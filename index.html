@@ -433,6 +433,23 @@
     else renderMatriz();
   }
 
+  // Convertir start_time "HH:MM:SS" a minutos reales
+  function timeToMin(t) {
+    if(!t) return 999;
+    const [h,m,s] = t.split(':').map(Number);
+    return h*60 + m + s/60;
+  }
+
+  async function getLineup(matchId, teamId) {
+    const r = await fetch(`${SB_URL}/rest/v1/rpc/get_lineup`, {
+      method: 'POST',
+      headers: { 'apikey':SB_KEY, 'Authorization':`Bearer ${SB_KEY}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({ p_match_id: parseInt(matchId), p_team_id: parseInt(teamId) })
+    });
+    const data = await r.json();
+    return Array.isArray(data) ? data : [];
+  }
+
   async function renderRed(periodo) {
     const tid=currentTeam.id, mid=redMatchId;
     const cont=document.getElementById('redCont');
@@ -440,19 +457,37 @@
     cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando red...</span></div>`;
     const partido=PARTIDOS.find(p=>p.id==mid);
     try {
-      const minCorte=periodo===1?2:50;
-      const {data:td}=await sbGet('eventos',`select=player_name,player_position&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&period=eq.${periodo}&minute_start=lte.${minCorte}`);
-      const titMap={};
-      td.forEach(e=>{ titMap[e.player_name]=e.player_position; });
-      if(Object.keys(titMap).length>11) {
-        const {data:cd}=await sbGet('eventos',`select=player_name&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&period=eq.${periodo}&limit=5000`);
-        const cnt={};
-        cd.forEach(e=>{ if(titMap[e.player_name]) cnt[e.player_name]=(cnt[e.player_name]||0)+1; });
-        const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,11).map(([n])=>n);
-        Object.keys(titMap).forEach(n=>{ if(!top.includes(n)) delete titMap[n]; });
+      // Obtener alineación real desde JSON del partido
+      const lineup = await getLineup(mid, tid);
+
+      // Determinar jugadores en campo para este periodo
+      // Periodo 1: jugadores con start_time = 00:00:00 (titulares)
+      // Periodo 2: titulares que no salieron antes del min 45 + suplentes que entraron antes del min 90
+      let jugadoresPeriodo = [];
+      let suplentes = [];
+
+      if(periodo === 1) {
+        jugadoresPeriodo = lineup.filter(p => timeToMin(p.start_time) === 0);
+      } else {
+        // En la 2ª parte: titulares que jugaron la 2ª parte + suplentes que entraron en 2ª parte
+        jugadoresPeriodo = lineup.filter(p => {
+          const entrada = timeToMin(p.start_time);
+          const salida = p.end_time ? timeToMin(p.end_time) : 999;
+          // Jugó algún minuto en la 2ª parte (después del min 45)
+          return entrada < 90 && salida > 45;
+        });
+        // Suplentes = los que no empezaron desde el inicio
+        suplentes = jugadoresPeriodo.filter(p => timeToMin(p.start_time) > 0);
       }
-      const tits=Object.keys(titMap);
-      if(!tits.length){ cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos para este periodo</div>`; return; }
+
+      // Limitar a 11 jugadores (por si hay datos raros)
+      if(jugadoresPeriodo.length > 11) jugadoresPeriodo = jugadoresPeriodo.slice(0, 11);
+
+      const titMap = {};
+      jugadoresPeriodo.forEach(p => { titMap[p.name] = p.position; });
+      const tits = Object.keys(titMap);
+
+      if(!tits.length){ cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de alineación para este partido</div>`; return; }
 
       const {data:allPP}=await sbGet('eventos',`select=player_name,x_start,y_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&period=eq.${periodo}&x_start=not.is.null&limit=5000`);
       const posA={},posC={};
@@ -471,16 +506,25 @@
       const maxT=Math.max(1,...Object.values(totP));
 
       let suplHTML='';
-      if(periodo===2){
-        const {data:sd}=await sbGet('eventos',`select=player_name,minute_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&period=eq.2&minute_start=gt.47&order=minute_start&limit=500`);
-        const sm={};
-        sd.forEach(e=>{ if(!tits.includes(e.player_name)&&!sm[e.player_name]) sm[e.player_name]=e.minute_start; });
-        if(Object.keys(sm).length){
-          suplHTML=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px">
-            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Suplentes</div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px">${Object.entries(sm).map(([n,m])=>`<div style="background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.2);border-radius:6px;padding:5px 12px;font-size:12px;display:flex;gap:6px"><span style="color:#58a6ff">↑</span><span>${n}</span><span style="color:var(--text3)">min ${m}'</span></div>`).join('')}
-            </div></div>`;
-        }
+      if(periodo===2 && suplentes.length > 0){
+        const minToReal = (t) => {
+          const m = timeToMin(t);
+          return m > 45 ? Math.round(m - 45) + 45 : Math.round(m);
+        };
+        suplHTML=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px">
+          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Suplentes 2ª parte</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">${suplentes.map(p => {
+            const minEntrada = minToReal(p.start_time);
+            const jugadorSaliente = lineup.find(x => x.end_time === p.start_time && x.team_id === tid);
+            const saliente = jugadorSaliente ? ` por ${jugadorSaliente.name}` : '';
+            return `<div style="background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.2);border-radius:6px;padding:5px 12px;font-size:12px;display:flex;gap:6px;align-items:center">
+              <span style="color:#58a6ff;font-weight:700">↑</span>
+              <span style="color:var(--text)">${p.name}</span>
+              <span style="color:var(--accent);font-size:10px">${p.position}</span>
+              <span style="color:var(--text3)">min ${minEntrada}'${saliente}</span>
+            </div>`;
+          }).join('')}
+          </div></div>`;
       }
 
       const W=820,H=540,MX=50,MY=40,PW=W-MX*2,PH=H-MY*2;
@@ -552,18 +596,18 @@
     cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando matriz...</span></div>`;
     const partido=PARTIDOS.find(p=>p.id==mid);
     try {
-      const {data}=await sbGet('eventos',`select=player_name,player_targeted_name&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&limit=5000`);
-      const jugsSet=new Set(), mat={};
-      data.forEach(e=>{ if(!e.player_name||!e.player_targeted_name) return; jugsSet.add(e.player_name); jugsSet.add(e.player_targeted_name); const k=`${e.player_name}|${e.player_targeted_name}`; mat[k]=(mat[k]||0)+1; });
+      const {data}=await sbGet('eventos',`select=player_name,player_position,player_targeted_name,player_targeted_position&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&limit=5000`);
+      const jugsSet=new Set(), mat={}, jugPos={};
+      data.forEach(e=>{ if(!e.player_name||!e.player_targeted_name) return; jugsSet.add(e.player_name); jugsSet.add(e.player_targeted_name); const k=`${e.player_name}|${e.player_targeted_name}`; mat[k]=(mat[k]||0)+1; if(e.player_position) jugPos[e.player_name]=e.player_position; if(e.player_targeted_position) jugPos[e.player_targeted_name]=e.player_targeted_position; });
       const totD={},totR={};
       jugsSet.forEach(j=>{totD[j]=0;totR[j]=0;});
       Object.entries(mat).forEach(([k,n])=>{ const [f,t]=k.split('|'); totD[f]=(totD[f]||0)+n; totR[t]=(totR[t]||0)+n; });
       const jugs=[...jugsSet].sort((a,b)=>(totD[b]||0)-(totD[a]||0));
       const maxV=Math.max(1,...Object.values(mat));
 
-      const thC=jugs.map(j=>`<th style="padding:6px 4px;font-size:9px;color:var(--text3);text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);min-width:28px">${j.split(' ').slice(-1)[0].substring(0,7)}</th>`).join('');
+      const thC=jugs.map(j=>`<th style="padding:6px 4px;font-size:9px;color:var(--text3);text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);min-width:28px">${j.split(' ').slice(-1)[0].substring(0,7)}<tspan style='font-size:8px;color:var(--accent)'> (${jugPos[j]||''})</tspan></th>`).join('');
       const filas=jugs.map(fr=>{
-        const ap=fr.split(' ').slice(-1)[0].substring(0,9);
+        const ap=`${fr.split(' ').slice(-1)[0].substring(0,9)} (${jugPos[fr]||''})`;
         const cels=jugs.map(to=>{
           if(fr===to) return `<td style="background:var(--bg4);border:1px solid var(--border)"></td>`;
           const n=mat[`${fr}|${to}`]||0;
