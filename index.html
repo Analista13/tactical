@@ -4,676 +4,214 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0d1117">
-  <title>SkillCorner · Análisis</title>
-  <link rel="manifest" href="manifest.json">
+  <title>Tactical</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:       #0d1117;
-      --bg2:      #161b22;
-      --bg3:      #21262d;
-      --bg4:      #2d333b;
-      --border:   rgba(255,255,255,0.08);
-      --accent:   #c8a96e;
-      --accent2:  #e8c98e;
-      --text:     #e6edf3;
-      --text2:    #8b949e;
-      --text3:    #484f58;
-      --green:    #3fb950;
-      --red:      #f85149;
-      --blue:     #58a6ff;
-      --orange:   #f0883e;
-      --sidebar:  220px;
-      --header:   52px;
-      --tabs:     48px;
-      --radius:   10px;
+      --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --bg4:#2d333b;
+      --border:rgba(255,255,255,0.08); --accent:#c8a96e; --accent2:#e8c98e;
+      --text:#e6edf3; --text2:#8b949e; --text3:#484f58;
+      --green:#3fb950; --red:#f85149; --blue:#58a6ff; --orange:#f0883e;
+      --sidebar:220px; --header:52px; --tabs:48px; --radius:10px;
     }
-
     * { margin:0; padding:0; box-sizing:border-box; }
-
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      height: 100vh;
-      display: grid;
-      grid-template-rows: var(--header) 1fr;
-      grid-template-columns: var(--sidebar) 1fr;
-      grid-template-areas:
-        "header header"
-        "sidebar main";
-      overflow: hidden;
-    }
-
-    /* ── HEADER ── */
-    header {
-      grid-area: header;
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      gap: 12px;
-      z-index: 50;
-    }
-
-    .header-logo {
-      width: 28px;
-      height: 28px;
-      object-fit: contain;
-    }
-
-    .header-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 18px;
-      letter-spacing: 2px;
-      color: var(--text);
-    }
-
-    .header-sub {
-      font-size: 11px;
-      color: var(--text3);
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      margin-left: 4px;
-      margin-top: 2px;
-    }
-
-    .header-badge {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(200,169,110,0.08);
-      border: 1px solid rgba(200,169,110,0.15);
-      padding: 4px 10px;
-      border-radius: 100px;
-      font-size: 11px;
-      color: var(--accent);
-      letter-spacing: 0.5px;
-    }
-
-    /* ── SIDEBAR ── */
-    aside {
-      grid-area: sidebar;
-      background: var(--bg2);
-      border-right: 1px solid var(--border);
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
-
-    aside::-webkit-scrollbar { width: 4px; }
-    aside::-webkit-scrollbar-track { background: transparent; }
-    aside::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
-
-    .sidebar-section-label {
-      padding: 16px 16px 6px;
-      font-size: 10px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--text3);
-      font-weight: 600;
-    }
-
-    .team-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
-      cursor: pointer;
-      border-radius: 8px;
-      margin: 2px 8px;
-      transition: all 0.15s;
-      position: relative;
-    }
-
-    .team-item:hover {
-      background: var(--bg3);
-    }
-
-    .team-item.active {
-      background: rgba(200,169,110,0.1);
-      border: 1px solid rgba(200,169,110,0.2);
-    }
-
-    .team-item.active::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 3px;
-      height: 60%;
-      background: var(--accent);
-      border-radius: 0 2px 2px 0;
-      margin-left: -8px;
-    }
-
-    .team-escudo {
-      width: 30px;
-      height: 30px;
-      object-fit: contain;
-      flex-shrink: 0;
-    }
-
-    .team-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .team-name {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .team-item.active .team-name { color: var(--accent); }
-
-    .team-sub {
-      font-size: 11px;
-      color: var(--text3);
-      margin-top: 1px;
-    }
-
-    .sidebar-divider {
-      height: 1px;
-      background: var(--border);
-      margin: 8px 16px;
-    }
-
-    /* ── MAIN ── */
-    main {
-      grid-area: main;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      background: var(--bg);
-    }
-
-    /* ── TABS ── */
-    .tabs-bar {
-      height: var(--tabs);
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      gap: 4px;
-      flex-shrink: 0;
-      overflow-x: auto;
-    }
-
-    .tabs-bar::-webkit-scrollbar { display: none; }
-
-    .tab {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text2);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.15s;
-      border: 1px solid transparent;
-    }
-
-    .tab:hover {
-      background: var(--bg3);
-      color: var(--text);
-    }
-
-    .tab.active {
-      background: rgba(200,169,110,0.1);
-      border-color: rgba(200,169,110,0.2);
-      color: var(--accent);
-    }
-
-    .tab .tab-icon { font-size: 14px; }
-
-    /* ── CONTENT ── */
-    .content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 28px;
-    }
-
-    .content::-webkit-scrollbar { width: 6px; }
-    .content::-webkit-scrollbar-track { background: transparent; }
-    .content::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
-
-    /* ── WELCOME ── */
-    .welcome {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      gap: 20px;
-      text-align: center;
-      animation: fadeUp 0.4s ease;
-    }
-
-    .welcome-escudo {
-      width: 90px;
-      height: 90px;
-      object-fit: contain;
-      filter: drop-shadow(0 8px 24px rgba(200,169,110,0.2));
-      animation: float 4s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0%,100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
-    }
-
-    .welcome h2 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 48px;
-      letter-spacing: 3px;
-      background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .welcome p {
-      font-size: 14px;
-      color: var(--text2);
-      max-width: 360px;
-      line-height: 1.6;
-    }
-
-    .welcome-hint {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      padding: 10px 18px;
-      border-radius: 8px;
-      font-size: 13px;
-      color: var(--text2);
-      margin-top: 8px;
-    }
-
-    /* ── CONTENT HEADER ── */
-    .content-head {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    .content-head-escudo {
-      width: 36px;
-      height: 36px;
-      object-fit: contain;
-    }
-
-    .content-head h2 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 22px;
-      letter-spacing: 2px;
-    }
-
-    .content-head p {
-      font-size: 12px;
-      color: var(--text2);
-      margin-top: 1px;
-    }
-
-    /* ── CARDS ── */
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 14px;
-      margin-bottom: 24px;
-    }
-
-    .card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px;
-      transition: all 0.2s;
-    }
-
-    .card:hover {
-      border-color: rgba(200,169,110,0.25);
-      transform: translateY(-1px);
-    }
-
-    .card-label {
-      font-size: 11px;
-      color: var(--text3);
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-
-    .card-value {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 34px;
-      letter-spacing: 1px;
-      color: var(--accent);
-      line-height: 1;
-    }
-
-    .card-sub {
-      font-size: 11px;
-      color: var(--text3);
-      margin-top: 4px;
-    }
-
-    /* ── TABLE ── */
-    .table-wrap {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-
-    th {
-      padding: 10px 16px;
-      text-align: left;
-      font-size: 10px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--text3);
-      border-bottom: 1px solid var(--border);
-      font-weight: 600;
-      background: var(--bg2);
-    }
-
-    td {
-      padding: 11px 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.03);
-      color: var(--text2);
-    }
-
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: var(--bg3); color: var(--text); }
-    td:first-child { color: var(--text); font-weight: 500; }
-
-    /* ── PARTIDOS ── */
-    .partidos {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .partido {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px 18px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      transition: all 0.15s;
-    }
-
-    .partido:hover {
-      border-color: rgba(200,169,110,0.2);
-      background: var(--bg3);
-    }
-
-    .partido-j {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 20px;
-      color: var(--accent);
-      width: 40px;
-      text-align: center;
-      flex-shrink: 0;
-    }
-
-    .partido-teams {
-      flex: 1;
-    }
-
-    .partido-teams strong {
-      font-size: 13px;
-      font-weight: 600;
-      display: block;
-    }
-
-    .partido-teams span {
-      font-size: 11px;
-      color: var(--text3);
-    }
-
-    .partido-score {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 22px;
-      letter-spacing: 2px;
-    }
-
-    .win  { color: var(--green); }
-    .draw { color: var(--accent); }
-    .loss { color: var(--red); }
-
-    /* ── BAR ── */
-    .bar-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .bar-bg {
-      flex: 1;
-      height: 5px;
-      background: var(--bg3);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-
-    .bar-fill {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 3px;
-      transition: width 0.6s ease;
-    }
-
-    .bar-pct {
-      font-size: 12px;
-      color: var(--text2);
-      min-width: 38px;
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* ── PILL ── */
-    .pill {
-      display: inline-block;
-      padding: 3px 8px;
-      border-radius: 100px;
-      font-size: 11px;
-      font-weight: 500;
-    }
-    .pill-blue   { background:rgba(88,166,255,0.12); color:var(--blue); }
-    .pill-green  { background:rgba(63,185,80,0.12);  color:var(--green); }
-    .pill-accent { background:rgba(200,169,110,0.12);color:var(--accent); }
-    .pill-red    { background:rgba(248,81,73,0.12);  color:var(--red); }
-
-    /* ── LOADING ── */
-    .loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
-      padding: 80px;
-      color: var(--text3);
-      font-size: 13px;
-    }
-
-    .spinner {
-      width: 28px; height: 28px;
-      border: 2px solid var(--bg4);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes fadeUp {
-      from { opacity:0; transform:translateY(10px); }
-      to   { opacity:1; transform:translateY(0); }
-    }
-
-    .anim { animation: fadeUp 0.3s ease; }
+    body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); height:100vh; display:grid; grid-template-rows:var(--header) 1fr; grid-template-columns:var(--sidebar) 1fr; grid-template-areas:"header header" "sidebar main"; overflow:hidden; }
+
+    header { grid-area:header; background:var(--bg2); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 20px; gap:12px; z-index:50; }
+    .header-logo { width:28px; height:28px; object-fit:contain; }
+    .header-title { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:2px; }
+    .header-sub { font-size:11px; color:var(--text3); letter-spacing:1.5px; text-transform:uppercase; margin-left:4px; margin-top:2px; }
+    .header-badge { margin-left:auto; background:rgba(200,169,110,0.08); border:1px solid rgba(200,169,110,0.15); padding:4px 10px; border-radius:100px; font-size:11px; color:var(--accent); }
+
+    aside { grid-area:sidebar; background:var(--bg2); border-right:1px solid var(--border); overflow-y:auto; display:flex; flex-direction:column; }
+    aside::-webkit-scrollbar { width:4px; } aside::-webkit-scrollbar-thumb { background:var(--bg4); border-radius:2px; }
+    .sidebar-label { padding:16px 16px 6px; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text3); font-weight:600; }
+    .team-item { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; border-radius:8px; margin:2px 8px; transition:all 0.15s; border:1px solid transparent; }
+    .team-item:hover { background:var(--bg3); }
+    .team-item.active { background:rgba(200,169,110,0.1); border-color:rgba(200,169,110,0.2); }
+    .team-escudo { width:30px; height:30px; object-fit:contain; flex-shrink:0; }
+    .team-name { font-size:13px; font-weight:500; color:var(--text); }
+    .team-item.active .team-name { color:var(--accent); }
+    .team-sub { font-size:11px; color:var(--text3); margin-top:1px; }
+    .sidebar-divider { height:1px; background:var(--border); margin:8px 16px; }
+
+    main { grid-area:main; display:flex; flex-direction:column; overflow:hidden; }
+    .tabs-bar { height:var(--tabs); background:var(--bg2); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 16px; gap:4px; flex-shrink:0; overflow-x:auto; }
+    .tabs-bar::-webkit-scrollbar { display:none; }
+    .tab { display:flex; align-items:center; gap:6px; padding:6px 13px; border-radius:6px; font-size:13px; font-weight:500; color:var(--text2); cursor:pointer; white-space:nowrap; transition:all 0.15s; border:1px solid transparent; }
+    .tab:hover { background:var(--bg3); color:var(--text); }
+    .tab.active { background:rgba(200,169,110,0.1); border-color:rgba(200,169,110,0.2); color:var(--accent); }
+
+    .content { flex:1; overflow-y:auto; padding:24px; }
+    .content::-webkit-scrollbar { width:6px; } .content::-webkit-scrollbar-thumb { background:var(--bg4); border-radius:3px; }
+
+    .content-head { display:flex; align-items:center; gap:12px; margin-bottom:22px; }
+    .content-head-escudo { width:36px; height:36px; object-fit:contain; }
+    .content-head h2 { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:2px; }
+    .content-head p { font-size:12px; color:var(--text2); margin-top:1px; }
+
+    .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; margin-bottom:22px; }
+    .card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:18px; transition:all 0.2s; }
+    .card:hover { border-color:rgba(200,169,110,0.25); transform:translateY(-1px); }
+    .card-label { font-size:11px; color:var(--text3); letter-spacing:1.2px; text-transform:uppercase; margin-bottom:8px; }
+    .card-value { font-family:'Bebas Neue',sans-serif; font-size:34px; letter-spacing:1px; color:var(--accent); line-height:1; }
+    .card-sub { font-size:11px; color:var(--text3); margin-top:4px; }
+
+    .table-wrap { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th { padding:10px 16px; text-align:left; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text3); border-bottom:1px solid var(--border); font-weight:600; }
+    td { padding:11px 16px; border-bottom:1px solid rgba(255,255,255,0.03); color:var(--text2); }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:var(--bg3); color:var(--text); }
+    td:first-child { color:var(--text); font-weight:500; }
+
+    .partidos { display:flex; flex-direction:column; gap:6px; }
+    .partido { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:14px 18px; display:flex; align-items:center; gap:14px; transition:all 0.15s; }
+    .partido:hover { border-color:rgba(200,169,110,0.2); background:var(--bg3); }
+    .partido-j { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--accent); width:40px; text-align:center; flex-shrink:0; }
+    .partido-teams { flex:1; }
+    .partido-teams strong { font-size:13px; font-weight:600; display:block; }
+    .partido-teams span { font-size:11px; color:var(--text3); }
+    .partido-score { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:2px; }
+    .win { color:var(--green); } .draw { color:var(--accent); } .loss { color:var(--red); }
+
+    .bar-row { display:flex; align-items:center; gap:10px; }
+    .bar-bg { flex:1; height:5px; background:var(--bg3); border-radius:3px; overflow:hidden; }
+    .bar-fill { height:100%; background:var(--accent); border-radius:3px; }
+    .bar-pct { font-size:12px; color:var(--text2); min-width:38px; text-align:right; }
+
+    .pill { display:inline-block; padding:3px 8px; border-radius:100px; font-size:11px; font-weight:500; }
+    .pill-blue { background:rgba(88,166,255,0.12); color:var(--blue); }
+    .pill-green { background:rgba(63,185,80,0.12); color:var(--green); }
+    .pill-accent { background:rgba(200,169,110,0.12); color:var(--accent); }
+    .pill-red { background:rgba(248,81,73,0.12); color:var(--red); }
+
+    .loading { display:flex; flex-direction:column; align-items:center; gap:14px; padding:80px; color:var(--text3); font-size:13px; }
+    .spinner { width:28px; height:28px; border:2px solid var(--bg4); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    .anim { animation:fadeUp 0.3s ease; }
+
+    .subtab { background:transparent; border:none; color:var(--text2); padding:7px 16px; border-radius:6px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+    .subtab:hover { color:var(--text); background:var(--bg3); }
+    .subtab.active { background:rgba(200,169,110,0.1); color:var(--accent); }
   </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header>
-  <img class="header-logo"
-       src="https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png"
-       alt="">
-  <div>
-    <div class="header-title">Tactical</div>
-  </div>
+  <img class="header-logo" src="https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png" alt="">
+  <div><div class="header-title">Tactical</div></div>
   <div class="header-sub">Primera Federación · 2025-26</div>
   <div class="header-badge">⚽ 106.908 eventos</div>
 </header>
 
-<!-- SIDEBAR -->
 <aside>
-  <div class="sidebar-section-label">Equipos</div>
-
-  <div class="team-item active" id="team-2908" onclick="selectTeam(2908, 'Pontevedra CF', 'https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png')">
+  <div class="sidebar-label">Equipos</div>
+  <div class="team-item active" id="team-2908" onclick="selectTeam(2908,'Pontevedra CF','https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png')">
     <img class="team-escudo" src="https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png" alt="">
-    <div class="team-info">
-      <div class="team-name">Pontevedra CF</div>
-      <div class="team-sub">27 partidos</div>
-    </div>
+    <div class="team-info"><div class="team-name">Pontevedra CF</div><div class="team-sub">27 partidos</div></div>
   </div>
-
   <div class="sidebar-divider"></div>
-  <div class="sidebar-section-label">Próximamente</div>
-
+  <div class="sidebar-label">Próximamente</div>
   <div class="team-item" style="opacity:0.4;pointer-events:none">
     <div style="width:30px;height:30px;background:var(--bg4);border-radius:50%;flex-shrink:0"></div>
-    <div class="team-info">
-      <div class="team-name">Real Madrid B</div>
-      <div class="team-sub">Sin datos</div>
-    </div>
+    <div><div class="team-name">Real Madrid B</div><div class="team-sub">Sin datos</div></div>
   </div>
-
   <div class="team-item" style="opacity:0.4;pointer-events:none">
     <div style="width:30px;height:30px;background:var(--bg4);border-radius:50%;flex-shrink:0"></div>
-    <div class="team-info">
-      <div class="team-name">SD Ponferradina</div>
-      <div class="team-sub">Sin datos</div>
-    </div>
+    <div><div class="team-name">SD Ponferradina</div><div class="team-sub">Sin datos</div></div>
   </div>
-
   <div class="team-item" style="opacity:0.4;pointer-events:none">
     <div style="width:30px;height:30px;background:var(--bg4);border-radius:50%;flex-shrink:0"></div>
-    <div class="team-info">
-      <div class="team-name">Barakaldo CF</div>
-      <div class="team-sub">Sin datos</div>
-    </div>
+    <div><div class="team-name">Barakaldo CF</div><div class="team-sub">Sin datos</div></div>
   </div>
-
 </aside>
 
-<!-- MAIN -->
 <main>
-
-  <!-- TABS -->
   <div class="tabs-bar" id="tabsBar">
-    <div class="tab active" data-tab="resumen" onclick="selectTab('resumen', this)">
-      <span class="tab-icon">📊</span> Resumen
-    </div>
-    <div class="tab" data-tab="partidos" onclick="selectTab('partidos', this)">
-      <span class="tab-icon">🗓️</span> Partidos
-    </div>
-    <div class="tab" data-tab="pressing" onclick="selectTab('pressing', this)">
-      <span class="tab-icon">⚡</span> Pressing
-    </div>
-    <div class="tab" data-tab="carreras" onclick="selectTab('carreras', this)">
-      <span class="tab-icon">🏃</span> Carreras
-    </div>
-    <div class="tab" data-tab="pases" onclick="selectTab('pases', this)">
-      <span class="tab-icon">🎯</span> Pases
-    </div>
-    <div class="tab" data-tab="fases" onclick="selectTab('fases', this)">
-      <span class="tab-icon">🔄</span> Fases
-    </div>
-    <div class="tab" data-tab="jugadores" onclick="selectTab('jugadores', this)">
-      <span class="tab-icon">👤</span> Jugadores
-    </div>
-    <div class="tab" data-tab="redpases" onclick="selectTab('redpases', this)">
-      <span class="tab-icon">🕸️</span> Red de Pases
-    </div>
-    <div style="margin-left:auto;padding-right:4px">
-      <button id="refreshBtn" onclick="refreshCurrentTab()" title="Actualizar"
-        style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.2s"
-        onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text2)'">↺</button>
+    <div class="tab active" data-tab="resumen" onclick="selectTab('resumen',this)"><span>📊</span> Resumen</div>
+    <div class="tab" data-tab="partidos" onclick="selectTab('partidos',this)"><span>🗓️</span> Partidos</div>
+    <div class="tab" data-tab="pressing" onclick="selectTab('pressing',this)"><span>⚡</span> Pressing</div>
+    <div class="tab" data-tab="carreras" onclick="selectTab('carreras',this)"><span>🏃</span> Carreras</div>
+    <div class="tab" data-tab="pases" onclick="selectTab('pases',this)"><span>🎯</span> Pases</div>
+    <div class="tab" data-tab="fases" onclick="selectTab('fases',this)"><span>🔄</span> Fases</div>
+    <div class="tab" data-tab="jugadores" onclick="selectTab('jugadores',this)"><span>👤</span> Jugadores</div>
+    <div class="tab" data-tab="redpases" onclick="selectTab('redpases',this)"><span>🕸️</span> Red de Pases</div>
+    <div style="margin-left:auto;padding-right:4px;display:flex;align-items:center">
+      <button onclick="refreshTab()" title="Actualizar" style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">↺</button>
     </div>
   </div>
-
-  <!-- CONTENT -->
   <div class="content" id="content">
     <div class="loading"><div class="spinner"></div><span>Cargando...</span></div>
   </div>
-
 </main>
 
 <script>
-  const URL  = 'https://grvcjuwzdewebxablwyb.supabase.co';
-  const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdydmNqdXd6ZGV3ZWJ4YWJsd3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTM0NzgsImV4cCI6MjA5NTAyOTQ3OH0.KPbDShmdsjH0VaJ9kggF34FZ-IiAKZ61qcPxNi6w6Rk';
+  const SB_URL = 'https://grvcjuwzdewebxablwyb.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdydmNqdXd6ZGV3ZWJ4YWJsd3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTM0NzgsImV4cCI6MjA5NTAyOTQ3OH0.KPbDShmdsjH0VaJ9kggF34FZ-IiAKZ61qcPxNi6w6Rk';
 
-  let currentTeam = { id: 2908, name: 'Pontevedra CF', escudo: 'https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png' };
+  let currentTeam = { id:2908, name:'Pontevedra CF', escudo:'https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png' };
   let currentTab  = 'resumen';
+  let redMatchId  = null;
+  let redSubTab   = '1parte';
 
-  async function get(table, params) {
-    const r = await fetch(`${URL}/rest/v1/${table}?${params}`, {
-      headers: { 'apikey': KEY, 'Authorization': `Bearer ${KEY}`, 'Prefer': 'count=exact' }
+  const PARTIDOS = [
+    {j:'J1',  f:'30/08/2025', local:'Pontevedra CF',    vis:'Cacereño',        id:2040850, s:'1-1'},
+    {j:'J2',  f:'06/09/2025', local:'Ponferradina',     vis:'Pontevedra CF',   id:2040906, s:'0-1'},
+    {j:'J3',  f:'14/09/2025', local:'Pontevedra CF',    vis:'CD Tenerife',     id:2040469, s:'0-2'},
+    {j:'J4',  f:'20/09/2025', local:'Bilbao Athletic',  vis:'Pontevedra CF',   id:2040422, s:'1-0'},
+    {j:'J5',  f:'27/09/2025', local:'Ourense CF',       vis:'Pontevedra CF',   id:2040406, s:'1-2'},
+    {j:'J8',  f:'18/10/2025', local:'Pontevedra CF',    vis:'Osasuna B',       id:2038960, s:'2-2'},
+    {j:'J10', f:'01/11/2025', local:'Pontevedra CF',    vis:'Zamora CF',       id:2040705, s:'4-1'},
+    {j:'J12', f:'15/11/2025', local:'Pontevedra CF',    vis:'Mérida AD',       id:2043899, s:'1-1'},
+    {j:'J13', f:'22/11/2025', local:'CD Lugo',          vis:'Pontevedra CF',   id:2044705, s:'1-0'},
+    {j:'J14', f:'29/11/2025', local:'Pontevedra CF',    vis:'Guadalajara',     id:2048014, s:'1-1'},
+    {j:'J15', f:'06/12/2025', local:'Celta de Vigo B',  vis:'Pontevedra CF',   id:2046903, s:'1-1'},
+    {j:'J16', f:'14/12/2025', local:'Pontevedra CF',    vis:'Arenas Club',     id:2047939, s:'2-0'},
+    {j:'J18', f:'03/01/2026', local:'Pontevedra CF',    vis:'Racing Ferrol',   id:2049227, s:'2-1'},
+    {j:'J19', f:'10/01/2026', local:'Real Avilés',      vis:'Pontevedra CF',   id:2049850, s:'0-3'},
+    {j:'J21', f:'23/01/2026', local:'Mérida AD',        vis:'Pontevedra CF',   id:2050946, s:'1-1'},
+    {j:'J23', f:'08/02/2026', local:'Pontevedra CF',    vis:'Real Madrid B',   id:2053307, s:'0-0'},
+    {j:'J24', f:'14/02/2026', local:'Cacereño',         vis:'Pontevedra CF',   id:2054295, s:'1-0'},
+    {j:'J25', f:'21/02/2026', local:'Pontevedra CF',    vis:'CD Lugo',         id:2055175, s:'1-1'},
+    {j:'J27', f:'08/03/2026', local:'Pontevedra CF',    vis:'Unionistas de S', id:2057739, s:'0-0'},
+    {j:'J29', f:'21/03/2026', local:'Pontevedra CF',    vis:'Ourense CF',      id:2059575, s:'0-0'},
+    {j:'J30', f:'28/03/2026', local:'Zamora CF',        vis:'Pontevedra CF',   id:2060320, s:'2-1'},
+    {j:'J31', f:'04/04/2026', local:'Pontevedra CF',    vis:'Barakaldo',       id:2061272, s:'3-0'},
+    {j:'J32', f:'12/04/2026', local:'Pontevedra CF',    vis:'Ponferradina',    id:2062716, s:'2-2'},
+    {j:'J34', f:'25/04/2026', local:'Pontevedra CF',    vis:'Celta de Vigo B', id:2064818, s:'2-1'},
+    {j:'J35', f:'02/05/2026', local:'Racing Ferrol',    vis:'Pontevedra CF',   id:2066030, s:'0-1'},
+    {j:'J36', f:'09/05/2026', local:'Pontevedra CF',    vis:'Bilbao Athletic', id:2067109, s:'4-0'},
+    {j:'J37', f:'17/05/2026', local:'CD Tenerife',      vis:'Pontevedra CF',   id:2068384, s:'3-0'},
+  ];
+
+  async function sbGet(table, params) {
+    const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, {
+      headers: { 'apikey':SB_KEY, 'Authorization':`Bearer ${SB_KEY}`, 'Prefer':'count=exact' }
     });
     const count = r.headers.get('content-range')?.split('/')[1];
-    return { data: await r.json(), count: parseInt(count) || 0 };
+    const json = await r.json();
+    const data = Array.isArray(json) ? json : [];
+    return { data, count: parseInt(count)||data.length };
   }
 
-  function setLoading() {
-    document.getElementById('content').innerHTML =
-      `<div class="loading"><div class="spinner"></div><span>Cargando datos...</span></div>`;
+  function loading() {
+    document.getElementById('content').innerHTML = `<div class="loading"><div class="spinner"></div><span>Cargando datos...</span></div>`;
   }
 
-  function headHTML() {
-    return `
-      <div class="content-head">
-        <img class="content-head-escudo" src="${currentTeam.escudo}" alt="">
-        <div>
-          <h2>${currentTeam.name}</h2>
-          <p>Primera Federación · Temporada 2025-26</p>
-        </div>
-      </div>`;
+  function head() {
+    return `<div class="content-head"><img class="content-head-escudo" src="${currentTeam.escudo}" alt=""><div><h2>${currentTeam.name}</h2><p>Primera Federación · Temporada 2025-26</p></div></div>`;
   }
 
-  // ── EQUIPO ──
   function selectTeam(id, name, escudo) {
     document.querySelectorAll('.team-item').forEach(i => i.classList.remove('active'));
     document.getElementById(`team-${id}`)?.classList.add('active');
-    currentTeam = { id, name, escudo };
+    currentTeam = {id, name, escudo};
     loadTab(currentTab);
   }
 
-  // ── TAB ──
   function selectTab(tab, el) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
@@ -681,916 +219,388 @@
     loadTab(tab);
   }
 
-  function loadTab(tab) {
-    switch(tab) {
-      case 'resumen':   loadResumen();   break;
-      case 'partidos':  loadPartidos();  break;
-      case 'pressing':  loadPressing();  break;
-      case 'carreras':  loadCarreras();  break;
-      case 'pases':     loadPases();     break;
-      case 'fases':     loadFases();     break;
-      case 'jugadores': loadJugadores(); break;
-      case 'redpases':  loadRedPases();  break;
-    }
-  }
-
-  // ── RESUMEN ──
-  async function loadResumen() {
-    setLoading();
-    const tid = currentTeam.id;
-    const [pp, obr, obe, po] = await Promise.all([
-      get('eventos', `select=event_id&team_id=eq.${tid}&event_type=eq.player_possession`),
-      get('eventos', `select=event_id&team_id=eq.${tid}&event_type=eq.off_ball_run`),
-      get('eventos', `select=event_id&team_id=eq.${tid}&event_type=eq.defensive_engagement`),
-      get('eventos', `select=event_id&team_id=eq.${tid}&event_type=eq.passing_option`)
-    ]);
-
-    document.getElementById('content').innerHTML = `
-      <div class="anim">
-        ${headHTML()}
-        <div class="cards">
-          <div class="card">
-            <div class="card-label">Posesiones de jugador</div>
-            <div class="card-value">${pp.count.toLocaleString()}</div>
-            <div class="card-sub">Player Possessions</div>
-          </div>
-          <div class="card">
-            <div class="card-label">Carreras sin balón</div>
-            <div class="card-value">${obr.count.toLocaleString()}</div>
-            <div class="card-sub">Off-Ball Runs</div>
-          </div>
-          <div class="card">
-            <div class="card-label">Opciones de pase</div>
-            <div class="card-value">${po.count.toLocaleString()}</div>
-            <div class="card-sub">Passing Options</div>
-          </div>
-          <div class="card">
-            <div class="card-label">Acciones defensivas</div>
-            <div class="card-value">${obe.count.toLocaleString()}</div>
-            <div class="card-sub">On-Ball Engagements</div>
-          </div>
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;color:var(--text2);font-size:13px;line-height:1.8">
-          <strong style="color:var(--accent)">Datos SkillCorner · Dynamic Events</strong><br>
-          Tracking v3 · 310 variables por evento · 27 partidos analizados
-        </div>
-      </div>`;
-  }
-
-  // ── PARTIDOS ──
-  async function loadPartidos() {
-    setLoading();
-    const tid = currentTeam.id;
-    const { data } = await get('eventos',
-      `select=match_id,team_id,team_shortname,team_score,opponent_team_score&event_type=eq.player_possession&order=match_id&limit=5000`
-    );
-
-    const matches = {};
-    data.forEach(e => {
-      if (!matches[e.match_id]) matches[e.match_id] = {};
-      if (e.team_id === tid) {
-        matches[e.match_id].myScore  = e.team_score;
-        matches[e.match_id].oppScore = e.opponent_team_score;
-      } else {
-        matches[e.match_id].rival = e.team_shortname;
-      }
-    });
-
-    const rows = Object.entries(matches).sort((a,b)=>a[0]-b[0]).map(([mid, m], i) => {
-      const ps = m.myScore ?? '?', rs = m.oppScore ?? '?';
-      const cls = ps > rs ? 'win' : ps < rs ? 'loss' : 'draw';
-      return `
-        <div class="partido">
-          <div class="partido-j">J${i+1}</div>
-          <div class="partido-teams">
-            <strong>${currentTeam.name} vs ${m.rival || 'Rival'}</strong>
-            <span>ID partido: ${mid}</span>
-          </div>
-          <div class="partido-score ${cls}">${ps} — ${rs}</div>
-        </div>`;
-    }).join('');
-
-    document.getElementById('content').innerHTML = `
-      <div class="anim">
-        ${headHTML()}
-        <div class="partidos">${rows}</div>
-      </div>`;
-  }
-
-  // ── PRESSING ──
-  async function loadPressing() {
-    setLoading();
-    const tid = currentTeam.id;
-    const { data } = await get('eventos',
-      `select=event_subtype,pressing_chain,pressing_chain_end_type,possession_danger,force_backward,beaten_by_possession&event_type=eq.defensive_engagement&team_id=eq.${tid}&limit=10000`
-    );
-
-    const tipos = {};
-    let chains=0, regain=0, peligro=0, forced=0, beaten=0;
-    data.forEach(e => {
-      tipos[e.event_subtype||'other'] = (tipos[e.event_subtype||'other']||0)+1;
-      if (e.pressing_chain) chains++;
-      if (e.pressing_chain_end_type==='regain') regain++;
-      if (e.possession_danger) peligro++;
-      if (e.force_backward) forced++;
-      if (e.beaten_by_possession) beaten++;
-    });
-
-    const total = data.length;
-    const pillClass = { pressing:'pill-blue', pressure:'pill-accent', counter_press:'pill-green', recovery_press:'pill-red', other:'pill-red' };
-
-    const rows = Object.entries(tipos).sort((a,b)=>b[1]-a[1]).map(([t,n]) => {
-      const pct = ((n/total)*100).toFixed(1);
-      return `<tr>
-        <td><span class="pill ${pillClass[t]||'pill-accent'}">${t}</span></td>
-        <td>${n.toLocaleString()}</td>
-        <td><div class="bar-row"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div><span class="bar-pct">${pct}%</span></div></td>
-      </tr>`;
-    }).join('');
-
-    document.getElementById('content').innerHTML = `
-      <div class="anim">
-        ${headHTML()}
-        <div class="cards">
-          <div class="card"><div class="card-label">Total acciones</div><div class="card-value">${total.toLocaleString()}</div><div class="card-sub">On-Ball Engagements</div></div>
-          <div class="card"><div class="card-label">En cadena pressing</div><div class="card-value">${chains.toLocaleString()}</div><div class="card-sub">Pressing colectivo</div></div>
-          <div class="card"><div class="card-label">Recuperaciones</div><div class="card-value">${regain.toLocaleString()}</div><div class="card-sub">Chain · regain</div></div>
-          <div class="card"><div class="card-label">Pases atrás forzados</div><div class="card-value">${forced.toLocaleString()}</div><div class="card-sub">Force backward</div></div>
-        </div>
-        <div class="table-wrap">
-          <table><thead><tr><th>Tipo</th><th>Total</th><th>Distribución</th></tr></thead>
-          <tbody>${rows}</tbody></table>
-        </div>
-      </div>`;
-  }
-
-  // ── CARRERAS ──
-  async function loadCarreras() {
-    setLoading();
-    const tid = currentTeam.id;
-    const { data } = await get('eventos',
-      `select=event_subtype,received,dangerous,speed_avg_band,give_and_go,break_defensive_line&event_type=eq.off_ball_run&team_id=eq.${tid}&limit=10000`
-    );
-
-    const tipos = {};
-    let recibidas=0, peligrosas=0, sprint=0, gng=0, lineBreak=0;
-    data.forEach(e => {
-      tipos[e.event_subtype||'unknown'] = (tipos[e.event_subtype||'unknown']||0)+1;
-      if (e.received) recibidas++;
-      if (e.dangerous) peligrosas++;
-      if (e.speed_avg_band==='sprinting') sprint++;
-      if (e.give_and_go) gng++;
-      if (e.break_defensive_line) lineBreak++;
-    });
-
-    const total = data.length;
-    const rows = Object.entries(tipos).sort((a,b)=>b[1]-a[1]).map(([t,n]) => {
-      const pct = ((n/total)*100).toFixed(1);
-      return `<tr>
-        <td>${t}</td><td>${n.toLocaleString()}</td>
-        <td><div class="bar-row"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div><span class="bar-pct">${pct}%</span></div></td>
-      </tr>`;
-    }).join('');
-
-    document.getElementById('content').innerHTML = `
-      <div class="anim">
-        ${headHTML()}
-        <div class="cards">
-          <div class="card"><div class="card-label">Total carreras</div><div class="card-value">${total.toLocaleString()}</div><div class="card-sub">Off-Ball Runs</div></div>
-          <div class="card"><div class="card-label">Con recepción</div><div class="card-value">${recibidas.toLocaleString()}</div><div class="card-sub">${((recibidas/total)*100).toFixed(1)}% del total</div></div>
-          <div class="card"><div class="card-label">Peligrosas</div><div class="card-value">${peligrosas.toLocaleString()}</div><div class="card-sub">xThreat &gt; 0.02</div></div>
-          <div class="card"><div class="card-label">Give & Go</div><div class="card-value">${gng.toLocaleString()}</div><div class="card-sub">Pared tras pase</div></div>
-        </div>
-        <div class="table-wrap">
-          <table><thead><tr><th>Tipo de carrera</th><th>Total</th><th>Distribución</th></tr></thead>
-          <tbody>${rows}</tbody></table>
-        </div>
-      </div>`;
-  }
-
-  // ── PASES ──
-  async function loadPases() {
-    setLoading();
-    const tid = currentTeam.id;
-    const { data } = await get('eventos',
-      `select=pass_outcome,furthest_line_break,furthest_line_break_type,pass_range&event_type=eq.player_possession&team_id=eq.${tid}&limit=10000`
-    );
-
-    let comp=0, incomp=0, first=0, second=0, last=0, through=0, around=0;
-    const rangos = {};
-    data.forEach(e => {
-      if (e.pass_outcome==='successful') comp++;
-      if (e.pass_outcome==='unsuccessful') incomp++;
-      if (e.furthest_line_break==='first_line') first++;
-      if (e.furthest_line_break==='second_last_line') second++;
-      if (e.furthest_line_break==='last_line') last++;
-      if (e.furthest_line_break_type==='Through') through++;
-      if (e.furthest_line_break_type==='Around') around++;
-      if (e.pass_range) rangos[e.pass_range] = (rangos[e.pass_range]||0)+1;
-    });
-
-    const totalPases = comp+incomp;
-    const pct = totalPases>0 ? ((comp/totalPases)*100).toFixed(1) : '—';
-
-    const rangoRows = Object.entries(rangos).sort((a,b)=>b[1]-a[1]).map(([r,n]) => {
-      const p = totalPases>0 ? ((n/totalPases)*100).toFixed(1) : 0;
-      return `<tr><td>${r}</td><td>${n.toLocaleString()}</td>
-        <td><div class="bar-row"><div class="bar-bg"><div class="bar-fill" style="width:${p}%"></div></div><span class="bar-pct">${p}%</span></div></td>
-      </tr>`;
-    }).join('');
-
-    document.getElementById('content').innerHTML = `
-      <div class="anim">
-        ${headHTML()}
-        <div class="cards">
-          <div class="card"><div class="card-label">% Pases completados</div><div class="card-value">${pct}%</div><div class="card-sub">${comp.toLocaleString()} de ${totalPases.toLocaleString()}</div></div>
-          <div class="card"><div class="card-label">Última línea rota</div><div class="card-value">${last.toLocaleString()}</div><div class="card-sub">Last line breaks</div></div>
-          <div class="card"><div class="card-label">Through (entre líneas)</div><div class="card-value">${through.toLocaleString()}</div><div class="card-sub">Entre defensores</div></div>
-          <div class="card"><div class="card-label">Around (por fuera)</div><div class="card-value">${around.toLocaleString()}</div><div class="card-sub">Por fuera estructura</div></div>
-        </div>
-        <div class="table-wrap">
-          <table><thead><tr><th>Rango de pase</th><th>Total</th><th>Distribución</th></tr></thead>
-          <tbody>${rangoRows}</tbody></table>
-        </div>
-      </div>`;
-  }
-
-  // ── FASES ──
-  async function loadFases() {
-    setLoading();
-    const tid = currentTeam.id;
-    const { data } = await get('eventos',
-      `select=team_in_possession_phase_type&event_type=eq.player_possession&team_id=eq.${tid}&limit=10000`
-    );
-
-    const fases = {};
-    data.forEach(e => { const f=e.team_in_possession_phase_type||'unknown'; fases[f]=(fases[f]||0)+1; });
-    const total = data.length;
-    const icons = { build_up:'🏗️', create:'🎨', finish:'🎯', transition:'⚡', quick_break:'💨', direct:'📏', set_play:'🚩', chaotic:'🌪️', disruption:'💥' };
-
-    const rows = Object.entries(fases).sort((a,b)=>b[1]-a[1]).map(([f,n]) => {
-      const pct = ((n/total)*100).toFixed(1);
-      return `<tr>
-        <td>${icons[f]||'⚽'} ${f}</td><td>${n.toLocaleString()}</td>
-        <td><div class="bar-row"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div><span class="bar-pct">${pct}%</span></div></td>
-      </tr>`;
-    }).join('');
-
-    document.getElementById('content').innerHTML = `
-      <div class="anim">
-        ${headHTML()}
-        <div class="table-wrap">
-          <table><thead><tr><th>Fase de juego</th><th>Posesiones</th><th>Distribución</th></tr></thead>
-          <tbody>${rows}</tbody></table>
-        </div>
-      </div>`;
-  }
-
-  // ── JUGADORES ──
-  async function loadJugadores() {
-    setLoading();
-    const tid = currentTeam.id;
-    const { data } = await get('eventos',
-      `select=player_name,event_type,received,dangerous,give_and_go,speed_avg_band&team_id=eq.${tid}&event_type=in.(off_ball_run,player_possession)&limit=10000`
-    );
-
-    const jug = {};
-    data.forEach(e => {
-      if (!e.player_name) return;
-      if (!jug[e.player_name]) jug[e.player_name] = { pp:0, obr:0, rec:0, pelig:0, gng:0, sprint:0 };
-      const j = jug[e.player_name];
-      if (e.event_type==='player_possession') j.pp++;
-      if (e.event_type==='off_ball_run') {
-        j.obr++;
-        if (e.received) j.rec++;
-        if (e.dangerous) j.pelig++;
-        if (e.give_and_go) j.gng++;
-        if (e.speed_avg_band==='sprinting') j.sprint++;
-      }
-    });
-
-    const rows = Object.entries(jug)
-      .filter(([,v]) => v.pp+v.obr > 5)
-      .sort((a,b) => (b[1].pp+b[1].obr)-(a[1].pp+a[1].obr))
-      .map(([n,v]) => `<tr>
-        <td>${n}</td>
-        <td style="text-align:center">${v.pp}</td>
-        <td style="text-align:center">${v.obr}</td>
-        <td style="text-align:center">${v.rec}</td>
-        <td style="text-align:center">${v.pelig}</td>
-        <td style="text-align:center">${v.sprint}</td>
-        <td style="text-align:center">${v.gng}</td>
-      </tr>`).join('');
-
-    document.getElementById('content').innerHTML = `
-      <div class="anim">
-        ${headHTML()}
-        <div class="table-wrap">
-          <table>
-            <thead><tr>
-              <th>Jugador</th>
-              <th style="text-align:center">PP</th>
-              <th style="text-align:center">OBR</th>
-              <th style="text-align:center">Recibidas</th>
-              <th style="text-align:center">Peligrosas</th>
-              <th style="text-align:center">Sprint</th>
-              <th style="text-align:center">G&G</th>
-            </tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>
-      </div>`;
-  }
-
-  // ── DATOS DE JORNADAS ──
-  const PARTIDOS = [
-    { jornada:'J1',  fecha:'30/08/2025', local:'Pontevedra CF',    visitante:'Cacereño',        match_id:2040850, score:'1-1' },
-    { jornada:'J2',  fecha:'06/09/2025', local:'Ponferradina',     visitante:'Pontevedra CF',   match_id:2040906, score:'0-1' },
-    { jornada:'J3',  fecha:'14/09/2025', local:'Pontevedra CF',    visitante:'CD Tenerife',     match_id:2040469, score:'0-2' },
-    { jornada:'J4',  fecha:'20/09/2025', local:'Bilbao Athletic',  visitante:'Pontevedra CF',   match_id:2040422, score:'1-0' },
-    { jornada:'J5',  fecha:'27/09/2025', local:'Ourense CF',       visitante:'Pontevedra CF',   match_id:2040406, score:'1-2' },
-    { jornada:'J8',  fecha:'18/10/2025', local:'Pontevedra CF',    visitante:'Osasuna B',       match_id:2038960, score:'2-2' },
-    { jornada:'J10', fecha:'01/11/2025', local:'Pontevedra CF',    visitante:'Zamora CF',       match_id:2040705, score:'4-1' },
-    { jornada:'J12', fecha:'15/11/2025', local:'Pontevedra CF',    visitante:'Mérida AD',       match_id:2043899, score:'1-1' },
-    { jornada:'J13', fecha:'22/11/2025', local:'CD Lugo',          visitante:'Pontevedra CF',   match_id:2044705, score:'1-0' },
-    { jornada:'J14', fecha:'29/11/2025', local:'Pontevedra CF',    visitante:'Guadalajara',     match_id:2048014, score:'1-1' },
-    { jornada:'J15', fecha:'06/12/2025', local:'Celta de Vigo B',  visitante:'Pontevedra CF',   match_id:2046903, score:'1-1' },
-    { jornada:'J16', fecha:'14/12/2025', local:'Pontevedra CF',    visitante:'Arenas Club',     match_id:2047939, score:'2-0' },
-    { jornada:'J18', fecha:'03/01/2026', local:'Pontevedra CF',    visitante:'Racing Ferrol',   match_id:2049227, score:'2-1' },
-    { jornada:'J19', fecha:'10/01/2026', local:'Real Avilés',      visitante:'Pontevedra CF',   match_id:2049850, score:'0-3' },
-    { jornada:'J21', fecha:'23/01/2026', local:'Mérida AD',        visitante:'Pontevedra CF',   match_id:2050946, score:'1-1' },
-    { jornada:'J23', fecha:'08/02/2026', local:'Pontevedra CF',    visitante:'Real Madrid B',   match_id:2053307, score:'0-0' },
-    { jornada:'J24', fecha:'14/02/2026', local:'Cacereño',         visitante:'Pontevedra CF',   match_id:2054295, score:'1-0' },
-    { jornada:'J25', fecha:'21/02/2026', local:'Pontevedra CF',    visitante:'CD Lugo',         match_id:2055175, score:'1-1' },
-    { jornada:'J27', fecha:'08/03/2026', local:'Pontevedra CF',    visitante:'Unionistas de S', match_id:2057739, score:'0-0' },
-    { jornada:'J29', fecha:'21/03/2026', local:'Pontevedra CF',    visitante:'Ourense CF',      match_id:2059575, score:'0-0' },
-    { jornada:'J30', fecha:'28/03/2026', local:'Zamora CF',        visitante:'Pontevedra CF',   match_id:2060320, score:'2-1' },
-    { jornada:'J31', fecha:'04/04/2026', local:'Pontevedra CF',    visitante:'Barakaldo',       match_id:2061272, score:'3-0' },
-    { jornada:'J32', fecha:'12/04/2026', local:'Pontevedra CF',    visitante:'Ponferradina',    match_id:2062716, score:'2-2' },
-    { jornada:'J34', fecha:'25/04/2026', local:'Pontevedra CF',    visitante:'Celta de Vigo B', match_id:2064818, score:'2-1' },
-    { jornada:'J35', fecha:'02/05/2026', local:'Racing Ferrol',    visitante:'Pontevedra CF',   match_id:2066030, score:'0-1' },
-    { jornada:'J36', fecha:'09/05/2026', local:'Pontevedra CF',    visitante:'Bilbao Athletic', match_id:2067109, score:'4-0' },
-    { jornada:'J37', fecha:'17/05/2026', local:'CD Tenerife',      visitante:'Pontevedra CF',   match_id:2068384, score:'3-0' },
-  ];
-
-  // ── RED DE PASES ──
-  async function loadRedPases() {
-    const tid = currentTeam.id;
-
-    // Selector de partido
-    const opciones = PARTIDOS.map(p => {
-      const rival = p.local === 'Pontevedra CF' ? p.visitante : p.local;
-      const signo = p.local === 'Pontevedra CF' ? '🏠' : '✈️';
-      return `<option value="${p.match_id}">${signo} ${p.jornada} · ${rival} · ${p.score} · ${p.fecha}</option>`;
-    }).join('');
-
-    document.getElementById('content').innerHTML = `
-      <div class="anim">
-        ${headHTML()}
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap">
-          <select id="matchSelector" onchange="renderRedPases(this.value)"
-            style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;flex:1;min-width:300px">
-            <option value="">— Selecciona un partido —</option>
-            ${opciones}
-          </select>
-          <div id="matchInfo" style="font-size:12px;color:var(--text2)"></div>
-        </div>
-        <div id="redPasesContainer" style="display:flex;flex-direction:column;gap:16px">
-          <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">
-            Selecciona un partido para ver la red de pases de los titulares
-          </div>
-        </div>
-      </div>`;
-  }
-
-
-      // 2a. Posición media — usar TODAS las PP del jugador en el partido
-      const { data: todasPP } = await get('eventos',
-        `select=player_name,x_start,y_start&team_id=eq.${tid}&match_id=eq.${matchId}&event_type=eq.player_possession&x_start=not.is.null&limit=5000`
-      );
-
-      const posiciones = {};
-      const contadorPos = {};
-      todasPP.forEach(e => {
-        if (!titulares.includes(e.player_name)) return;
-        if (!posiciones[e.player_name]) { posiciones[e.player_name] = {x:0,y:0}; contadorPos[e.player_name] = 0; }
-        posiciones[e.player_name].x += e.x_start;
-        posiciones[e.player_name].y += e.y_start;
-        contadorPos[e.player_name]++;
-      });
-
-      // 2b. Obtener pases completados entre titulares
-      const { data: pasesData } = await get('eventos',
-        `select=player_name,player_targeted_name&team_id=eq.${tid}&match_id=eq.${matchId}&event_type=eq.player_possession&pass_outcome=eq.successful&limit=5000`
-      );
-
-      // 3. Calcular pases entre titulares
-      const pases = {};
-      pasesData.forEach(e => {
-        if (!titulares.includes(e.player_name) || !titulares.includes(e.player_targeted_name)) return;
-        if (e.player_name === e.player_targeted_name) return;
-        const key = `${e.player_name}→${e.player_targeted_name}`;
-        pases[key] = (pases[key] || 0) + 1;
-      });
-
-      // Posición media por jugador
-      const posMedia = {};
-      titulares.forEach(p => {
-        if (posiciones[p] && contadorPos[p] > 0) {
-          posMedia[p] = { x: posiciones[p].x / contadorPos[p], y: posiciones[p].y / contadorPos[p] };
-        } else {
-          posMedia[p] = { x: 0, y: 0 };
-        }
-      });
-
-      // 4. Calcular total de pases por jugador
-      const totalPases = {};
-      titulares.forEach(p => { totalPases[p] = 0; });
-      Object.entries(pases).forEach(([key, n]) => {
-        const [from] = key.split('→');
-        totalPases[from] = (totalPases[from] || 0) + n;
-      });
-
-      const maxPases = Math.max(...Object.values(pases));
-      const maxTotal = Math.max(...Object.values(totalPases));
-
-      // 5. Dibujar SVG
-      // Campo: x de -52.5 a 52.5, y de -34 a 34
-      // SVG: 800x520, margen 40
-      const W = 800, H = 520, MX = 50, MY = 40;
-      const PW = W - MX*2, PH = H - MY*2;
-
-      function toSVG(x, y) {
-        // x: -52.5 a 52.5 → MX a W-MX (izq=defensa, der=ataque)
-        // y: en SkillCorner positivo=banda izquierda (arriba SVG), negativo=banda derecha (abajo SVG)
-        // Por tanto y positivo → sy pequeño (arriba), y negativo → sy grande (abajo)
-        const sx = MX + ((x + 52.5) / 105) * PW;
-        const sy = MY + ((34 - y) / 68) * PH;
-        return { sx, sy };
-      }
-
-      // Líneas de pases
-      let lineas = '';
-      Object.entries(pases).forEach(([key, n]) => {
-        const [from, to] = key.split('→');
-        if (!posMedia[from] || !posMedia[to]) return;
-        const { sx: x1, sy: y1 } = toSVG(posMedia[from].x, posMedia[from].y);
-        const { sx: x2, sy: y2 } = toSVG(posMedia[to].x, posMedia[to].y);
-        const grosor = 1 + (n / maxPases) * 7;
-        const opacidad = 0.15 + (n / maxPases) * 0.65;
-        lineas += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
-          stroke="#c8a96e" stroke-width="${grosor.toFixed(1)}" stroke-opacity="${opacidad.toFixed(2)}" stroke-linecap="round"/>`;
-      });
-
-      // Nodos de jugadores
-      let nodos = '';
-      titulares.forEach(nombre => {
-        if (!posMedia[nombre]) return;
-        const { sx, sy } = toSVG(posMedia[nombre].x, posMedia[nombre].y);
-        const radio = 16 + (totalPases[nombre] / maxTotal) * 10;
-        const pos = titularesMap[nombre] || '';
-        const apellido = nombre.split(' ').pop();
-        nodos += `
-          <g>
-            <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${radio.toFixed(1)}"
-              fill="#1c2333" stroke="#c8a96e" stroke-width="2" opacity="0.95"/>
-            <text x="${sx.toFixed(1)}" y="${(sy-2).toFixed(1)}" text-anchor="middle"
-              font-family="'DM Sans',sans-serif" font-size="9" font-weight="600" fill="#e8c98e">${pos}</text>
-            <text x="${sx.toFixed(1)}" y="${(sy+8).toFixed(1)}" text-anchor="middle"
-              font-family="'DM Sans',sans-serif" font-size="8" fill="#8b949e">${apellido.substring(0,8)}</text>
-          </g>`;
-      });
-
-      const rival = partido.local === 'Pontevedra CF' ? partido.visitante : partido.local;
-      const lugar = partido.local === 'Pontevedra CF' ? '🏠 Casa' : '✈️ Fuera';
-
-      container.innerHTML = `
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;display:flex;gap:24px;flex-wrap:wrap;align-items:center">
-          <div>
-            <div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:4px">${partido.jornada} · ${partido.fecha} · ${lugar}</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px">Pontevedra CF vs ${rival}</div>
-          </div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;color:var(--accent)">${partido.score}</div>
-          <div style="margin-left:auto;font-size:12px;color:var(--text2)">${titulares.length} titulares · ${Object.values(pases).reduce((a,b)=>a+b,0)} pases entre ellos</div>
-        </div>
-
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-          <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;display:block">
-
-            <!-- Campo -->
-            <rect x="${MX}" y="${MY}" width="${PW}" height="${PH}" fill="#0f1f0f" stroke="#2a4a2a" stroke-width="1.5"/>
-
-            <!-- Línea central -->
-            <line x1="${W/2}" y1="${MY}" x2="${W/2}" y2="${H-MY}" stroke="#2a4a2a" stroke-width="1"/>
-            <circle cx="${W/2}" cy="${H/2}" r="${(PH*9.15/68).toFixed(0)}" fill="none" stroke="#2a4a2a" stroke-width="1"/>
-
-            <!-- Área izquierda -->
-            <rect x="${MX}" y="${(MY + PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#2a4a2a" stroke-width="1"/>
-            <rect x="${MX}" y="${(MY + PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#2a4a2a" stroke-width="1"/>
-
-            <!-- Área derecha -->
-            <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY + PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#2a4a2a" stroke-width="1"/>
-            <rect x="${(W-MX-PW*5.5/105).toFixed(1)}" y="${(MY + PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#2a4a2a" stroke-width="1"/>
-
-            <!-- Líneas de pases -->
-            ${lineas}
-
-            <!-- Nodos de jugadores -->
-            ${nodos}
-          </svg>
-        </div>
-
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px">
-          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Titulares</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px">
-            ${titulares.map(n => `
-              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;display:flex;gap:6px;align-items:center">
-                <span style="color:var(--accent);font-size:10px;font-weight:600">${titularesMap[n]}</span>
-                <span style="color:var(--text)">${n}</span>
-                <span style="color:var(--text3);font-size:11px">${totalPases[n]} pases</span>
-              </div>`).join('')}
-          </div>
-        </div>`;
-
-    } catch(e) {
-      container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
-    }
-  }
-
-
-  // ── REFRESH ──
-  function refreshCurrentTab() {
-    const btn = document.getElementById('refreshBtn');
-    btn.style.transform = 'rotate(360deg)';
-    btn.style.transition = 'transform 0.5s ease';
-    setTimeout(() => { btn.style.transform = ''; btn.style.transition = ''; }, 500);
+  function refreshTab() {
     loadTab(currentTab);
   }
 
-  // ── RED DE PASES ──
-  let redPasesMatchId = null;
-  let redPasesSubTab  = '1parte';
+  function loadTab(tab) {
+    const fns = { resumen:loadResumen, partidos:loadPartidos, pressing:loadPressing, carreras:loadCarreras, pases:loadPases, fases:loadFases, jugadores:loadJugadores, redpases:loadRedPases };
+    if (fns[tab]) fns[tab]();
+  }
 
-  async function loadRedPases() {
+  // RESUMEN
+  async function loadResumen() {
+    loading();
     const tid = currentTeam.id;
-    const opciones = PARTIDOS.map(p => {
-      const rival = p.local === 'Pontevedra CF' ? p.visitante : p.local;
-      const signo = p.local === 'Pontevedra CF' ? '🏠' : '✈️';
-      return `<option value="${p.match_id}" ${p.match_id == redPasesMatchId ? 'selected' : ''}>${signo} ${p.jornada} · ${rival} · ${p.score} · ${p.fecha}</option>`;
+    const [pp,obr,obe,po] = await Promise.all([
+      sbGet('eventos',`select=event_id&team_id=eq.${tid}&event_type=eq.player_possession`),
+      sbGet('eventos',`select=event_id&team_id=eq.${tid}&event_type=eq.off_ball_run`),
+      sbGet('eventos',`select=event_id&team_id=eq.${tid}&event_type=eq.defensive_engagement`),
+      sbGet('eventos',`select=event_id&team_id=eq.${tid}&event_type=eq.passing_option`)
+    ]);
+    document.getElementById('content').innerHTML = `<div class="anim">${head()}
+      <div class="cards">
+        <div class="card"><div class="card-label">Posesiones de jugador</div><div class="card-value">${pp.count.toLocaleString()}</div><div class="card-sub">Player Possessions</div></div>
+        <div class="card"><div class="card-label">Carreras sin balón</div><div class="card-value">${obr.count.toLocaleString()}</div><div class="card-sub">Off-Ball Runs</div></div>
+        <div class="card"><div class="card-label">Opciones de pase</div><div class="card-value">${po.count.toLocaleString()}</div><div class="card-sub">Passing Options</div></div>
+        <div class="card"><div class="card-label">Acciones defensivas</div><div class="card-value">${obe.count.toLocaleString()}</div><div class="card-sub">On-Ball Engagements</div></div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;color:var(--text2);font-size:13px;line-height:1.8">
+        <strong style="color:var(--accent)">Datos SkillCorner · Dynamic Events</strong><br>Tracking v3 · 310 variables · 27 partidos
+      </div></div>`;
+  }
+
+  // PARTIDOS
+  async function loadPartidos() {
+    loading();
+    const tid = currentTeam.id;
+    const rows = PARTIDOS.map((p,i) => {
+      const rival = p.local==='Pontevedra CF' ? p.vis : p.local;
+      const [ps,rs] = p.s.split('-').map(Number);
+      const cls = ps>rs?'win':ps<rs?'loss':'draw';
+      const lugar = p.local==='Pontevedra CF'?'🏠':'✈️';
+      return `<div class="partido">
+        <div class="partido-j">${p.j}</div>
+        <div class="partido-teams"><strong>${lugar} Pontevedra CF vs ${rival}</strong><span>${p.f}</span></div>
+        <div class="partido-score ${cls}">${p.s}</div>
+      </div>`;
+    }).join('');
+    document.getElementById('content').innerHTML = `<div class="anim">${head()}<div class="partidos">${rows}</div></div>`;
+  }
+
+  // PRESSING
+  async function loadPressing() {
+    loading();
+    const tid = currentTeam.id;
+    const {data} = await sbGet('eventos',`select=event_subtype,pressing_chain,pressing_chain_end_type,possession_danger,force_backward&event_type=eq.defensive_engagement&team_id=eq.${tid}&limit=10000`);
+    const tipos={};
+    let chains=0,regain=0,peligro=0,forced=0;
+    data.forEach(e => {
+      tipos[e.event_subtype||'other']=(tipos[e.event_subtype||'other']||0)+1;
+      if(e.pressing_chain) chains++;
+      if(e.pressing_chain_end_type==='regain') regain++;
+      if(e.possession_danger) peligro++;
+      if(e.force_backward) forced++;
+    });
+    const total=data.length;
+    const pc={'pressing':'pill-blue','pressure':'pill-accent','counter_press':'pill-green','recovery_press':'pill-red'};
+    const rows=Object.entries(tipos).sort((a,b)=>b[1]-a[1]).map(([t,n]) => {
+      const pct=((n/total)*100).toFixed(1);
+      return `<tr><td><span class="pill ${pc[t]||'pill-accent'}">${t}</span></td><td>${n.toLocaleString()}</td><td><div class="bar-row"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div><span class="bar-pct">${pct}%</span></div></td></tr>`;
+    }).join('');
+    document.getElementById('content').innerHTML = `<div class="anim">${head()}
+      <div class="cards">
+        <div class="card"><div class="card-label">Total acciones</div><div class="card-value">${total.toLocaleString()}</div><div class="card-sub">On-Ball Engagements</div></div>
+        <div class="card"><div class="card-label">En cadena pressing</div><div class="card-value">${chains.toLocaleString()}</div><div class="card-sub">Pressing colectivo</div></div>
+        <div class="card"><div class="card-label">Recuperaciones</div><div class="card-value">${regain.toLocaleString()}</div><div class="card-sub">Chain · regain</div></div>
+        <div class="card"><div class="card-label">Pases atrás forzados</div><div class="card-value">${forced.toLocaleString()}</div><div class="card-sub">Force backward</div></div>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Tipo</th><th>Total</th><th>Distribución</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  }
+
+  // CARRERAS
+  async function loadCarreras() {
+    loading();
+    const tid=currentTeam.id;
+    const {data}=await sbGet('eventos',`select=event_subtype,received,dangerous,speed_avg_band,give_and_go&event_type=eq.off_ball_run&team_id=eq.${tid}&limit=10000`);
+    const tipos={};let rec=0,pelig=0,sprint=0,gng=0;
+    data.forEach(e => {
+      tipos[e.event_subtype||'unknown']=(tipos[e.event_subtype||'unknown']||0)+1;
+      if(e.received) rec++; if(e.dangerous) pelig++; if(e.speed_avg_band==='sprinting') sprint++; if(e.give_and_go) gng++;
+    });
+    const total=data.length;
+    const rows=Object.entries(tipos).sort((a,b)=>b[1]-a[1]).map(([t,n]) => {
+      const pct=((n/total)*100).toFixed(1);
+      return `<tr><td>${t}</td><td>${n.toLocaleString()}</td><td><div class="bar-row"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div><span class="bar-pct">${pct}%</span></div></td></tr>`;
+    }).join('');
+    document.getElementById('content').innerHTML = `<div class="anim">${head()}
+      <div class="cards">
+        <div class="card"><div class="card-label">Total carreras</div><div class="card-value">${total.toLocaleString()}</div><div class="card-sub">Off-Ball Runs</div></div>
+        <div class="card"><div class="card-label">Con recepción</div><div class="card-value">${rec.toLocaleString()}</div><div class="card-sub">${((rec/total)*100).toFixed(1)}% del total</div></div>
+        <div class="card"><div class="card-label">Peligrosas</div><div class="card-value">${pelig.toLocaleString()}</div><div class="card-sub">xThreat &gt; 0.02</div></div>
+        <div class="card"><div class="card-label">Give &amp; Go</div><div class="card-value">${gng.toLocaleString()}</div><div class="card-sub">Pared tras pase</div></div>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Tipo de carrera</th><th>Total</th><th>Distribución</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  }
+
+  // PASES
+  async function loadPases() {
+    loading();
+    const tid=currentTeam.id;
+    const {data}=await sbGet('eventos',`select=pass_outcome,furthest_line_break,furthest_line_break_type,pass_range&event_type=eq.player_possession&team_id=eq.${tid}&limit=10000`);
+    let comp=0,incomp=0,first=0,second=0,last=0,through=0,around=0;
+    const rangos={};
+    data.forEach(e => {
+      if(e.pass_outcome==='successful') comp++;
+      if(e.pass_outcome==='unsuccessful') incomp++;
+      if(e.furthest_line_break==='first_line') first++;
+      if(e.furthest_line_break==='second_last_line') second++;
+      if(e.furthest_line_break==='last_line') last++;
+      if(e.furthest_line_break_type==='Through') through++;
+      if(e.furthest_line_break_type==='Around') around++;
+      if(e.pass_range) rangos[e.pass_range]=(rangos[e.pass_range]||0)+1;
+    });
+    const total=comp+incomp;
+    const pct=total>0?((comp/total)*100).toFixed(1):'—';
+    const rows=Object.entries(rangos).sort((a,b)=>b[1]-a[1]).map(([r,n]) => {
+      const p=total>0?((n/total)*100).toFixed(1):0;
+      return `<tr><td>${r}</td><td>${n.toLocaleString()}</td><td><div class="bar-row"><div class="bar-bg"><div class="bar-fill" style="width:${p}%"></div></div><span class="bar-pct">${p}%</span></div></td></tr>`;
+    }).join('');
+    document.getElementById('content').innerHTML = `<div class="anim">${head()}
+      <div class="cards">
+        <div class="card"><div class="card-label">% Pases completados</div><div class="card-value">${pct}%</div><div class="card-sub">${comp.toLocaleString()} de ${total.toLocaleString()}</div></div>
+        <div class="card"><div class="card-label">Última línea rota</div><div class="card-value">${last.toLocaleString()}</div><div class="card-sub">Last line breaks</div></div>
+        <div class="card"><div class="card-label">Through</div><div class="card-value">${through.toLocaleString()}</div><div class="card-sub">Entre defensores</div></div>
+        <div class="card"><div class="card-label">Around</div><div class="card-value">${around.toLocaleString()}</div><div class="card-sub">Por fuera estructura</div></div>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Rango de pase</th><th>Total</th><th>Distribución</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  }
+
+  // FASES
+  async function loadFases() {
+    loading();
+    const tid=currentTeam.id;
+    const {data}=await sbGet('eventos',`select=team_in_possession_phase_type&event_type=eq.player_possession&team_id=eq.${tid}&limit=10000`);
+    const fases={};
+    data.forEach(e => { const f=e.team_in_possession_phase_type||'unknown'; fases[f]=(fases[f]||0)+1; });
+    const total=data.length;
+    const icons={build_up:'🏗️',create:'🎨',finish:'🎯',transition:'⚡',quick_break:'💨',direct:'📏',set_play:'🚩',chaotic:'🌪️',disruption:'💥'};
+    const rows=Object.entries(fases).sort((a,b)=>b[1]-a[1]).map(([f,n]) => {
+      const pct=((n/total)*100).toFixed(1);
+      return `<tr><td>${icons[f]||'⚽'} ${f}</td><td>${n.toLocaleString()}</td><td><div class="bar-row"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div><span class="bar-pct">${pct}%</span></div></td></tr>`;
+    }).join('');
+    document.getElementById('content').innerHTML = `<div class="anim">${head()}
+      <div class="table-wrap"><table><thead><tr><th>Fase de juego</th><th>Posesiones</th><th>Distribución</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  }
+
+  // JUGADORES
+  async function loadJugadores() {
+    loading();
+    const tid=currentTeam.id;
+    const {data}=await sbGet('eventos',`select=player_name,event_type,received,dangerous,give_and_go,speed_avg_band&team_id=eq.${tid}&event_type=in.(off_ball_run,player_possession)&limit=10000`);
+    const jug={};
+    data.forEach(e => {
+      if(!e.player_name) return;
+      if(!jug[e.player_name]) jug[e.player_name]={pp:0,obr:0,rec:0,pelig:0,gng:0,sprint:0};
+      const j=jug[e.player_name];
+      if(e.event_type==='player_possession') j.pp++;
+      if(e.event_type==='off_ball_run') { j.obr++; if(e.received) j.rec++; if(e.dangerous) j.pelig++; if(e.give_and_go) j.gng++; if(e.speed_avg_band==='sprinting') j.sprint++; }
+    });
+    const rows=Object.entries(jug).filter(([,v])=>v.pp+v.obr>5).sort((a,b)=>(b[1].pp+b[1].obr)-(a[1].pp+a[1].obr)).map(([n,v]) =>
+      `<tr><td>${n}</td><td style="text-align:center">${v.pp}</td><td style="text-align:center">${v.obr}</td><td style="text-align:center">${v.rec}</td><td style="text-align:center">${v.pelig}</td><td style="text-align:center">${v.sprint}</td><td style="text-align:center">${v.gng}</td></tr>`
+    ).join('');
+    document.getElementById('content').innerHTML = `<div class="anim">${head()}
+      <div class="table-wrap"><table><thead><tr><th>Jugador</th><th style="text-align:center">PP</th><th style="text-align:center">OBR</th><th style="text-align:center">Recibidas</th><th style="text-align:center">Peligrosas</th><th style="text-align:center">Sprint</th><th style="text-align:center">G&G</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  }
+
+  // RED DE PASES
+  function loadRedPases() {
+    const opts = PARTIDOS.map(p => {
+      const rival = p.local==='Pontevedra CF'?p.vis:p.local;
+      const s = p.local==='Pontevedra CF'?'🏠':'✈️';
+      return `<option value="${p.id}" ${p.id==redMatchId?'selected':''}>${s} ${p.j} · ${rival} · ${p.s} · ${p.f}</option>`;
     }).join('');
 
-    document.getElementById('content').innerHTML = `
-      <div class="anim">
-        ${headHTML()}
+    document.getElementById('content').innerHTML = `<div class="anim">${head()}
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <select id="matchSel" onchange="redMatchId=parseInt(this.value);renderRedTab()"
+          style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;flex:1;min-width:280px">
+          <option value="">— Selecciona un partido —</option>${opts}
+        </select>
+      </div>
+      <div style="display:flex;gap:4px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content">
+        <button id="st-1parte" class="subtab active" onclick="setSubTab('1parte')">⚽ 1ª Parte</button>
+        <button id="st-2parte" class="subtab" onclick="setSubTab('2parte')">⚽ 2ª Parte</button>
+        <button id="st-matriz" class="subtab" onclick="setSubTab('matriz')">📊 Matriz</button>
+      </div>
+      <div id="redCont">
+        <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>
+      </div></div>`;
 
-        <!-- Selector partido -->
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
-          <select id="matchSelector" onchange="redPasesMatchId=this.value; renderRedPasesTab()"
-            style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;flex:1;min-width:280px">
-            <option value="">— Selecciona un partido —</option>
-            ${opciones}
-          </select>
-        </div>
-
-        <!-- Sub-tabs -->
-        <div style="display:flex;gap:4px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content">
-          <button id="subtab-1parte"  onclick="setRedSubTab('1parte')"  class="subtab active-subtab">⚽ 1ª Parte</button>
-          <button id="subtab-2parte"  onclick="setRedSubTab('2parte')"  class="subtab">⚽ 2ª Parte</button>
-          <button id="subtab-matriz"  onclick="setRedSubTab('matriz')"  class="subtab">📊 Matriz de Pases</button>
-        </div>
-
-        <!-- Contenido red -->
-        <div id="redPasesContainer">
-          <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">
-            Selecciona un partido para ver el análisis
-          </div>
-        </div>
-      </div>`;
-
-    // Añadir estilos sub-tabs
-    if (!document.getElementById('subtabStyles')) {
-      const st = document.createElement('style');
-      st.id = 'subtabStyles';
-      st.textContent = \`
-        .subtab { background:transparent; border:none; color:var(--text2); padding:7px 16px; border-radius:6px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
-        .subtab:hover { color:var(--text); background:var(--bg3); }
-        .active-subtab { background:rgba(200,169,110,0.1) !important; color:var(--accent) !important; }
-      \`;
-      document.head.appendChild(st);
-    }
-
-    if (redPasesMatchId) renderRedPasesTab();
+    if(redMatchId) renderRedTab();
   }
 
-  function setRedSubTab(tab) {
-    redPasesSubTab = tab;
-    document.querySelectorAll('.subtab').forEach(b => b.classList.remove('active-subtab'));
-    document.getElementById('subtab-' + tab)?.classList.add('active-subtab');
-    if (redPasesMatchId) renderRedPasesTab();
+  function setSubTab(tab) {
+    redSubTab=tab;
+    document.querySelectorAll('.subtab').forEach(b=>b.classList.remove('active'));
+    document.getElementById('st-'+tab)?.classList.add('active');
+    if(redMatchId) renderRedTab();
   }
 
-  async function renderRedPasesTab() {
-    if (!redPasesMatchId) return;
-    if (redPasesSubTab === '1parte') await renderRed(redPasesMatchId, 1);
-    else if (redPasesSubTab === '2parte') await renderRed(redPasesMatchId, 2);
-    else await renderMatriz(redPasesMatchId);
+  function renderRedTab() {
+    if(redSubTab==='1parte') renderRed(1);
+    else if(redSubTab==='2parte') renderRed(2);
+    else renderMatriz();
   }
 
-  // ── DIBUJAR RED DE PASES (periodo 1 o 2) ──
-  async function renderRed(matchId, periodo) {
-    const tid = currentTeam.id;
-    const container = document.getElementById('redPasesContainer');
-    container.innerHTML = `<div class="loading"><div class="spinner"></div><span>Calculando red de pases...</span></div>`;
-    const partido = PARTIDOS.find(p => p.match_id == matchId);
-
+  async function renderRed(periodo) {
+    const tid=currentTeam.id, mid=redMatchId;
+    const cont=document.getElementById('redCont');
+    if(!cont) return;
+    cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando red...</span></div>`;
+    const partido=PARTIDOS.find(p=>p.id==mid);
     try {
-      // 1. Titulares del periodo:
-      //    - Periodo 1: jugadores con PP en period=1 y minute_start <= 2
-      //    - Periodo 2: los 11 jugadores con PP más temprana en period=2 (minute_start <= 47)
-      const minutoCorte = periodo === 1 ? 2 : 47;
-      const { data: titData } = await get('eventos',
-        `select=player_name,player_position&team_id=eq.${tid}&match_id=eq.${matchId}&event_type=eq.player_possession&period=eq.${periodo}&minute_start=lte.${minutoCorte}`
-      );
-      const titularesMap = {};
-      titData.forEach(e => { titularesMap[e.player_name] = e.player_position; });
-
-      // Limitar a 11 jugadores (los que más posesiones tienen si hay más de 11)
-      if (Object.keys(titularesMap).length > 11) {
-        const { data: contData } = await get('eventos',
-          `select=player_name&team_id=eq.${tid}&match_id=eq.${matchId}&event_type=eq.player_possession&period=eq.${periodo}&limit=5000`
-        );
-        const conteo = {};
-        contData.forEach(e => { if (titularesMap[e.player_name]) conteo[e.player_name] = (conteo[e.player_name]||0)+1; });
-        const top11 = Object.entries(conteo).sort((a,b)=>b[1]-a[1]).slice(0,11).map(([n])=>n);
-        Object.keys(titularesMap).forEach(n => { if (!top11.includes(n)) delete titularesMap[n]; });
+      const minCorte=periodo===1?2:50;
+      const {data:td}=await sbGet('eventos',`select=player_name,player_position&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&period=eq.${periodo}&minute_start=lte.${minCorte}`);
+      const titMap={};
+      td.forEach(e=>{ titMap[e.player_name]=e.player_position; });
+      if(Object.keys(titMap).length>11) {
+        const {data:cd}=await sbGet('eventos',`select=player_name&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&period=eq.${periodo}&limit=5000`);
+        const cnt={};
+        cd.forEach(e=>{ if(titMap[e.player_name]) cnt[e.player_name]=(cnt[e.player_name]||0)+1; });
+        const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,11).map(([n])=>n);
+        Object.keys(titMap).forEach(n=>{ if(!top.includes(n)) delete titMap[n]; });
       }
+      const tits=Object.keys(titMap);
+      if(!tits.length){ cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos para este periodo</div>`; return; }
 
-      const titulares = Object.keys(titularesMap);
+      const {data:allPP}=await sbGet('eventos',`select=player_name,x_start,y_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&period=eq.${periodo}&x_start=not.is.null&limit=5000`);
+      const posA={},posC={};
+      allPP.forEach(e=>{ if(!tits.includes(e.player_name)) return; if(!posA[e.player_name]){posA[e.player_name]={x:0,y:0};posC[e.player_name]=0;} posA[e.player_name].x+=e.x_start; posA[e.player_name].y+=e.y_start; posC[e.player_name]++; });
+      const posM={};
+      tits.forEach(n=>{ posM[n]=posC[n]>0?{x:posA[n].x/posC[n],y:posA[n].y/posC[n]}:{x:0,y:0}; });
 
-      if (titulares.length === 0) {
-        container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos para este periodo</div>`;
-        return;
-      }
+      const {data:pd}=await sbGet('eventos',`select=player_name,player_targeted_name&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&period=eq.${periodo}&limit=5000`);
+      const pases={};
+      pd.forEach(e=>{ if(!tits.includes(e.player_name)||!tits.includes(e.player_targeted_name)||e.player_name===e.player_targeted_name) return; const k=`${e.player_name}|${e.player_targeted_name}`; pases[k]=(pases[k]||0)+1; });
 
-      // 2. Posición media con TODAS las PP del periodo
-      const { data: todasPP } = await get('eventos',
-        `select=player_name,x_start,y_start&team_id=eq.${tid}&match_id=eq.${matchId}&event_type=eq.player_possession&period=eq.${periodo}&x_start=not.is.null&limit=5000`
-      );
-      const posAcum = {}, posCount = {};
-      todasPP.forEach(e => {
-        if (!titulares.includes(e.player_name)) return;
-        if (!posAcum[e.player_name]) { posAcum[e.player_name]={x:0,y:0}; posCount[e.player_name]=0; }
-        posAcum[e.player_name].x += e.x_start;
-        posAcum[e.player_name].y += e.y_start;
-        posCount[e.player_name]++;
-      });
-      const posMedia = {};
-      titulares.forEach(n => {
-        posMedia[n] = posCount[n] > 0
-          ? { x: posAcum[n].x/posCount[n], y: posAcum[n].y/posCount[n] }
-          : { x: 0, y: 0 };
-      });
+      const totP={};
+      tits.forEach(n=>{totP[n]=0;});
+      Object.entries(pases).forEach(([k,n])=>{ const [f]=k.split('|'); totP[f]=(totP[f]||0)+n; });
+      const maxP=Math.max(1,...Object.values(pases));
+      const maxT=Math.max(1,...Object.values(totP));
 
-      // 3. Pases completados entre titulares en este periodo
-      const { data: pasesData } = await get('eventos',
-        `select=player_name,player_targeted_name&team_id=eq.${tid}&match_id=eq.${matchId}&event_type=eq.player_possession&pass_outcome=eq.successful&period=eq.${periodo}&limit=5000`
-      );
-      const pases = {};
-      pasesData.forEach(e => {
-        if (!titulares.includes(e.player_name) || !titulares.includes(e.player_targeted_name)) return;
-        if (e.player_name === e.player_targeted_name) return;
-        const key = \`\${e.player_name}→\${e.player_targeted_name}\`;
-        pases[key] = (pases[key]||0)+1;
-      });
-
-      // 4. Suplentes que entraron en 2ª parte
-      let infoSuplentes = '';
-      if (periodo === 2) {
-        const { data: suplData } = await get('eventos',
-          \`select=player_name,minute_start&team_id=eq.\${tid}&match_id=eq.\${matchId}&event_type=eq.player_possession&period=eq.2&minute_start=gt.47&order=minute_start&limit=1000\`
-        );
-        const suplMap = {};
-        suplData.forEach(e => {
-          if (!titulares.includes(e.player_name) && !suplMap[e.player_name]) {
-            suplMap[e.player_name] = e.minute_start;
-          }
-        });
-        if (Object.keys(suplMap).length > 0) {
-          infoSuplentes = \`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px">
-            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Suplentes 2ª parte</div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px">
-              \${Object.entries(suplMap).map(([n,m]) => \`
-                <div style="background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.2);border-radius:6px;padding:5px 12px;font-size:12px;display:flex;gap:6px;align-items:center">
-                  <span style="color:#58a6ff">↑</span>
-                  <span style="color:var(--text)">\${n}</span>
-                  <span style="color:var(--text3);font-size:11px">min \${m}'</span>
-                </div>\`).join('')}
-            </div>
-          </div>\`;
+      let suplHTML='';
+      if(periodo===2){
+        const {data:sd}=await sbGet('eventos',`select=player_name,minute_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&period=eq.2&minute_start=gt.47&order=minute_start&limit=500`);
+        const sm={};
+        sd.forEach(e=>{ if(!tits.includes(e.player_name)&&!sm[e.player_name]) sm[e.player_name]=e.minute_start; });
+        if(Object.keys(sm).length){
+          suplHTML=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px">
+            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Suplentes</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">${Object.entries(sm).map(([n,m])=>`<div style="background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.2);border-radius:6px;padding:5px 12px;font-size:12px;display:flex;gap:6px"><span style="color:#58a6ff">↑</span><span>${n}</span><span style="color:var(--text3)">min ${m}'</span></div>`).join('')}
+            </div></div>`;
         }
       }
 
-      // 5. Dibujar SVG
-      const totalPases = {};
-      titulares.forEach(p => { totalPases[p] = 0; });
-      Object.entries(pases).forEach(([key,n]) => { const [f] = key.split('→'); totalPases[f]=(totalPases[f]||0)+n; });
-      const maxPases = Math.max(1, ...Object.values(pases));
-      const maxTotal = Math.max(1, ...Object.values(totalPases));
+      const W=820,H=540,MX=50,MY=40,PW=W-MX*2,PH=H-MY*2;
+      const sv=(x,y)=>({sx:MX+((x+52.5)/105)*PW, sy:MY+((34-y)/68)*PH});
 
-      const W=820, H=540, MX=50, MY=40, PW=W-MX*2, PH=H-MY*2;
-      const toSVG = (x,y) => ({
-        sx: MX + ((x+52.5)/105)*PW,
-        sy: MY + ((34-y)/68)*PH
+      let lin='';
+      Object.entries(pases).forEach(([k,n])=>{
+        const [fr,to]=k.split('|');
+        if(!posM[fr]||!posM[to]) return;
+        const {sx:x1,sy:y1}=sv(posM[fr].x,posM[fr].y);
+        const {sx:x2,sy:y2}=sv(posM[to].x,posM[to].y);
+        const g=1+(n/maxP)*7, op=0.12+(n/maxP)*0.7;
+        const mx=(x1+x2)/2,my=(y1+y2)/2;
+        lin+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#c8a96e" stroke-width="${g.toFixed(1)}" stroke-opacity="${op.toFixed(2)}" stroke-linecap="round"/>
+        <text x="${mx.toFixed(1)}" y="${(my-2).toFixed(1)}" text-anchor="middle" font-size="9" fill="#c8a96e" opacity="${Math.min(op+0.2,1).toFixed(2)}">${n}</text>`;
       });
 
-      let lineas = '';
-      Object.entries(pases).forEach(([key,n]) => {
-        const [from,to] = key.split('→');
-        if (!posMedia[from]||!posMedia[to]) return;
-        const {sx:x1,sy:y1} = toSVG(posMedia[from].x, posMedia[from].y);
-        const {sx:x2,sy:y2} = toSVG(posMedia[to].x, posMedia[to].y);
-        const grosor = 1 + (n/maxPases)*7;
-        const op = 0.12 + (n/maxPases)*0.7;
-        // Flecha en el centro
-        const mx=(x1+x2)/2, my=(y1+y2)/2;
-        lineas += \`<line x1="\${x1.toFixed(1)}" y1="\${y1.toFixed(1)}" x2="\${x2.toFixed(1)}" y2="\${y2.toFixed(1)}"
-          stroke="#c8a96e" stroke-width="\${grosor.toFixed(1)}" stroke-opacity="\${op.toFixed(2)}" stroke-linecap="round"/>
-          <text x="\${mx.toFixed(1)}" y="\${(my-2).toFixed(1)}" text-anchor="middle" font-size="9" fill="#c8a96e" opacity="\${Math.min(op+0.2,1).toFixed(2)}" font-family="'DM Mono',monospace">\${n}</text>\`;
+      let nod='';
+      tits.forEach(n=>{
+        if(!posM[n]) return;
+        const {sx,sy}=sv(posM[n].x,posM[n].y);
+        const r=18+(totP[n]/maxT)*10;
+        const pos=titMap[n]||'';
+        const ap=n.split(' ').slice(-1)[0].substring(0,9);
+        nod+=`<g><circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${r.toFixed(1)}" fill="#1c2333" stroke="#c8a96e" stroke-width="2.5"/>
+          <text x="${sx.toFixed(1)}" y="${(sy-3).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#e8c98e">${pos}</text>
+          <text x="${sx.toFixed(1)}" y="${(sy+9).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="#8b949e">${ap}</text></g>`;
       });
 
-      let nodos = '';
-      titulares.forEach(nombre => {
-        if (!posMedia[nombre]) return;
-        const {sx,sy} = toSVG(posMedia[nombre].x, posMedia[nombre].y);
-        const radio = 18 + (totalPases[nombre]/maxTotal)*10;
-        const pos = titularesMap[nombre]||'';
-        const apellido = nombre.split(' ').slice(-1)[0].substring(0,9);
-        nodos += \`<g>
-          <circle cx="\${sx.toFixed(1)}" cy="\${sy.toFixed(1)}" r="\${radio.toFixed(1)}"
-            fill="#1c2333" stroke="#c8a96e" stroke-width="2.5" opacity="0.97"/>
-          <text x="\${sx.toFixed(1)}" y="\${(sy-3).toFixed(1)}" text-anchor="middle"
-            font-family="'DM Sans',sans-serif" font-size="9" font-weight="700" fill="#e8c98e">\${pos}</text>
-          <text x="\${sx.toFixed(1)}" y="\${(sy+9).toFixed(1)}" text-anchor="middle"
-            font-family="'DM Sans',sans-serif" font-size="8" fill="#8b949e">\${apellido}</text>
-        </g>\`;
-      });
+      const rival=partido.local==='Pontevedra CF'?partido.vis:partido.local;
+      const lugar=partido.local==='Pontevedra CF'?'🏠':'✈️';
+      const totPases=Object.values(pases).reduce((a,b)=>a+b,0);
 
-      const rival = partido.local==='Pontevedra CF' ? partido.visitante : partido.local;
-      const lugar = partido.local==='Pontevedra CF' ? '🏠 Casa' : '✈️ Fuera';
-      const totalPasesCount = Object.values(pases).reduce((a,b)=>a+b,0);
-
-      container.innerHTML = \`
+      cont.innerHTML=`
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
-          <div>
-            <div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">\${partido.jornada} · \${partido.fecha} · \${lugar} · \${periodo===1?'1ª Parte':'2ª Parte'}</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px">Pontevedra CF vs \${rival}</div>
-          </div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">\${partido.score}</div>
-          <div style="margin-left:auto;font-size:12px;color:var(--text2)">\${titulares.length} jugadores · \${totalPasesCount} pases</div>
+          <div><div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · ${periodo===1?'1ª Parte':'2ª Parte'}</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">Pontevedra CF vs ${rival}</div></div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
+          <div style="margin-left:auto;font-size:12px;color:var(--text2)">${tits.length} jugadores · ${totPases} pases</div>
         </div>
-
-        \${infoSuplentes}
-
+        ${suplHTML}
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px">
-          <svg viewBox="0 0 \${W} \${H}" style="width:100%;display:block">
-            <rect x="\${MX}" y="\${MY}" width="\${PW}" height="\${PH}" fill="#0d1a0d" stroke="#1e3a1e" stroke-width="1.5"/>
-            <line x1="\${W/2}" y1="\${MY}" x2="\${W/2}" y2="\${H-MY}" stroke="#1e3a1e" stroke-width="1"/>
-            <circle cx="\${W/2}" cy="\${H/2}" r="\${(PH*9.15/68).toFixed(0)}" fill="none" stroke="#1e3a1e" stroke-width="1"/>
-            <rect x="\${MX}" y="\${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="\${(PW*16.5/105).toFixed(1)}" height="\${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="1"/>
-            <rect x="\${MX}" y="\${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="\${(PW*5.5/105).toFixed(1)}" height="\${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="1"/>
-            <rect x="\${(W-MX-PW*16.5/105).toFixed(1)}" y="\${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="\${(PW*16.5/105).toFixed(1)}" height="\${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="1"/>
-            <rect x="\${(W-MX-PW*5.5/105).toFixed(1)}" y="\${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="\${(PW*5.5/105).toFixed(1)}" height="\${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="1"/>
-            <text x="\${MX+20}" y="\${H-MY+25}" font-family="'DM Sans',sans-serif" font-size="11" fill="#2a4a2a">← Portería propia</text>
-            <text x="\${W-MX-20}" y="\${H-MY+25}" text-anchor="end" font-family="'DM Sans',sans-serif" font-size="11" fill="#2a4a2a">Portería rival →</text>
-            \${lineas}
-            \${nodos}
+          <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+            <rect x="${MX}" y="${MY}" width="${PW}" height="${PH}" fill="#0d1a0d" stroke="#1e3a1e" stroke-width="1.5"/>
+            <line x1="${W/2}" y1="${MY}" x2="${W/2}" y2="${H-MY}" stroke="#1e3a1e" stroke-width="1"/>
+            <circle cx="${W/2}" cy="${H/2}" r="${(PH*9.15/68).toFixed(0)}" fill="none" stroke="#1e3a1e" stroke-width="1"/>
+            <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
+            <rect x="${MX}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
+            <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
+            <rect x="${(W-MX-PW*5.5/105).toFixed(1)}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
+            <text x="${MX+8}" y="${H-MY+22}" font-size="10" fill="#2a4a2a">← Portería propia</text>
+            <text x="${W-MX-8}" y="${H-MY+22}" text-anchor="end" font-size="10" fill="#2a4a2a">Portería rival →</text>
+            ${lin}${nod}
           </svg>
         </div>
-
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px">
-          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">11 jugadores · \${periodo===1?'1ª Parte':'2ª Parte'}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px">
-            \${titulares.map(n => \`
-              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;display:flex;gap:6px;align-items:center">
-                <span style="color:var(--accent);font-size:10px;font-weight:700">\${titularesMap[n]}</span>
-                <span style="color:var(--text)">\${n}</span>
-                <span style="color:var(--text3);font-size:11px">\${totalPases[n]} pases</span>
-              </div>\`).join('')}
-          </div>
-        </div>\`;
-
+          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">11 jugadores · ${periodo===1?'1ª Parte':'2ª Parte'}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">${tits.map(n=>`<div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;display:flex;gap:6px"><span style="color:var(--accent);font-size:10px;font-weight:700">${titMap[n]}</span><span>${n}</span><span style="color:var(--text3);font-size:11px">${totP[n]} pases</span></div>`).join('')}</div>
+        </div>`;
     } catch(e) {
-      container.innerHTML = \`<div style="text-align:center;padding:40px;color:var(--red)">\${e.message}</div>\`;
+      cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
     }
   }
 
-  // ── MATRIZ DE PASES ──
-  async function renderMatriz(matchId) {
-    const tid = currentTeam.id;
-    const container = document.getElementById('redPasesContainer');
-    container.innerHTML = \`<div class="loading"><div class="spinner"></div><span>Calculando matriz...</span></div>\`;
-    const partido = PARTIDOS.find(p => p.match_id == matchId);
-
+  async function renderMatriz() {
+    const tid=currentTeam.id, mid=redMatchId;
+    const cont=document.getElementById('redCont');
+    if(!cont) return;
+    cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando matriz...</span></div>`;
+    const partido=PARTIDOS.find(p=>p.id==mid);
     try {
-      // Todos los jugadores del equipo en el partido con sus pases
-      const { data } = await get('eventos',
-        \`select=player_name,player_targeted_name,pass_outcome,period&team_id=eq.\${tid}&match_id=eq.\${matchId}&event_type=eq.player_possession&pass_outcome=eq.successful&limit=5000\`
-      );
+      const {data}=await sbGet('eventos',`select=player_name,player_targeted_name&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&limit=5000`);
+      const jugsSet=new Set(), mat={};
+      data.forEach(e=>{ if(!e.player_name||!e.player_targeted_name) return; jugsSet.add(e.player_name); jugsSet.add(e.player_targeted_name); const k=`${e.player_name}|${e.player_targeted_name}`; mat[k]=(mat[k]||0)+1; });
+      const totD={},totR={};
+      jugsSet.forEach(j=>{totD[j]=0;totR[j]=0;});
+      Object.entries(mat).forEach(([k,n])=>{ const [f,t]=k.split('|'); totD[f]=(totD[f]||0)+n; totR[t]=(totR[t]||0)+n; });
+      const jugs=[...jugsSet].sort((a,b)=>(totD[b]||0)-(totD[a]||0));
+      const maxV=Math.max(1,...Object.values(mat));
 
-      // Construir matriz
-      const jugadores = new Set();
-      const matriz = {};
-      data.forEach(e => {
-        if (!e.player_name || !e.player_targeted_name) return;
-        jugadores.add(e.player_name);
-        jugadores.add(e.player_targeted_name);
-        const key = \`\${e.player_name}|\${e.player_targeted_name}\`;
-        matriz[key] = (matriz[key]||0)+1;
-      });
-
-      // Ordenar por total de pases dados
-      const totalDados = {};
-      const totalRecibidos = {};
-      jugadores.forEach(j => { totalDados[j]=0; totalRecibidos[j]=0; });
-      Object.entries(matriz).forEach(([key,n]) => {
-        const [f,t] = key.split('|');
-        totalDados[f]=(totalDados[f]||0)+n;
-        totalRecibidos[t]=(totalRecibidos[t]||0)+n;
-      });
-
-      const jugs = [...jugadores].sort((a,b) => (totalDados[b]||0)-(totalDados[a]||0));
-      const maxVal = Math.max(1, ...Object.values(matriz));
-
-      // Cabecera
-      const thCells = jugs.map(j => {
-        const apellido = j.split(' ').slice(-1)[0].substring(0,7);
-        return \`<th style="padding:6px 4px;font-size:9px;letter-spacing:0.5px;color:var(--text3);text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);min-width:28px;max-width:28px">\${apellido}</th>\`;
-      }).join('');
-
-      const filas = jugs.map(from => {
-        const apellido = from.split(' ').slice(-1)[0].substring(0,9);
-        const celdas = jugs.map(to => {
-          if (from === to) return \`<td style="background:var(--bg4);border:1px solid var(--border)"></td>\`;
-          const n = matriz[\`\${from}|\${to}\`]||0;
-          if (n === 0) return \`<td style="border:1px solid var(--border);text-align:center;font-size:10px;color:var(--text3);padding:4px">—</td>\`;
-          const intensity = n/maxVal;
-          const bg = \`rgba(200,169,110,\${(intensity*0.6+0.08).toFixed(2)})\`;
-          const color = intensity > 0.4 ? '#0d1117' : '#e8c98e';
-          return \`<td style="background:\${bg};border:1px solid var(--border);text-align:center;font-size:11px;font-weight:600;color:\${color};padding:4px;\${intensity>0.3?'font-family:\'DM Mono\',monospace':''}">\${n}</td>\`;
+      const thC=jugs.map(j=>`<th style="padding:6px 4px;font-size:9px;color:var(--text3);text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);min-width:28px">${j.split(' ').slice(-1)[0].substring(0,7)}</th>`).join('');
+      const filas=jugs.map(fr=>{
+        const ap=fr.split(' ').slice(-1)[0].substring(0,9);
+        const cels=jugs.map(to=>{
+          if(fr===to) return `<td style="background:var(--bg4);border:1px solid var(--border)"></td>`;
+          const n=mat[`${fr}|${to}`]||0;
+          if(!n) return `<td style="border:1px solid var(--border);text-align:center;font-size:10px;color:var(--text3)">—</td>`;
+          const iv=n/maxV;
+          const bg=`rgba(200,169,110,${(iv*0.6+0.08).toFixed(2)})`;
+          const col=iv>0.4?'#0d1117':'#e8c98e';
+          return `<td style="background:${bg};border:1px solid var(--border);text-align:center;font-size:11px;font-weight:600;color:${col}">${n}</td>`;
         }).join('');
-        return \`<tr>
-          <td style="padding:4px 10px 4px 6px;font-size:11px;color:var(--text);white-space:nowrap;border:1px solid var(--border);font-weight:500">\${apellido}</td>
-          \${celdas}
-          <td style="padding:4px 8px;font-size:11px;color:var(--accent);font-weight:700;border:1px solid var(--border);text-align:center;font-family:'DM Mono',monospace">\${totalDados[from]||0}</td>
-        </tr>\`;
+        return `<tr><td style="padding:4px 10px;font-size:11px;border:1px solid var(--border);font-weight:500;white-space:nowrap">${ap}</td>${cels}<td style="padding:4px 8px;font-size:11px;color:var(--accent);font-weight:700;border:1px solid var(--border);text-align:center">${totD[fr]||0}</td></tr>`;
       }).join('');
+      const recRow=jugs.map(j=>`<td style="padding:4px;font-size:11px;color:var(--blue);font-weight:700;border:1px solid var(--border);text-align:center">${totR[j]||0}</td>`).join('');
+      const rival=partido.local==='Pontevedra CF'?partido.vis:partido.local;
 
-      const totalRecRow = jugs.map(j => \`<td style="padding:4px 4px;font-size:11px;color:var(--blue);font-weight:700;border:1px solid var(--border);text-align:center;font-family:'DM Mono',monospace">\${totalRecibidos[j]||0}</td>\`).join('');
-
-      const rival = partido.local==='Pontevedra CF' ? partido.visitante : partido.local;
-
-      container.innerHTML = \`
+      cont.innerHTML=`
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
-          <div>
-            <div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">\${partido.jornada} · \${partido.fecha} · Ambas partes</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px">Pontevedra CF vs \${rival}</div>
-          </div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">\${partido.score}</div>
-          <div style="margin-left:auto;font-size:12px;color:var(--text2)">\${jugs.length} jugadores · \${data.length} pases completados</div>
+          <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · Ambas partes</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">Pontevedra CF vs ${rival}</div></div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
+          <div style="margin-left:auto;font-size:12px;color:var(--text2)">${data.length} pases completados</div>
         </div>
-
         <div style="display:flex;gap:16px;font-size:11px;color:var(--text3);margin-bottom:12px">
           <span>Filas = <span style="color:var(--accent)">Pasador</span></span>
           <span>Columnas = <span style="color:var(--blue)">Receptor</span></span>
-          <span>El color indica intensidad del vínculo</span>
         </div>
-
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:auto">
           <table style="border-collapse:collapse;min-width:100%">
-            <thead>
-              <tr>
-                <th style="padding:6px 10px;font-size:10px;color:var(--text3);border:1px solid var(--border);min-width:80px">Pasador \ Receptor</th>
-                \${thCells}
-                <th style="padding:6px 8px;font-size:10px;color:var(--accent);border:1px solid var(--border);text-align:center;min-width:36px">TOTAL</th>
-              </tr>
-            </thead>
-            <tbody>
-              \${filas}
-              <tr style="border-top:2px solid var(--border)">
-                <td style="padding:4px 10px;font-size:10px;color:var(--blue);font-weight:700;border:1px solid var(--border)">RECIBIDOS</td>
-                \${totalRecRow}
-                <td style="border:1px solid var(--border)"></td>
-              </tr>
-            </tbody>
+            <thead><tr><th style="padding:6px 10px;font-size:10px;color:var(--text3);border:1px solid var(--border);min-width:80px">↓ Pasa \\ Recibe →</th>${thC}<th style="padding:6px 8px;font-size:10px;color:var(--accent);border:1px solid var(--border);text-align:center">TOTAL</th></tr></thead>
+            <tbody>${filas}<tr style="border-top:2px solid var(--border)"><td style="padding:4px 10px;font-size:10px;color:var(--blue);font-weight:700;border:1px solid var(--border)">RECIBIDOS</td>${recRow}<td style="border:1px solid var(--border)"></td></tr></tbody>
           </table>
-        </div>\`;
-
+        </div>`;
     } catch(e) {
-      container.innerHTML = \`<div style="text-align:center;padding:40px;color:var(--red)">\${e.message}</div>\`;
+      cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
     }
   }
 
-  // ── INIT ──
+  // INIT
   loadTab('resumen');
 </script>
 </body>
