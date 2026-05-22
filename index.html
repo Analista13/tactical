@@ -596,9 +596,14 @@
     cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando matriz...</span></div>`;
     const partido=PARTIDOS.find(p=>p.id==mid);
     try {
-      const {data}=await sbGet('eventos',`select=player_name,player_position,player_targeted_name,player_targeted_position&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&limit=5000`);
-      const jugsSet=new Set(), mat={}, jugPos={};
-      data.forEach(e=>{ if(!e.player_name||!e.player_targeted_name) return; jugsSet.add(e.player_name); jugsSet.add(e.player_targeted_name); const k=`${e.player_name}|${e.player_targeted_name}`; mat[k]=(mat[k]||0)+1; if(e.player_position) jugPos[e.player_name]=e.player_position; if(e.player_targeted_position) jugPos[e.player_targeted_name]=e.player_targeted_position; });
+      // Obtener posiciones reales desde get_lineup
+      const lineup = await getLineup(mid, tid);
+      const jugPos={};
+      lineup.forEach(p => { jugPos[p.name] = p.position; });
+
+      const {data}=await sbGet('eventos',`select=player_name,player_targeted_name&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&limit=5000`);
+      const jugsSet=new Set(), mat={};
+      data.forEach(e=>{ if(!e.player_name||!e.player_targeted_name) return; jugsSet.add(e.player_name); jugsSet.add(e.player_targeted_name); const k=`${e.player_name}|${e.player_targeted_name}`; mat[k]=(mat[k]||0)+1; });
       const totD={},totR={};
       jugsSet.forEach(j=>{totD[j]=0;totR[j]=0;});
       Object.entries(mat).forEach(([k,n])=>{ const [f,t]=k.split('|'); totD[f]=(totD[f]||0)+n; totR[t]=(totR[t]||0)+n; });
@@ -607,7 +612,7 @@
 
       const thC=jugs.map(j=>`<th style="padding:6px 4px;font-size:9px;color:var(--text3);text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);min-width:28px">${j.split(' ').slice(-1)[0].substring(0,7)}<tspan style='font-size:8px;color:var(--accent)'> (${jugPos[j]||''})</tspan></th>`).join('');
       const filas=jugs.map(fr=>{
-        const ap=`${fr.split(' ').slice(-1)[0].substring(0,9)} (${jugPos[fr]||''})`;
+        const pos=jugPos[fr]?`<span style='color:var(--accent);font-size:10px;font-weight:700;margin-right:4px'>${jugPos[fr]}</span>`:''; const ap=fr.split(' ').slice(-1)[0].substring(0,10);
         const cels=jugs.map(to=>{
           if(fr===to) return `<td style="background:var(--bg4);border:1px solid var(--border)"></td>`;
           const n=mat[`${fr}|${to}`]||0;
@@ -617,7 +622,7 @@
           const col=iv>0.4?'#0d1117':'#e8c98e';
           return `<td style="background:${bg};border:1px solid var(--border);text-align:center;font-size:11px;font-weight:600;color:${col}">${n}</td>`;
         }).join('');
-        return `<tr><td style="padding:4px 10px;font-size:11px;border:1px solid var(--border);font-weight:500;white-space:nowrap">${ap}</td>${cels}<td style="padding:4px 8px;font-size:11px;color:var(--accent);font-weight:700;border:1px solid var(--border);text-align:center">${totD[fr]||0}</td></tr>`;
+        return `<tr><td style="padding:4px 10px;font-size:11px;border:1px solid var(--border);font-weight:500;white-space:nowrap">${pos}${ap}</td>${cels}<td style="padding:4px 8px;font-size:11px;color:var(--accent);font-weight:700;border:1px solid var(--border);text-align:center">${totD[fr]||0}</td></tr>`;
       }).join('');
       const recRow=jugs.map(j=>`<td style="padding:4px;font-size:11px;color:var(--blue);font-weight:700;border:1px solid var(--border);text-align:center">${totR[j]||0}</td>`).join('');
       const rival=partido.local==='Pontevedra CF'?partido.vis:partido.local;
