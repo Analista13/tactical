@@ -1136,13 +1136,14 @@
             const col=cnts.prog/n>0.35?'#3fb950':cnts.back/n>0.45?'#8b949e':'#c8a96e';
             // Línea igual que Mapa de Pases
             lin+=`<line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${tx.toFixed(1)}" y2="${ty.toFixed(1)}" stroke="${col}" stroke-width="${sw.toFixed(1)}" stroke-opacity="${op.toFixed(2)}" stroke-linecap="round"/>`;
-            // Punto igual que Mapa de Pases
-            const dop=(0.4+(n/maxT)*0.6).toFixed(2);
-            dots+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="3" fill="${col}" fill-opacity="0.2" stroke="${col}" stroke-width="1.2" stroke-opacity="${dop}"/>`;
-            // Dorsal encima del punto (sin fondo oscuro)
+            // Círculo-dorsal como marcador de destino
+            const dop=(0.45+(n/maxT)*0.55).toFixed(2);
             const dorsal=PLAYER_DORSALES[idMap[tgt]];
             if(dorsal!=null){
-              dots+=`<text x="${tx.toFixed(1)}" y="${(ty-5).toFixed(1)}" fill="${col}" font-size="6" font-family="'DM Mono',monospace" font-weight="700" text-anchor="middle" opacity="${dop}">${dorsal}</text>`;
+              dots+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="7.5" fill="#0a1410" fill-opacity="0.92" stroke="${col}" stroke-width="1.5" stroke-opacity="${dop}"/>`;
+              dots+=`<text x="${tx.toFixed(1)}" y="${(ty+2.8).toFixed(1)}" fill="${col}" font-size="7.5" font-family="'DM Mono',monospace" font-weight="700" text-anchor="middle" opacity="${dop}">${dorsal}</text>`;
+            } else {
+              dots+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="3" fill="${col}" fill-opacity="0.2" stroke="${col}" stroke-width="1.2" stroke-opacity="${dop}"/>`;
             }
           });
           const tc=TIER_COL[tierId]||'#c8a96e';
