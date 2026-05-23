@@ -493,7 +493,11 @@
       const posA={},posC={};
       allPP.forEach(e=>{ if(!tits.includes(e.player_name)) return; if(!posA[e.player_name]){posA[e.player_name]={x:0,y:0};posC[e.player_name]=0;} posA[e.player_name].x+=e.x_start; posA[e.player_name].y+=e.y_start; posC[e.player_name]++; });
       const posM={};
-      tits.forEach(n=>{ posM[n]=posC[n]>0?{x:posA[n].x/posC[n],y:posA[n].y/posC[n]}:{x:0,y:0}; });
+      const GK_POS=['GK','PT','PORTERO','POR','P','GOALKEEPER'];
+      tits.forEach(n=>{
+        if(posC[n]>0){ posM[n]={x:posA[n].x/posC[n],y:posA[n].y/posC[n]}; }
+        else { const pos=(titMap[n]||'').toUpperCase().trim(); posM[n]=GK_POS.includes(pos)?{x:-47,y:0}:null; }
+      });
 
       const {data:pd}=await sbGet('eventos',`select=player_name,player_targeted_name&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&period=eq.${periodo}&limit=5000`);
       const pases={};
