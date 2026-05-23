@@ -149,6 +149,22 @@
   let redSubTab     = '1parte';
   let jugSubTab     = 'mapa';
 
+  // Dorsales por player_id (fuente: Transfermarkt temporada 2025-26)
+  const PLAYER_DORSALES = {
+    890502:13, // R. Marqueta
+    751468: 2, // Víctor Eimil
+    640025:19, // B. Garay
+    759356:17, // L. Macías
+    978058: 3, // Adrián Expósito
+    531707: 6, // A. Ribeiro
+     27524:16, // Ander Vidorreta
+    570213:10, // Y. Pino
+    533006:23, // Antonio Montoro
+    296081: 4, // Miki Bosch
+    698822: 8, // Brais Abelenda
+    570203: 7, // Álex González
+  };
+
   const PARTIDOS = [
     {j:'J1',  f:'30/08/2025', local:'Pontevedra CF',    vis:'Cacereño',        id:2040850, s:'1-1'},
     {j:'J2',  f:'06/09/2025', local:'Ponferradina',     vis:'Pontevedra CF',   id:2040906, s:'0-1'},
@@ -917,8 +933,8 @@
         cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de alineación</div>`;
         return;
       }
-      const playerMap={};
-      lineup.forEach(p=>{ playerMap[p.name]=p.position; });
+      const playerMap={}, idMap={};
+      lineup.forEach(p=>{ playerMap[p.name]=p.position; idMap[p.name]=p.id; });
       const allPlayers=Object.keys(playerMap);
       const allPlayersSet=new Set(allPlayers);
 
@@ -970,7 +986,7 @@
       }
 
       const sorted=allPlayers.map(n=>({
-        name:n, pos:playerMap[n]||'',
+        name:n, pos:playerMap[n]||'', id:idMap[n]||null,
         ...getPosTier(playerMap[n]),
         total:playerTotal[n]||0,
       })).sort((a,b)=>a.tier!==b.tier?a.tier-b.tier:a.order!==b.order?a.order-b.order:b.total-a.total);
@@ -1000,12 +1016,15 @@
         <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="5.5" fill="${tc}" fill-opacity="0.25" stroke="${tc}" stroke-width="2"/>
         <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="2.5" fill="${tc}" fill-opacity="0.95"/>`;
 
-      const cardHeader=(pos,dispName,tc,bo,bg,extra='')=>
-        `<div style="padding:9px 12px 8px;border-bottom:1px solid ${bo};display:flex;align-items:center;gap:8px;background:${bg}">
-          <span style="color:${tc};font-size:9px;font-weight:700;background:rgba(0,0,0,0.25);border:1px solid ${bo};padding:2px 7px;border-radius:4px;flex-shrink:0;letter-spacing:0.8px;font-family:'DM Mono',monospace">${pos}</span>
+      const cardHeader=(pos,dispName,tc,bo,bg,playerId,extra='')=>{
+        const dorsal=playerId&&PLAYER_DORSALES[playerId];
+        return `<div style="padding:9px 12px 8px;border-bottom:1px solid ${bo};display:flex;align-items:center;gap:7px;background:${bg}">
+          ${dorsal?`<span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${tc};opacity:0.75;line-height:1;flex-shrink:0;min-width:22px;text-align:right">${dorsal}</span>`:''}
+          <span style="color:${tc};font-size:9px;font-weight:700;background:rgba(0,0,0,0.25);border:1px solid ${bo};padding:2px 6px;border-radius:4px;flex-shrink:0;letter-spacing:0.8px;font-family:'DM Mono',monospace">${pos}</span>
           <span style="font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${dispName}</span>
           ${extra}
         </div>`;
+      };
 
       const matchHeader=(subtitle,legend='')=>
         `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
@@ -1061,12 +1080,12 @@
         for(let t=0;t<=3;t++){
           const tp=sorted.filter(p=>p.tier===t&&posM[p.name]); if(!tp.length) continue;
           const bo=TIER_BO[t]; let cards='';
-          tp.forEach(({name,pos,total})=>{
+          tp.forEach(({name,pos,total,id})=>{
             const fc=miniField(name,t); if(!fc) return;
             const recv=playerRecv[name]||0, prog=playerProg[name]||0;
             const progPct=total>0?Math.round((prog/total)*100):0;
             cards+=`<div style="background:var(--bg2);border:1px solid ${bo};border-radius:var(--radius);overflow:hidden;width:260px;flex-shrink:0;transition:transform 0.18s,box-shadow 0.18s" onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 24px rgba(0,0,0,0.35)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
-              ${cardHeader(pos,dispN(name),TIER_COL[t],bo,TIER_BG[t])}
+              ${cardHeader(pos,dispN(name),TIER_COL[t],bo,TIER_BG[t],id)}
               <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${fc}</svg>
               <div style="padding:8px 12px;border-top:1px solid ${bo};display:grid;grid-template-columns:1fr 1fr 1fr;text-align:center;background:var(--bg)">
                 <div style="padding:4px 0;border-right:1px solid ${bo}">
@@ -1104,19 +1123,20 @@
         const assocField=(playerName,tierId)=>{
           const p=posM[playerName]; if(!p) return null;
           const {sx:px,sy:py}=sv(p.x,p.y);
-          const top5=Object.entries(assocM[playerName]||{}).sort((a,b)=>b[1]-a[1]).slice(0,5);
+          // Todos los compañeros ordenados por asociación (más fuerte primero)
+          const allAssocs=Object.entries(assocM[playerName]||{}).sort((a,b)=>b[1]-a[1]);
           let lin='',dots='',lbls='';
-          top5.forEach(([tgt,cnt],idx)=>{
+          allAssocs.forEach(([tgt,cnt],idx)=>{
             const tp=posM[tgt]; if(!tp) return;
             const {sx:tx,sy:ty}=sv(tp.x,tp.y);
-            const col=RCOL[Math.min(idx,4)];
-            const op=idx===0?0.9:idx===1?0.72:idx===2?0.55:0.2;
-            const sw=idx===0?4.5:idx===1?3:idx===2?1.8:0.8;
+            // Top3: colores oro/plata/bronce prominentes; resto: muy tenues
+            const col=idx<3?RCOL[idx]:'rgba(180,180,180,0.4)';
+            const op=idx===0?0.9:idx===1?0.72:idx===2?0.55:0.12;
+            const sw=idx===0?4.5:idx===1?3:idx===2?1.8:0.6;
             lin+=`<line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${tx.toFixed(1)}" y2="${ty.toFixed(1)}" stroke="${col}" stroke-width="${sw}" stroke-opacity="${op}" stroke-linecap="round"/>`;
-            const dr=idx<3?4.5:2.5;
-            dots+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${dr}" fill="${col}" fill-opacity="${idx<3?0.3:0.08}" stroke="${col}" stroke-width="${idx<3?1.8:0.8}" stroke-opacity="${op}"/>`;
+            const dr=idx<3?4.5:2;
+            dots+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${dr}" fill="${col}" fill-opacity="${idx<3?0.3:0.06}" stroke="${col}" stroke-width="${idx<3?1.8:0.6}" stroke-opacity="${op}"/>`;
             if(idx<3){
-              // Número de rango a mitad de la línea, ligeramente desplazado
               const lx=((tx*0.65+px*0.35)).toFixed(1);
               const ly=((ty*0.65+py*0.35)-5).toFixed(1);
               lbls+=`<text x="${lx}" y="${ly}" fill="${col}" font-size="8" font-family="'DM Mono',monospace" font-weight="700" text-anchor="middle" opacity="0.95">${idx+1}</text>`;
@@ -1132,7 +1152,7 @@
            <div style="display:flex;align-items:center;gap:5px"><div style="width:18px;height:3px;background:#cd8c5c;border-radius:2px"></div>#3</div>`);
 
         const sortedA=allPlayers.map(n=>({
-          name:n, pos:playerMap[n]||'',
+          name:n, pos:playerMap[n]||'', id:idMap[n]||null,
           ...getPosTier(playerMap[n]),
           totalA:Object.values(assocM[n]||{}).reduce((s,v)=>s+v,0),
         })).sort((a,b)=>a.tier!==b.tier?a.tier-b.tier:a.order!==b.order?a.order-b.order:b.totalA-a.totalA);
@@ -1140,18 +1160,20 @@
         for(let t=0;t<=3;t++){
           const tp=sortedA.filter(p=>p.tier===t&&posM[p.name]); if(!tp.length) continue;
           const bo=TIER_BO[t]; let cards='';
-          tp.forEach(({name,pos,totalA})=>{
+          tp.forEach(({name,pos,totalA,id})=>{
             const fc=assocField(name,t); if(!fc) return;
             const top3=Object.entries(assocM[name]||{}).sort((a,b)=>b[1]-a[1]).slice(0,3);
-            const rankRows=top3.length?top3.map(([partner,cnt],idx)=>`
-              <div style="display:flex;align-items:center;gap:8px;padding:4px 0;${idx<top3.length-1?'border-bottom:1px solid '+bo:''}">
+            const rankRows=top3.length?top3.map(([partner,cnt],idx)=>{
+              const pDorsal=PLAYER_DORSALES[idMap[partner]];
+              return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;${idx<top3.length-1?'border-bottom:1px solid '+bo:''}">
                 <span style="color:${RCOL[idx]};font-size:10px;font-weight:700;font-family:'DM Mono',monospace;width:22px;flex-shrink:0">#${idx+1}</span>
+                ${pDorsal?`<span style="color:${RCOL[idx]};font-family:'Bebas Neue',sans-serif;font-size:14px;line-height:1;opacity:0.7;flex-shrink:0">${pDorsal}</span>`:''}
                 <span style="font-size:11px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${dispN(partner)}</span>
                 <span style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:${RCOL[idx]};line-height:1">${cnt}</span>
-              </div>`).join('')
+              </div>`;}).join('')
               :`<div style="font-size:11px;color:var(--text3);text-align:center;padding:4px">Sin conexiones</div>`;
             cards+=`<div style="background:var(--bg2);border:1px solid ${bo};border-radius:var(--radius);overflow:hidden;width:260px;flex-shrink:0;transition:transform 0.18s,box-shadow 0.18s" onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 24px rgba(0,0,0,0.35)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
-              ${cardHeader(pos,dispN(name),TIER_COL[t],bo,TIER_BG[t],
+              ${cardHeader(pos,dispN(name),TIER_COL[t],bo,TIER_BG[t],id,
                 `<span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--text3);margin-left:auto;flex-shrink:0">${totalA} asoc.</span>`)}
               <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${fc}</svg>
               <div style="padding:10px 12px;border-top:1px solid ${bo};background:var(--bg)">${rankRows}</div>
