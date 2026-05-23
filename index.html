@@ -208,6 +208,31 @@
     loadRedPases();
   }
 
+  // Betweenness centrality (Brandes) — módulo compartido
+  function calcBetweenness(nodes,ps){
+    const bc={};nodes.forEach(n=>bc[n]=0);
+    for(const s of nodes){
+      const pred={},dist={},sigma={};
+      nodes.forEach(n=>{dist[n]=Infinity;sigma[n]=0;pred[n]=[];});
+      dist[s]=0;sigma[s]=1;const Q=[s],S=[];
+      while(Q.length){
+        const v=Q.shift();S.push(v);
+        for(const w of nodes){
+          if(!ps[`${v}|${w}`]) continue;
+          if(dist[w]===Infinity){dist[w]=dist[v]+1;Q.push(w);}
+          if(dist[w]===dist[v]+1){sigma[w]+=sigma[v];pred[w].push(v);}
+        }
+      }
+      const delta={};nodes.forEach(n=>delta[n]=0);
+      while(S.length){
+        const w=S.pop();
+        for(const v of pred[w]) delta[v]+=(sigma[v]/sigma[w])*(1+delta[w]);
+        if(w!==s) bc[w]+=delta[w];
+      }
+    }
+    return bc;
+  }
+
   // RED DE PASES
   function loadRedPases() {
     const matchOpts = PARTIDOS.map(p => {
@@ -238,6 +263,7 @@
         <button id="st-2parte" class="subtab ${redSubTab==='2parte'?'active':''}" onclick="setSubTab('2parte')">⚽ 2ª Parte</button>
         <button id="st-matriz" class="subtab ${redSubTab==='matriz'?'active':''}" onclick="setSubTab('matriz')">📊 Matriz</button>
         <button id="st-tendencia" class="subtab ${redSubTab==='tendencia'?'active':''}" onclick="setSubTab('tendencia')">🗺️ Tendencia</button>
+        <button id="st-comparativa" class="subtab ${redSubTab==='comparativa'?'active':''}" onclick="setSubTab('comparativa')">⚡ Comparativa</button>
       </div>`:''}
       <div id="redCont">
         <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>
@@ -263,6 +289,7 @@
     if(redSubTab==='1parte') renderRed(1);
     else if(redSubTab==='2parte') renderRed(2);
     else if(redSubTab==='tendencia') renderTendencia();
+    else if(redSubTab==='comparativa') renderComparativa();
     else renderMatriz();
   }
 
@@ -347,31 +374,7 @@
       const totProgresivos=Object.values(progP).reduce((a,b)=>a+b,0);
       const totPasesAll=Object.values(pases).reduce((a,b)=>a+b,0);
 
-      // Betweenness centrality — Brandes algorithm
-      function btwn(nodes,ps){
-        const bc={};nodes.forEach(n=>bc[n]=0);
-        for(const s of nodes){
-          const pred={},dist={},sigma={};
-          nodes.forEach(n=>{dist[n]=Infinity;sigma[n]=0;pred[n]=[];});
-          dist[s]=0;sigma[s]=1;const Q=[s],S=[];
-          while(Q.length){
-            const v=Q.shift();S.push(v);
-            for(const w of nodes){
-              if(!ps[`${v}|${w}`]) continue;
-              if(dist[w]===Infinity){dist[w]=dist[v]+1;Q.push(w);}
-              if(dist[w]===dist[v]+1){sigma[w]+=sigma[v];pred[w].push(v);}
-            }
-          }
-          const delta={};nodes.forEach(n=>delta[n]=0);
-          while(S.length){
-            const w=S.pop();
-            for(const v of pred[w]) delta[v]+=(sigma[v]/sigma[w])*(1+delta[w]);
-            if(w!==s) bc[w]+=delta[w];
-          }
-        }
-        return bc;
-      }
-      const bcScores=btwn(tits,pases);
+      const bcScores=calcBetweenness(tits,pases);
       const maxBC=Math.max(1,...Object.values(bcScores));
 
       // Top 5 conexiones
@@ -716,6 +719,166 @@
             <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:14px">Por tercio de campo</div>
             ${thirdHTML}
           </div>
+        </div>`;
+    } catch(e){
+      cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
+    }
+  }
+
+  async function renderComparativa() {
+    const tid=currentTeam.id, mid=redMatchId;
+    const cont=document.getElementById('redCont');
+    if(!cont) return;
+    cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando comparativa...</span></div>`;
+    const partido=PARTIDOS.find(p=>p.id==mid);
+    try {
+      const lineup=await getLineup(mid,tid);
+      if(!lineup.length){cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de alineación</div>`;return;}
+
+      const [pp1r,pp2r,pd1r,pd2r]=await Promise.all([
+        sbGet('eventos',`select=player_name,x_start,y_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&period=eq.1&x_start=not.is.null&limit=5000`),
+        sbGet('eventos',`select=player_name,x_start,y_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&period=eq.2&x_start=not.is.null&limit=5000`),
+        sbGet('eventos',`select=player_name,player_targeted_name,x_start,x_end&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&period=eq.1&limit=5000`),
+        sbGet('eventos',`select=player_name,player_targeted_name,x_start,x_end&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&period=eq.2&limit=5000`),
+      ]);
+
+      function getPlayers(period){
+        if(period===1) return lineup.filter(p=>timeToMin(p.start_time)<45);
+        return lineup.filter(p=>{const e=timeToMin(p.start_time),s=p.end_time?timeToMin(p.end_time):999;return e<90&&s>45;});
+      }
+
+      function computeMetrics(players,ppData,pdData){
+        const playerMap={};players.forEach(p=>{playerMap[p.name]=p.position;});
+        const tits=Object.keys(playerMap);
+        const GK=['GK','PT','PORTERO','POR','P','GOALKEEPER'];
+        const posA={},posC={};
+        ppData.forEach(e=>{
+          if(!tits.includes(e.player_name)) return;
+          if(!posA[e.player_name]){posA[e.player_name]={x:0,y:0};posC[e.player_name]=0;}
+          posA[e.player_name].x+=e.x_start;posA[e.player_name].y+=e.y_start;posC[e.player_name]++;
+        });
+        const posM={};
+        tits.forEach(n=>{posM[n]=posC[n]>0?{x:posA[n].x/posC[n],y:posA[n].y/posC[n]}:(GK.includes((playerMap[n]||'').toUpperCase().trim())?{x:-47,y:0}:null);});
+        const pases={},progP={};tits.forEach(n=>{progP[n]=0;});
+        pdData.forEach(e=>{
+          if(!tits.includes(e.player_name)||!tits.includes(e.player_targeted_name)||e.player_name===e.player_targeted_name) return;
+          const k=`${e.player_name}|${e.player_targeted_name}`;pases[k]=(pases[k]||0)+1;
+          if(e.x_end!=null&&e.x_start!=null&&(e.x_end-e.x_start)>9) progP[e.player_name]=(progP[e.player_name]||0)+1;
+        });
+        const totP={};tits.forEach(n=>{totP[n]=0;});
+        Object.entries(pases).forEach(([k,n])=>{const[f]=k.split('|');totP[f]=(totP[f]||0)+n;});
+        const maxP=Math.max(1,...Object.values(pases));
+        const maxT=Math.max(1,...Object.values(totP));
+        const totPases=Object.values(pases).reduce((a,b)=>a+b,0);
+        const totProg=Object.values(progP).reduce((a,b)=>a+b,0);
+        const bcScores=calcBetweenness(tits,pases);
+        const maxBC=Math.max(1,...Object.values(bcScores));
+        const topCentral=tits.filter(n=>posM[n]).sort((a,b)=>(bcScores[b]||0)-(bcScores[a]||0))[0];
+        const topConn=Object.entries(pases).sort((a,b)=>b[1]-a[1])[0];
+        const validPos=tits.filter(n=>posM[n]);
+        const avgX=validPos.length?validPos.reduce((s,n)=>s+(posM[n].x||0),0)/validPos.length:0;
+        return {tits,playerMap,posM,pases,totP,progP,bcScores,maxBC,topCentral,topConn,totPases,totProg,avgX,maxP,maxT};
+      }
+
+      const m1=computeMetrics(getPlayers(1),pp1r.data,pd1r.data);
+      const m2=computeMetrics(getPlayers(2),pp2r.data,pd2r.data);
+
+      const MW=500,MH=330,MMX=38,MMY=28,MPW=MW-MMX*2,MPH=MH-MMY*2;
+      const msv=(x,y)=>({sx:MMX+((x+52.5)/105)*MPW,sy:MMY+((34-y)/68)*MPH});
+
+      function miniNet(m,label,color){
+        let lin='';
+        Object.entries(m.pases).forEach(([k,n])=>{
+          const[fr,to]=k.split('|');if(!m.posM[fr]||!m.posM[to]) return;
+          const{sx:x1,sy:y1}=msv(m.posM[fr].x,m.posM[fr].y);
+          const{sx:x2,sy:y2}=msv(m.posM[to].x,m.posM[to].y);
+          const g=0.8+(n/m.maxP)*5,op=0.1+(n/m.maxP)*0.7;
+          const angle=Math.atan2(y2-y1,x2-x1);
+          const ax=x1+0.65*(x2-x1),ay=y1+0.65*(y2-y1),as=3+(n/m.maxP)*4;
+          const a1=`${(ax+as*Math.cos(angle)).toFixed(1)},${(ay+as*Math.sin(angle)).toFixed(1)}`;
+          const a2=`${(ax+as*0.45*Math.cos(angle+2.2)).toFixed(1)},${(ay+as*0.45*Math.sin(angle+2.2)).toFixed(1)}`;
+          const a3=`${(ax+as*0.45*Math.cos(angle-2.2)).toFixed(1)},${(ay+as*0.45*Math.sin(angle-2.2)).toFixed(1)}`;
+          lin+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${color}" stroke-width="${g.toFixed(1)}" stroke-opacity="${op.toFixed(2)}" stroke-linecap="round"/>
+            <polygon points="${a1} ${a2} ${a3}" fill="${color}" fill-opacity="${(op*0.9).toFixed(2)}"/>`;
+        });
+        let nod='';
+        m.tits.forEach(n=>{
+          if(!m.posM[n]) return;
+          const{sx,sy}=msv(m.posM[n].x,m.posM[n].y);
+          const r=13+(m.totP[n]/m.maxT)*8;
+          const bcNorm=m.maxBC>0?(m.bcScores[n]||0)/m.maxBC:0;
+          const glow=bcNorm>0.25?`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${(r+5).toFixed(1)}" fill="none" stroke="#f0883e" stroke-width="2" stroke-opacity="${(bcNorm*0.85).toFixed(2)}" stroke-dasharray="3,2"/>`:'' ;
+          const pos=m.playerMap[n]||'';const ap=n.split(' ').slice(-1)[0].substring(0,8);
+          nod+=`<g>${glow}<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${r.toFixed(1)}" fill="#1c2333" stroke="${color}" stroke-width="2"/>
+            <text x="${sx.toFixed(1)}" y="${(sy-2).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="700" fill="#e8c98e">${pos}</text>
+            <text x="${sx.toFixed(1)}" y="${(sy+8).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7" fill="#8b949e">${ap}</text></g>`;
+        });
+        const pctProg=m.totPases>0?Math.round((m.totProg/m.totPases)*100):0;
+        return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+            <span style="font-size:13px;font-weight:700;color:${color}">${label}</span>
+            <span style="font-size:12px;color:var(--text2)">${m.totPases} pases</span>
+            <span style="font-size:12px;color:var(--green)">↑${pctProg}%</span>
+            <span style="font-size:11px;color:var(--text3);margin-left:auto">${m.tits.length} jugadores</span>
+          </div>
+          <svg viewBox="0 0 ${MW} ${MH}" style="width:100%;display:block">
+            <rect x="${MMX}" y="${MMY}" width="${MPW}" height="${MPH}" fill="#0d1a0d" stroke="#1e3a1e" stroke-width="1.5"/>
+            <line x1="${MW/2}" y1="${MMY}" x2="${MW/2}" y2="${MH-MMY}" stroke="#1e3a1e" stroke-width="0.8"/>
+            <circle cx="${MW/2}" cy="${MH/2}" r="${(MPH*9.15/68).toFixed(0)}" fill="none" stroke="#1e3a1e" stroke-width="0.8"/>
+            <rect x="${MMX}" y="${(MMY+MPH*(68-40.32)/2/68).toFixed(1)}" width="${(MPW*16.5/105).toFixed(1)}" height="${(MPH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.6"/>
+            <rect x="${(MW-MMX-MPW*16.5/105).toFixed(1)}" y="${(MMY+MPH*(68-40.32)/2/68).toFixed(1)}" width="${(MPW*16.5/105).toFixed(1)}" height="${(MPH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.6"/>
+            <text x="${MMX+6}" y="${MH-MMY+18}" font-size="9" fill="#2a4a2a">← Def.</text>
+            <text x="${MW-MMX-6}" y="${MH-MMY+18}" text-anchor="end" font-size="9" fill="#2a4a2a">Ata. →</text>
+            ${lin}${nod}
+          </svg>
+        </div>`;
+      }
+
+      function zoneLabel(x){return x<-17.5?'Zona 1 — Defensiva':x<17.5?'Zona 2 — Medio':'Zona 3 — Ataque';}
+      function shortConn(c){if(!c) return '—';const[fr,to]=c[0].split('|');return `${fr.split(' ').slice(-1)[0]} → ${to.split(' ').slice(-1)[0]} (×${c[1]})`;}
+      function shortName(n){return n?n.split(' ').slice(-1)[0]:'—';}
+
+      const cmpRows=[
+        {label:'Pases completados',  v1:m1.totPases,  v2:m2.totPases,  num:true},
+        {label:'Pases progresivos',  v1:m1.totProg,   v2:m2.totProg,   num:true},
+        {label:'% Progresivos',      v1:m1.totPases?Math.round(m1.totProg/m1.totPases*100):0, v2:m2.totPases?Math.round(m2.totProg/m2.totPases*100):0, num:true, suf:'%'},
+        {label:'Jugador más central',v1:shortName(m1.topCentral), v2:shortName(m2.topCentral), num:false},
+        {label:'Top conexión',       v1:shortConn(m1.topConn),    v2:shortConn(m2.topConn),    num:false},
+        {label:'Zona media',         v1:zoneLabel(m1.avgX),       v2:zoneLabel(m2.avgX),       num:false},
+      ];
+
+      const cmpHTML=cmpRows.map(({label,v1,v2,num,suf=''})=>{
+        const w1=num&&v1>v2,w2=num&&v2>v1;
+        const fmt=(v)=>num?`<span style="font-family:'Bebas Neue',sans-serif;font-size:20px">${v}${suf}</span>`:`<span style="font-size:12px">${v}</span>`;
+        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+          <td style="padding:10px 16px;text-align:right;color:${w1?'var(--accent)':'var(--text2)'}">${fmt(v1)}</td>
+          <td style="padding:10px 16px;text-align:center;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);border-left:1px solid var(--border);border-right:1px solid var(--border);white-space:nowrap">${label}</td>
+          <td style="padding:10px 16px;text-align:left;color:${w2?'var(--green)':'var(--text2)'}">${fmt(v2)}</td>
+        </tr>`;
+      }).join('');
+
+      const rival=partido.local==='Pontevedra CF'?partido.vis:partido.local;
+      const lugar=partido.local==='Pontevedra CF'?'🏠':'✈️';
+
+      cont.innerHTML=`
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+          <div><div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · 1ª vs 2ª Parte</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">Pontevedra CF vs ${rival}</div></div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+          ${miniNet(m1,'⚽ 1ª Parte','#c8a96e')}
+          ${miniNet(m2,'⚽ 2ª Parte','#58a6ff')}
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="border-bottom:2px solid var(--border)">
+              <th style="padding:10px 16px;text-align:right;font-size:12px;color:var(--accent);font-weight:700;width:35%">1ª Parte</th>
+              <th style="padding:10px 16px;text-align:center;font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;border-left:1px solid var(--border);border-right:1px solid var(--border)">MÉTRICA</th>
+              <th style="padding:10px 16px;text-align:left;font-size:12px;color:var(--blue);font-weight:700;width:35%">2ª Parte</th>
+            </tr></thead>
+            <tbody>${cmpHTML}</tbody>
+          </table>
         </div>`;
     } catch(e){
       cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
