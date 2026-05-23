@@ -144,8 +144,9 @@
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdydmNqdXd6ZGV3ZWJ4YWJsd3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTM0NzgsImV4cCI6MjA5NTAyOTQ3OH0.KPbDShmdsjH0VaJ9kggF34FZ-IiAKZ61qcPxNi6w6Rk';
 
   let currentTeam = { id:2908, name:'Pontevedra CF', escudo:'https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png' };
-  let redMatchId  = null;
-  let redSubTab   = '1parte';
+  let redMatchId    = null;
+  let redPrimaryTab = 'equipo';
+  let redSubTab     = '1parte';
 
   const PARTIDOS = [
     {j:'J1',  f:'30/08/2025', local:'Pontevedra CF',    vis:'Cacereño',        id:2040850, s:'1-1'},
@@ -215,12 +216,20 @@
       return `<option value="${p.id}" ${p.id==redMatchId?'selected':''}>${s} ${p.j} · ${rival} · ${p.s} · ${p.f}</option>`;
     }).join('');
 
+    const ptBtn=(id,label)=>{
+      const active=redPrimaryTab===id;
+      return `<button onclick="setPrimaryTab('${id}')" style="background:transparent;border:none;border-bottom:2px solid ${active?'var(--accent)':'transparent'};color:${active?'var(--accent)':'var(--text2)'};padding:10px 22px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${label}</button>`;
+    };
+
     document.getElementById('content').innerHTML = `<div class="anim">${head()}
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
         <select id="matchSel" onchange="redMatchId=parseInt(this.value);renderRedTab()"
           style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;flex:1;min-width:280px">
           <option value="">— Selecciona un partido —</option>${matchOpts}
         </select>
+      </div>
+      <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">
+        ${ptBtn('equipo','Equipo')}
       </div>
       <div style="display:flex;gap:4px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content">
         <button id="st-1parte" class="subtab ${redSubTab==='1parte'?'active':''}" onclick="setSubTab('1parte')">⚽ 1ª Parte</button>
@@ -233,6 +242,11 @@
       </div></div>`;
 
     if(redMatchId) renderRedTab();
+  }
+
+  function setPrimaryTab(tab) {
+    redPrimaryTab = tab;
+    loadRedPases();
   }
 
   function setSubTab(tab) {
