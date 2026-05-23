@@ -1125,23 +1125,24 @@
         const assocField=(playerName,tierId)=>{
           const p=posM[playerName]; if(!p) return null;
           const {sx:px,sy:py}=sv(p.x,p.y);
-          // Usar pases direccionales (igual que Mapa de Pases) coloreados por tipo
+          // Mismo estilo que Mapa de Pases (pases direccionales, coloreados por tipo)
           const passes=playerPasses[playerName]||{};
           const maxT=Math.max(1,...Object.values(passes).map(v=>v.total));
           let lin='',dots='';
-          // Dibujar de menor a mayor (los más fuertes encima)
           Object.entries(passes).sort((a,b)=>a[1].total-b[1].total).forEach(([tgt,cnts])=>{
             const tp=posM[tgt]; if(!tp) return;
             const {sx:tx,sy:ty}=sv(tp.x,tp.y);
             const n=cnts.total, op=0.22+(n/maxT)*0.62, sw=0.7+(n/maxT)*3.8;
             const col=cnts.prog/n>0.35?'#3fb950':cnts.back/n>0.45?'#8b949e':'#c8a96e';
+            // Línea igual que Mapa de Pases
             lin+=`<line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${tx.toFixed(1)}" y2="${ty.toFixed(1)}" stroke="${col}" stroke-width="${sw.toFixed(1)}" stroke-opacity="${op.toFixed(2)}" stroke-linecap="round"/>`;
-            // Círculo con dorsal del compañero
-            const dorsal=PLAYER_DORSALES[idMap[tgt]];
+            // Punto igual que Mapa de Pases
             const dop=(0.4+(n/maxT)*0.6).toFixed(2);
-            dots+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="6" fill="#0d1a0d" fill-opacity="0.92" stroke="${col}" stroke-width="1.2" stroke-opacity="${dop}"/>`;
+            dots+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="3" fill="${col}" fill-opacity="0.2" stroke="${col}" stroke-width="1.2" stroke-opacity="${dop}"/>`;
+            // Dorsal encima del punto (sin fondo oscuro)
+            const dorsal=PLAYER_DORSALES[idMap[tgt]];
             if(dorsal!=null){
-              dots+=`<text x="${tx.toFixed(1)}" y="${(ty+2.5).toFixed(1)}" fill="${col}" font-size="6.5" font-family="'DM Mono',monospace" font-weight="700" text-anchor="middle" opacity="${dop}">${dorsal}</text>`;
+              dots+=`<text x="${tx.toFixed(1)}" y="${(ty-5).toFixed(1)}" fill="${col}" font-size="6" font-family="'DM Mono',monospace" font-weight="700" text-anchor="middle" opacity="${dop}">${dorsal}</text>`;
             }
           });
           const tc=TIER_COL[tierId]||'#c8a96e';
