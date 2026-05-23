@@ -913,7 +913,7 @@
 
   // ── barra de subtabs de Jugadores ──────────────────────────────────────────
   function jugSubTabBar() {
-    const tabs=[['mapa','🗺️ Mapa de Pases'],['asoc','🤝 Asociaciones'],['telarana','🕸️ Telaraña']];
+    const tabs=[['mapa','🗺️ Mapa de Pases'],['asoc','🤝 Asociaciones'],['telarana','🕸️ Telaraña'],['metricas','📊 Métricas']];
     return `<div style="display:flex;gap:2px;margin-bottom:20px;border-bottom:1px solid var(--border)">
       ${tabs.map(([id,lbl])=>`<button onclick="setJugSubTab('${id}')" style="background:transparent;border:none;border-bottom:2px solid ${jugSubTab===id?'var(--accent)':'transparent'};color:${jugSubTab===id?'var(--accent)':'var(--text2)'};padding:10px 20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${lbl}</button>`).join('')}
     </div>`;
@@ -955,9 +955,10 @@
         else { const pos=(playerMap[n]||'').toUpperCase().trim(); posM[n]=GK_POS.includes(pos)?{x:-47,y:0}:null; }
       });
 
-      // Pases con info progresivo/atrás
-      const {data:passData}=await sbGet('eventos',`select=player_name,player_targeted_name,x_start,x_end&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&limit=5000`);
+      // Pases con info progresivo/atrás + métricas extendidas
+      const {data:passData}=await sbGet('eventos',`select=player_name,player_targeted_name,x_start,y_start,x_end,y_end&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&limit=5000`);
       const playerPasses={},playerTotal={},playerProg={},playerRecv={};
+      const playerFT={},playerDistSum={},playerDistN={};
       passData.forEach(e=>{
         if(!allPlayersSet.has(e.player_name)||!allPlayersSet.has(e.player_targeted_name)||e.player_name===e.player_targeted_name) return;
         if(!playerPasses[e.player_name]) playerPasses[e.player_name]={};
@@ -969,6 +970,14 @@
         const dx=e.x_end!=null&&e.x_start!=null?e.x_end-e.x_start:0;
         if(dx>9){ playerPasses[e.player_name][k].prog++; playerProg[e.player_name]=(playerProg[e.player_name]||0)+1; }
         if(dx<-5) playerPasses[e.player_name][k].back++;
+        // Último tercio (x_end > 17.5m desde centro = último tercio rival)
+        if(e.x_end!=null&&e.x_end>17.5) playerFT[e.player_name]=(playerFT[e.player_name]||0)+1;
+        // Distancia euclidiana del pase
+        if(e.x_start!=null&&e.y_start!=null&&e.x_end!=null&&e.y_end!=null){
+          const d=Math.sqrt((e.x_end-e.x_start)**2+(e.y_end-e.y_start)**2);
+          playerDistSum[e.player_name]=(playerDistSum[e.player_name]||0)+d;
+          playerDistN[e.player_name]=(playerDistN[e.player_name]||0)+1;
+        }
       });
 
       // Clasificación por línea
@@ -1263,6 +1272,98 @@
         html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
           <svg viewBox="0 0 ${TW} ${TH}" style="width:100%;display:block">${tField}${tLines}${tNodes}</svg>
         </div>`;
+
+      } else if(jugSubTab==='metricas'){
+        // ── MÉTRICAS ─────────────────────────────────────────────────────────────
+        // Conexiones únicas y bilateral total por jugador
+        const playerConn={}, playerBilat={};
+        allPlayers.forEach(a=>{
+          playerConn[a]=Object.keys(playerPasses[a]||{}).length;
+          let bil=0;
+          allPlayers.forEach(b=>{
+            if(b===a) return;
+            bil+=((playerPasses[a]?.[b]?.total)||0)+((playerPasses[b]?.[a]?.total)||0);
+          });
+          playerBilat[a]=Math.round(bil/2); // cada par contado 1 vez
+        });
+
+        // Construcción tabla por línea
+        const metRows=sorted.map(({name,pos,id,tier})=>({
+          name, pos, id, tier,
+          total : playerTotal[name]||0,
+          recv  : playerRecv[name]||0,
+          prog  : playerProg[name]||0,
+          ft    : playerFT[name]||0,
+          dist  : playerDistN[name]>0 ? +(playerDistSum[name]/playerDistN[name]).toFixed(1) : 0,
+          conn  : playerConn[name]||0,
+          bilat : playerBilat[name]||0,
+        }));
+
+        html=matchHeader('📊 Métricas por jugador',
+          `<div style="display:flex;gap:16px;font-size:10px;color:var(--text3);flex-wrap:wrap">
+            <span>ENV = Pases enviados</span><span>REC = Recibidos</span>
+            <span>PROG = Progresivos</span><span>ÚLT⅓ = Al último tercio</span>
+            <span>DIST = Distancia media</span><span>CONEX = Conexiones únicas</span><span>BILAT = Pases bilaterales</span>
+          </div>`);
+
+        for(let t=0;t<=3;t++){
+          const tp=metRows.filter(p=>p.tier===t); if(!tp.length) continue;
+          const bo=TIER_BO[t], tc=TIER_COL[t];
+          // Máximos por línea para normalizar barras
+          const mx={
+            total:Math.max(1,...tp.map(p=>p.total)), recv:Math.max(1,...tp.map(p=>p.recv)),
+            prog:Math.max(1,...tp.map(p=>p.prog)),   ft:Math.max(1,...tp.map(p=>p.ft)),
+            dist:Math.max(1,...tp.map(p=>p.dist)),   conn:Math.max(1,...tp.map(p=>p.conn)),
+            bilat:Math.max(1,...tp.map(p=>p.bilat)),
+          };
+          const bar=(v,m)=>`<div style="height:2px;background:var(--bg4);border-radius:1px;margin-top:4px"><div style="height:2px;width:${Math.round(v/m*100)}%;background:${tc};border-radius:1px"></div></div>`;
+          const cell=(v,m,unit='')=>`<td style="padding:9px 14px;text-align:right;border-right:1px solid ${bo};vertical-align:top">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:${tc};line-height:1">${v}${unit?`<span style="font-size:9px;color:var(--text3);font-family:'DM Sans',sans-serif;margin-left:1px">${unit}</span>`:''}</div>
+              ${bar(v,m)}
+            </td>`;
+
+          const thStyle=`padding:8px 14px;text-align:right;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:600;font-family:'DM Mono',monospace;border-right:1px solid ${bo};white-space:nowrap`;
+          const thead=`<tr style="border-bottom:1px solid ${bo};background:var(--bg)">
+            <th style="${thStyle.replace('text-align:right','text-align:left')}">JUGADOR</th>
+            <th style="${thStyle}">ENV.</th><th style="${thStyle}">REC.</th>
+            <th style="${thStyle}">PROG.</th><th style="${thStyle}">ÚLT⅓</th>
+            <th style="${thStyle}">DIST.</th><th style="${thStyle}">CONEX.</th>
+            <th style="padding:8px 14px;text-align:right;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:600;font-family:'DM Mono',monospace;white-space:nowrap">BILAT.</th>
+          </tr>`;
+
+          const rows=tp.sort((a,b)=>b.total-a.total).map((p,i)=>{
+            const dorsal=p.id&&PLAYER_DORSALES[p.id];
+            return `<tr style="border-bottom:1px solid ${bo};transition:background 0.12s" onmouseenter="this.style.background='rgba(255,255,255,0.03)'" onmouseleave="this.style.background=''">
+              <td style="padding:9px 14px;border-right:1px solid ${bo};white-space:nowrap">
+                <div style="display:flex;align-items:center;gap:8px">
+                  ${dorsal?`<span style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:${tc};opacity:0.65;min-width:18px;text-align:right;flex-shrink:0">${dorsal}</span>`:''}
+                  <span style="color:${tc};font-size:8px;font-weight:700;background:rgba(0,0,0,0.3);border:1px solid ${bo};padding:2px 5px;border-radius:3px;letter-spacing:0.8px;font-family:'DM Mono',monospace;flex-shrink:0">${p.pos}</span>
+                  <span style="font-size:12px;font-weight:600;color:var(--text)">${dispN(p.name)}</span>
+                </div>
+              </td>
+              ${cell(p.total,mx.total)}${cell(p.recv,mx.recv)}
+              ${cell(p.prog,mx.prog)}${cell(p.ft,mx.ft)}
+              ${cell(p.dist,mx.dist,'m')}${cell(p.conn,mx.conn)}
+              <td style="padding:9px 14px;text-align:right;vertical-align:top">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:${tc};line-height:1">${p.bilat}</div>
+                ${bar(p.bilat,mx.bilat)}
+              </td>
+            </tr>`;
+          }).join('');
+
+          html+=`<div style="margin-bottom:28px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid ${bo}">
+              <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;color:${tc}">${TIER_LABEL[t]}</div>
+              <div style="font-size:11px;color:var(--text3)">${tp.length} jugador${tp.length>1?'es':''}</div>
+            </div>
+            <div style="background:var(--bg2);border:1px solid ${bo};border-radius:var(--radius);overflow:hidden">
+              <table style="width:100%;border-collapse:collapse">
+                <thead>${thead}</thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+          </div>`;
+        }
       }
 
       cont.innerHTML=jugSubTabBar()+html;
