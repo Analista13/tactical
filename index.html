@@ -536,9 +536,9 @@
         {label:'Carril derecho',    n:zones[0][0]+zones[1][0]+zones[2][0]},
       ];
       const thirds=[
-        {label:'Tercio defensivo',  n:zones[0][0]+zones[0][1]+zones[0][2]},
-        {label:'Tercio medio',      n:zones[1][0]+zones[1][1]+zones[1][2]},
-        {label:'Tercio ofensivo',   n:zones[2][0]+zones[2][1]+zones[2][2]},
+        {label:'Zona 1 (defensiva)', n:zones[0][0]+zones[0][1]+zones[0][2]},
+        {label:'Zona 2 (media)',     n:zones[1][0]+zones[1][1]+zones[1][2]},
+        {label:'Zona 3 (ofensiva)', n:zones[2][0]+zones[2][1]+zones[2][2]},
       ];
       const bar=(n,color)=>`<div style="flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden"><div style="width:${((n/total)*100).toFixed(1)}%;height:100%;background:${color};border-radius:4px"></div></div>`;
       const corrHTML=corr.map(({label,n})=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
