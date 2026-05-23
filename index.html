@@ -531,9 +531,9 @@
 
       // Resumen corredores
       const corr=[
-        {label:'Izquierda (y>11)',  n:zones[0][2]+zones[1][2]+zones[2][2]},
-        {label:'Centro',            n:zones[0][1]+zones[1][1]+zones[2][1]},
-        {label:'Derecha (y<-11)',   n:zones[0][0]+zones[1][0]+zones[2][0]},
+        {label:'Carril izquierdo',  n:zones[0][2]+zones[1][2]+zones[2][2]},
+        {label:'Carril central',    n:zones[0][1]+zones[1][1]+zones[2][1]},
+        {label:'Carril derecho',    n:zones[0][0]+zones[1][0]+zones[2][0]},
       ];
       const thirds=[
         {label:'Tercio defensivo',  n:zones[0][0]+zones[0][1]+zones[0][2]},
@@ -577,7 +577,7 @@
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px">
-            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:14px">Por corredor</div>
+            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:14px">Por carril</div>
             ${corrHTML}
           </div>
           <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px">
