@@ -147,6 +147,7 @@
   let redMatchId    = null;
   let redPrimaryTab = 'equipo';
   let redSubTab     = '1parte';
+  let jugSubTab     = 'mapa';
 
   const PARTIDOS = [
     {j:'J1',  f:'30/08/2025', local:'Pontevedra CF',    vis:'Cacereño',        id:2040850, s:'1-1'},
@@ -284,6 +285,11 @@
     document.querySelectorAll('.subtab').forEach(b=>b.classList.remove('active'));
     document.getElementById('st-'+tab)?.classList.add('active');
     if(redMatchId) renderRedTab();
+  }
+
+  function setJugSubTab(tab) {
+    jugSubTab=tab;
+    renderJugadores();
   }
 
   function renderRedTab() {
@@ -887,6 +893,14 @@
     }
   }
 
+  // ── barra de subtabs de Jugadores ──────────────────────────────────────────
+  function jugSubTabBar() {
+    const tabs=[['mapa','🗺️ Mapa de Pases'],['asoc','🤝 Asociaciones']];
+    return `<div style="display:flex;gap:2px;margin-bottom:20px;border-bottom:1px solid var(--border)">
+      ${tabs.map(([id,lbl])=>`<button onclick="setJugSubTab('${id}')" style="background:transparent;border:none;border-bottom:2px solid ${jugSubTab===id?'var(--accent)':'transparent'};color:${jugSubTab===id?'var(--accent)':'var(--text2)'};padding:10px 20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${lbl}</button>`).join('')}
+    </div>`;
+  }
+
   async function renderJugadores() {
     const tid=currentTeam.id, mid=redMatchId;
     const cont=document.getElementById('redCont');
@@ -895,7 +909,7 @@
       cont.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>`;
       return;
     }
-    cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando red por jugador...</span></div>`;
+    cont.innerHTML=`${jugSubTabBar()}<div class="loading"><div class="spinner"></div><span>Cargando datos...</span></div>`;
     const partido=PARTIDOS.find(p=>p.id==mid);
     try {
       const lineup=await getLineup(mid,tid);
@@ -967,107 +981,187 @@
       const TIER_BO=['rgba(200,169,110,0.2)','rgba(88,166,255,0.2)','rgba(63,185,80,0.2)','rgba(248,81,73,0.2)'];
       const TIER_LABEL=['🧤 Portero','🛡️ Defensas','⚙️ Centrocampistas','⚡ Delanteros'];
 
-      // Mini campo SVG (260×170)
+      // ── Helpers SVG compartidos ─────────────────────────────────────────────
       const W=260,H=170,MX=20,MY=14,PW=W-MX*2,PH=H-MY*2;
       const sv=(x,y)=>({sx:MX+((x+52.5)/105)*PW,sy:MY+((34-y)/68)*PH});
-
-      function miniField(playerName, tierId){
-        const p=posM[playerName];
-        if(!p) return null;
-        const {sx:px,sy:py}=sv(p.x,p.y);
-        const passes=playerPasses[playerName]||{};
-        const maxTotal=Math.max(1,...Object.values(passes).map(v=>v.total));
-        let lines='',tdots='';
-        // Dibujar menos importantes primero (z-order: gruesos encima)
-        Object.entries(passes).sort((a,b)=>a[1].total-b[1].total).forEach(([target,cnts])=>{
-          const tp=posM[target];
-          if(!tp) return;
-          const {sx:tx,sy:ty}=sv(tp.x,tp.y);
-          const n=cnts.total, op=0.22+(n/maxTotal)*0.62, sw=0.7+(n/maxTotal)*3.8;
-          // Verde=progresivo, Gris=atrás, Dorado=lateral
-          let col='#c8a96e';
-          if(cnts.prog/n>0.35) col='#3fb950';
-          else if(cnts.back/n>0.45) col='#8b949e';
-          lines+=`<line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${tx.toFixed(1)}" y2="${ty.toFixed(1)}" stroke="${col}" stroke-width="${sw.toFixed(1)}" stroke-opacity="${op.toFixed(2)}" stroke-linecap="round"/>`;
-          const dop=(0.4+(n/maxTotal)*0.6).toFixed(2);
-          tdots+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="3" fill="${col}" fill-opacity="0.2" stroke="${col}" stroke-width="1.2" stroke-opacity="${dop}"/>`;
-        });
-        const tc=TIER_COL[tierId]||'#c8a96e';
-        // Campo base
-        const fieldSvg=`<rect x="${MX}" y="${MY}" width="${PW}" height="${PH}" fill="#0a1a0a" stroke="#1a3a1a" stroke-width="1"/>
-          <line x1="${(W/2).toFixed(1)}" y1="${MY}" x2="${(W/2).toFixed(1)}" y2="${H-MY}" stroke="#1a3a1a" stroke-width="0.8"/>
-          <circle cx="${(W/2).toFixed(1)}" cy="${(H/2).toFixed(1)}" r="${(PH*9.15/68).toFixed(0)}" fill="none" stroke="#1a3a1a" stroke-width="0.8"/>
-          <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.6"/>
-          <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.6"/>
-          <rect x="${MX}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.4"/>
-          <rect x="${(W-MX-PW*5.5/105).toFixed(1)}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.4"/>`;
-        return `${fieldSvg}${lines}${tdots}
-          <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="8" fill="${tc}" fill-opacity="0.15" stroke="${tc}" stroke-width="0" />
-          <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="5.5" fill="${tc}" fill-opacity="0.25" stroke="${tc}" stroke-width="2"/>
-          <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="2.5" fill="${tc}" fill-opacity="0.95"/>`;
-      }
-
       const rival=partido.local==='Pontevedra CF'?partido.vis:partido.local;
       const lugar=partido.local==='Pontevedra CF'?'🏠':'✈️';
 
-      let html=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
-        <div>
-          <div style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · Mapa de pases individual</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px">Pontevedra CF <span style="color:var(--text3);font-size:16px">vs</span> ${rival}</div>
-        </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:4px;color:var(--accent)">${partido.s}</div>
-        <div style="margin-left:auto;display:flex;gap:18px;font-size:11px;color:var(--text2);align-items:center;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:5px"><div style="width:18px;height:3px;background:#3fb950;border-radius:2px"></div>Progresivo</div>
-          <div style="display:flex;align-items:center;gap:5px"><div style="width:18px;height:3px;background:#c8a96e;border-radius:2px"></div>Lateral</div>
-          <div style="display:flex;align-items:center;gap:5px"><div style="width:18px;height:3px;background:#8b949e;border-radius:2px"></div>Atrás</div>
-        </div>
-      </div>`;
+      const fieldBase=()=>`<rect x="${MX}" y="${MY}" width="${PW}" height="${PH}" fill="#0a1a0a" stroke="#1a3a1a" stroke-width="1"/>
+        <line x1="${(W/2).toFixed(1)}" y1="${MY}" x2="${(W/2).toFixed(1)}" y2="${H-MY}" stroke="#1a3a1a" stroke-width="0.8"/>
+        <circle cx="${(W/2).toFixed(1)}" cy="${(H/2).toFixed(1)}" r="${(PH*9.15/68).toFixed(0)}" fill="none" stroke="#1a3a1a" stroke-width="0.8"/>
+        <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.6"/>
+        <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.6"/>
+        <rect x="${MX}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.4"/>
+        <rect x="${(W-MX-PW*5.5/105).toFixed(1)}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.4"/>`;
 
-      for(let tierId=0;tierId<=3;tierId++){
-        const tierPlayers=sorted.filter(p=>p.tier===tierId&&posM[p.name]);
-        if(!tierPlayers.length) continue;
+      const playerDot=(px,py,tc)=>`
+        <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="8" fill="${tc}" fill-opacity="0.15" stroke="${tc}" stroke-width="0"/>
+        <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="5.5" fill="${tc}" fill-opacity="0.25" stroke="${tc}" stroke-width="2"/>
+        <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="2.5" fill="${tc}" fill-opacity="0.95"/>`;
+
+      const cardHeader=(pos,dispName,tc,bo,bg,extra='')=>
+        `<div style="padding:9px 12px 8px;border-bottom:1px solid ${bo};display:flex;align-items:center;gap:8px;background:${bg}">
+          <span style="color:${tc};font-size:9px;font-weight:700;background:rgba(0,0,0,0.25);border:1px solid ${bo};padding:2px 7px;border-radius:4px;flex-shrink:0;letter-spacing:0.8px;font-family:'DM Mono',monospace">${pos}</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${dispName}</span>
+          ${extra}
+        </div>`;
+
+      const matchHeader=(subtitle,legend='')=>
+        `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
+          <div>
+            <div style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · ${subtitle}</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px">Pontevedra CF <span style="color:var(--text3);font-size:16px">vs</span> ${rival}</div>
+          </div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:4px;color:var(--accent)">${partido.s}</div>
+          ${legend?`<div style="margin-left:auto;display:flex;gap:18px;font-size:11px;color:var(--text2);align-items:center;flex-wrap:wrap">${legend}</div>`:''}
+        </div>`;
+
+      const tierSection=(tierId,players,content)=>{
         const tc=TIER_COL[tierId], bo=TIER_BO[tierId];
-        html+=`<div style="margin-bottom:32px">
+        return `<div style="margin-bottom:32px">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid ${bo}">
             <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;color:${tc}">${TIER_LABEL[tierId]}</div>
-            <div style="font-size:11px;color:var(--text3);font-weight:400">${tierPlayers.length} jugador${tierPlayers.length>1?'es':''}</div>
+            <div style="font-size:11px;color:var(--text3);font-weight:400">${players} jugador${players>1?'es':''}</div>
           </div>
-          <div style="display:flex;flex-wrap:wrap;gap:16px">`;
-        tierPlayers.forEach(({name,pos,total})=>{
-          const fieldContent=miniField(name, tierId);
-          if(!fieldContent) return;
-          const parts=name.split(' ');
-          const dispName=name.length>20?(parts.length>1?parts[parts.length-1]:name.substring(0,18)):name;
-          const recv=playerRecv[name]||0;
-          const prog=playerProg[name]||0;
-          const progPct=total>0?Math.round((prog/total)*100):0;
-          const bg=TIER_BG[tierId];
-          html+=`<div style="background:var(--bg2);border:1px solid ${bo};border-radius:var(--radius);overflow:hidden;width:260px;flex-shrink:0;transition:transform 0.18s,box-shadow 0.18s" onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 24px rgba(0,0,0,0.35)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
-            <div style="padding:9px 12px 8px;border-bottom:1px solid ${bo};display:flex;align-items:center;gap:8px;background:${bg}">
-              <span style="color:${tc};font-size:9px;font-weight:700;background:rgba(0,0,0,0.25);border:1px solid ${bo};padding:2px 7px;border-radius:4px;flex-shrink:0;letter-spacing:0.8px;font-family:'DM Mono',monospace">${pos}</span>
-              <span style="font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${dispName}</span>
-            </div>
-            <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${fieldContent}</svg>
-            <div style="padding:8px 12px;border-top:1px solid ${bo};display:grid;grid-template-columns:1fr 1fr 1fr;text-align:center;background:var(--bg)">
-              <div style="padding:4px 0;border-right:1px solid ${bo}">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${tc};line-height:1.1">${total}</div>
-                <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-top:1px">Enviados</div>
+          <div style="display:flex;flex-wrap:wrap;gap:16px">${content}</div>
+        </div>`;
+      };
+
+      const dispN=n=>{const p=n.split(' ');return n.length>20?(p.length>1?p[p.length-1]:n.substring(0,18)):n;};
+
+      // ── ROUTING: Mapa de Pases vs Asociaciones ──────────────────────────────
+      let html='';
+
+      if(jugSubTab==='mapa'){
+        // ── MAPA DE PASES ───────────────────────────────────────────────────────
+        const legend=`
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:18px;height:3px;background:#3fb950;border-radius:2px"></div>Progresivo</div>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:18px;height:3px;background:#c8a96e;border-radius:2px"></div>Lateral</div>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:18px;height:3px;background:#8b949e;border-radius:2px"></div>Atrás</div>`;
+        html=matchHeader('Mapa de pases individual',legend);
+
+        const miniField=(playerName,tierId)=>{
+          const p=posM[playerName]; if(!p) return null;
+          const {sx:px,sy:py}=sv(p.x,p.y);
+          const passes=playerPasses[playerName]||{};
+          const maxT=Math.max(1,...Object.values(passes).map(v=>v.total));
+          let lin='',dots='';
+          Object.entries(passes).sort((a,b)=>a[1].total-b[1].total).forEach(([tgt,cnts])=>{
+            const tp=posM[tgt]; if(!tp) return;
+            const {sx:tx,sy:ty}=sv(tp.x,tp.y);
+            const n=cnts.total, op=0.22+(n/maxT)*0.62, sw=0.7+(n/maxT)*3.8;
+            const col=cnts.prog/n>0.35?'#3fb950':cnts.back/n>0.45?'#8b949e':'#c8a96e';
+            lin+=`<line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${tx.toFixed(1)}" y2="${ty.toFixed(1)}" stroke="${col}" stroke-width="${sw.toFixed(1)}" stroke-opacity="${op.toFixed(2)}" stroke-linecap="round"/>`;
+            dots+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="3" fill="${col}" fill-opacity="0.2" stroke="${col}" stroke-width="1.2" stroke-opacity="${(0.4+(n/maxT)*0.6).toFixed(2)}"/>`;
+          });
+          return `${fieldBase()}${lin}${dots}${playerDot(px,py,TIER_COL[tierId]||'#c8a96e')}`;
+        };
+
+        for(let t=0;t<=3;t++){
+          const tp=sorted.filter(p=>p.tier===t&&posM[p.name]); if(!tp.length) continue;
+          const bo=TIER_BO[t]; let cards='';
+          tp.forEach(({name,pos,total})=>{
+            const fc=miniField(name,t); if(!fc) return;
+            const recv=playerRecv[name]||0, prog=playerProg[name]||0;
+            const progPct=total>0?Math.round((prog/total)*100):0;
+            cards+=`<div style="background:var(--bg2);border:1px solid ${bo};border-radius:var(--radius);overflow:hidden;width:260px;flex-shrink:0;transition:transform 0.18s,box-shadow 0.18s" onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 24px rgba(0,0,0,0.35)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
+              ${cardHeader(pos,dispN(name),TIER_COL[t],bo,TIER_BG[t])}
+              <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${fc}</svg>
+              <div style="padding:8px 12px;border-top:1px solid ${bo};display:grid;grid-template-columns:1fr 1fr 1fr;text-align:center;background:var(--bg)">
+                <div style="padding:4px 0;border-right:1px solid ${bo}">
+                  <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${TIER_COL[t]};line-height:1.1">${total}</div>
+                  <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-top:1px">Enviados</div>
+                </div>
+                <div style="padding:4px 0;border-right:1px solid ${bo}">
+                  <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text2);line-height:1.1">${recv}</div>
+                  <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-top:1px">Recibidos</div>
+                </div>
+                <div style="padding:4px 0">
+                  <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#3fb950;line-height:1.1">${progPct}<span style="font-size:10px;font-family:'DM Sans',sans-serif;color:var(--text3)">%</span></div>
+                  <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-top:1px">Progresivos</div>
+                </div>
               </div>
-              <div style="padding:4px 0;border-right:1px solid ${bo}">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text2);line-height:1.1">${recv}</div>
-                <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-top:1px">Recibidos</div>
-              </div>
-              <div style="padding:4px 0">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#3fb950;line-height:1.1">${progPct}<span style="font-size:10px;font-family:'DM Sans',sans-serif;color:var(--text3)">%</span></div>
-                <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-top:1px">Progresivos</div>
-              </div>
-            </div>
-          </div>`;
-        });
-        html+=`</div></div>`;
+            </div>`;
+          });
+          html+=tierSection(t,tp.length,cards);
+        }
+
+      } else {
+        // ── ASOCIACIONES ────────────────────────────────────────────────────────
+        // Pases bidireccionales A↔B = A→B + B→A
+        const assocM={};
+        allPlayers.forEach(a=>allPlayers.forEach(b=>{
+          if(a===b) return;
+          const tot=((playerPasses[a]?.[b]?.total)||0)+((playerPasses[b]?.[a]?.total)||0);
+          if(!tot) return;
+          if(!assocM[a]) assocM[a]={};
+          assocM[a][b]=tot;
+        }));
+
+        const RCOL=['#f0c040','#b0b8c8','#cd8c5c','rgba(200,169,110,0.3)','rgba(200,169,110,0.15)'];
+
+        const assocField=(playerName,tierId)=>{
+          const p=posM[playerName]; if(!p) return null;
+          const {sx:px,sy:py}=sv(p.x,p.y);
+          const top5=Object.entries(assocM[playerName]||{}).sort((a,b)=>b[1]-a[1]).slice(0,5);
+          let lin='',dots='',lbls='';
+          top5.forEach(([tgt,cnt],idx)=>{
+            const tp=posM[tgt]; if(!tp) return;
+            const {sx:tx,sy:ty}=sv(tp.x,tp.y);
+            const col=RCOL[Math.min(idx,4)];
+            const op=idx===0?0.9:idx===1?0.72:idx===2?0.55:0.2;
+            const sw=idx===0?4.5:idx===1?3:idx===2?1.8:0.8;
+            lin+=`<line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${tx.toFixed(1)}" y2="${ty.toFixed(1)}" stroke="${col}" stroke-width="${sw}" stroke-opacity="${op}" stroke-linecap="round"/>`;
+            const dr=idx<3?4.5:2.5;
+            dots+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${dr}" fill="${col}" fill-opacity="${idx<3?0.3:0.08}" stroke="${col}" stroke-width="${idx<3?1.8:0.8}" stroke-opacity="${op}"/>`;
+            if(idx<3){
+              // Número de rango a mitad de la línea, ligeramente desplazado
+              const lx=((tx*0.65+px*0.35)).toFixed(1);
+              const ly=((ty*0.65+py*0.35)-5).toFixed(1);
+              lbls+=`<text x="${lx}" y="${ly}" fill="${col}" font-size="8" font-family="'DM Mono',monospace" font-weight="700" text-anchor="middle" opacity="0.95">${idx+1}</text>`;
+            }
+          });
+          const tc=TIER_COL[tierId]||'#c8a96e';
+          return `${fieldBase()}${lin}${dots}${lbls}${playerDot(px,py,tc)}`;
+        };
+
+        html=matchHeader('Asociaciones clave por jugador',
+          `<div style="display:flex;align-items:center;gap:5px"><div style="width:18px;height:3px;background:#f0c040;border-radius:2px"></div>#1 · Mayor dupla</div>
+           <div style="display:flex;align-items:center;gap:5px"><div style="width:18px;height:3px;background:#b0b8c8;border-radius:2px"></div>#2</div>
+           <div style="display:flex;align-items:center;gap:5px"><div style="width:18px;height:3px;background:#cd8c5c;border-radius:2px"></div>#3</div>`);
+
+        const sortedA=allPlayers.map(n=>({
+          name:n, pos:playerMap[n]||'',
+          ...getPosTier(playerMap[n]),
+          totalA:Object.values(assocM[n]||{}).reduce((s,v)=>s+v,0),
+        })).sort((a,b)=>a.tier!==b.tier?a.tier-b.tier:a.order!==b.order?a.order-b.order:b.totalA-a.totalA);
+
+        for(let t=0;t<=3;t++){
+          const tp=sortedA.filter(p=>p.tier===t&&posM[p.name]); if(!tp.length) continue;
+          const bo=TIER_BO[t]; let cards='';
+          tp.forEach(({name,pos,totalA})=>{
+            const fc=assocField(name,t); if(!fc) return;
+            const top3=Object.entries(assocM[name]||{}).sort((a,b)=>b[1]-a[1]).slice(0,3);
+            const rankRows=top3.length?top3.map(([partner,cnt],idx)=>`
+              <div style="display:flex;align-items:center;gap:8px;padding:4px 0;${idx<top3.length-1?'border-bottom:1px solid '+bo:''}">
+                <span style="color:${RCOL[idx]};font-size:10px;font-weight:700;font-family:'DM Mono',monospace;width:22px;flex-shrink:0">#${idx+1}</span>
+                <span style="font-size:11px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${dispN(partner)}</span>
+                <span style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:${RCOL[idx]};line-height:1">${cnt}</span>
+              </div>`).join('')
+              :`<div style="font-size:11px;color:var(--text3);text-align:center;padding:4px">Sin conexiones</div>`;
+            cards+=`<div style="background:var(--bg2);border:1px solid ${bo};border-radius:var(--radius);overflow:hidden;width:260px;flex-shrink:0;transition:transform 0.18s,box-shadow 0.18s" onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 24px rgba(0,0,0,0.35)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
+              ${cardHeader(pos,dispN(name),TIER_COL[t],bo,TIER_BG[t],
+                `<span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--text3);margin-left:auto;flex-shrink:0">${totalA} asoc.</span>`)}
+              <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${fc}</svg>
+              <div style="padding:10px 12px;border-top:1px solid ${bo};background:var(--bg)">${rankRows}</div>
+            </div>`;
+          });
+          html+=tierSection(t,tp.length,cards);
+        }
       }
 
-      cont.innerHTML=html;
+      cont.innerHTML=jugSubTabBar()+html;
     } catch(e){
       cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
     }
