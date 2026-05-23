@@ -243,17 +243,15 @@
         <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>
       </div></div>`;
 
-    if(redMatchId) renderRedTab();
+    if(redPrimaryTab==='equipo' && redMatchId) renderRedTab();
+    if(redPrimaryTab==='jugadores') {
+      document.getElementById('redCont').innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Próximamente · Estadísticas por jugador</div>`;
+    }
   }
 
   function setPrimaryTab(tab) {
     redPrimaryTab = tab;
     loadRedPases();
-    if(tab==='jugadores') {
-      document.getElementById('redCont').innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Próximamente · Estadísticas por jugador</div>`;
-    } else if(redMatchId) {
-      renderRedTab();
-    }
   }
 
   function setSubTab(tab) {
