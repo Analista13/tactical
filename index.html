@@ -328,9 +328,15 @@
         else { const pos=(titMap[n]||'').toUpperCase().trim(); posM[n]=GK_POS.includes(pos)?{x:-47,y:0}:null; }
       });
 
-      const {data:pd}=await sbGet('eventos',`select=player_name,player_targeted_name&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&period=eq.${periodo}&limit=5000`);
-      const pases={};
-      pd.forEach(e=>{ if(!tits.includes(e.player_name)||!tits.includes(e.player_targeted_name)||e.player_name===e.player_targeted_name) return; const k=`${e.player_name}|${e.player_targeted_name}`; pases[k]=(pases[k]||0)+1; });
+      const {data:pd}=await sbGet('eventos',`select=player_name,player_targeted_name,x_start,x_end&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&period=eq.${periodo}&limit=5000`);
+      const pases={}, progP={};
+      tits.forEach(n=>{progP[n]=0;});
+      pd.forEach(e=>{
+        if(!tits.includes(e.player_name)||!tits.includes(e.player_targeted_name)||e.player_name===e.player_targeted_name) return;
+        const k=`${e.player_name}|${e.player_targeted_name}`;
+        pases[k]=(pases[k]||0)+1;
+        if(e.x_end!=null&&e.x_start!=null&&(e.x_end-e.x_start)>9) progP[e.player_name]=(progP[e.player_name]||0)+1;
+      });
 
       const totP={};
       tits.forEach(n=>{totP[n]=0;});
@@ -338,15 +344,35 @@
       const maxP=Math.max(1,...Object.values(pases));
       const maxT=Math.max(1,...Object.values(totP));
 
-      // Pases progresivos por jugador (hacia portería rival: posM target.x > posM passer.x)
-      const progP={};
-      tits.forEach(n=>{progP[n]=0;});
-      Object.entries(pases).forEach(([k,n])=>{
-        const [fr,to]=k.split('|');
-        if(posM[fr]&&posM[to]&&posM[to].x>posM[fr].x) progP[fr]=(progP[fr]||0)+n;
-      });
       const totProgresivos=Object.values(progP).reduce((a,b)=>a+b,0);
       const totPasesAll=Object.values(pases).reduce((a,b)=>a+b,0);
+
+      // Betweenness centrality — Brandes algorithm
+      function btwn(nodes,ps){
+        const bc={};nodes.forEach(n=>bc[n]=0);
+        for(const s of nodes){
+          const pred={},dist={},sigma={};
+          nodes.forEach(n=>{dist[n]=Infinity;sigma[n]=0;pred[n]=[];});
+          dist[s]=0;sigma[s]=1;const Q=[s],S=[];
+          while(Q.length){
+            const v=Q.shift();S.push(v);
+            for(const w of nodes){
+              if(!ps[`${v}|${w}`]) continue;
+              if(dist[w]===Infinity){dist[w]=dist[v]+1;Q.push(w);}
+              if(dist[w]===dist[v]+1){sigma[w]+=sigma[v];pred[w].push(v);}
+            }
+          }
+          const delta={};nodes.forEach(n=>delta[n]=0);
+          while(S.length){
+            const w=S.pop();
+            for(const v of pred[w]) delta[v]+=(sigma[v]/sigma[w])*(1+delta[w]);
+            if(w!==s) bc[w]+=delta[w];
+          }
+        }
+        return bc;
+      }
+      const bcScores=btwn(tits,pases);
+      const maxBC=Math.max(1,...Object.values(bcScores));
 
       // Top 5 conexiones
       const topConn=Object.entries(pases).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,n])=>{
@@ -415,20 +441,39 @@
         const strokeC=esSup?'#58a6ff':'#c8a96e';
         const fillC=esSup?'#0d1a2d':'#1c2333';
         const posC=esSup?'#79c0ff':'#e8c98e';
-        nod+=`<g><circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${r.toFixed(1)}" fill="${fillC}" stroke="${strokeC}" stroke-width="2.5"/>
+        const bcNorm=maxBC>0?(bcScores[n]||0)/maxBC:0;
+        const glow=bcNorm>0.25?`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${(r+7).toFixed(1)}" fill="none" stroke="#f0883e" stroke-width="2.5" stroke-opacity="${(bcNorm*0.85).toFixed(2)}" stroke-dasharray="4,3"/>`:'' ;
+        nod+=`<g>${glow}<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${r.toFixed(1)}" fill="${fillC}" stroke="${strokeC}" stroke-width="2.5"/>
           <text x="${sx.toFixed(1)}" y="${(sy-3).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="${posC}">${pos}</text>
           <text x="${sx.toFixed(1)}" y="${(sy+9).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="#8b949e">${ap}</text></g>`;
       });
-      const leyenda=suplSet.size>0?`
-        <rect x="${MX+4}" y="${MY+4}" width="120" height="38" rx="4" fill="#0d1117" fill-opacity="0.85"/>
+      const leyHt=suplSet.size>0?72:50;
+      const leyenda=`
+        <rect x="${MX+4}" y="${MY+4}" width="155" height="${leyHt}" rx="4" fill="#0d1117" fill-opacity="0.85"/>
         <circle cx="${MX+16}" cy="${MY+16}" r="5" fill="#1c2333" stroke="#c8a96e" stroke-width="1.5"/>
         <text x="${MX+26}" y="${MY+20}" font-family="DM Sans,sans-serif" font-size="9" fill="#8b949e">Titular</text>
-        <circle cx="${MX+16}" cy="${MY+32}" r="5" fill="#0d1a2d" stroke="#58a6ff" stroke-width="1.5"/>
-        <text x="${MX+26}" y="${MY+36}" font-family="DM Sans,sans-serif" font-size="9" fill="#8b949e">Suplente</text>`:'';
+        ${suplSet.size>0?`<circle cx="${MX+16}" cy="${MY+32}" r="5" fill="#0d1a2d" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="${MX+26}" y="${MY+36}" font-family="DM Sans,sans-serif" font-size="9" fill="#8b949e">Suplente</text>
+        <circle cx="${MX+16}" cy="${MY+56}" r="6" fill="none" stroke="#f0883e" stroke-width="2" stroke-dasharray="3,2"/>
+        <text x="${MX+26}" y="${MY+60}" font-family="DM Sans,sans-serif" font-size="9" fill="#8b949e">Alta centralidad</text>`
+        :`<circle cx="${MX+16}" cy="${MY+32}" r="6" fill="none" stroke="#f0883e" stroke-width="2" stroke-dasharray="3,2"/>
+        <text x="${MX+26}" y="${MY+36}" font-family="DM Sans,sans-serif" font-size="9" fill="#8b949e">Alta centralidad</text>`}`;
 
       const rival=partido.local==='Pontevedra CF'?partido.vis:partido.local;
       const lugar=partido.local==='Pontevedra CF'?'🏠':'✈️';
       const pctProg=totPasesAll>0?Math.round((totProgresivos/totPasesAll)*100):0;
+
+      // Centralidad HTML
+      const centHTML=tits.filter(n=>posM[n]).sort((a,b)=>(bcScores[b]||0)-(bcScores[a]||0)).slice(0,5).map((n,i)=>{
+        const bcN=maxBC>0?(bcScores[n]||0)/maxBC:0;
+        const ap=n.split(' ').slice(-1)[0].substring(0,11);
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:11px;color:var(--text3);width:16px;text-align:right;flex-shrink:0">${i+1}</span>
+          <span style="font-size:12px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ap}</span>
+          <span style="font-size:9px;color:var(--accent);flex-shrink:0">${titMap[n]||''}</span>
+          <div style="width:60px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;flex-shrink:0"><div style="width:${Math.round(bcN*100)}%;height:100%;background:#f0883e;border-radius:3px"></div></div>
+        </div>`;
+      }).join('');
 
       // Top conexiones HTML
       const topConnHTML=topConn.map(({fr,to,n,prog},i)=>{
@@ -469,11 +514,20 @@
               ${lin}${nod}${leyenda}
             </svg>
           </div>
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px">
-            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Top conexiones</div>
-            ${topConnHTML}
-            <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:10px;color:var(--text3)">
-              <span style="color:var(--green)">↑</span> pase progresivo hacia portería rival
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px">
+              <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Top conexiones</div>
+              ${topConnHTML}
+              <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--text3)">
+                <span style="color:var(--green)">↑</span> pase hacia portería rival
+              </div>
+            </div>
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px">
+              <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Centralidad de red</div>
+              ${centHTML}
+              <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--text3)">
+                <span style="color:#f0883e">●</span> halo naranja en el campo
+              </div>
             </div>
           </div>
         </div>
