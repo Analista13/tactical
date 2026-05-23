@@ -338,6 +338,22 @@
       const maxP=Math.max(1,...Object.values(pases));
       const maxT=Math.max(1,...Object.values(totP));
 
+      // Pases progresivos por jugador (hacia portería rival: posM target.x > posM passer.x)
+      const progP={};
+      tits.forEach(n=>{progP[n]=0;});
+      Object.entries(pases).forEach(([k,n])=>{
+        const [fr,to]=k.split('|');
+        if(posM[fr]&&posM[to]&&posM[to].x>posM[fr].x) progP[fr]=(progP[fr]||0)+n;
+      });
+      const totProgresivos=Object.values(progP).reduce((a,b)=>a+b,0);
+      const totPasesAll=Object.values(pases).reduce((a,b)=>a+b,0);
+
+      // Top 5 conexiones
+      const topConn=Object.entries(pases).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,n])=>{
+        const [fr,to]=k.split('|');
+        return {fr,to,n,prog:posM[fr]&&posM[to]&&posM[to].x>posM[fr].x};
+      });
+
       const suplSet = new Set(suplentes.map(p => p.name));
 
       let suplHTML='';
@@ -375,9 +391,17 @@
         const {sx:x1,sy:y1}=sv(posM[fr].x,posM[fr].y);
         const {sx:x2,sy:y2}=sv(posM[to].x,posM[to].y);
         const g=1+(n/maxP)*7, op=0.12+(n/maxP)*0.7;
-        const mx=(x1+x2)/2,my=(y1+y2)/2;
+        const cmx=(x1+x2)/2,cmy=(y1+y2)/2;
+        // Flecha en el 65% de la línea
+        const angle=Math.atan2(y2-y1,x2-x1);
+        const ax=x1+0.65*(x2-x1), ay=y1+0.65*(y2-y1);
+        const as=4+(n/maxP)*5;
+        const a1=`${(ax+as*Math.cos(angle)).toFixed(1)},${(ay+as*Math.sin(angle)).toFixed(1)}`;
+        const a2=`${(ax+as*0.45*Math.cos(angle+2.2)).toFixed(1)},${(ay+as*0.45*Math.sin(angle+2.2)).toFixed(1)}`;
+        const a3=`${(ax+as*0.45*Math.cos(angle-2.2)).toFixed(1)},${(ay+as*0.45*Math.sin(angle-2.2)).toFixed(1)}`;
         lin+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#c8a96e" stroke-width="${g.toFixed(1)}" stroke-opacity="${op.toFixed(2)}" stroke-linecap="round"/>
-        <text x="${mx.toFixed(1)}" y="${(my-2).toFixed(1)}" text-anchor="middle" font-size="9" fill="#c8a96e" opacity="${Math.min(op+0.2,1).toFixed(2)}">${n}</text>`;
+        <polygon points="${a1} ${a2} ${a3}" fill="#c8a96e" fill-opacity="${(op*0.9).toFixed(2)}"/>
+        <text x="${cmx.toFixed(1)}" y="${(cmy-2).toFixed(1)}" text-anchor="middle" font-size="9" fill="#c8a96e" opacity="${Math.min(op+0.2,1).toFixed(2)}">${n}</text>`;
       });
 
       let nod='';
@@ -404,33 +428,67 @@
 
       const rival=partido.local==='Pontevedra CF'?partido.vis:partido.local;
       const lugar=partido.local==='Pontevedra CF'?'🏠':'✈️';
-      const totPases=Object.values(pases).reduce((a,b)=>a+b,0);
+      const pctProg=totPasesAll>0?Math.round((totProgresivos/totPasesAll)*100):0;
+
+      // Top conexiones HTML
+      const topConnHTML=topConn.map(({fr,to,n,prog},i)=>{
+        const apFr=fr.split(' ').slice(-1)[0].substring(0,10);
+        const apTo=to.split(' ').slice(-1)[0].substring(0,10);
+        const barW=Math.round((n/topConn[0].n)*100);
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:11px;color:var(--text3);width:16px;text-align:right;flex-shrink:0">${i+1}</span>
+          <span style="font-size:12px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${apFr} <span style="color:var(--text3)">→</span> ${apTo}${prog?'<span style="color:var(--green);margin-left:4px;font-size:10px">↑</span>':''}</span>
+          <div style="width:60px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;flex-shrink:0"><div style="width:${barW}%;height:100%;background:var(--accent);border-radius:3px"></div></div>
+          <span style="font-size:12px;font-weight:700;color:var(--accent);width:22px;text-align:right;flex-shrink:0">${n}</span>
+        </div>`;
+      }).join('');
 
       cont.innerHTML=`
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
           <div><div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · ${periodo===1?'1ª Parte':'2ª Parte'}</div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">Pontevedra CF vs ${rival}</div></div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
-          <div style="margin-left:auto;font-size:12px;color:var(--text2)">${tits.length} jugadores · ${totPases} pases</div>
+          <div style="margin-left:auto;display:flex;gap:20px;align-items:center">
+            <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent)">${totPasesAll}</div><div style="font-size:10px;color:var(--text3);letter-spacing:1px">PASES</div></div>
+            <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green)">${pctProg}%</div><div style="font-size:10px;color:var(--text3);letter-spacing:1px">PROGRESIVOS</div></div>
+          </div>
         </div>
         ${suplHTML}
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px">
-          <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
-            <rect x="${MX}" y="${MY}" width="${PW}" height="${PH}" fill="#0d1a0d" stroke="#1e3a1e" stroke-width="1.5"/>
-            <line x1="${W/2}" y1="${MY}" x2="${W/2}" y2="${H-MY}" stroke="#1e3a1e" stroke-width="1"/>
-            <circle cx="${W/2}" cy="${H/2}" r="${(PH*9.15/68).toFixed(0)}" fill="none" stroke="#1e3a1e" stroke-width="1"/>
-            <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
-            <rect x="${MX}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
-            <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
-            <rect x="${(W-MX-PW*5.5/105).toFixed(1)}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
-            <text x="${MX+8}" y="${H-MY+22}" font-size="10" fill="#2a4a2a">← Portería propia</text>
-            <text x="${W-MX-8}" y="${H-MY+22}" text-anchor="end" font-size="10" fill="#2a4a2a">Portería rival →</text>
-            ${lin}${nod}${leyenda}
-          </svg>
+        <div style="display:grid;grid-template-columns:1fr 220px;gap:14px;margin-bottom:16px;align-items:start">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+            <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+              <rect x="${MX}" y="${MY}" width="${PW}" height="${PH}" fill="#0d1a0d" stroke="#1e3a1e" stroke-width="1.5"/>
+              <line x1="${W/2}" y1="${MY}" x2="${W/2}" y2="${H-MY}" stroke="#1e3a1e" stroke-width="1"/>
+              <circle cx="${W/2}" cy="${H/2}" r="${(PH*9.15/68).toFixed(0)}" fill="none" stroke="#1e3a1e" stroke-width="1"/>
+              <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
+              <rect x="${MX}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
+              <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
+              <rect x="${(W-MX-PW*5.5/105).toFixed(1)}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
+              <text x="${MX+8}" y="${H-MY+22}" font-size="10" fill="#2a4a2a">← Portería propia</text>
+              <text x="${W-MX-8}" y="${H-MY+22}" text-anchor="end" font-size="10" fill="#2a4a2a">Portería rival →</text>
+              ${lin}${nod}${leyenda}
+            </svg>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px">
+            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Top conexiones</div>
+            ${topConnHTML}
+            <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:10px;color:var(--text3)">
+              <span style="color:var(--green)">↑</span> pase progresivo hacia portería rival
+            </div>
+          </div>
         </div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px">
           <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">${tits.length} jugadores · ${periodo===1?'1ª Parte':'2ª Parte'}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px">${tits.map(n=>`<div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;display:flex;gap:6px"><span style="color:var(--accent);font-size:10px;font-weight:700">${titMap[n]}</span><span>${n}</span><span style="color:var(--text3);font-size:11px">${totP[n]} pases</span></div>`).join('')}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">${tits.map(n=>{
+            const pct=totP[n]>0?Math.round((progP[n]/totP[n])*100):0;
+            const ap=n.split(' ').slice(-1)[0];
+            return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;display:flex;gap:6px;align-items:center">
+              <span style="color:var(--accent);font-size:10px;font-weight:700">${titMap[n]}</span>
+              <span>${ap}</span>
+              <span style="color:var(--text3);font-size:11px">${totP[n]}</span>
+              <span style="color:var(--green);font-size:10px;font-weight:600">↑${pct}%</span>
+            </div>`;
+          }).join('')}</div>
         </div>`;
     } catch(e) {
       cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
