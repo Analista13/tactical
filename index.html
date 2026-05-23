@@ -490,12 +490,12 @@
       const {data}=await sbGet('eventos',`select=x_start,y_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&x_start=not.is.null&limit=5000`);
       if(!data.length){cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de pases</div>`;return;}
 
-      // zones[col][row]: col 0-2 = def/med/atq, row 0-2 = der/cen/izq
-      const zones=Array.from({length:3},()=>Array(3).fill(0));
+      // zones[col][lane]: col 0-2 = Z1/Z2/Z3, lane 0-4 = C5→C1 (der→izq)
+      const zones=Array.from({length:3},()=>Array(5).fill(0));
       data.forEach(e=>{
         const col=e.x_start<-17.5?0:e.x_start<17.5?1:2;
-        const row=e.y_start<-11.33?0:e.y_start<11.33?1:2;
-        zones[col][row]++;
+        const lane=e.y_start<-20.4?0:e.y_start<-6.8?1:e.y_start<6.8?2:e.y_start<20.4?3:4;
+        zones[col][lane]++;
       });
       const total=data.length;
       const maxZone=Math.max(...zones.flat());
@@ -503,12 +503,13 @@
       const W=820,H=540,MX=50,MY=40,PW=W-MX*2,PH=H-MY*2;
       const sv=(x,y)=>({sx:MX+((x+52.5)/105)*PW,sy:MY+((34-y)/68)*PH});
       const xR=[[-52.5,-17.5],[-17.5,17.5],[17.5,52.5]];
-      const yR=[[34,11.33],[11.33,-11.33],[-11.33,-34]]; // top→bottom en SVG
+      // 5 carriles top→bottom en SVG (y decrece hacia abajo)
+      const yR=[[34,20.4],[20.4,6.8],[6.8,-6.8],[-6.8,-20.4],[-20.4,-34]];
 
       let zoneSVG='';
       for(let c=0;c<3;c++){
-        for(let vr=0;vr<3;vr++){
-          const count=zones[c][2-vr]; // vr 0=izq(top), vr 2=der(bottom)
+        for(let vr=0;vr<5;vr++){
+          const count=zones[c][4-vr]; // vr 0=C1(top/izq), vr 4=C5(bottom/der)
           const {sx:sx1,sy:sy1}=sv(xR[c][0],yR[vr][0]);
           const {sx:sx2,sy:sy2}=sv(xR[c][1],yR[vr][1]);
           const zw=sx2-sx1,zh=sy2-sy1,cx=sx1+zw/2,cy=sy1+zh/2;
@@ -516,29 +517,31 @@
           const op=count>0?Math.max(0.06,(count/maxZone)*0.78):0;
           const dark=op>0.35;
           zoneSVG+=`<rect x="${sx1.toFixed(1)}" y="${sy1.toFixed(1)}" width="${zw.toFixed(1)}" height="${zh.toFixed(1)}" fill="#c8a96e" fill-opacity="${op.toFixed(3)}" stroke="#1e3a1e" stroke-width="0.8"/>
-          <text x="${cx.toFixed(1)}" y="${(cy-4).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="20" font-weight="700" fill="${dark?'#0d1117':'#e8c98e'}">${pct}%</text>
-          <text x="${cx.toFixed(1)}" y="${(cy+14).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="${dark?'#1c2333':'#8b949e'}">${count} pases</text>`;
+          <text x="${cx.toFixed(1)}" y="${(cy-3).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="15" font-weight="700" fill="${dark?'#0d1117':'#e8c98e'}">${pct}%</text>
+          <text x="${cx.toFixed(1)}" y="${(cy+12).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" fill="${dark?'#1c2333':'#8b949e'}">${count} pases</text>`;
         }
       }
 
-      // Etiquetas de zona
+      // Etiquetas de eje
       const xMids=[MX+PW*0.167, MX+PW*0.5, MX+PW*0.833];
-      const xLabels=['Def','Med','Atq'];
-      const yMids=[MY+PH*0.17, MY+PH*0.5, MY+PH*0.83];
-      const yLabels=['Izq','Cen','Der'];
+      const xLabels=['Z1','Z2','Z3'];
+      const yMids=[MY+PH*0.1, MY+PH*0.3, MY+PH*0.5, MY+PH*0.7, MY+PH*0.9];
+      const yLabels=['C1','C2','C3','C4','C5'];
       const axisLabels=xLabels.map((l,i)=>`<text x="${xMids[i].toFixed(1)}" y="${(MY-10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#484f58">${l}</text>`).join('')
         +yLabels.map((l,i)=>`<text x="${(MX-10).toFixed(1)}" y="${yMids[i].toFixed(1)}" text-anchor="end" dominant-baseline="middle" font-size="11" font-weight="600" fill="#484f58">${l}</text>`).join('');
 
-      // Resumen corredores
+      // Resumen por carril (C1=izq exterior … C5=der exterior)
       const corr=[
-        {label:'Carril izquierdo',  n:zones[0][2]+zones[1][2]+zones[2][2]},
-        {label:'Carril central',    n:zones[0][1]+zones[1][1]+zones[2][1]},
-        {label:'Carril derecho',    n:zones[0][0]+zones[1][0]+zones[2][0]},
+        {label:'C1 — Izq. exterior', n:zones[0][4]+zones[1][4]+zones[2][4]},
+        {label:'C2 — Izq. interior', n:zones[0][3]+zones[1][3]+zones[2][3]},
+        {label:'C3 — Central',       n:zones[0][2]+zones[1][2]+zones[2][2]},
+        {label:'C4 — Der. interior', n:zones[0][1]+zones[1][1]+zones[2][1]},
+        {label:'C5 — Der. exterior', n:zones[0][0]+zones[1][0]+zones[2][0]},
       ];
       const thirds=[
-        {label:'Zona 1 (defensiva)', n:zones[0][0]+zones[0][1]+zones[0][2]},
-        {label:'Zona 2 (media)',     n:zones[1][0]+zones[1][1]+zones[1][2]},
-        {label:'Zona 3 (ofensiva)', n:zones[2][0]+zones[2][1]+zones[2][2]},
+        {label:'Zona 1 (defensiva)', n:zones[0].reduce((a,b)=>a+b,0)},
+        {label:'Zona 2 (media)',     n:zones[1].reduce((a,b)=>a+b,0)},
+        {label:'Zona 3 (ofensiva)', n:zones[2].reduce((a,b)=>a+b,0)},
       ];
       const bar=(n,color)=>`<div style="flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden"><div style="width:${((n/total)*100).toFixed(1)}%;height:100%;background:${color};border-radius:4px"></div></div>`;
       const corrHTML=corr.map(({label,n})=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
