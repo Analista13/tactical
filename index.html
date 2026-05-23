@@ -230,13 +230,15 @@
       </div>
       <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">
         ${ptBtn('equipo','Equipo')}
+        ${ptBtn('jugadores','Jugadores')}
       </div>
+      ${redPrimaryTab==='equipo'?`
       <div style="display:flex;gap:4px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content">
         <button id="st-1parte" class="subtab ${redSubTab==='1parte'?'active':''}" onclick="setSubTab('1parte')">⚽ 1ª Parte</button>
         <button id="st-2parte" class="subtab ${redSubTab==='2parte'?'active':''}" onclick="setSubTab('2parte')">⚽ 2ª Parte</button>
         <button id="st-matriz" class="subtab ${redSubTab==='matriz'?'active':''}" onclick="setSubTab('matriz')">📊 Matriz</button>
         <button id="st-tendencia" class="subtab ${redSubTab==='tendencia'?'active':''}" onclick="setSubTab('tendencia')">🗺️ Tendencia</button>
-      </div>
+      </div>`:''}
       <div id="redCont">
         <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>
       </div></div>`;
@@ -247,6 +249,11 @@
   function setPrimaryTab(tab) {
     redPrimaryTab = tab;
     loadRedPases();
+    if(tab==='jugadores') {
+      document.getElementById('redCont').innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Próximamente · Estadísticas por jugador</div>`;
+    } else if(redMatchId) {
+      renderRedTab();
+    }
   }
 
   function setSubTab(tab) {
