@@ -16,7 +16,7 @@
       --sidebar:220px; --header:52px; --tabs:48px; --radius:10px;
     }
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); height:100vh; display:grid; grid-template-rows:var(--header) 1fr; grid-template-columns:1fr; grid-template-areas:"header" "main"; overflow:hidden; }
+    body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); height:100vh; display:grid; grid-template-rows:var(--header) 1fr; grid-template-columns:var(--sidebar) 1fr; grid-template-areas:"header header" "sidebar main"; overflow:hidden; }
 
     header { grid-area:header; background:var(--bg2); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 20px; gap:12px; z-index:50; }
     .header-logo { width:28px; height:28px; object-fit:contain; }
@@ -108,6 +108,28 @@
 </header>
 
 
+<aside>
+  <div class="sidebar-label">Equipos</div>
+  <div class="team-item active" id="team-2908" onclick="selectTeam(2908,'Pontevedra CF','https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png')">
+    <img class="team-escudo" src="https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png" alt="">
+    <div class="team-info"><div class="team-name">Pontevedra CF</div><div class="team-sub">27 partidos</div></div>
+  </div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-label">Próximamente</div>
+  <div class="team-item" style="opacity:0.4;pointer-events:none">
+    <div style="width:30px;height:30px;background:var(--bg4);border-radius:50%;flex-shrink:0"></div>
+    <div><div class="team-name">Real Madrid B</div><div class="team-sub">Sin datos</div></div>
+  </div>
+  <div class="team-item" style="opacity:0.4;pointer-events:none">
+    <div style="width:30px;height:30px;background:var(--bg4);border-radius:50%;flex-shrink:0"></div>
+    <div><div class="team-name">SD Ponferradina</div><div class="team-sub">Sin datos</div></div>
+  </div>
+  <div class="team-item" style="opacity:0.4;pointer-events:none">
+    <div style="width:30px;height:30px;background:var(--bg4);border-radius:50%;flex-shrink:0"></div>
+    <div><div class="team-name">Barakaldo CF</div><div class="team-sub">Sin datos</div></div>
+  </div>
+</aside>
+
 <main>
   <div class="tabs-bar" id="tabsBar">
     <div class="tab active" data-tab="redpases">🕸️ Red de Pases</div>
@@ -177,34 +199,26 @@
     {id:2908, name:'Pontevedra CF', escudo:'https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png', partidos:27},
   ];
 
-  function selectTeam(id) {
-    const t = TEAMS.find(t=>t.id===id);
-    if(!t) return;
-    currentTeam = {id:t.id, name:t.name, escudo:t.escudo};
+  function selectTeam(id, name, escudo) {
+    document.querySelectorAll('.team-item').forEach(i => i.classList.remove('active'));
+    document.getElementById(`team-${id}`)?.classList.add('active');
+    currentTeam = {id, name, escudo};
     redMatchId = null;
     loadRedPases();
   }
 
   // RED DE PASES
   function loadRedPases() {
-    const teamOpts = TEAMS.map(t =>
-      `<option value="${t.id}" ${t.id===currentTeam.id?'selected':''}>${t.name} · ${t.partidos} partidos</option>`
-    ).join('');
-
     const matchOpts = PARTIDOS.map(p => {
       const rival = p.local==='Pontevedra CF'?p.vis:p.local;
       const s = p.local==='Pontevedra CF'?'🏠':'✈️';
       return `<option value="${p.id}" ${p.id==redMatchId?'selected':''}>${s} ${p.j} · ${rival} · ${p.s} · ${p.f}</option>`;
     }).join('');
 
-    document.getElementById('content').innerHTML = `<div class="anim">
+    document.getElementById('content').innerHTML = `<div class="anim">${head()}
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-        <select onchange="selectTeam(parseInt(this.value))"
-          style="background:var(--bg2);border:1px solid var(--border);color:var(--accent);padding:9px 14px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;min-width:200px">
-          ${teamOpts}
-        </select>
         <select id="matchSel" onchange="redMatchId=parseInt(this.value);renderRedTab()"
-          style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:9px 14px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;flex:1;min-width:280px">
+          style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;flex:1;min-width:280px">
           <option value="">— Selecciona un partido —</option>${matchOpts}
         </select>
       </div>
@@ -473,8 +487,8 @@
     cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando tendencias...</span></div>`;
     const partido=PARTIDOS.find(p=>p.id==mid);
     try {
-      const {data}=await sbGet('eventos',`select=x_start,y_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&x_start=not.is.null&limit=5000`);
-      if(!data.length){cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de coordenadas</div>`;return;}
+      const {data}=await sbGet('eventos',`select=x_start,y_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&x_start=not.is.null&limit=5000`);
+      if(!data.length){cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de pases</div>`;return;}
 
       // zones[col][row]: col 0-2 = def/med/atq, row 0-2 = der/cen/izq
       const zones=Array.from({length:3},()=>Array(3).fill(0));
@@ -503,7 +517,7 @@
           const dark=op>0.35;
           zoneSVG+=`<rect x="${sx1.toFixed(1)}" y="${sy1.toFixed(1)}" width="${zw.toFixed(1)}" height="${zh.toFixed(1)}" fill="#c8a96e" fill-opacity="${op.toFixed(3)}" stroke="#1e3a1e" stroke-width="0.8"/>
           <text x="${cx.toFixed(1)}" y="${(cy-4).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="20" font-weight="700" fill="${dark?'#0d1117':'#e8c98e'}">${pct}%</text>
-          <text x="${cx.toFixed(1)}" y="${(cy+14).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="${dark?'#1c2333':'#8b949e'}">${count} pos.</text>`;
+          <text x="${cx.toFixed(1)}" y="${(cy+14).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="${dark?'#1c2333':'#8b949e'}">${count} pases</text>`;
         }
       }
 
@@ -546,7 +560,7 @@
           <div><div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · Tendencia de juego</div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">Pontevedra CF vs ${rival}</div></div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
-          <div style="margin-left:auto;font-size:12px;color:var(--text2)">${total} posesiones</div>
+          <div style="margin-left:auto;font-size:12px;color:var(--text2)">${total} pases exitosos</div>
         </div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px">
           <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
