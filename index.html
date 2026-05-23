@@ -480,8 +480,8 @@
         suplentes = jugadoresPeriodo.filter(p => timeToMin(p.start_time) >= 45);
       }
 
-      // Limitar a 11 jugadores (por si hay datos raros)
-      if(jugadoresPeriodo.length > 11) jugadoresPeriodo = jugadoresPeriodo.slice(0, 11);
+      // En 1ª parte solo deben haber 11 titulares; en 2ª parte puede haber más por sustituciones
+      if(periodo === 1 && jugadoresPeriodo.length > 11) jugadoresPeriodo = jugadoresPeriodo.slice(0, 11);
 
       const titMap = {};
       jugadoresPeriodo.forEach(p => { titMap[p.name] = p.position; });
