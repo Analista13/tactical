@@ -477,7 +477,7 @@
           return entrada < 90 && salida > 45;
         });
         // Suplentes = los que no empezaron desde el inicio
-        suplentes = jugadoresPeriodo.filter(p => timeToMin(p.start_time) > 0);
+        suplentes = jugadoresPeriodo.filter(p => timeToMin(p.start_time) >= 45);
       }
 
       // Limitar a 11 jugadores (por si hay datos raros)
@@ -508,8 +508,10 @@
       let suplHTML='';
       if(periodo===2 && suplentes.length > 0){
         const minToReal = (t) => {
-          const m = timeToMin(t);
-          return m > 45 ? Math.round(m - 45) + 45 : Math.round(m);
+          if(!t) return 0;
+          const [h,m,s] = t.split(':').map(Number);
+          if(h === 0) return m;           // 1ª parte: minuto directo
+          return 45 + m;                  // 2ª parte: 45 + minutos del 2º tiempo
         };
         suplHTML=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px">
           <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Suplentes 2ª parte</div>
