@@ -1127,25 +1127,20 @@
           const {sx:px,sy:py}=sv(p.x,p.y);
           // Todos los compañeros ordenados por asociación (más fuerte primero)
           const allAssocs=Object.entries(assocM[playerName]||{}).sort((a,b)=>b[1]-a[1]);
-          let lin='',dots='',lbls='';
+          let lin='',dots='';
           allAssocs.forEach(([tgt,cnt],idx)=>{
             const tp=posM[tgt]; if(!tp) return;
             const {sx:tx,sy:ty}=sv(tp.x,tp.y);
             // Top3: colores oro/plata/bronce prominentes; resto: muy tenues
-            const col=idx<3?RCOL[idx]:'rgba(180,180,180,0.4)';
-            const op=idx===0?0.9:idx===1?0.72:idx===2?0.55:0.12;
+            const col=idx<3?RCOL[idx]:'rgba(180,180,180,0.35)';
+            const op=idx===0?0.88:idx===1?0.70:idx===2?0.52:0.12;
             const sw=idx===0?4.5:idx===1?3:idx===2?1.8:0.6;
             lin+=`<line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${tx.toFixed(1)}" y2="${ty.toFixed(1)}" stroke="${col}" stroke-width="${sw}" stroke-opacity="${op}" stroke-linecap="round"/>`;
-            const dr=idx<3?4.5:2;
-            dots+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${dr}" fill="${col}" fill-opacity="${idx<3?0.3:0.06}" stroke="${col}" stroke-width="${idx<3?1.8:0.6}" stroke-opacity="${op}"/>`;
-            if(idx<3){
-              const lx=((tx*0.65+px*0.35)).toFixed(1);
-              const ly=((ty*0.65+py*0.35)-5).toFixed(1);
-              lbls+=`<text x="${lx}" y="${ly}" fill="${col}" font-size="8" font-family="'DM Mono',monospace" font-weight="700" text-anchor="middle" opacity="0.95">${idx+1}</text>`;
-            }
+            const dr=idx<3?4:1.8;
+            dots+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${dr}" fill="${col}" fill-opacity="${idx<3?0.28:0.06}" stroke="${col}" stroke-width="${idx<3?1.6:0.5}" stroke-opacity="${op}"/>`;
           });
           const tc=TIER_COL[tierId]||'#c8a96e';
-          return `${fieldBase()}${lin}${dots}${lbls}${playerDot(px,py,tc)}`;
+          return `${fieldBase()}${lin}${dots}${playerDot(px,py,tc)}`;
         };
 
         html=matchHeader('Asociaciones clave por jugador',
