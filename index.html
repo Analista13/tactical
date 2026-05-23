@@ -467,21 +467,17 @@
       let suplentes = [];
 
       if(periodo === 1) {
-        jugadoresPeriodo = lineup.filter(p => timeToMin(p.start_time) === 0);
+        jugadoresPeriodo = lineup.filter(p => timeToMin(p.start_time) < 45);
+        suplentes = jugadoresPeriodo.filter(p => timeToMin(p.start_time) > 0);
       } else {
         // En la 2ª parte: titulares que jugaron la 2ª parte + suplentes que entraron en 2ª parte
         jugadoresPeriodo = lineup.filter(p => {
           const entrada = timeToMin(p.start_time);
           const salida = p.end_time ? timeToMin(p.end_time) : 999;
-          // Jugó algún minuto en la 2ª parte (después del min 45)
           return entrada < 90 && salida > 45;
         });
-        // Suplentes = los que no empezaron desde el inicio
         suplentes = jugadoresPeriodo.filter(p => timeToMin(p.start_time) >= 45);
       }
-
-      // En 1ª parte solo deben haber 11 titulares; en 2ª parte puede haber más por sustituciones
-      if(periodo === 1 && jugadoresPeriodo.length > 11) jugadoresPeriodo = jugadoresPeriodo.slice(0, 11);
 
       const titMap = {};
       jugadoresPeriodo.forEach(p => { titMap[p.name] = p.position; });
@@ -509,16 +505,19 @@
       const maxP=Math.max(1,...Object.values(pases));
       const maxT=Math.max(1,...Object.values(totP));
 
+      const suplSet = new Set(suplentes.map(p => p.name));
+
       let suplHTML='';
-      if(periodo===2 && suplentes.length > 0){
+      if(suplentes.length > 0){
         const minToReal = (t) => {
           if(!t) return 0;
           const [h,m,s] = t.split(':').map(Number);
-          if(h === 0) return m;           // 1ª parte: minuto directo
-          return 45 + m;                  // 2ª parte: 45 + minutos del 2º tiempo
+          if(h === 0) return m;
+          return 45 + m;
         };
+        const label = periodo===1 ? 'Suplentes 1ª parte' : 'Suplentes 2ª parte';
         suplHTML=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px">
-          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Suplentes 2ª parte</div>
+          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">${label}</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px">${suplentes.map(p => {
             const minEntrada = minToReal(p.start_time);
             const jugadorSaliente = lineup.find(x => x.end_time === p.start_time && x.team_id === tid);
@@ -555,10 +554,20 @@
         const r=18+(totP[n]/maxT)*10;
         const pos=titMap[n]||'';
         const ap=n.split(' ').slice(-1)[0].substring(0,9);
-        nod+=`<g><circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${r.toFixed(1)}" fill="#1c2333" stroke="#c8a96e" stroke-width="2.5"/>
-          <text x="${sx.toFixed(1)}" y="${(sy-3).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#e8c98e">${pos}</text>
+        const esSup=suplSet.has(n);
+        const strokeC=esSup?'#58a6ff':'#c8a96e';
+        const fillC=esSup?'#0d1a2d':'#1c2333';
+        const posC=esSup?'#79c0ff':'#e8c98e';
+        nod+=`<g><circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${r.toFixed(1)}" fill="${fillC}" stroke="${strokeC}" stroke-width="2.5"/>
+          <text x="${sx.toFixed(1)}" y="${(sy-3).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="${posC}">${pos}</text>
           <text x="${sx.toFixed(1)}" y="${(sy+9).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="#8b949e">${ap}</text></g>`;
       });
+      const leyenda=suplSet.size>0?`
+        <rect x="${MX+4}" y="${MY+4}" width="120" height="38" rx="4" fill="#0d1117" fill-opacity="0.85"/>
+        <circle cx="${MX+16}" cy="${MY+16}" r="5" fill="#1c2333" stroke="#c8a96e" stroke-width="1.5"/>
+        <text x="${MX+26}" y="${MY+20}" font-family="DM Sans,sans-serif" font-size="9" fill="#8b949e">Titular</text>
+        <circle cx="${MX+16}" cy="${MY+32}" r="5" fill="#0d1a2d" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="${MX+26}" y="${MY+36}" font-family="DM Sans,sans-serif" font-size="9" fill="#8b949e">Suplente</text>`:'';
 
       const rival=partido.local==='Pontevedra CF'?partido.vis:partido.local;
       const lugar=partido.local==='Pontevedra CF'?'🏠':'✈️';
@@ -583,7 +592,7 @@
             <rect x="${(W-MX-PW*5.5/105).toFixed(1)}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
             <text x="${MX+8}" y="${H-MY+22}" font-size="10" fill="#2a4a2a">← Portería propia</text>
             <text x="${W-MX-8}" y="${H-MY+22}" text-anchor="end" font-size="10" fill="#2a4a2a">Portería rival →</text>
-            ${lin}${nod}
+            ${lin}${nod}${leyenda}
           </svg>
         </div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px">
