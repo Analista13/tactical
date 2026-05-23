@@ -243,10 +243,7 @@
         <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>
       </div></div>`;
 
-    if(redPrimaryTab==='equipo' && redMatchId) renderRedTab();
-    if(redPrimaryTab==='jugadores') {
-      document.getElementById('redCont').innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Próximamente · Estadísticas por jugador</div>`;
-    }
+    if(redMatchId) renderRedTab();
   }
 
   function setPrimaryTab(tab) {
@@ -262,6 +259,7 @@
   }
 
   function renderRedTab() {
+    if(redPrimaryTab==='jugadores') { renderJugadores(); return; }
     if(redSubTab==='1parte') renderRed(1);
     else if(redSubTab==='2parte') renderRed(2);
     else if(redSubTab==='tendencia') renderTendencia();
@@ -607,6 +605,145 @@
             ${thirdHTML}
           </div>
         </div>`;
+    } catch(e){
+      cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
+    }
+  }
+
+  async function renderJugadores() {
+    const tid=currentTeam.id, mid=redMatchId;
+    const cont=document.getElementById('redCont');
+    if(!cont) return;
+    if(!mid){
+      cont.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>`;
+      return;
+    }
+    cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando red por jugador...</span></div>`;
+    const partido=PARTIDOS.find(p=>p.id==mid);
+    try {
+      const lineup=await getLineup(mid,tid);
+      if(!lineup.length){
+        cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de alineación</div>`;
+        return;
+      }
+      const playerMap={};
+      lineup.forEach(p=>{ playerMap[p.name]=p.position; });
+      const allPlayers=Object.keys(playerMap);
+      const allPlayersSet=new Set(allPlayers);
+
+      // Posiciones medias desde posesiones
+      const {data:posData}=await sbGet('eventos',`select=player_name,x_start,y_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&x_start=not.is.null&limit=5000`);
+      const posA={},posC={};
+      posData.forEach(e=>{
+        if(!allPlayersSet.has(e.player_name)) return;
+        if(!posA[e.player_name]){posA[e.player_name]={x:0,y:0};posC[e.player_name]=0;}
+        posA[e.player_name].x+=e.x_start; posA[e.player_name].y+=e.y_start; posC[e.player_name]++;
+      });
+      const posM={};
+      const GK_POS=['GK','PT','PORTERO','POR','P','GOALKEEPER'];
+      allPlayers.forEach(n=>{
+        if(posC[n]>0){ posM[n]={x:posA[n].x/posC[n],y:posA[n].y/posC[n]}; }
+        else { const pos=(playerMap[n]||'').toUpperCase().trim(); posM[n]=GK_POS.includes(pos)?{x:-47,y:0}:null; }
+      });
+
+      // Pases por jugador
+      const {data:passData}=await sbGet('eventos',`select=player_name,player_targeted_name&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&limit=5000`);
+      const playerPasses={},playerTotal={};
+      passData.forEach(e=>{
+        if(!allPlayersSet.has(e.player_name)||!allPlayersSet.has(e.player_targeted_name)||e.player_name===e.player_targeted_name) return;
+        if(!playerPasses[e.player_name]) playerPasses[e.player_name]={};
+        playerPasses[e.player_name][e.player_targeted_name]=(playerPasses[e.player_name][e.player_targeted_name]||0)+1;
+        playerTotal[e.player_name]=(playerTotal[e.player_name]||0)+1;
+      });
+
+      // Clasificación por línea (derecha → izquierda dentro de cada línea)
+      function getPosTier(pos){
+        const p=(pos||'').toUpperCase().trim();
+        if(['GK','PT','POR','PORTERO','P','GOALKEEPER'].includes(p)) return {tier:0,order:0};
+        if(['RB','RWB'].includes(p)) return {tier:1,order:1};
+        if(['CB','DC','DF','DEF','CD','BC','CT'].includes(p)) return {tier:1,order:2};
+        if(['LB','LWB'].includes(p)) return {tier:1,order:3};
+        if(['RM'].includes(p)) return {tier:2,order:1};
+        if(['CDM','DM','SD','CM','MC','MID','CAM','AM','MF','M','MO'].includes(p)) return {tier:2,order:2};
+        if(['LM'].includes(p)) return {tier:2,order:3};
+        if(['RW'].includes(p)) return {tier:3,order:1};
+        if(['CF','ST','FW','ATT','DEL','SS'].includes(p)) return {tier:3,order:2};
+        if(['LW'].includes(p)) return {tier:3,order:3};
+        return {tier:2,order:2};
+      }
+
+      const sorted=allPlayers.map(n=>({
+        name:n, pos:playerMap[n]||'',
+        ...getPosTier(playerMap[n]),
+        total:playerTotal[n]||0,
+      })).sort((a,b)=>a.tier!==b.tier?a.tier-b.tier:a.order-b.order);
+
+      // Mini campo SVG
+      const W=220,H=143,MX=18,MY=12,PW=W-MX*2,PH=H-MY*2;
+      const sv=(x,y)=>({sx:MX+((x+52.5)/105)*PW,sy:MY+((34-y)/68)*PH});
+
+      function miniField(playerName){
+        const p=posM[playerName];
+        if(!p) return null;
+        const {sx:px,sy:py}=sv(p.x,p.y);
+        const passes=playerPasses[playerName]||{};
+        const maxP=Math.max(1,...Object.values(passes));
+        let lines='',tdots='';
+        Object.entries(passes).forEach(([target,count])=>{
+          const tp=posM[target];
+          if(!tp) return;
+          const {sx:tx,sy:ty}=sv(tp.x,tp.y);
+          const op=0.15+(count/maxP)*0.65;
+          const sw=0.8+(count/maxP)*3.2;
+          lines+=`<line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${tx.toFixed(1)}" y2="${ty.toFixed(1)}" stroke="#c8a96e" stroke-width="${sw.toFixed(1)}" stroke-opacity="${op.toFixed(2)}" stroke-linecap="round"/>`;
+          tdots+=`<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="3.5" fill="#21262d" stroke="#484f58" stroke-width="1"/>`;
+        });
+        return `<rect x="${MX}" y="${MY}" width="${PW}" height="${PH}" fill="#0d1a0d" stroke="#1e3a1e" stroke-width="1"/>
+          <line x1="${(W/2).toFixed(1)}" y1="${MY}" x2="${(W/2).toFixed(1)}" y2="${H-MY}" stroke="#1e3a1e" stroke-width="0.7"/>
+          <circle cx="${(W/2).toFixed(1)}" cy="${(H/2).toFixed(1)}" r="${(PH*9.15/68).toFixed(0)}" fill="none" stroke="#1e3a1e" stroke-width="0.7"/>
+          <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.5"/>
+          <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.5"/>
+          ${lines}${tdots}
+          <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="6" fill="#1c2333" stroke="#c8a96e" stroke-width="2"/>`;
+      }
+
+      const rival=partido.local==='Pontevedra CF'?partido.vis:partido.local;
+      const lugar=partido.local==='Pontevedra CF'?'🏠':'✈️';
+
+      let html=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
+        <div><div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · Red por jugador</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">Pontevedra CF vs ${rival}</div></div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
+        <div style="margin-left:auto;font-size:12px;color:var(--text2)">${allPlayers.length} jugadores</div>
+      </div>`;
+
+      const tierLabels=['Portero','Defensas','Centrocampistas','Delanteros'];
+      for(let tierId=0;tierId<=3;tierId++){
+        const tierPlayers=sorted.filter(p=>p.tier===tierId&&posM[p.name]);
+        if(!tierPlayers.length) continue;
+        html+=`<div style="margin-bottom:28px">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--border)">${tierLabels[tierId]}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:14px">`;
+        tierPlayers.forEach(({name,pos,total})=>{
+          const fieldContent=miniField(name);
+          if(!fieldContent) return;
+          const ap=name.split(' ').slice(-1)[0].substring(0,14);
+          const dispName=name.length>18?ap:name;
+          html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;width:220px;flex-shrink:0">
+            <div style="padding:8px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px">
+              <span style="color:var(--accent);font-size:9px;font-weight:700;background:rgba(200,169,110,0.1);border:1px solid rgba(200,169,110,0.2);padding:2px 5px;border-radius:4px;flex-shrink:0">${pos}</span>
+              <span style="font-size:11px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${dispName}</span>
+            </div>
+            <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${fieldContent}</svg>
+            <div style="padding:6px 10px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)">
+              <span style="color:var(--accent);font-weight:700">${total}</span> pases completados
+            </div>
+          </div>`;
+        });
+        html+=`</div></div>`;
+      }
+
+      cont.innerHTML=html;
     } catch(e){
       cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
     }
