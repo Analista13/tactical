@@ -114,15 +114,15 @@
     <img class="team-escudo" src="https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png" alt="">
     <div class="team-info"><div class="team-name">Pontevedra CF</div><div class="team-sub">27 partidos</div></div>
   </div>
+  <div class="team-item" id="team-923" onclick="selectTeam(923,'SD Ponferradina','https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/SD_Ponferradina_logo.svg/150px-SD_Ponferradina_logo.svg.png')">
+    <img class="team-escudo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/SD_Ponferradina_logo.svg/150px-SD_Ponferradina_logo.svg.png" alt="">
+    <div class="team-info"><div class="team-name">SD Ponferradina</div><div class="team-sub">30 partidos</div></div>
+  </div>
   <div class="sidebar-divider"></div>
   <div class="sidebar-label">Próximamente</div>
   <div class="team-item" style="opacity:0.4;pointer-events:none">
     <div style="width:30px;height:30px;background:var(--bg4);border-radius:50%;flex-shrink:0"></div>
     <div><div class="team-name">Real Madrid B</div><div class="team-sub">Sin datos</div></div>
-  </div>
-  <div class="team-item" style="opacity:0.4;pointer-events:none">
-    <div style="width:30px;height:30px;background:var(--bg4);border-radius:50%;flex-shrink:0"></div>
-    <div><div class="team-name">SD Ponferradina</div><div class="team-sub">Sin datos</div></div>
   </div>
   <div class="team-item" style="opacity:0.4;pointer-events:none">
     <div style="width:30px;height:30px;background:var(--bg4);border-radius:50%;flex-shrink:0"></div>
@@ -167,35 +167,70 @@
     979392: 5, // Nico Conesa
   };
 
-  const PARTIDOS = [
-    {j:'J1',  f:'30/08/2025', local:'Pontevedra CF',    vis:'Cacereño',        id:2040850, s:'1-1'},
-    {j:'J2',  f:'06/09/2025', local:'Ponferradina',     vis:'Pontevedra CF',   id:2040906, s:'0-1'},
-    {j:'J3',  f:'14/09/2025', local:'Pontevedra CF',    vis:'CD Tenerife',     id:2040469, s:'0-2'},
-    {j:'J4',  f:'20/09/2025', local:'Bilbao Athletic',  vis:'Pontevedra CF',   id:2040422, s:'1-0'},
-    {j:'J5',  f:'27/09/2025', local:'Ourense CF',       vis:'Pontevedra CF',   id:2040406, s:'1-2'},
-    {j:'J8',  f:'18/10/2025', local:'Pontevedra CF',    vis:'Osasuna B',       id:2038960, s:'2-2'},
-    {j:'J10', f:'01/11/2025', local:'Pontevedra CF',    vis:'Zamora CF',       id:2040705, s:'4-1'},
-    {j:'J12', f:'15/11/2025', local:'Pontevedra CF',    vis:'Mérida AD',       id:2043899, s:'1-1'},
-    {j:'J13', f:'22/11/2025', local:'CD Lugo',          vis:'Pontevedra CF',   id:2044705, s:'1-0'},
-    {j:'J14', f:'29/11/2025', local:'Pontevedra CF',    vis:'Guadalajara',     id:2048014, s:'1-1'},
-    {j:'J15', f:'06/12/2025', local:'Celta de Vigo B',  vis:'Pontevedra CF',   id:2046903, s:'1-1'},
-    {j:'J16', f:'14/12/2025', local:'Pontevedra CF',    vis:'Arenas Club',     id:2047939, s:'2-0'},
-    {j:'J18', f:'03/01/2026', local:'Pontevedra CF',    vis:'Racing Ferrol',   id:2049227, s:'2-1'},
-    {j:'J19', f:'10/01/2026', local:'Real Avilés',      vis:'Pontevedra CF',   id:2049850, s:'0-3'},
-    {j:'J21', f:'23/01/2026', local:'Mérida AD',        vis:'Pontevedra CF',   id:2050946, s:'1-1'},
-    {j:'J23', f:'08/02/2026', local:'Pontevedra CF',    vis:'Real Madrid B',   id:2053307, s:'0-0'},
-    {j:'J24', f:'14/02/2026', local:'Cacereño',         vis:'Pontevedra CF',   id:2054295, s:'1-0'},
-    {j:'J25', f:'21/02/2026', local:'Pontevedra CF',    vis:'CD Lugo',         id:2055175, s:'1-1'},
-    {j:'J27', f:'08/03/2026', local:'Pontevedra CF',    vis:'Unionistas de S', id:2057739, s:'0-0'},
-    {j:'J29', f:'21/03/2026', local:'Pontevedra CF',    vis:'Ourense CF',      id:2059575, s:'0-0'},
-    {j:'J30', f:'28/03/2026', local:'Zamora CF',        vis:'Pontevedra CF',   id:2060320, s:'2-1'},
-    {j:'J31', f:'04/04/2026', local:'Pontevedra CF',    vis:'Barakaldo',       id:2061272, s:'3-0'},
-    {j:'J32', f:'12/04/2026', local:'Pontevedra CF',    vis:'Ponferradina',    id:2062716, s:'2-2'},
-    {j:'J34', f:'25/04/2026', local:'Pontevedra CF',    vis:'Celta de Vigo B', id:2064818, s:'2-1'},
-    {j:'J35', f:'02/05/2026', local:'Racing Ferrol',    vis:'Pontevedra CF',   id:2066030, s:'0-1'},
-    {j:'J36', f:'09/05/2026', local:'Pontevedra CF',    vis:'Bilbao Athletic', id:2067109, s:'4-0'},
-    {j:'J37', f:'17/05/2026', local:'CD Tenerife',      vis:'Pontevedra CF',   id:2068384, s:'3-0'},
-  ];
+  const PARTIDOS_MAP = {
+    2908: [
+      {j:'J1',  f:'30/08/2025', local:'Pontevedra CF',    vis:'Cacereño',        id:2040850, s:'1-1'},
+      {j:'J2',  f:'06/09/2025', local:'Ponferradina',     vis:'Pontevedra CF',   id:2040906, s:'0-1'},
+      {j:'J3',  f:'14/09/2025', local:'Pontevedra CF',    vis:'CD Tenerife',     id:2040469, s:'0-2'},
+      {j:'J4',  f:'20/09/2025', local:'Bilbao Athletic',  vis:'Pontevedra CF',   id:2040422, s:'1-0'},
+      {j:'J5',  f:'27/09/2025', local:'Ourense CF',       vis:'Pontevedra CF',   id:2040406, s:'1-2'},
+      {j:'J8',  f:'18/10/2025', local:'Pontevedra CF',    vis:'Osasuna B',       id:2038960, s:'2-2'},
+      {j:'J10', f:'01/11/2025', local:'Pontevedra CF',    vis:'Zamora CF',       id:2040705, s:'4-1'},
+      {j:'J12', f:'15/11/2025', local:'Pontevedra CF',    vis:'Mérida AD',       id:2043899, s:'1-1'},
+      {j:'J13', f:'22/11/2025', local:'CD Lugo',          vis:'Pontevedra CF',   id:2044705, s:'1-0'},
+      {j:'J14', f:'29/11/2025', local:'Pontevedra CF',    vis:'Guadalajara',     id:2048014, s:'1-1'},
+      {j:'J15', f:'06/12/2025', local:'Celta de Vigo B',  vis:'Pontevedra CF',   id:2046903, s:'1-1'},
+      {j:'J16', f:'14/12/2025', local:'Pontevedra CF',    vis:'Arenas Club',     id:2047939, s:'2-0'},
+      {j:'J18', f:'03/01/2026', local:'Pontevedra CF',    vis:'Racing Ferrol',   id:2049227, s:'2-1'},
+      {j:'J19', f:'10/01/2026', local:'Real Avilés',      vis:'Pontevedra CF',   id:2049850, s:'0-3'},
+      {j:'J21', f:'23/01/2026', local:'Mérida AD',        vis:'Pontevedra CF',   id:2050946, s:'1-1'},
+      {j:'J23', f:'08/02/2026', local:'Pontevedra CF',    vis:'Real Madrid B',   id:2053307, s:'0-0'},
+      {j:'J24', f:'14/02/2026', local:'Cacereño',         vis:'Pontevedra CF',   id:2054295, s:'1-0'},
+      {j:'J25', f:'21/02/2026', local:'Pontevedra CF',    vis:'CD Lugo',         id:2055175, s:'1-1'},
+      {j:'J27', f:'08/03/2026', local:'Pontevedra CF',    vis:'Unionistas de S', id:2057739, s:'0-0'},
+      {j:'J29', f:'21/03/2026', local:'Pontevedra CF',    vis:'Ourense CF',      id:2059575, s:'0-0'},
+      {j:'J30', f:'28/03/2026', local:'Zamora CF',        vis:'Pontevedra CF',   id:2060320, s:'2-1'},
+      {j:'J31', f:'04/04/2026', local:'Pontevedra CF',    vis:'Barakaldo',       id:2061272, s:'3-0'},
+      {j:'J32', f:'12/04/2026', local:'Pontevedra CF',    vis:'Ponferradina',    id:2062716, s:'2-2'},
+      {j:'J34', f:'25/04/2026', local:'Pontevedra CF',    vis:'Celta de Vigo B', id:2064818, s:'2-1'},
+      {j:'J35', f:'02/05/2026', local:'Racing Ferrol',    vis:'Pontevedra CF',   id:2066030, s:'0-1'},
+      {j:'J36', f:'09/05/2026', local:'Pontevedra CF',    vis:'Bilbao Athletic', id:2067109, s:'4-0'},
+      {j:'J37', f:'17/05/2026', local:'CD Tenerife',      vis:'Pontevedra CF',   id:2068384, s:'3-0'},
+    ],
+    923: [
+      {j:'J1',  f:'31/08/2025', local:'Real Avilés',          vis:'SD Ponferradina',   id:2041110, s:'0-3'},
+      {j:'J2',  f:'06/09/2025', local:'SD Ponferradina',      vis:'Pontevedra CF',     id:2040906, s:'0-1'},
+      {j:'J3',  f:'14/09/2025', local:'Racing Ferrol',        vis:'SD Ponferradina',   id:2040921, s:'2-1'},
+      {j:'J4',  f:'19/09/2025', local:'SD Ponferradina',      vis:'Guadalajara',       id:2040430, s:'1-3'},
+      {j:'J6',  f:'05/10/2025', local:'SD Ponferradina',      vis:'Real Madrid B',     id:2040391, s:'2-3'},
+      {j:'J8',  f:'19/10/2025', local:'SD Ponferradina',      vis:'Zamora CF',         id:2038965, s:'2-0'},
+      {j:'J9',  f:'24/10/2025', local:'Mérida AD',            vis:'SD Ponferradina',   id:2040148, s:'0-0'},
+      {j:'J10', f:'02/11/2025', local:'SD Ponferradina',      vis:'Cacereño',          id:2040246, s:'2-0'},
+      {j:'J12', f:'15/11/2025', local:'SD Ponferradina',      vis:'CD Lugo',           id:2043900, s:'1-1'},
+      {j:'J13', f:'23/11/2025', local:'Celta de Vigo B',      vis:'SD Ponferradina',   id:2044962, s:'2-0'},
+      {j:'J14', f:'29/11/2025', local:'SD Ponferradina',      vis:'Arenas Club',       id:2046155, s:'1-2'},
+      {j:'J15', f:'08/12/2025', local:'Unionistas de S',      vis:'SD Ponferradina',   id:2047298, s:'2-2'},
+      {j:'J16', f:'13/12/2025', local:'SD Ponferradina',      vis:'Arenteiro',         id:2047799, s:'1-3'},
+      {j:'J17', f:'20/12/2025', local:'CD Tenerife',          vis:'SD Ponferradina',   id:2048312, s:'2-0'},
+      {j:'J19', f:'10/01/2026', local:'SD Ponferradina',      vis:'Ourense CF',        id:2049811, s:'2-0'},
+      {j:'J20', f:'17/01/2026', local:'SD Ponferradina',      vis:'Racing Ferrol',     id:2050287, s:'3-0'},
+      {j:'J21', f:'25/01/2026', local:'Guadalajara',          vis:'SD Ponferradina',   id:2051795, s:'0-1'},
+      {j:'J22', f:'01/02/2026', local:'CD Lugo',              vis:'SD Ponferradina',   id:2052263, s:'0-2'},
+      {j:'J23', f:'08/02/2026', local:'SD Ponferradina',      vis:'Celta de Vigo B',   id:2053348, s:'0-0'},
+      {j:'J24', f:'14/02/2026', local:'Arenas Club',          vis:'SD Ponferradina',   id:2054294, s:'0-1'},
+      {j:'J25', f:'20/02/2026', local:'SD Ponferradina',      vis:'Talavera CF',       id:2054952, s:'1-0'},
+      {j:'J26', f:'01/03/2026', local:'Real Madrid B',        vis:'SD Ponferradina',   id:2056593, s:'0-1'},
+      {j:'J27', f:'07/03/2026', local:'SD Ponferradina',      vis:'Osasuna B',         id:2057466, s:'0-1'},
+      {j:'J28', f:'15/03/2026', local:'Cacereño',             vis:'SD Ponferradina',   id:2058792, s:'0-0'},
+      {j:'J31', f:'04/04/2026', local:'SD Ponferradina',      vis:'Mérida AD',         id:2061313, s:'4-1'},
+      {j:'J32', f:'12/04/2026', local:'Pontevedra CF',        vis:'SD Ponferradina',   id:2062716, s:'3-1'},
+      {j:'J33', f:'19/04/2026', local:'SD Ponferradina',      vis:'Barakaldo',         id:2063736, s:'1-0'},
+      {j:'J34', f:'25/04/2026', local:'SD Ponferradina',      vis:'CD Tenerife',       id:2064907, s:'1-1'},
+      {j:'J35', f:'02/05/2026', local:'Zamora CF',            vis:'SD Ponferradina',   id:2066099, s:'3-0'},
+      {j:'J36', f:'09/05/2026', local:'SD Ponferradina',      vis:'Real Avilés',       id:2067181, s:'3-1'},
+    ],
+  };
+  let PARTIDOS = PARTIDOS_MAP[2908];
 
   async function sbGet(table, params) {
     const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, {
@@ -223,7 +258,9 @@
     document.querySelectorAll('.team-item').forEach(i => i.classList.remove('active'));
     document.getElementById(`team-${id}`)?.classList.add('active');
     currentTeam = {id, name, escudo};
+    PARTIDOS = PARTIDOS_MAP[id] || PARTIDOS_MAP[2908];
     redMatchId = null;
+    jugSubTab = 'mapa';
     loadRedPases();
   }
 
@@ -255,8 +292,8 @@
   // RED DE PASES
   function loadRedPases() {
     const matchOpts = PARTIDOS.map(p => {
-      const rival = p.local==='Pontevedra CF'?p.vis:p.local;
-      const s = p.local==='Pontevedra CF'?'🏠':'✈️';
+      const rival = p.local===currentTeam.name?p.vis:p.local;
+      const s = p.local===currentTeam.name?'🏠':'✈️';
       return `<option value="${p.id}" ${p.id==redMatchId?'selected':''}>${s} ${p.j} · ${rival} · ${p.s} · ${p.f}</option>`;
     }).join('');
 
@@ -488,8 +525,8 @@
         :`<circle cx="${MX+16}" cy="${MY+32}" r="6" fill="none" stroke="#f0883e" stroke-width="2" stroke-dasharray="3,2"/>
         <text x="${MX+26}" y="${MY+36}" font-family="DM Sans,sans-serif" font-size="9" fill="#8b949e">Alta centralidad</text>`}`;
 
-      const rival=partido.local==='Pontevedra CF'?partido.vis:partido.local;
-      const lugar=partido.local==='Pontevedra CF'?'🏠':'✈️';
+      const rival=partido.local===currentTeam.name?partido.vis:partido.local;
+      const lugar=partido.local===currentTeam.name?'🏠':'✈️';
       const pctProg=totPasesAll>0?Math.round((totProgresivos/totPasesAll)*100):0;
 
       // Centralidad HTML
@@ -520,7 +557,7 @@
       cont.innerHTML=`
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
           <div><div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · ${periodo===1?'1ª Parte':'2ª Parte'}</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">Pontevedra CF vs ${rival}</div></div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">${currentTeam.name} vs ${rival}</div></div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
           <div style="margin-left:auto;display:flex;gap:20px;align-items:center">
             <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent)">${totPasesAll}</div><div style="font-size:10px;color:var(--text3);letter-spacing:1px">PASES</div></div>
@@ -614,12 +651,12 @@
         return `<tr><td style="padding:4px 10px;font-size:11px;border:1px solid var(--border);font-weight:500;white-space:nowrap">${pos}${ap}</td>${cels}<td style="padding:4px 8px;font-size:11px;color:var(--accent);font-weight:700;border:1px solid var(--border);text-align:center">${totD[fr]||0}</td></tr>`;
       }).join('');
       const recRow=jugs.map(j=>`<td style="padding:4px;font-size:11px;color:var(--blue);font-weight:700;border:1px solid var(--border);text-align:center">${totR[j]||0}</td>`).join('');
-      const rival=partido.local==='Pontevedra CF'?partido.vis:partido.local;
+      const rival=partido.local===currentTeam.name?partido.vis:partido.local;
 
       cont.innerHTML=`
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
           <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · Ambas partes</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">Pontevedra CF vs ${rival}</div></div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">${currentTeam.name} vs ${rival}</div></div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
           <div style="margin-left:auto;font-size:12px;color:var(--text2)">${data.length} pases completados</div>
         </div>
@@ -713,13 +750,13 @@
         <span style="font-size:13px;font-weight:700;color:var(--blue);width:44px;text-align:right">${((n/total)*100).toFixed(1)}%</span>
       </div>`).join('');
 
-      const rival=partido.local==='Pontevedra CF'?partido.vis:partido.local;
-      const lugar=partido.local==='Pontevedra CF'?'🏠':'✈️';
+      const rival=partido.local===currentTeam.name?partido.vis:partido.local;
+      const lugar=partido.local===currentTeam.name?'🏠':'✈️';
 
       cont.innerHTML=`
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
           <div><div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · Tendencia de juego</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">Pontevedra CF vs ${rival}</div></div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">${currentTeam.name} vs ${rival}</div></div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
           <div style="margin-left:auto;font-size:12px;color:var(--text2)">${total} pases exitosos</div>
         </div>
@@ -883,13 +920,13 @@
         </tr>`;
       }).join('');
 
-      const rival=partido.local==='Pontevedra CF'?partido.vis:partido.local;
-      const lugar=partido.local==='Pontevedra CF'?'🏠':'✈️';
+      const rival=partido.local===currentTeam.name?partido.vis:partido.local;
+      const lugar=partido.local===currentTeam.name?'🏠':'✈️';
 
       cont.innerHTML=`
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
           <div><div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · 1ª vs 2ª Parte</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">Pontevedra CF vs ${rival}</div></div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">${currentTeam.name} vs ${rival}</div></div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
@@ -1016,8 +1053,8 @@
       // ── Helpers SVG compartidos ─────────────────────────────────────────────
       const W=260,H=170,MX=20,MY=14,PW=W-MX*2,PH=H-MY*2;
       const sv=(x,y)=>({sx:MX+((x+52.5)/105)*PW,sy:MY+((34-y)/68)*PH});
-      const rival=partido.local==='Pontevedra CF'?partido.vis:partido.local;
-      const lugar=partido.local==='Pontevedra CF'?'🏠':'✈️';
+      const rival=partido.local===currentTeam.name?partido.vis:partido.local;
+      const lugar=partido.local===currentTeam.name?'🏠':'✈️';
 
       const fieldBase=()=>`<rect x="${MX}" y="${MY}" width="${PW}" height="${PH}" fill="#0a1a0a" stroke="#1a3a1a" stroke-width="1"/>
         <line x1="${(W/2).toFixed(1)}" y1="${MY}" x2="${(W/2).toFixed(1)}" y2="${H-MY}" stroke="#1a3a1a" stroke-width="0.8"/>
@@ -1046,7 +1083,7 @@
         `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:20px">
           <div>
             <div style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · ${subtitle}</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px">Pontevedra CF <span style="color:var(--text3);font-size:16px">vs</span> ${rival}</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px">${currentTeam.name} <span style="color:var(--text3);font-size:16px">vs</span> ${rival}</div>
           </div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:4px;color:var(--accent)">${partido.s}</div>
           ${legend?`<div style="margin-left:auto;display:flex;gap:18px;font-size:11px;color:var(--text2);align-items:center;flex-wrap:wrap">${legend}</div>`:''}
