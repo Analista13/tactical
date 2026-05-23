@@ -539,9 +539,9 @@
         {label:'C5 — Der. exterior', n:zones[0][0]+zones[1][0]+zones[2][0]},
       ];
       const thirds=[
-        {label:'Zona 1 (defensiva)', n:zones[0].reduce((a,b)=>a+b,0)},
-        {label:'Zona 2 (media)',     n:zones[1].reduce((a,b)=>a+b,0)},
-        {label:'Zona 3 (ofensiva)', n:zones[2].reduce((a,b)=>a+b,0)},
+        {label:'Zona 1', n:zones[0].reduce((a,b)=>a+b,0)},
+        {label:'Zona 2', n:zones[1].reduce((a,b)=>a+b,0)},
+        {label:'Zona 3', n:zones[2].reduce((a,b)=>a+b,0)},
       ];
       const bar=(n,color)=>`<div style="flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden"><div style="width:${((n/total)*100).toFixed(1)}%;height:100%;background:${color};border-radius:4px"></div></div>`;
       const corrHTML=corr.map(({label,n})=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
