@@ -1520,6 +1520,57 @@
     'SS' :{x: 33,y:  0}, 'ST' :{x: 38,y:  0},
   };
 
+  // ─── Posición canónica de cada jugador (posición táctica real del equipo) ────
+  // Fuente: conocimiento del analista. Usada como fallback cuando el tracking
+  // de SkillCorner asigna una posición claramente errónea (ej. un defensa como CF).
+  const PLAYER_CANONICAL_POS = {
+    928181:'RW',   // A. Keita        — extremo derecho / delantero
+    25640: 'LB',   // Andoni López    — lateral izquierdo
+    13149: 'LCB',  // B. Moltenis     — central (zurdo)
+    826951:'CF',   // Borja Vázquez   — delantero centro
+    25796: 'LW',   // Borja Valle     — extremo izquierdo
+    736606:'LM',   // E. Frimpong     — mediocampista izq.
+    532819:'CM',   // Eneko Aguilar   — mediocampista central
+    62134: 'LCB',  // Eneko Undabarrena — central (zurdo)
+    23777: 'DM',   // Fede San Emeterio — pivote defensivo
+    746539:'RCB',  // Germán Novoa    — central (diestro)
+    745374:'CF',   // José Luis Cortés — delantero centro
+    70531: 'RW',   // P. Ferrer       — extremo derecho
+    31995: 'CF',   // Sergio Benito   — delantero centro
+    505184:'RB',   // Diego Moreno    — lateral derecho
+    69380: 'AM',   // Xemi Fernández  — mediapunta / extremo
+    34150: 'GK',   // Ángel Jiménez   — portero
+    3156:  'LM',   // Erik Morán      — mediocampista izq.
+    24021: 'GK',   // Andrés Prieto   — portero
+    24345: 'CM',   // Vicente Esquerdo — mediocampista central
+    26415: 'LW',   // Álex Mula       — extremo izquierdo
+    31972: 'LCB',  // David Andújar   — central
+    69915: 'CF',   // Borislav Stankov — delantero
+    180393:'LB',   // Vasco Sousa     — lateral izquierdo
+    258595:'RB',   // Mario Jorrín    — lateral derecho
+    486534:'AM',   // S. Petkov       — mediapunta
+    531656:'RW',   // Carlos Calderón — extremo derecho
+    671880:'RW',   // Lian            — extremo derecho
+    819170:'RB',   // Koke            — lateral derecho
+    1029735:'RM',  // V. Kisil        — mediocampista derecho
+    1066888:'RM',  // O. Mfulu        — mediocampista derecho
+  };
+
+  // Corrige posiciones de tracking cuando el tier difiere ≥ 2 respecto a la canónica
+  // (ej. defensa rastreado como delantero, portero como CM, etc.)
+  function resolvePlayerPosition(player) {
+    const tracked  = (player.position || '').toUpperCase().trim();
+    const canonical = PLAYER_CANONICAL_POS[player.id];
+    if(!canonical) return tracked || 'CM';
+    const tTracked   = getPosTier(tracked).tier;
+    const tCanonical = getPosTier(canonical).tier;
+    // GK nunca puede cambiar de posición
+    if(tCanonical === 0 || tTracked === 0) return tCanonical === 0 ? canonical : tracked;
+    // Diferencia de 2 o más tiers (DEF↔ATT): claramente incorrecto → usar canónica
+    if(Math.abs(tTracked - tCanonical) >= 2) return canonical;
+    return tracked;
+  }
+
   // ─── Helpers globales (accesibles desde buildAlineacionSVG, renderAlineacion, renderJugadores) ───
   function getPosTier(pos){
     const p=(pos||'').toUpperCase().trim();
@@ -1546,12 +1597,13 @@
     const DM  = ['LDM','RDM','DM'];
     const MID = ['LCM','RCM','CM','LM','RM'];
     const AMF = ['LAM','RAM','AM','CAM'];
-    const FWD = ['LW','RW','CF','LF','RF','SS','ST'];
-    const nd=players.filter(p=>DEF.includes(p.position)).length;
-    const ndm=players.filter(p=>DM.includes(p.position)).length;
-    const nm=players.filter(p=>MID.includes(p.position)).length;
-    const na=players.filter(p=>AMF.includes(p.position)).length;
-    const nf=players.filter(p=>FWD.includes(p.position)).length;
+    const FWD = ['LW','RW','CF','LF','RF','SS','ST','FW','ATT'];
+    const pos = p => (p.position||'').toUpperCase();
+    const nd=players.filter(p=>DEF.includes(pos(p))).length;
+    const ndm=players.filter(p=>DM.includes(pos(p))).length;
+    const nm=players.filter(p=>MID.includes(pos(p))).length;
+    const na=players.filter(p=>AMF.includes(pos(p))).length;
+    const nf=players.filter(p=>FWD.includes(pos(p))).length;
     const parts=[nd];
     if(ndm&&(nm||na||nf)) parts.push(ndm);
     if(nm) parts.push(nm);
@@ -1669,7 +1721,9 @@
     const finishers=lineup.filter(p=>p.end_time===null);
 
     const activePlayers = aliParte==='1' ? starters : finishers;
-    const formacion=detectFormacion(activePlayers.filter(p=>p.position!=='GK'));
+    // Resolver posiciones: corrige errores de tracking (defensa rastreado como delantero, etc.)
+    const resolvedPlayers = activePlayers.map(p=>({...p, position: resolvePlayerPosition(p)}));
+    const formacion=detectFormacion(resolvedPlayers.filter(p=>p.position!=='GK'));
 
     // Jugadores que salieron si es 2ª parte (para mostrar cambios)
     const outPlayers = aliParte==='2' ? lineup.filter(p=>p.start_time==='00:00:00'&&p.end_time!==null) : [];
@@ -1732,7 +1786,7 @@
 
       <!-- Campo con jugadores -->
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-        ${buildAlineacionSVG(activePlayers, aliParte)}
+        ${buildAlineacionSVG(resolvedPlayers, aliParte)}
       </div>
 
       <!-- Leyenda -->
