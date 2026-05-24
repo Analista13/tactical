@@ -293,13 +293,32 @@
     2067181:[[69915,'Borislav Ivanov Stankov','RF','01:22:53',null,20.5,13.9],[23777,'Fede San Emeterio','CF','01:03:24',null,-9.3,-1.4],[69380,'Xemi Fernández','LM','01:03:24',null,9.5,11.5],[745374,'José Luis Cortés','LF','01:11:34',null,11.9,13.8],[31972,'David Andújar','CM','01:11:34',null,-22.7,1.2],[531656,'Carlos Calderón','RF','00:00:00','01:22:53',17.6,-25.0],[70531,'P. Ferrer','CF','00:00:00','01:03:24',7.7,-5.4],[928181,'A. Keita','LF','00:00:00','01:11:34',14.0,3.9],[826951,'Borja Vázquez','RM','00:00:00',null,10.7,12.9],[24345,'Vicente Esquerdo','CM','00:00:00','01:11:34',3.8,-2.8],[736606,'E. Frimpong','LM','00:00:00','01:03:24',1.7,6.1],[819170,'Koke','RB','00:00:00',null,-0.3,-23.1],[746539,'Germán Novoa','RCB','00:00:00',null,-9.0,14.5],[62134,'Eneko Undabarrena','LCB','00:00:00',null,-12.1,-3.8],[25640,'Andoni López','LB','00:00:00',null,0.5,21.9],[24021,'Andrés Prieto','GK','00:00:00',null,-43.0,1.4]],
   };
 
+  // ─── Cache de respuestas Supabase ────────────────────────────────────────────
+  // Primera consulta → red; resto → instantánea. Se limpia al cambiar de partido.
+  const _SBC = new Map();
+  function sbCacheClear() { _SBC.clear(); }
+
   async function sbGet(table, params) {
-    const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, {
-      headers: { 'apikey':SB_KEY, 'Authorization':`Bearer ${SB_KEY}` }
-    });
-    const json = await r.json();
-    const data = Array.isArray(json) ? json : [];
-    return { data, count: data.length };
+    const key = `${table}|${params}`;
+    if(_SBC.has(key)) return _SBC.get(key);          // ← caché: ~0ms
+
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(()=>ctrl.abort(), 14000); // timeout 14s
+      const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, {
+        headers: { 'apikey':SB_KEY, 'Authorization':`Bearer ${SB_KEY}` },
+        signal: ctrl.signal
+      });
+      clearTimeout(timer);
+      const json = await r.json();
+      const data = Array.isArray(json) ? json : [];
+      const result = { data, count: data.length };
+      _SBC.set(key, result);                           // ← guardar en caché
+      return result;
+    } catch(e) {
+      console.warn('sbGet error:', e.message);
+      return { data: [], count: 0 };
+    }
   }
 
   function loading() {
@@ -370,7 +389,7 @@
 
     document.getElementById('content').innerHTML = `<div class="anim">${head()}
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-        <select id="matchSel" onchange="redMatchId=parseInt(this.value);telaranaMode='todos';renderRedTab()"
+        <select id="matchSel" onchange="redMatchId=parseInt(this.value);sbCacheClear();telaranaMode='todos';prefetchMatch(currentTeam.id,redMatchId);renderRedTab()"
           style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;flex:1;min-width:280px">
           <option value="">— Selecciona un partido —</option>${matchOpts}
         </select>
@@ -425,6 +444,18 @@
     else if(redSubTab==='tendencia') renderTendencia();
     else if(redSubTab==='comparativa') renderComparativa();
     else renderMatriz();
+  }
+
+  // Pre-carga en background al seleccionar partido → tabs instantáneas
+  function prefetchMatch(tid, mid) {
+    const base = `team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession`;
+    // Las 4 queries más comunes, en paralelo silenciosamente
+    [
+      `select=player_name,x_start,y_start&${base}&x_start=not.is.null&limit=5000`,
+      `select=player_name,player_targeted_name,x_start,x_end&${base}&pass_outcome=eq.successful&period=eq.1&limit=5000`,
+      `select=player_name,player_targeted_name,x_start,x_end&${base}&pass_outcome=eq.successful&period=eq.2&limit=5000`,
+      `select=player_name,player_targeted_name,x_start,y_start,x_end,y_end,pass_distance,player_targeted_xthreat,player_targeted_xpass_completion,first_line_break,lead_to_shot&${base}&pass_outcome=eq.successful&limit=5000`,
+    ].forEach(q => sbGet('eventos', q).catch(()=>{}));
   }
 
   // Convertir start_time "HH:MM:SS" a minutos reales
@@ -487,7 +518,11 @@
 
       if(!tits.length){ cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de alineación para este partido</div>`; return; }
 
-      const {data:allPP}=await sbGet('eventos',`select=player_name,x_start,y_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&period=eq.${periodo}&x_start=not.is.null&limit=5000`);
+      // Queries paralelas → se ejecutan simultáneamente
+      const [{data:allPP},{data:pd}] = await Promise.all([
+        sbGet('eventos',`select=player_name,x_start,y_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&period=eq.${periodo}&x_start=not.is.null&limit=5000`),
+        sbGet('eventos',`select=player_name,player_targeted_name,x_start,x_end&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&period=eq.${periodo}&limit=5000`)
+      ]);
       const posA={},posC={};
       allPP.forEach(e=>{ if(!tits.includes(e.player_name)) return; if(!posA[e.player_name]){posA[e.player_name]={x:0,y:0};posC[e.player_name]=0;} posA[e.player_name].x+=e.x_start; posA[e.player_name].y+=e.y_start; posC[e.player_name]++; });
       const posM={};
@@ -496,8 +531,6 @@
         if(posC[n]>0){ posM[n]={x:posA[n].x/posC[n],y:posA[n].y/posC[n]}; }
         else { const pos=(titMap[n]||'').toUpperCase().trim(); posM[n]=GK_POS.includes(pos)?{x:-47,y:0}:null; }
       });
-
-      const {data:pd}=await sbGet('eventos',`select=player_name,player_targeted_name,x_start,x_end&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&period=eq.${periodo}&limit=5000`);
       const pases={}, progP={};
       tits.forEach(n=>{progP[n]=0;});
       pd.forEach(e=>{
@@ -1056,8 +1089,11 @@
       const allPlayers=Object.keys(playerMap);
       const allPlayersSet=new Set(allPlayers);
 
-      // Posiciones medias desde posesiones
-      const {data:posData}=await sbGet('eventos',`select=player_name,x_start,y_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&x_start=not.is.null&limit=5000`);
+      // Queries paralelas → posiciones y pases simultáneamente
+      const [{data:posData},{data:passData}] = await Promise.all([
+        sbGet('eventos',`select=player_name,x_start,y_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&x_start=not.is.null&limit=5000`),
+        sbGet('eventos',`select=player_name,player_targeted_name,x_start,y_start,x_end,y_end,pass_distance,player_targeted_xthreat,player_targeted_xpass_completion,first_line_break,lead_to_shot&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&limit=5000`)
+      ]);
       const posA={},posC={};
       posData.forEach(e=>{
         if(!allPlayersSet.has(e.player_name)) return;
@@ -1070,9 +1106,6 @@
         if(posC[n]>0){ posM[n]={x:posA[n].x/posC[n],y:posA[n].y/posC[n]}; }
         else { const pos=(playerMap[n]||'').toUpperCase().trim(); posM[n]=GK_POS.includes(pos)?{x:-47,y:0}:null; }
       });
-
-      // Pases con info progresivo/atrás + métricas SkillCorner avanzadas
-      const {data:passData}=await sbGet('eventos',`select=player_name,player_targeted_name,x_start,y_start,x_end,y_end,pass_distance,player_targeted_xthreat,player_targeted_xpass_completion,first_line_break,lead_to_shot&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&limit=5000`);
       const playerPasses={},playerTotal={},playerProg={},playerRecv={};
       const playerFT={},playerDistSum={},playerDistN={};
       const playerXT={},playerXTN={},playerXpassSum={},playerXpassN={},playerLB={},playerShot={};
