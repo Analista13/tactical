@@ -1119,6 +1119,7 @@
       const playerPasses={},playerTotal={},playerProg={},playerRecv={};
       const playerFT={},playerDistSum={},playerDistN={};
       const playerXT={},playerXTN={},playerXpassSum={},playerXpassN={},playerLB={},playerShot={};
+      const playerShort={},playerLong={};
       passData.forEach(e=>{
         if(!allPlayersSet.has(e.player_name)||!allPlayersSet.has(e.player_targeted_name)||e.player_name===e.player_targeted_name) return;
         if(!playerPasses[e.player_name]) playerPasses[e.player_name]={};
@@ -1133,7 +1134,12 @@
         // Último tercio
         if(e.x_end!=null&&e.x_end>17.5) playerFT[e.player_name]=(playerFT[e.player_name]||0)+1;
         // Distancia (pre-calculada por SkillCorner)
-        if(e.pass_distance!=null){ playerDistSum[e.player_name]=(playerDistSum[e.player_name]||0)+e.pass_distance; playerDistN[e.player_name]=(playerDistN[e.player_name]||0)+1; }
+        if(e.pass_distance!=null){
+          playerDistSum[e.player_name]=(playerDistSum[e.player_name]||0)+e.pass_distance;
+          playerDistN[e.player_name]=(playerDistN[e.player_name]||0)+1;
+          if(e.pass_distance<15) playerShort[e.player_name]=(playerShort[e.player_name]||0)+1;
+          if(e.pass_distance>32) playerLong[e.player_name]=(playerLong[e.player_name]||0)+1;
+        }
         // xThreat generado
         if(e.player_targeted_xthreat!=null){ playerXT[e.player_name]=(playerXT[e.player_name]||0)+e.player_targeted_xthreat; playerXTN[e.player_name]=(playerXTN[e.player_name]||0)+1; }
         // xPass completion esperada
@@ -1437,28 +1443,41 @@
           const xtTotal=playerXT[name]||0;
           const xtN=playerXTN[name]||0;
           const xpassN=playerXpassN[name]||0;
+          const tot=playerTotal[name]||0;
           return {
             name, pos, id, tier,
-            total : playerTotal[name]||0,
+            total : tot,
             ft    : playerFT[name]||0,
             dist  : playerDistN[name]>0 ? +(playerDistSum[name]/playerDistN[name]).toFixed(1) : 0,
-            xt    : +xtTotal.toFixed(4),          // xT total acumulado
-            xtpp  : xtN>0 ? +(xtTotal/xtN).toFixed(4) : 0, // xT por pase
-            xpas  : xpassN>0 ? Math.round((playerXpassSum[name]/xpassN)*100) : 0, // xPass% esperado
-            lb    : playerLB[name]||0,            // líneas rotas
-            shot  : playerShot[name]||0,          // posesiones → tiro
+            xt    : +xtTotal.toFixed(4),
+            xtpp  : xtN>0 ? +(xtTotal/xtN).toFixed(4) : 0,
+            xpas  : xpassN>0 ? Math.round((playerXpassSum[name]/xpassN)*100) : 0,
+            lb    : playerLB[name]||0,
+            shot  : playerShot[name]||0,
+            short : playerShort[name]||0,
+            long  : playerLong[name]||0,
           };
         });
 
-        const metLegend=`<div style="display:flex;gap:14px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
-          <span><b style="color:var(--text2)">ENV</b> Pases enviados</span>
-          <span><b style="color:var(--text2)">ÚLT⅓</b> Al último tercio</span>
-          <span><b style="color:var(--text2)">DIST</b> Distancia media</span>
-          <span><b style="color:var(--text2)">xT↑</b> xThreat generado</span>
-          <span><b style="color:var(--text2)">xT/P</b> xThreat por pase</span>
-          <span><b style="color:var(--text2)">xPas%</b> Compl. esperada</span>
-          <span><b style="color:var(--text2)">LÍNEAS</b> Líneas rotas</span>
-          <span><b style="color:var(--text2)">→TIRO</b> Acaban en tiro</span>
+        // ── LEYENDA en tarjetas con descripción ─────────────────────────────
+        const metDefs=[
+          {abbr:'ENV',    col:'var(--text2)', label:'Pases enviados',    desc:'Total pases completados al equipo en el partido'},
+          {abbr:'ÚLT⅓',  col:'var(--text2)', label:'Último tercio',     desc:'Pases cuyo destino entra en el tercio final del campo (x>17.5)'},
+          {abbr:'DIST',   col:'var(--text2)', label:'Distancia media',   desc:'Longitud media de sus pases (metros), calculada por SkillCorner'},
+          {abbr:'CORTOS', col:'#58a6ff',      label:'Pases cortos',      desc:'Pases completados de menos de 15 m — circulación y apoyo'},
+          {abbr:'LARGOS', col:'#58a6ff',      label:'Pases largos',      desc:'Pases completados de más de 32 m — cambios de juego y pelotazos'},
+          {abbr:'xT↑',   col:'var(--accent)',label:'xThreat generado',  desc:'Aumento de prob. de gol acumulado. Cada pase sube el valor de zona de destino menos la de origen'},
+          {abbr:'xT/P',  col:'var(--accent)',label:'xThreat por pase',  desc:'Peligro medio por pase. Indica calidad de decisión, no volumen'},
+          {abbr:'xPas%', col:'var(--accent)',label:'Compl. esperada',   desc:'% que el modelo espera que se completen sus pases (dificultad táctica y técnica)'},
+          {abbr:'LÍNEAS',col:'var(--text2)', label:'Líneas rotas',      desc:'Pases que superan al menos una línea defensiva rival (first_line_break)'},
+          {abbr:'→TIRO', col:'#f85149',      label:'Acaban en tiro',    desc:'Posesiones del jugador en esa secuencia que terminan con un disparo del equipo'},
+        ];
+        const metLegend=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-top:4px">
+          ${metDefs.map(d=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 10px">
+            <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:${d.col};letter-spacing:1px;margin-bottom:3px">${d.abbr}</div>
+            <div style="font-size:11px;color:var(--text);font-weight:600;margin-bottom:2px">${d.label}</div>
+            <div style="font-size:10px;color:var(--text3);line-height:1.4">${d.desc}</div>
+          </div>`).join('')}
         </div>`;
         html=matchHeader('📊 Métricas avanzadas · SkillCorner', metLegend);
 
@@ -1470,6 +1489,7 @@
             dist :Math.max(1,...tp.map(p=>p.dist)),  xt:Math.max(0.0001,...tp.map(p=>p.xt)),
             xtpp :Math.max(0.0001,...tp.map(p=>p.xtpp)), xpas:Math.max(1,...tp.map(p=>p.xpas)),
             lb   :Math.max(1,...tp.map(p=>p.lb)),    shot:Math.max(1,...tp.map(p=>p.shot)),
+            short:Math.max(1,...tp.map(p=>p.short)), long:Math.max(1,...tp.map(p=>p.long)),
           };
           const bar=(v,m,col=tc)=>`<div style="height:2px;background:var(--bg4);border-radius:1px;margin-top:4px"><div style="height:2px;width:${Math.min(100,Math.round(v/m*100))}%;background:${col};border-radius:1px;transition:width 0.3s"></div></div>`;
           const cell=(v,m,disp,col=tc,last=false)=>`<td style="padding:9px 13px;text-align:right;${last?'':'border-right:1px solid '+bo+';'}vertical-align:top;min-width:64px">
@@ -1478,16 +1498,19 @@
           </td>`;
 
           const thS=`padding:8px 13px;text-align:right;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:600;font-family:'DM Mono',monospace;border-right:1px solid ${bo};white-space:nowrap`;
+          const thLast=`padding:8px 13px;text-align:right;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:600;font-family:'DM Mono',monospace;white-space:nowrap`;
           const thead=`<tr style="border-bottom:2px solid ${bo};background:var(--bg)">
-            <th style="${thS.replace('text-align:right','text-align:left').replace('border-right','border-right')}">JUGADOR</th>
+            <th style="${thS.replace('text-align:right','text-align:left')}">JUGADOR</th>
             <th style="${thS}">ENV.</th>
             <th style="${thS}">ÚLT⅓</th>
             <th style="${thS}">DIST.</th>
+            <th style="${thS};color:#58a6ff" title="Pases < 15m">CORTOS</th>
+            <th style="${thS};color:#58a6ff" title="Pases > 32m">LARGOS</th>
             <th style="${thS};color:${tc}">xT↑</th>
             <th style="${thS};color:${tc}">xT/P</th>
             <th style="${thS};color:${tc}">xPas%</th>
             <th style="${thS}">LÍNEAS</th>
-            <th style="padding:8px 13px;text-align:right;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:600;font-family:'DM Mono',monospace;white-space:nowrap">→TIRO</th>
+            <th style="${thLast}">→TIRO</th>
           </tr>`;
 
           const rows=tp.sort((a,b)=>b.xt-a.xt).map(p=>{
@@ -1505,6 +1528,8 @@
               ${cell(p.total,mx.total,p.total)}
               ${cell(p.ft,mx.ft,p.ft)}
               ${cell(p.dist,mx.dist,p.dist+'m')}
+              ${cell(p.short,mx.short,p.short,'#58a6ff')}
+              ${cell(p.long,mx.long,p.long,'#58a6ff')}
               ${cell(p.xt,mx.xt,p.xt.toFixed(3),xtCol)}
               ${cell(p.xtpp,mx.xtpp,p.xtpp.toFixed(3),xtCol)}
               ${cell(p.xpas,mx.xpas,p.xpas+'%',xtCol)}
