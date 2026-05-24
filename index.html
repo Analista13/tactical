@@ -1025,12 +1025,13 @@
         const {sx:sx2,sy:sy2}=sv(xR[c][1],yR[vr][1]);
         const zw=sx2-sx1,zh=sy2-sy1,cx=sx1+zw/2,cy=sy1+zh/2;
         const pct=((cnt/total)*100).toFixed(1);
-        const op=cnt>0?Math.max(0.05,(cnt/maxZ)*0.82):0;
-        const dark=op>0.38;
-        const fc=dark?'#1a0505':'#f85149'; // rojo = pérdidas
+        const op=cnt>0?Math.max(0.04,(cnt/maxZ)*0.75):0;
+        // texto siempre blanco/claro sobre fondo oscuro
+        const txtCol=cnt>0?'#ffffff':'#3a1e1e';
+        const subCol=cnt>0?'rgba(255,255,255,0.65)':'#3a1e1e';
         zoneSVG+=`<rect x="${sx1.toFixed(1)}" y="${sy1.toFixed(1)}" width="${zw.toFixed(1)}" height="${zh.toFixed(1)}" fill="#f85149" fill-opacity="${op.toFixed(3)}" stroke="#3a1e1e" stroke-width="0.8"/>
-          <text x="${cx.toFixed(1)}" y="${(cy-3).toFixed(1)}" text-anchor="middle" font-family="'Bebas Neue',sans-serif" font-size="15" font-weight="700" fill="${dark?'#ff9999':'#f85149'}">${pct}%</text>
-          <text x="${cx.toFixed(1)}" y="${(cy+12).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="${dark?'#cc6666':'#6e3030'}">${cnt} pérd.</text>`;
+          <text x="${cx.toFixed(1)}" y="${(cy-2).toFixed(1)}" text-anchor="middle" font-family="'Bebas Neue',sans-serif" font-size="16" font-weight="700" fill="${txtCol}">${pct}%</text>
+          <text x="${cx.toFixed(1)}" y="${(cy+13).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="${subCol}">${cnt}</text>`;
       }
       const xMids=[MX+PW*0.167,MX+PW*0.5,MX+PW*0.833];
       const axisLabels=['Z1','Z2','Z3'].map((l,i)=>`<text x="${xMids[i].toFixed(1)}" y="${(MY-10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#484f58" font-family="'DM Mono',monospace">${l}</text>`).join('')
@@ -1093,7 +1094,6 @@
         </div>
         <div style="display:grid;grid-template-columns:1fr 400px;gap:16px;align-items:start">
           <div>
-            <div style="font-size:10px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Dónde pierde el balón el equipo</div>
             <div style="background:var(--bg2);border:1px solid rgba(248,81,73,0.2);border-radius:var(--radius);overflow:hidden">
               <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
                 <rect x="0" y="0" width="${W}" height="${H}" fill="#0d1117"/>
