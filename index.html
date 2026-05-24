@@ -346,7 +346,9 @@
     redMatchId = null;
     aliMatchId = null;
     jugSubTab = 'mapa';
+    jugCalorPlayer = null;
     telaranaMode = 'todos';
+    perdidasPart = 'total';
     aliParte = '1';
     if(currentMainTab === 'redpases') loadRedPases();
     else loadAlineaciones();
@@ -392,7 +394,7 @@
 
     document.getElementById('content').innerHTML = `<div class="anim">${head()}
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-        <select id="matchSel" onchange="redMatchId=parseInt(this.value);sbCacheClear();telaranaMode='todos';perdidasPart='total';prefetchMatch(currentTeam.id,redMatchId);renderRedTab()"
+        <select id="matchSel" onchange="redMatchId=parseInt(this.value);sbCacheClear();telaranaMode='todos';perdidasPart='total';jugCalorPlayer=null;prefetchMatch(currentTeam.id,redMatchId);renderRedTab()"
           style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;flex:1;min-width:280px">
           <option value="">— Selecciona un partido —</option>${matchOpts}
         </select>
@@ -522,6 +524,7 @@
     if(!cont) return;
     cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando red...</span></div>`;
     const partido=PARTIDOS.find(p=>p.id==mid);
+    if(!partido){cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Partido no encontrado</div>`;return;}
     try {
       // Obtener alineación real desde JSON del partido
       const lineup = await getLineup(mid, tid);
@@ -549,7 +552,7 @@
       jugadoresPeriodo.forEach(p => { titMap[p.name] = p.position; });
       const tits = Object.keys(titMap);
 
-      if(!tits.length){ cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de alineación para este partido</div>`; return; }
+      if(!tits.length){ if(_redRenderSeq===seq) cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de alineación para este partido</div>`; return; }
 
       // Queries paralelas → se ejecutan simultáneamente
       const [{data:allPP},{data:pd}] = await Promise.all([
@@ -832,7 +835,7 @@
     const partido=PARTIDOS.find(p=>p.id==mid);
     try {
       const {data}=await sbGet('eventos',`select=x_start,y_start,period&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&x_start=not.is.null&limit=5000`);
-      if(!data.length){cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de pases</div>`;return;}
+      if(!data.length){if(_redRenderSeq===seq)cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de pases</div>`;return;}
 
       // Separar por periodo
       const d1=data.filter(e=>e.period===1), d2=data.filter(e=>e.period===2);
@@ -1008,7 +1011,7 @@
       const touches    = pf==='total'?allTouches:allTouches.filter(e=>String(e.period)===pf);
 
       const allLoss=[...lostDirect,...lostPass];
-      if(!allLoss.length){cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de pérdidas</div>`;return;}
+      if(!allLoss.length){if(_redRenderSeq===seq)cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de pérdidas</div>`;return;}
 
       // Toques por jugador (para normalizar)
       const tqPlayer={};
@@ -1176,7 +1179,7 @@
     const partido=PARTIDOS.find(p=>p.id==mid);
     try {
       const lineup=await getLineup(mid,tid);
-      if(!lineup.length){cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de alineación</div>`;return;}
+      if(!lineup.length){if(_redRenderSeq===seq)cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de alineación</div>`;return;}
 
       const [pp1r,pp2r,pd1r,pd2r]=await Promise.all([
         sbGet('eventos',`select=player_name,x_start,y_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&period=eq.1&x_start=not.is.null&limit=5000`),
@@ -1409,6 +1412,7 @@
   }
 
   async function renderJugadores() {
+    const seq=++_redRenderSeq;
     const tid=currentTeam.id, mid=redMatchId;
     const cont=document.getElementById('redCont');
     if(!cont) return;
@@ -1421,7 +1425,7 @@
     try {
       const lineup=await getLineup(mid,tid);
       if(!lineup.length){
-        cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de alineación</div>`;
+        if(_redRenderSeq===seq) cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de alineación</div>`;
         return;
       }
       const playerMap={}, idMap={};
@@ -1964,9 +1968,10 @@
         }
       }
 
+      if(_redRenderSeq!==seq) return;
       cont.innerHTML=jugSubTabBar()+html;
     } catch(e){
-      cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
+      if(_redRenderSeq===seq) cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
     }
   }
 
