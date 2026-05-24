@@ -1098,33 +1098,13 @@
         if(e.lead_to_shot===true) playerShot[e.player_name]=(playerShot[e.player_name]||0)+1;
       });
 
-      // Clasificación por línea
-      function getPosTier(pos){
-        const p=(pos||'').toUpperCase().trim();
-        if(['GK','PT','POR','PORTERO','P','GOALKEEPER'].includes(p)) return {tier:0,order:0};
-        if(['RB','RWB'].includes(p)) return {tier:1,order:1};
-        if(['CB','DC','DF','DEF','CD','BC','CT'].includes(p)) return {tier:1,order:2};
-        if(['LB','LWB'].includes(p)) return {tier:1,order:3};
-        if(['RM'].includes(p)) return {tier:2,order:1};
-        if(['CDM','DM','SD','CM','MC','MID','CAM','AM','MF','M','MO'].includes(p)) return {tier:2,order:2};
-        if(['LM'].includes(p)) return {tier:2,order:3};
-        if(['RW'].includes(p)) return {tier:3,order:1};
-        if(['CF','ST','FW','ATT','DEL','SS'].includes(p)) return {tier:3,order:2};
-        if(['LW'].includes(p)) return {tier:3,order:3};
-        return {tier:2,order:2};
-      }
-
       const sorted=allPlayers.map(n=>({
         name:n, pos:playerMap[n]||'', id:idMap[n]||null,
         ...getPosTier(playerMap[n]),
         total:playerTotal[n]||0,
       })).sort((a,b)=>a.tier!==b.tier?a.tier-b.tier:a.order!==b.order?a.order-b.order:b.total-a.total);
 
-      // Colores por línea
-      const TIER_COL=['#c8a96e','#58a6ff','#3fb950','#f85149'];
-      const TIER_BG=['rgba(200,169,110,0.07)','rgba(88,166,255,0.07)','rgba(63,185,80,0.07)','rgba(248,81,73,0.07)'];
-      const TIER_BO=['rgba(200,169,110,0.2)','rgba(88,166,255,0.2)','rgba(63,185,80,0.2)','rgba(248,81,73,0.2)'];
-      const TIER_LABEL=['🧤 Portero','🛡️ Defensas','⚙️ Centrocampistas','⚡ Delanteros'];
+      // Colores por línea (referencia globals: TIER_COL, TIER_BG, TIER_BO, TIER_LABEL)
 
       // ── Helpers SVG compartidos ─────────────────────────────────────────────
       const W=260,H=170,MX=20,MY=14,PW=W-MX*2,PH=H-MY*2;
@@ -1175,8 +1155,6 @@
           <div style="display:flex;flex-wrap:wrap;gap:16px">${content}</div>
         </div>`;
       };
-
-      const dispN=n=>{const p=n.split(' ');return n.length>20?(p.length>1?p[p.length-1]:n.substring(0,18)):n;};
 
       // ── ROUTING: Mapa de Pases / Asociaciones / Telaraña ────────────────────
       let html='';
@@ -1541,6 +1519,27 @@
     'LF' :{x: 35,y: 16}, 'RF' :{x: 35,y:-16},
     'SS' :{x: 33,y:  0}, 'ST' :{x: 38,y:  0},
   };
+
+  // ─── Helpers globales (accesibles desde buildAlineacionSVG, renderAlineacion, renderJugadores) ───
+  function getPosTier(pos){
+    const p=(pos||'').toUpperCase().trim();
+    if(['GK','PT','POR','PORTERO','P','GOALKEEPER'].includes(p)) return {tier:0,order:0};
+    if(['RB','RWB','RCB'].includes(p)) return {tier:1,order:1};
+    if(['CB','DC','DF','DEF','CD','BC','CT','LCB'].includes(p)) return {tier:1,order:2};
+    if(['LB','LWB'].includes(p)) return {tier:1,order:3};
+    if(['RM','RDM','RCM','RAM'].includes(p)) return {tier:2,order:1};
+    if(['CDM','DM','SD','CM','MC','MID','CAM','AM','MF','M','MO'].includes(p)) return {tier:2,order:2};
+    if(['LM','LDM','LCM','LAM'].includes(p)) return {tier:2,order:3};
+    if(['RW','RF'].includes(p)) return {tier:3,order:1};
+    if(['CF','ST','FW','ATT','DEL','SS'].includes(p)) return {tier:3,order:2};
+    if(['LW','LF'].includes(p)) return {tier:3,order:3};
+    return {tier:2,order:2};
+  }
+  const TIER_COL  = ['#c8a96e','#58a6ff','#3fb950','#f85149'];
+  const TIER_BG   = ['rgba(200,169,110,0.07)','rgba(88,166,255,0.07)','rgba(63,185,80,0.07)','rgba(248,81,73,0.07)'];
+  const TIER_BO   = ['rgba(200,169,110,0.2)','rgba(88,166,255,0.2)','rgba(63,185,80,0.2)','rgba(248,81,73,0.2)'];
+  const TIER_LABEL= ['🧤 Portero','🛡️ Defensas','⚙️ Centrocampistas','⚡ Delanteros'];
+  const dispN     = n=>{const p=n.split(' ');return n.length>20?(p.length>1?p[p.length-1]:n.substring(0,18)):n;};
 
   function detectFormacion(players) {
     const DEF = ['LB','RB','LCB','RCB','CB','LWB','RWB'];
