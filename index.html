@@ -138,6 +138,7 @@
   let jugCalorPlayer = null;  // null=grid, 'name'=individual
   let telaranaMode  = 'todos'; // 'todos' | 'titulares'
   let perdidasPart  = 'total'; // 'total' | '1' | '2'
+  let _redRenderSeq = 0;       // cancel stale async renders
   let currentMainTab = 'redpases';
   let aliMatchId    = null;
   let aliParte      = '1';    // '1' | '2'
@@ -515,6 +516,7 @@
   }
 
   async function renderRed(periodo) {
+    const seq=++_redRenderSeq;
     const tid=currentTeam.id, mid=redMatchId;
     const cont=document.getElementById('redCont');
     if(!cont) return;
@@ -697,6 +699,7 @@
         </div>`;
       }).join('');
 
+      if(_redRenderSeq!==seq) return;
       cont.innerHTML=`
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
           <div><div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · ${periodo===1?'1ª Parte':'2ª Parte'}</div>
@@ -754,11 +757,12 @@
           }).join('')}</div>
         </div>`;
     } catch(e) {
-      cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
+      if(_redRenderSeq===seq) cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
     }
   }
 
   async function renderMatriz() {
+    const seq=++_redRenderSeq;
     const tid=currentTeam.id, mid=redMatchId;
     const cont=document.getElementById('redCont');
     if(!cont) return;
@@ -796,6 +800,7 @@
       const recRow=jugs.map(j=>`<td style="padding:4px;font-size:11px;color:var(--blue);font-weight:700;border:1px solid var(--border);text-align:center">${totR[j]||0}</td>`).join('');
       const rival=partido.local===currentTeam.name?partido.vis:partido.local;
 
+      if(_redRenderSeq!==seq) return;
       cont.innerHTML=`
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
           <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · Ambas partes</div>
@@ -814,11 +819,12 @@
           </table>
         </div>`;
     } catch(e) {
-      cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
+      if(_redRenderSeq===seq) cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
     }
   }
 
   async function renderTendencia() {
+    const seq=++_redRenderSeq;
     const tid=currentTeam.id, mid=redMatchId;
     const cont=document.getElementById('redCont');
     if(!cont) return;
@@ -922,6 +928,7 @@
       const rival=partido.local===currentTeam.name?partido.vis:partido.local;
       const lugar=partido.local===currentTeam.name?'🏠':'✈️';
 
+      if(_redRenderSeq!==seq) return;
       cont.innerHTML=`
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:18px">
           <div><div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · Tendencia de juego</div>
@@ -974,11 +981,12 @@
         </div>
         `;
     } catch(e){
-      cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
+      if(_redRenderSeq===seq) cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
     }
   }
 
   async function renderPerdidas() {
+    const seq=++_redRenderSeq;
     const tid=currentTeam.id, mid=redMatchId;
     const cont=document.getElementById('redCont');
     if(!cont) return;
@@ -1098,6 +1106,7 @@
       const lugar=partido.local===currentTeam.name?'🏠':'✈️';
 
       const pLabel=pf==='total'?'Total':pf==='1'?'1ª Parte':'2ª Parte';
+      if(_redRenderSeq!==seq) return;
       cont.innerHTML=`
         <div style="display:flex;gap:6px;margin-bottom:14px">
           ${['total','1','2'].map(p=>`<button onclick="setPerdidasPart('${p}')" style="padding:6px 16px;border-radius:20px;border:1px solid ${pf===p?'#f85149':'var(--border)'};background:${pf===p?'rgba(248,81,73,0.15)':'var(--bg2)'};color:${pf===p?'#f85149':'var(--text2)'};font-size:12px;font-weight:${pf===p?700:400};cursor:pointer;letter-spacing:0.5px;transition:all .15s">${p==='total'?'Total':p==='1'?'1ª Parte':'2ª Parte'}</button>`).join('')}
@@ -1154,11 +1163,12 @@
           </div>
         </div>`;
     } catch(e){
-      cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
+      if(_redRenderSeq===seq) cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
     }
   }
 
   async function renderComparativa() {
+    const seq=++_redRenderSeq;
     const tid=currentTeam.id, mid=redMatchId;
     const cont=document.getElementById('redCont');
     if(!cont) return;
@@ -1293,6 +1303,7 @@
       const rival=partido.local===currentTeam.name?partido.vis:partido.local;
       const lugar=partido.local===currentTeam.name?'🏠':'✈️';
 
+      if(_redRenderSeq!==seq) return;
       cont.innerHTML=`
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
           <div><div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · 1ª vs 2ª Parte</div>
@@ -1314,7 +1325,7 @@
           </table>
         </div>`;
     } catch(e){
-      cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
+      if(_redRenderSeq===seq) cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
     }
   }
 
