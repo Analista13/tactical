@@ -118,7 +118,8 @@
 
 <main>
   <div class="tabs-bar" id="tabsBar">
-    <div class="tab active" data-tab="redpases">🕸️ Red de Pases</div>
+    <div class="tab active" data-tab="redpases" onclick="switchTab('redpases')">🕸️ Red de Pases</div>
+    <div class="tab" data-tab="alineaciones" onclick="switchTab('alineaciones')">📋 Alineaciones</div>
   </div>
   <div class="content" id="content">
     <div class="loading"><div class="spinner"></div><span>Cargando...</span></div>
@@ -135,6 +136,9 @@
   let redSubTab     = '1parte';
   let jugSubTab     = 'mapa';
   let telaranaMode  = 'todos'; // 'todos' | 'titulares'
+  let currentMainTab = 'redpases';
+  let aliMatchId    = null;
+  let aliParte      = '1';    // '1' | '2'
 
   // Dorsales por equipo y player_id (fuente: Transfermarkt 2025-26)
   const PLAYER_DORSALES_MAP_D = {
@@ -318,9 +322,12 @@
     PLAYER_DORSALES = PLAYER_DORSALES_MAP_D[id] || {};
     document.getElementById('headerLogo').src = escudo;
     redMatchId = null;
+    aliMatchId = null;
     jugSubTab = 'mapa';
     telaranaMode = 'todos';
-    loadRedPases();
+    aliParte = '1';
+    if(currentMainTab === 'redpases') loadRedPases();
+    else loadAlineaciones();
   }
 
   // Betweenness centrality (Brandes) — módulo compartido
@@ -1502,6 +1509,244 @@
     } catch(e){
       cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
     }
+  }
+
+  // ─── TAB SWITCHING ──────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    currentMainTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    if(tab === 'redpases')     loadRedPases();
+    else if(tab === 'alineaciones') loadAlineaciones();
+  }
+
+  // ─── ALINEACIONES ────────────────────────────────────────────────────────────
+  // Coordenadas tácticas por código de posición (SkillCorner → campo horizontal)
+  // x ∈ [-52.5, 52.5]  izq=propio arco, der=portería rival
+  // y ∈ [-34, 34]       y>0=izquierda, y<0=derecha
+  const POS_XY = {
+    'GK' :{x:-47,y:  0},
+    'LB' :{x:-32,y: 24}, 'RB' :{x:-32,y:-24},
+    'LCB':{x:-35,y: 11}, 'RCB':{x:-35,y:-11},
+    'CB' :{x:-35,y:  0},
+    'LWB':{x:-18,y: 28}, 'RWB':{x:-18,y:-28},
+    'LDM':{x:-12,y: 13}, 'RDM':{x:-12,y:-13},
+    'DM' :{x:-14,y:  0},
+    'LCM':{x:  1,y: 15}, 'RCM':{x:  1,y:-15},
+    'CM' :{x:  1,y:  0},
+    'LM' :{x:  3,y: 27}, 'RM' :{x:  3,y:-27},
+    'LAM':{x: 16,y: 15}, 'RAM':{x: 16,y:-15},
+    'AM' :{x: 16,y:  0}, 'CAM':{x: 16,y:  0},
+    'LW' :{x: 30,y: 27}, 'RW' :{x: 30,y:-27},
+    'CF' :{x: 38,y:  0},
+    'LF' :{x: 35,y: 16}, 'RF' :{x: 35,y:-16},
+    'SS' :{x: 33,y:  0}, 'ST' :{x: 38,y:  0},
+  };
+
+  function detectFormacion(players) {
+    const DEF = ['LB','RB','LCB','RCB','CB','LWB','RWB'];
+    const DM  = ['LDM','RDM','DM'];
+    const MID = ['LCM','RCM','CM','LM','RM'];
+    const AMF = ['LAM','RAM','AM','CAM'];
+    const FWD = ['LW','RW','CF','LF','RF','SS','ST'];
+    const nd=players.filter(p=>DEF.includes(p.position)).length;
+    const ndm=players.filter(p=>DM.includes(p.position)).length;
+    const nm=players.filter(p=>MID.includes(p.position)).length;
+    const na=players.filter(p=>AMF.includes(p.position)).length;
+    const nf=players.filter(p=>FWD.includes(p.position)).length;
+    const parts=[nd];
+    if(ndm&&(nm||na||nf)) parts.push(ndm);
+    if(nm) parts.push(nm);
+    if(na&&nf) parts.push(na);
+    else if(na) { parts[parts.length-1]=(parts[parts.length-1]||0)+na; }
+    parts.push(nf);
+    return parts.filter(Boolean).join('-');
+  }
+
+  function buildAlineacionSVG(players, parte) {
+    // Resolver colisiones: si dos jugadores tienen la misma posición, los esparcimos en Y
+    const byPos={};
+    players.forEach(p=>{
+      const k=p.position;
+      if(!byPos[k]) byPos[k]=[];
+      byPos[k].push(p);
+    });
+    const coords={};
+    Object.entries(byPos).forEach(([pos,grp])=>{
+      const base=POS_XY[pos]||{x:0,y:0};
+      const spread=grp.length>1?12:0;
+      grp.forEach((p,i)=>{
+        coords[p.id]={
+          x: base.x,
+          y: base.y + (i-(grp.length-1)/2)*spread
+        };
+      });
+    });
+
+    const AW=920, AH=590, AMX=70, AMY=46, APW=AW-AMX*2, APH=AH-AMY*2;
+    const asv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW, sy:AMY+((34-y)/68)*APH});
+
+    // Campo
+    const fieldSVG=`
+      <rect x="0" y="0" width="${AW}" height="${AH}" fill="#0b150b"/>
+      <rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="#0d1f0d" stroke="#1c3a1c" stroke-width="1.5"/>
+      <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="#1c3a1c" stroke-width="1"/>
+      <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="#1c3a1c" stroke-width="1"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>`;
+
+    // Nodos
+    let nodes='';
+    players.forEach(p=>{
+      const c=coords[p.id]||{x:0,y:0};
+      const {sx,sy}=asv(c.x,c.y);
+      const {tier}=getPosTier(p.position);
+      const tc=TIER_COL[tier]||'#c8a96e';
+      const dorsal=PLAYER_DORSALES[p.id];
+      const isSub = parte==='2' && p.start_time!=='00:00:00';
+      const subMin = isSub ? Math.floor(timeToMin(p.start_time)) : null;
+      const R=23;
+
+      // Aura exterior
+      nodes+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${R+7}" fill="${tc}" fill-opacity="0.06"/>`;
+      // Círculo principal
+      nodes+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${R}" fill="#111c11" stroke="${tc}" stroke-width="${isSub?'2':'2.5'}" ${isSub?`stroke-dasharray="4 2"`:''} />`;
+      // Dorsal
+      if(dorsal!=null){
+        nodes+=`<text x="${sx.toFixed(1)}" y="${(sy+8).toFixed(1)}" fill="${tc}" font-size="17" font-family="'Bebas Neue',sans-serif" text-anchor="middle" font-weight="bold">${dorsal}</text>`;
+      } else {
+        nodes+=`<text x="${sx.toFixed(1)}" y="${(sy+6).toFixed(1)}" fill="${tc}" font-size="11" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="600">${p.position}</text>`;
+      }
+      // Nombre del jugador
+      const shortName=p.name.split(' ')[0].length>8?p.name.split(' ')[0]:dispN(p.name);
+      nodes+=`<text x="${sx.toFixed(1)}" y="${(sy+R+14).toFixed(1)}" fill="#c9d1d9" font-size="10.5" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="500">${shortName}</text>`;
+      // Indicador de cambio (entrada)
+      if(isSub){
+        nodes+=`<text x="${sx.toFixed(1)}" y="${(sy+R+27).toFixed(1)}" fill="#3fb950" font-size="9.5" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="700">▲ ${subMin}'</text>`;
+      }
+    });
+
+    return `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${fieldSVG}${nodes}</svg>`;
+  }
+
+  function loadAlineaciones() {
+    const matchOpts = PARTIDOS.map(p=>{
+      const rival = p.local===currentTeam.name?p.vis:p.local;
+      const s = p.local===currentTeam.name?'🏠':'✈️';
+      return `<option value="${p.id}" ${p.id==aliMatchId?'selected':''}>${s} ${p.j} · ${rival} · ${p.s} · ${p.f}</option>`;
+    }).join('');
+
+    document.getElementById('content').innerHTML=`<div class="anim">${head()}
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+        <select id="aliSel" onchange="aliMatchId=parseInt(this.value);renderAlineacion()"
+          style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;flex:1;min-width:280px">
+          <option value="">— Selecciona un partido —</option>${matchOpts}
+        </select>
+      </div>
+      <div id="aliCont">
+        <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido para ver la alineación</div>
+      </div>
+    </div>`;
+
+    if(aliMatchId) renderAlineacion();
+  }
+
+  function renderAlineacion() {
+    const cont=document.getElementById('aliCont');
+    if(!cont) return;
+    const partido=PARTIDOS.find(p=>p.id==aliMatchId);
+    const rawLineup=PONF_LINEUPS[aliMatchId]||[];
+    if(!rawLineup.length){
+      cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de alineación para este partido</div>`;
+      return;
+    }
+
+    const lineup=rawLineup.map(r=>({id:r[0],name:r[1],position:r[2],start_time:r[3],end_time:r[4]}));
+
+    // Parte 1: jugadores que inician
+    const starters=lineup.filter(p=>p.start_time==='00:00:00');
+    // Parte 2: jugadores que terminan (end_time=null → en campo al final)
+    const finishers=lineup.filter(p=>p.end_time===null);
+
+    const activePlayers = aliParte==='1' ? starters : finishers;
+    const formacion=detectFormacion(activePlayers.filter(p=>p.position!=='GK'));
+
+    // Jugadores que salieron si es 2ª parte (para mostrar cambios)
+    const outPlayers = aliParte==='2' ? lineup.filter(p=>p.start_time==='00:00:00'&&p.end_time!==null) : [];
+
+    // Subtabs parte
+    const parteBtn=(id,lbl)=>{
+      const act=aliParte===id;
+      return `<button onclick="aliParte='${id}';renderAlineacion()" style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:7px 20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.18s;white-space:nowrap">${lbl}</button>`;
+    };
+
+    const rival=partido?(partido.local===currentTeam.name?partido.vis:partido.local):'?';
+    const esLocal=partido&&partido.local===currentTeam.name;
+    const score=partido?partido.s:'';
+    const parteLabel=aliParte==='1'?`XI Inicial · ${starters.length} jugadores`:`XI Final · ${finishers.length} jugadores`;
+
+    // Bloque de cambios (solo 2ª parte)
+    let cambiosHtml='';
+    if(aliParte==='2'&&outPlayers.length){
+      const subIns=finishers.filter(p=>p.start_time!=='00:00:00');
+      cambiosHtml=`<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">`;
+      subIns.forEach(sin=>{
+        const minIn=Math.floor(timeToMin(sin.start_time));
+        // Buscar a quién reemplazó (player que salió en el mismo rango de tiempo)
+        const sout=outPlayers.find(so=>Math.abs(timeToMin(so.end_time)-timeToMin(sin.start_time))<2);
+        const dIn=PLAYER_DORSALES[sin.id]!=null?`#${PLAYER_DORSALES[sin.id]} `:'';
+        const dOut=sout&&PLAYER_DORSALES[sout.id]!=null?`#${PLAYER_DORSALES[sout.id]} `:'';
+        cambiosHtml+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:12px;display:flex;align-items:center;gap:8px">
+          <span style="color:#3fb950;font-weight:700">▲</span>
+          <span style="color:var(--text);font-weight:600">${dIn}${dispN(sin.name)}</span>
+          ${sout?`<span style="color:var(--text3)">·</span><span style="color:#f85149;font-weight:600">▼ ${dOut}${dispN(sout.name)}</span>`:''}
+          <span style="color:var(--text3);font-size:11px;margin-left:2px">${minIn}'</span>
+        </div>`;
+      });
+      cambiosHtml+='</div>';
+    }
+
+    cont.innerHTML=`
+      <!-- Header de partido -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px">
+        <div>
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px">${partido?partido.j+' · '+partido.f:''}</div>
+          <div style="font-size:20px;font-weight:700;color:var(--text);font-family:'Bebas Neue',sans-serif;letter-spacing:1px">${esLocal?currentTeam.name:rival} <span style="color:var(--accent)">${score}</span> ${esLocal?rival:currentTeam.name}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px">${esLocal?'🏠 Local':'✈️ Visitante'}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <div style="background:rgba(200,169,110,0.1);border:1px solid rgba(200,169,110,0.2);border-radius:20px;padding:4px 14px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--accent)">
+            ${formacion}
+          </div>
+          <div style="font-size:11px;color:var(--text3)">${parteLabel}</div>
+        </div>
+      </div>
+
+      <!-- Toggle parte -->
+      <div style="display:flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;width:fit-content;margin-bottom:16px">
+        ${parteBtn('1','⚽ 1ª Parte — XI Inicial')}
+        ${parteBtn('2','🔄 2ª Parte — XI Final')}
+      </div>
+
+      ${cambiosHtml}
+
+      <!-- Campo con jugadores -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        ${buildAlineacionSVG(activePlayers, aliParte)}
+      </div>
+
+      <!-- Leyenda -->
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding:0 4px">
+        ${[0,1,2,3].map((t,i)=>`<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">
+          <div style="width:10px;height:10px;border-radius:50%;border:2px solid ${TIER_COL[t]}"></div>
+          <span>${['Portero','Defensa','Medio','Delantero'][i]}</span>
+        </div>`).join('')}
+        ${aliParte==='2'?`<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">
+          <div style="width:14px;height:14px;border-radius:50%;border:2px dashed #3fb950"></div>
+          <span>Entró como suplente</span>
+        </div>`:''}
+      </div>`;
   }
 
   // INIT
