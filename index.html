@@ -406,6 +406,7 @@
           <button id="st-2parte" class="subtab ${redSubTab==='2parte'?'active':''}" onclick="setSubTab('2parte')">⚽ 2ª Parte</button>
           <button id="st-matriz" class="subtab ${redSubTab==='matriz'?'active':''}" onclick="setSubTab('matriz')">📊 Matriz</button>
           <button id="st-tendencia" class="subtab ${redSubTab==='tendencia'?'active':''}" onclick="setSubTab('tendencia')">🗺️ Tendencia</button>
+          <button id="st-perdidas" class="subtab ${redSubTab==='perdidas'?'active':''}" onclick="setSubTab('perdidas')">💔 Pérdidas</button>
           <button id="st-comparativa" class="subtab ${redSubTab==='comparativa'?'active':''}" onclick="setSubTab('comparativa')">⚡ Comparativa</button>
         </div>
       </div>`:''}
@@ -449,6 +450,7 @@
     if(redSubTab==='1parte') renderRed(1);
     else if(redSubTab==='2parte') renderRed(2);
     else if(redSubTab==='tendencia') renderTendencia();
+    else if(redSubTab==='perdidas') renderPerdidas();
     else if(redSubTab==='comparativa') renderComparativa();
     else renderMatriz();
   }
@@ -959,6 +961,176 @@
           </div>
         </div>
         `;
+    } catch(e){
+      cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
+    }
+  }
+
+  async function renderPerdidas() {
+    const tid=currentTeam.id, mid=redMatchId;
+    const cont=document.getElementById('redCont');
+    if(!cont) return;
+    cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando pérdidas...</span></div>`;
+    const partido=PARTIDOS.find(p=>p.id==mid);
+    try {
+      // Queries paralelas: pérdidas directas + pases fallados + total toques por jugador
+      const base=`team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession`;
+      const [{data:lostDirect},{data:lostPass},{data:touches}] = await Promise.all([
+        sbGet('eventos',`select=player_name,x_end,y_end&${base}&end_type=eq.possession_loss&x_end=not.is.null&limit=500`),
+        sbGet('eventos',`select=player_name,x_end,y_end&${base}&pass_outcome=eq.unsuccessful&x_end=not.is.null&limit=500`),
+        sbGet('eventos',`select=player_name&${base}&x_start=not.is.null&limit=5000`),
+      ]);
+
+      const allLoss=[...lostDirect,...lostPass];
+      if(!allLoss.length){cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de pérdidas</div>`;return;}
+
+      // Toques por jugador (para normalizar)
+      const tqPlayer={};
+      touches.forEach(e=>{ tqPlayer[e.player_name]=(tqPlayer[e.player_name]||0)+1; });
+
+      // Zonas de pérdida (15 zonas: x_end, y_end)
+      const zones=Array.from({length:3},()=>Array(5).fill(0));
+      const zonesD=Array.from({length:3},()=>Array(5).fill(0)); // solo directas
+      const zonesP=Array.from({length:3},()=>Array(5).fill(0)); // solo pases fallados
+      const lossPlayer={}, lossDirectPlayer={}, lossPassPlayer={};
+
+      lostDirect.forEach(e=>{
+        const c=e.x_end<-17.5?0:e.x_end<=17.5?1:2;
+        const l=e.y_end<-20.4?0:e.y_end<-6.8?1:e.y_end<6.8?2:e.y_end<20.4?3:4;
+        zones[c][l]++; zonesD[c][l]++;
+        lossPlayer[e.player_name]=(lossPlayer[e.player_name]||0)+1;
+        lossDirectPlayer[e.player_name]=(lossDirectPlayer[e.player_name]||0)+1;
+      });
+      lostPass.forEach(e=>{
+        const c=e.x_end<-17.5?0:e.x_end<=17.5?1:2;
+        const l=e.y_end<-20.4?0:e.y_end<-6.8?1:e.y_end<6.8?2:e.y_end<20.4?3:4;
+        zones[c][l]++; zonesP[c][l]++;
+        lossPlayer[e.player_name]=(lossPlayer[e.player_name]||0)+1;
+        lossPassPlayer[e.player_name]=(lossPassPlayer[e.player_name]||0)+1;
+      });
+
+      const total=allLoss.length;
+      const maxZ=Math.max(1,...zones.flat());
+
+      // Campo SVG de pérdidas (mismo sistema que Tendencia)
+      const W=820,H=540,MX=50,MY=40,PW=W-MX*2,PH=H-MY*2;
+      const sv=(x,y)=>({sx:MX+((x+52.5)/105)*PW,sy:MY+((34-y)/68)*PH});
+      const xR=[[-52.5,-17.5],[-17.5,17.5],[17.5,52.5]];
+      const yR=[[34,20.4],[20.4,6.8],[6.8,-6.8],[-6.8,-20.4],[-20.4,-34]];
+      let zoneSVG='';
+      for(let c=0;c<3;c++) for(let vr=0;vr<5;vr++){
+        const cnt=zones[c][4-vr];
+        const cntD=zonesD[c][4-vr], cntP=zonesP[c][4-vr];
+        const {sx:sx1,sy:sy1}=sv(xR[c][0],yR[vr][0]);
+        const {sx:sx2,sy:sy2}=sv(xR[c][1],yR[vr][1]);
+        const zw=sx2-sx1,zh=sy2-sy1,cx=sx1+zw/2,cy=sy1+zh/2;
+        const pct=((cnt/total)*100).toFixed(1);
+        const op=cnt>0?Math.max(0.05,(cnt/maxZ)*0.82):0;
+        const dark=op>0.38;
+        const fc=dark?'#1a0505':'#f85149'; // rojo = pérdidas
+        zoneSVG+=`<rect x="${sx1.toFixed(1)}" y="${sy1.toFixed(1)}" width="${zw.toFixed(1)}" height="${zh.toFixed(1)}" fill="#f85149" fill-opacity="${op.toFixed(3)}" stroke="#3a1e1e" stroke-width="0.8"/>
+          <text x="${cx.toFixed(1)}" y="${(cy-3).toFixed(1)}" text-anchor="middle" font-family="'Bebas Neue',sans-serif" font-size="15" font-weight="700" fill="${dark?'#ff9999':'#f85149'}">${pct}%</text>
+          <text x="${cx.toFixed(1)}" y="${(cy+12).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="${dark?'#cc6666':'#6e3030'}">${cnt} pérd.</text>`;
+      }
+      const xMids=[MX+PW*0.167,MX+PW*0.5,MX+PW*0.833];
+      const axisLabels=['Z1','Z2','Z3'].map((l,i)=>`<text x="${xMids[i].toFixed(1)}" y="${(MY-10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#484f58" font-family="'DM Mono',monospace">${l}</text>`).join('')
+        +['C1','C2','C3','C4','C5'].map((l,i)=>`<text x="${(MX-10).toFixed(1)}" y="${(MY+PH*0.1+PH*0.2*i).toFixed(1)}" text-anchor="end" dominant-baseline="middle" font-size="11" font-weight="600" fill="#484f58" font-family="'DM Mono',monospace">${l}</text>`).join('');
+
+      // Ranking jugadores: pérdidas totales + rate/100 toques
+      const playerRank=Object.entries(lossPlayer)
+        .map(([name,n])=>({
+          name, n,
+          direct: lossDirectPlayer[name]||0,
+          pass:   lossPassPlayer[name]||0,
+          tq:     tqPlayer[name]||1,
+          rate:   +((n/(tqPlayer[name]||1))*100).toFixed(1),
+        }))
+        .sort((a,b)=>b.n-a.n);
+
+      const maxN=Math.max(1,...playerRank.map(p=>p.n));
+      const rankRows=playerRank.map((p,i)=>{
+        const dorsal=idMap&&idMap[p.name]?PLAYER_DORSALES[idMap[p.name]]:'';
+        const barW=Math.round((p.n/maxN)*100);
+        const isTop=i===0;
+        return `<tr style="border-bottom:1px solid var(--border);${isTop?'background:rgba(248,81,73,0.07)':''}">
+          <td style="padding:8px 12px;white-space:nowrap">
+            <div style="display:flex;align-items:center;gap:8px">
+              ${dorsal?`<span style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#f85149;opacity:0.6;min-width:16px">${dorsal}</span>`:''}
+              <span style="font-size:12px;font-weight:${isTop?700:500};color:${isTop?'var(--text)':'var(--text2)'}">${dispN(p.name)}</span>
+            </div>
+          </td>
+          <td style="padding:8px 10px;text-align:right">
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#f85149">${p.n}</span>
+          </td>
+          <td style="padding:8px 8px;text-align:right;font-size:11px;color:var(--text3)">${p.direct}</td>
+          <td style="padding:8px 8px;text-align:right;font-size:11px;color:var(--text3)">${p.pass}</td>
+          <td style="padding:8px 14px;text-align:right">
+            <span style="font-size:11px;color:var(--text3)">${p.rate}</span>
+          </td>
+          <td style="padding:8px 14px;min-width:100px">
+            <div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden">
+              <div style="height:5px;width:${barW}%;background:#f85149;border-radius:3px;opacity:0.75"></div>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+
+      const rival=partido.local===currentTeam.name?partido.vis:partido.local;
+      const lugar=partido.local===currentTeam.name?'🏠':'✈️';
+
+      cont.innerHTML=`
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:18px">
+          <div>
+            <div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · Pérdidas de balón</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">${currentTeam.name} vs ${rival}</div>
+          </div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
+          <div style="margin-left:auto;display:flex;gap:20px;font-size:12px">
+            <span style="color:#f85149">● <b>${lostDirect.length}</b> pérd. directas</span>
+            <span style="color:#e06666">● <b>${lostPass.length}</b> pases fallados</span>
+            <span style="color:var(--text3)">Total <b>${total}</b></span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 400px;gap:16px;align-items:start">
+          <div>
+            <div style="font-size:10px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Dónde pierde el balón el equipo (x_end / y_end)</div>
+            <div style="background:var(--bg2);border:1px solid rgba(248,81,73,0.2);border-radius:var(--radius);overflow:hidden">
+              <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+                <rect x="0" y="0" width="${W}" height="${H}" fill="#0d1117"/>
+                <rect x="${MX}" y="${MY}" width="${PW}" height="${PH}" fill="#150808" stroke="#3a1e1e" stroke-width="1.5"/>
+                ${zoneSVG}
+                <line x1="${W/2}" y1="${MY}" x2="${W/2}" y2="${H-MY}" stroke="#3a1e1e" stroke-width="1" stroke-dasharray="4,4"/>
+                <circle cx="${W/2}" cy="${H/2}" r="${(PH*9.15/68).toFixed(0)}" fill="none" stroke="#3a1e1e" stroke-width="1"/>
+                <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#3a1e1e" stroke-width="0.8"/>
+                <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#3a1e1e" stroke-width="0.8"/>
+                ${axisLabels}
+                <text x="${MX+8}" y="${H-MY+22}" font-size="10" fill="#3a1e1e">← Portería propia</text>
+                <text x="${W-MX-8}" y="${H-MY+22}" text-anchor="end" font-size="10" fill="#3a1e1e">Portería rival →</text>
+              </svg>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Pérdidas por jugador</div>
+            <div style="background:var(--bg2);border:1px solid rgba(248,81,73,0.2);border-radius:var(--radius);overflow:hidden">
+              <table style="width:100%;border-collapse:collapse">
+                <thead><tr style="border-bottom:2px solid rgba(248,81,73,0.2);background:var(--bg)">
+                  <th style="padding:8px 12px;text-align:left;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-family:'DM Mono',monospace">JUGADOR</th>
+                  <th style="padding:8px 10px;text-align:right;font-size:9px;letter-spacing:1px;color:#f85149;font-family:'DM Mono',monospace">TOTAL</th>
+                  <th style="padding:8px 8px;text-align:right;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">DIR</th>
+                  <th style="padding:8px 8px;text-align:right;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">PAS</th>
+                  <th style="padding:8px 14px;text-align:right;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">/100T</th>
+                  <th style="padding:8px 14px;min-width:80px"></th>
+                </tr></thead>
+                <tbody>${rankRows}</tbody>
+              </table>
+            </div>
+            <div style="margin-top:12px;font-size:10px;color:var(--text3);line-height:1.8">
+              <div><b style="color:var(--text2)">DIR</b> — Pérdida directa (presión, robo)</div>
+              <div><b style="color:var(--text2)">PAS</b> — Pase fallado / impreciso</div>
+              <div><b style="color:var(--text2)">/100T</b> — Pérdidas por cada 100 toques</div>
+            </div>
+          </div>
+        </div>`;
     } catch(e){
       cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
     }
