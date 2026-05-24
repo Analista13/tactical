@@ -426,7 +426,11 @@
     redSubTab=tab;
     document.querySelectorAll('.subtab').forEach(b=>b.classList.remove('active'));
     document.getElementById('st-'+tab)?.classList.add('active');
-    if(redMatchId) renderRedTab();
+    if(redMatchId) {
+      const cont=document.getElementById('redCont');
+      if(cont) cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Cargando...</span></div>`;
+      renderRedTab();
+    }
   }
 
   function setJugSubTab(tab) {
