@@ -137,6 +137,7 @@
   let jugSubTab     = 'mapa';
   let jugCalorPlayer = null;  // null=grid, 'name'=individual
   let telaranaMode  = 'todos'; // 'todos' | 'titulares'
+  let perdidasPart  = 'total'; // 'total' | '1' | '2'
   let currentMainTab = 'redpases';
   let aliMatchId    = null;
   let aliParte      = '1';    // '1' | '2'
@@ -390,7 +391,7 @@
 
     document.getElementById('content').innerHTML = `<div class="anim">${head()}
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-        <select id="matchSel" onchange="redMatchId=parseInt(this.value);sbCacheClear();telaranaMode='todos';prefetchMatch(currentTeam.id,redMatchId);renderRedTab()"
+        <select id="matchSel" onchange="redMatchId=parseInt(this.value);sbCacheClear();telaranaMode='todos';perdidasPart='total';prefetchMatch(currentTeam.id,redMatchId);renderRedTab()"
           style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;flex:1;min-width:280px">
           <option value="">— Selecciona un partido —</option>${matchOpts}
         </select>
@@ -437,6 +438,13 @@
     jugSubTab=tab;
     jugCalorPlayer=null;
     renderJugadores();
+  }
+
+  function setPerdidasPart(p) {
+    perdidasPart=p;
+    const cont=document.getElementById('redCont');
+    if(cont) cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Cargando...</span></div>`;
+    renderPerdidas();
   }
 
   function setJugCalorPlayer(name) {
@@ -979,11 +987,17 @@
     try {
       // Queries paralelas: pérdidas directas + pases fallados + total toques por jugador
       const base=`team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession`;
-      const [{data:lostDirect},{data:lostPass},{data:touches}] = await Promise.all([
-        sbGet('eventos',`select=player_name,x_end,y_end&${base}&end_type=eq.possession_loss&x_end=not.is.null&limit=500`),
-        sbGet('eventos',`select=player_name,x_end,y_end&${base}&pass_outcome=eq.unsuccessful&x_end=not.is.null&limit=500`),
-        sbGet('eventos',`select=player_name&${base}&x_start=not.is.null&limit=5000`),
+      const [{data:allDirect},{data:allPass},{data:allTouches}] = await Promise.all([
+        sbGet('eventos',`select=player_name,x_end,y_end,period&${base}&end_type=eq.possession_loss&x_end=not.is.null&limit=500`),
+        sbGet('eventos',`select=player_name,x_end,y_end,period&${base}&pass_outcome=eq.unsuccessful&x_end=not.is.null&limit=500`),
+        sbGet('eventos',`select=player_name,period&${base}&x_start=not.is.null&limit=5000`),
       ]);
+
+      // Filtrar por parte
+      const pf=perdidasPart;
+      const lostDirect = pf==='total'?allDirect:allDirect.filter(e=>String(e.period)===pf);
+      const lostPass   = pf==='total'?allPass  :allPass.filter(e=>String(e.period)===pf);
+      const touches    = pf==='total'?allTouches:allTouches.filter(e=>String(e.period)===pf);
 
       const allLoss=[...lostDirect,...lostPass];
       if(!allLoss.length){cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de pérdidas</div>`;return;}
@@ -1083,10 +1097,14 @@
       const rival=partido.local===currentTeam.name?partido.vis:partido.local;
       const lugar=partido.local===currentTeam.name?'🏠':'✈️';
 
+      const pLabel=pf==='total'?'Total':pf==='1'?'1ª Parte':'2ª Parte';
       cont.innerHTML=`
+        <div style="display:flex;gap:6px;margin-bottom:14px">
+          ${['total','1','2'].map(p=>`<button onclick="setPerdidasPart('${p}')" style="padding:6px 16px;border-radius:20px;border:1px solid ${pf===p?'#f85149':'var(--border)'};background:${pf===p?'rgba(248,81,73,0.15)':'var(--bg2)'};color:${pf===p?'#f85149':'var(--text2)'};font-size:12px;font-weight:${pf===p?700:400};cursor:pointer;letter-spacing:0.5px;transition:all .15s">${p==='total'?'Total':p==='1'?'1ª Parte':'2ª Parte'}</button>`).join('')}
+        </div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:18px">
           <div>
-            <div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · Pérdidas de balón</div>
+            <div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · Pérdidas · ${pLabel}</div>
             <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">${currentTeam.name} vs ${rival}</div>
           </div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
