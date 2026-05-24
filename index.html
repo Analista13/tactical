@@ -1097,7 +1097,7 @@
     const TW=APW/3, CH=APH/5; // tamaño celda en píxeles
     // etiquetas de canales y tercios (solo vista completa)
     const CANAL_LABELS=['Banda Izq','Semi Izq','Centro','Semi Dch','Banda Dch'];
-    const TERCIO_LABELS=['DEF','MED','ATQ'];
+    const TERCIO_LABELS=['ZONA 1','ZONA 2','ZONA 3'];
     let cells='', labels='';
     for(let c=0;c<5;c++) for(let t=0;t<3;t++){
       const v=grid[c][t];
@@ -1644,7 +1644,7 @@
           const dorsal=p.id&&PLAYER_DORSALES[p.id];
           // Tabla de % por zona (5 canales × 3 tercios)
           const CANAL_ES=['Banda Izq','Semi Izq','Centro','Semi Dch','Banda Dch'];
-          const TERCIO_ES=['DEF','MED','ATQ'];
+          const TERCIO_ES=['ZONA 1','ZONA 2','ZONA 3'];
           const zg=Array.from({length:5},()=>[0,0,0]);
           pts.forEach(({x,y})=>{ const t2=x<-17.5?0:x<=17.5?1:2; const c=y>20.4?0:y>6.8?1:y>=-6.8?2:y>=-20.4?3:4; zg[c][t2]++; });
           const maxZ=Math.max(1,...zg.flat());
