@@ -406,7 +406,7 @@
           <button id="st-2parte" class="subtab ${redSubTab==='2parte'?'active':''}" onclick="setSubTab('2parte')">⚽ 2ª Parte</button>
           <button id="st-matriz" class="subtab ${redSubTab==='matriz'?'active':''}" onclick="setSubTab('matriz')">📊 Matriz</button>
           <button id="st-tendencia" class="subtab ${redSubTab==='tendencia'?'active':''}" onclick="setSubTab('tendencia')">🗺️ Tendencia</button>
-          <button id="st-perdidas" class="subtab ${redSubTab==='perdidas'?'active':''}" onclick="setSubTab('perdidas')">💔 Pérdidas</button>
+          <button id="st-perdidas" class="subtab ${redSubTab==='perdidas'?'active':''}" onclick="setSubTab('perdidas')">Pérdidas</button>
           <button id="st-comparativa" class="subtab ${redSubTab==='comparativa'?'active':''}" onclick="setSubTab('comparativa')">⚡ Comparativa</button>
         </div>
       </div>`:''}
@@ -1049,7 +1049,7 @@
 
       const maxN=Math.max(1,...playerRank.map(p=>p.n));
       const rankRows=playerRank.map((p,i)=>{
-        const dorsal=idMap&&idMap[p.name]?PLAYER_DORSALES[idMap[p.name]]:'';
+        const dorsal='';
         const barW=Math.round((p.n/maxN)*100);
         const isTop=i===0;
         return `<tr style="border-bottom:1px solid var(--border);${isTop?'background:rgba(248,81,73,0.07)':''}">
