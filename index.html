@@ -451,10 +451,20 @@
     const base = `team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession`;
     // Las 4 queries más comunes, en paralelo silenciosamente
     [
-      `select=player_name,x_start,y_start&${base}&x_start=not.is.null&limit=5000`,
+      // Red de Pases: posiciones por periodo (renderRed)
+      `select=player_name,x_start,y_start&${base}&period=eq.1&x_start=not.is.null&limit=5000`,
+      `select=player_name,x_start,y_start&${base}&period=eq.2&x_start=not.is.null&limit=5000`,
+      // Red de Pases: pases por periodo (renderRed + renderComparativa)
       `select=player_name,player_targeted_name,x_start,x_end&${base}&pass_outcome=eq.successful&period=eq.1&limit=5000`,
       `select=player_name,player_targeted_name,x_start,x_end&${base}&pass_outcome=eq.successful&period=eq.2&limit=5000`,
+      // Jugadores: posiciones (renderJugadores) — sin filtro de periodo
+      `select=player_name,x_start,y_start&${base}&x_start=not.is.null&limit=5000`,
+      // Jugadores: métricas detalladas (renderJugadores)
       `select=player_name,player_targeted_name,x_start,y_start,x_end,y_end,pass_distance,player_targeted_xthreat,player_targeted_xpass_completion,first_line_break,lead_to_shot&${base}&pass_outcome=eq.successful&limit=5000`,
+      // Matriz (renderMatriz) — pases ligeros sin coordenadas
+      `select=player_name,player_targeted_name&${base}&pass_outcome=eq.successful&limit=5000`,
+      // Tendencia (renderTendencia) — solo coordenadas
+      `select=x_start,y_start&${base}&pass_outcome=eq.successful&x_start=not.is.null&limit=5000`,
     ].forEach(q => sbGet('eventos', q).catch(()=>{}));
   }
 
@@ -1758,7 +1768,9 @@
       return;
     }
 
-    const lineup=rawLineup.map(r=>({id:r[0],name:r[1],position:r[2],start_time:r[3],end_time:r[4]}));
+    const lineup=rawLineup.map(r=>({id:r[0],name:r[1],position:r[2],start_time:r[3],end_time:r[4],
+      avg_x:(r[5]!==undefined&&r[5]!==null)?r[5]:null,
+      avg_y:(r[6]!==undefined&&r[6]!==null)?r[6]:null}));
 
     // Parte 1: jugadores que inician
     const starters=lineup.filter(p=>p.start_time==='00:00:00');
