@@ -101,32 +101,18 @@
 <body>
 
 <header>
-  <img class="header-logo" id="headerLogo" src="https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png" alt="">
+  <img class="header-logo" id="headerLogo" src="https://tmssl.akamaized.net/images/wappen/head/4032.png" alt="">
   <div><div class="header-title">Tactical</div></div>
   <div class="header-sub">Primera Federación · 2025-26</div>
-  <div class="header-badge">⚽ 106.908 eventos</div>
+  <div class="header-badge">⚽ 51.036 eventos</div>
 </header>
 
 
 <aside>
   <div class="sidebar-label">Equipos</div>
-  <div class="team-item active" id="team-2908" onclick="selectTeam(2908,'Pontevedra CF','https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png')">
-    <img class="team-escudo" src="https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png" alt="">
-    <div class="team-info"><div class="team-name">Pontevedra CF</div><div class="team-sub">27 partidos</div></div>
-  </div>
-  <div class="team-item" id="team-923" onclick="selectTeam(923,'SD Ponferradina','https://tmssl.akamaized.net/images/wappen/head/4032.png')">
+  <div class="team-item active" id="team-923" onclick="selectTeam(923,'SD Ponferradina','https://tmssl.akamaized.net/images/wappen/head/4032.png')">
     <img class="team-escudo" src="https://tmssl.akamaized.net/images/wappen/head/4032.png" alt="">
     <div class="team-info"><div class="team-name">SD Ponferradina</div><div class="team-sub">30 partidos</div></div>
-  </div>
-  <div class="sidebar-divider"></div>
-  <div class="sidebar-label">Próximamente</div>
-  <div class="team-item" style="opacity:0.4;pointer-events:none">
-    <div style="width:30px;height:30px;background:var(--bg4);border-radius:50%;flex-shrink:0"></div>
-    <div><div class="team-name">Real Madrid B</div><div class="team-sub">Sin datos</div></div>
-  </div>
-  <div class="team-item" style="opacity:0.4;pointer-events:none">
-    <div style="width:30px;height:30px;background:var(--bg4);border-radius:50%;flex-shrink:0"></div>
-    <div><div class="team-name">Barakaldo CF</div><div class="team-sub">Sin datos</div></div>
   </div>
 </aside>
 
@@ -143,7 +129,7 @@
   const SB_URL = 'https://grvcjuwzdewebxablwyb.supabase.co';
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdydmNqdXd6ZGV3ZWJ4YWJsd3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTM0NzgsImV4cCI6MjA5NTAyOTQ3OH0.KPbDShmdsjH0VaJ9kggF34FZ-IiAKZ61qcPxNi6w6Rk';
 
-  let currentTeam = { id:2908, name:'Pontevedra CF', escudo:'https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/Pontevedra_CF_logo.png/150px-Pontevedra_CF_logo.png' };
+  let currentTeam = { id:923, name:'SD Ponferradina', escudo:'https://tmssl.akamaized.net/images/wappen/head/4032.png' };
   let redMatchId    = null;
   let redPrimaryTab = 'equipo';
   let redSubTab     = '1parte';
@@ -168,25 +154,39 @@
       979392: 5, // Nico Conesa
     },
     923: { // SD Ponferradina
-      928181:17, // A. Keita (Abdoulaye)
+      928181:17, // A. Keita
        25640:19, // Andoni López
-       13149: 4, // B. Moltenis (Boris)
+       13149: 4, // B. Moltenis
       826951:18, // Borja Vázquez
        25796:10, // Borja Valle
-      736606:16, // E. Frimpong (Eugene)
+      736606:16, // E. Frimpong
       532819: 8, // Eneko Aguilar
        62134: 5, // Eneko Undabarrena
        23777: 6, // Fede San Emeterio
       746539: 3, // Germán Novoa
       745374: 9, // José Luis Cortés
-       70531:20, // P. Ferrer (Pau)
+       70531:20, // P. Ferrer
        31995: 7, // Sergio Benito
       505184:21, // Diego Moreno
        69380:14, // Xemi Fernández
        34150:13, // Ángel Jiménez
+        3156:24, // Erik Morán
+       24021: 1, // Andrés Prieto
+       24345:22, // Vicente Esquerdo
+       26415:11, // Álex Mula
+       31972: 2, // David Andújar
+       69915: 8, // Borislav Stankov
+      180393:15, // Vasco Sousa
+      258595:23, // Mario Jorrín
+      486534:11, // S. Petkov
+      531656: 7, // Carlos Calderón
+      671880:12, // Lian
+      819170:12, // Koke
+     1029735:26, // V. Kisil
+     1066888:21, // O. Mfulu
     },
   };
-  let PLAYER_DORSALES = PLAYER_DORSALES_MAP_D[2908];
+  let PLAYER_DORSALES = PLAYER_DORSALES_MAP_D[923];
 
   const PARTIDOS_MAP = {
     2908: [
@@ -251,7 +251,42 @@
       {j:'J36', f:'09/05/2026', local:'SD Ponferradina',      vis:'Real Avilés',       id:2067181, s:'3-1'},
     ],
   };
-  let PARTIDOS = PARTIDOS_MAP[2908];
+  let PARTIDOS = PARTIDOS_MAP[923];
+
+  // Alineaciones embebidas de Ponferradina (30 partidos, desde JSONs SkillCorner)
+  // Formato: [id, name, position, start_time, end_time]
+  const PONF_LINEUPS = {
+    2038965:[[826951,'Borja Vázquez','RB','01:18:17',null],[180393,'Vasco Sousa','CF','01:18:17',null],[70531,'P. Ferrer','RW','01:13:20',null],[25796,'Borja Valle','RDM','01:01:05',null],[745374,'José Luis Cortés','CF','00:00:00','01:18:17'],[928181,'A. Keita','RW','00:00:00','01:13:20'],[69380,'Xemi Fernández','AM','00:00:00',null],[505184,'Diego Moreno','LW','00:00:00',null],[23777,'Fede San Emeterio','RDM','00:00:00','01:01:05'],[62134,'Eneko Undabarrena','LDM','00:00:00',null],[25640,'Andoni López','RB','00:00:00','01:18:17'],[746539,'Germán Novoa','RCB','00:00:00',null],[31972,'David Andújar','LCB','00:00:00',null],[13149,'B. Moltenis','LB','00:00:00',null],[34150,'Ángel Jiménez','GK','00:00:00',null]],
+    2040148:[[258595,'Mario Jorrín','RF','01:24:16',null],[736606,'E. Frimpong','LM','01:21:53',null],[745374,'José Luis Cortés','CF','01:03:48',null],[25796,'Borja Valle','RM','01:03:48',null],[826951,'Borja Vázquez','CF','00:45:00',null],[746539,'Germán Novoa','RCB','00:00:00',null],[62134,'Eneko Undabarrena','RM','00:00:00',null],[31972,'David Andújar','CB','00:00:00',null],[13149,'B. Moltenis','LCB','00:00:00',null],[34150,'Ángel Jiménez','GK','00:00:00',null],[25640,'Andoni López','LWB','00:00:00',null],[505184,'Diego Moreno','RWB','00:00:00','01:24:16'],[69380,'Xemi Fernández','LM','00:00:00','01:21:53'],[70531,'P. Ferrer','CF','00:00:00','01:03:48'],[23777,'Fede San Emeterio','DM','00:00:00','01:03:48'],[928181,'A. Keita','CF','00:00:00','00:45:00']],
+    2040246:[[26415,'Álex Mula','RW','01:23:21',null],[70531,'P. Ferrer','LW','01:23:21',null],[31995,'Sergio Benito','CF','01:19:45',null],[258595,'Mario Jorrín','LCB','01:18:25',null],[928181,'A. Keita','CF','01:00:01',null],[532819,'Eneko Aguilar','RM','01:00:01',null],[745374,'José Luis Cortés','CF','00:00:00','01:19:45'],[826951,'Borja Vázquez','CF','00:00:00','01:00:01'],[69380,'Xemi Fernández','RW','00:00:00','01:23:21'],[736606,'E. Frimpong','RM','00:00:00','01:00:01'],[62134,'Eneko Undabarrena','LM','00:00:00',null],[25796,'Borja Valle','LW','00:00:00','01:23:21'],[746539,'Germán Novoa','RB','00:00:00',null],[13149,'B. Moltenis','RCB','00:00:00',null],[31972,'David Andújar','LCB','00:00:00','01:18:25'],[25640,'Andoni López','LB','00:00:00',null],[34150,'Ángel Jiménez','GK','00:00:00',null]],
+    2040391:[[736606,'E. Frimpong','RM','01:28:38',null],[26415,'Álex Mula','LW','01:28:38',null],[69380,'Xemi Fernández','LM','00:00:00',null],[70531,'P. Ferrer','CF','01:11:37',null],[25796,'Borja Valle','CF','00:00:00','01:11:37'],[826951,'Borja Vázquez','LW','00:37:04',null],[671880,'Lian','RW','01:28:38',null],[532819,'Eneko Aguilar','LW','00:00:00','00:37:04'],[745374,'José Luis Cortés','CF','00:00:00','01:28:38'],[62134,'Eneko Undabarrena','LCB','00:00:00',null],[505184,'Diego Moreno','RB','00:00:00',null],[31972,'David Andújar','RCB','00:00:00',null],[24021,'Andrés Prieto','GK','00:00:00',null],[25640,'Andoni López','LB','00:00:00',null],[23777,'Fede San Emeterio','RM','00:00:00','01:28:38'],[928181,'A. Keita','RW','00:00:00','01:28:38']],
+    2040430:[[70531,'P. Ferrer','CF','01:12:12',null],[746539,'Germán Novoa','LDM','01:12:12',null],[69380,'Xemi Fernández','LW','01:07:00',null],[736606,'E. Frimpong','CF','00:45:00',null],[31995,'Sergio Benito','RDM','00:45:00',null],[745374,'José Luis Cortés','CF','00:00:00','01:12:12'],[826951,'Borja Vázquez','CF','00:00:00','00:45:00'],[928181,'A. Keita','RW','00:00:00',null],[25796,'Borja Valle','LW','00:00:00','01:07:00'],[532819,'Eneko Aguilar','RDM','00:00:00','00:45:00'],[23777,'Fede San Emeterio','LDM','00:00:00','01:12:12'],[505184,'Diego Moreno','RB','00:00:00',null],[62134,'Eneko Undabarrena','RCB','00:00:00',null],[31972,'David Andújar','LCB','00:00:00',null],[25640,'Andoni López','LB','00:00:00',null],[24021,'Andrés Prieto','GK','00:00:00',null]],
+    2040906:[[928181,'A. Keita','LB','01:00:01',null],[746539,'Germán Novoa','LCB','00:00:00',null],[31995,'Sergio Benito','CF','01:19:01',null],[736606,'E. Frimpong','RDM','01:09:31',null],[745374,'José Luis Cortés','AM','01:00:01',null],[23777,'Fede San Emeterio','RW','01:00:01',null],[826951,'Borja Vázquez','CF','00:00:00','01:19:01'],[70531,'P. Ferrer','RW','00:00:00','01:00:01'],[69380,'Xemi Fernández','AM','00:00:00','01:00:01'],[25796,'Borja Valle','LW','00:00:00',null],[62134,'Eneko Undabarrena','RDM','00:00:00','01:09:31'],[532819,'Eneko Aguilar','LDM','00:00:00',null],[505184,'Diego Moreno','RB','00:00:00',null],[13149,'B. Moltenis','RCB','00:00:00',null],[25640,'Andoni López','LB','00:00:00','01:00:01'],[34150,'Ángel Jiménez','GK','00:00:00',null]],
+    2040921:[[70531,'P. Ferrer','RDM','01:23:04',null],[31972,'David Andújar','LCB','01:23:04',null],[23777,'Fede San Emeterio','AM','01:14:25',null],[26415,'Álex Mula','RW','01:14:25',null],[826951,'Borja Vázquez','LB','01:08:41',null],[745374,'José Luis Cortés','CF','00:00:00',null],[928181,'A. Keita','RW','00:00:00','01:14:25'],[69380,'Xemi Fernández','AM','00:00:00','01:14:25'],[25796,'Borja Valle','LW','00:00:00',null],[62134,'Eneko Undabarrena','RDM','00:00:00','01:23:04'],[532819,'Eneko Aguilar','LDM','00:00:00',null],[505184,'Diego Moreno','RB','00:00:00',null],[13149,'B. Moltenis','RCB','00:00:00',null],[746539,'Germán Novoa','LCB','00:00:00','01:23:04'],[25640,'Andoni López','LB','00:00:00','01:08:41'],[24021,'Andrés Prieto','GK','00:00:00',null]],
+    2041110:[[31995,'Sergio Benito','RW','01:22:31',null],[26415,'Álex Mula','CF','01:17:23',null],[745374,'José Luis Cortés','LW','01:17:23',null],[23777,'Fede San Emeterio','AM','01:09:52',null],[928181,'A. Keita','RDM','01:09:52',null],[826951,'Borja Vázquez','CF','00:00:00','01:17:23'],[70531,'P. Ferrer','RW','00:00:00','01:22:31'],[69380,'Xemi Fernández','AM','00:00:00','01:09:52'],[25796,'Borja Valle','LW','00:00:00','01:17:23'],[62134,'Eneko Undabarrena','RDM','00:00:00','01:09:52'],[532819,'Eneko Aguilar','LDM','00:00:00',null],[505184,'Diego Moreno','RB','00:00:00',null],[13149,'B. Moltenis','RCB','00:00:00',null],[746539,'Germán Novoa','LCB','00:00:00',null],[25640,'Andoni López','LB','00:00:00',null],[34150,'Ángel Jiménez','GK','00:00:00',null]],
+    2043900:[[26415,'Álex Mula','LW','01:16:26',null],[31995,'Sergio Benito','CF','01:16:26',null],[928181,'A. Keita','CF','01:16:26',null],[826951,'Borja Vázquez','CF','00:00:00','01:16:26'],[745374,'José Luis Cortés','CF','00:00:00','01:16:26'],[69380,'Xemi Fernández','RW','00:00:00',null],[62134,'Eneko Undabarrena','RM','00:00:00',null],[532819,'Eneko Aguilar','LM','00:00:00',null],[25796,'Borja Valle','LW','00:00:00','01:16:26'],[746539,'Germán Novoa','RB','00:00:00',null],[13149,'B. Moltenis','RCB','00:00:00',null],[31972,'David Andújar','LCB','00:00:00',null],[25640,'Andoni López','LB','00:00:00',null],[34150,'Ángel Jiménez','GK','00:00:00',null]],
+    2044962:[[26415,'Álex Mula','RM','01:17:52',null],[745374,'José Luis Cortés','RW','01:17:52',null],[258595,'Mario Jorrín','CB','01:17:52',null],[532819,'Eneko Aguilar','CF','01:13:20',null],[928181,'A. Keita','RWB','01:02:36',null],[826951,'Borja Vázquez','CF','00:00:00','01:13:20'],[69380,'Xemi Fernández','RW','00:00:00','01:17:52'],[736606,'E. Frimpong','RM','00:00:00','01:17:52'],[62134,'Eneko Undabarrena','LM','00:00:00',null],[25796,'Borja Valle','LW','00:00:00',null],[505184,'Diego Moreno','RWB','00:00:00','01:02:36'],[31972,'David Andújar','RCB','00:00:00',null],[746539,'Germán Novoa','CB','00:00:00','01:17:52'],[13149,'B. Moltenis','LCB','00:00:00',null],[25640,'Andoni López','LWB','00:00:00',null],[34150,'Ángel Jiménez','GK','00:00:00',null]],
+    2046155:[[31995,'Sergio Benito','LW','01:27:30',null],[505184,'Diego Moreno','CF','01:27:30',null],[532819,'Eneko Aguilar','CF','01:11:37',null],[928181,'A. Keita','RM','01:11:37',null],[26415,'Álex Mula','CF','00:16:03','01:27:30'],[25796,'Borja Valle','CF','00:00:00','00:16:03'],[745374,'José Luis Cortés','CF','00:00:00','01:11:37'],[62134,'Eneko Undabarrena','RW','00:00:00',null],[736606,'E. Frimpong','RM','00:00:00','01:11:37'],[69380,'Xemi Fernández','LM','00:00:00',null],[826951,'Borja Vázquez','LW','00:00:00','01:27:30'],[13149,'B. Moltenis','RB','00:00:00',null],[746539,'Germán Novoa','RCB','00:00:00',null],[25640,'Andoni López','LCB','00:00:00',null],[31972,'David Andújar','LB','00:00:00','01:23:45'],[34150,'Ángel Jiménez','GK','00:00:00',null]],
+    2047298:[[70531,'P. Ferrer','RW','01:13:18',null],[23777,'Fede San Emeterio','RM','01:25:03',null],[26415,'Álex Mula','LW','01:13:18',null],[31995,'Sergio Benito','CF','00:55:18',null],[62134,'Eneko Undabarrena','LM','00:45:00',null],[745374,'José Luis Cortés','CF','00:00:00','00:55:18'],[826951,'Borja Vázquez','CF','00:00:00',null],[69380,'Xemi Fernández','RW','00:00:00','01:13:18'],[532819,'Eneko Aguilar','RM','00:00:00','01:25:03'],[736606,'E. Frimpong','LM','00:00:00','00:45:00'],[928181,'A. Keita','LW','00:00:00','01:13:18'],[505184,'Diego Moreno','RB','00:00:00',null],[13149,'B. Moltenis','RCB','00:00:00',null],[746539,'Germán Novoa','LCB','00:00:00',null],[180393,'Vasco Sousa','LB','00:00:00',null],[24021,'Andrés Prieto','GK','00:00:00',null]],
+    2047799:[[31972,'David Andújar','LM','01:29:23',null],[31995,'Sergio Benito','CF','01:10:59',null],[26415,'Álex Mula','LW','01:00:15',null],[70531,'P. Ferrer','RW','01:00:15',null],[69380,'Xemi Fernández','RW','00:00:00','01:00:15'],[23777,'Fede San Emeterio','LB','01:00:15',null],[745374,'José Luis Cortés','CF','00:00:00','01:10:59'],[826951,'Borja Vázquez','CF','00:00:00',null],[736606,'E. Frimpong','RM','00:00:00',null],[532819,'Eneko Aguilar','LM','00:00:00','01:29:23'],[928181,'A. Keita','LW','00:00:00','01:00:15'],[505184,'Diego Moreno','RB','00:00:00',null],[746539,'Germán Novoa','RCB','00:00:00',null],[13149,'B. Moltenis','LCB','00:00:00',null],[180393,'Vasco Sousa','LB','00:00:00','01:00:15'],[24021,'Andrés Prieto','GK','00:00:00',null]],
+    2048312:[[532819,'Eneko Aguilar','CF','01:05:30',null],[928181,'A. Keita','RB','01:21:02',null],[69380,'Xemi Fernández','LW','01:15:45',null],[745374,'José Luis Cortés','RM','01:05:30',null],[13149,'B. Moltenis','LB','00:45:00',null],[31995,'Sergio Benito','CF','00:00:00','01:05:30'],[826951,'Borja Vázquez','RW','00:00:00',null],[26415,'Álex Mula','RM','00:00:00','01:05:30'],[736606,'E. Frimpong','LM','00:00:00',null],[70531,'P. Ferrer','LW','00:00:00','01:15:45'],[23777,'Fede San Emeterio','DM','00:00:00',null],[505184,'Diego Moreno','RB','00:00:00','01:21:02'],[31972,'David Andújar','RCB','00:00:00',null],[746539,'Germán Novoa','LCB','00:00:00',null],[25640,'Andoni López','LB','00:00:00','00:45:00'],[24021,'Andrés Prieto','GK','00:00:00',null]],
+    2049811:[[25640,'Andoni López','LB','00:00:00',null],[180393,'Vasco Sousa','LW','01:27:25',null],[25796,'Borja Valle','LW','00:00:00','01:27:25'],[69380,'Xemi Fernández','RW','01:27:25',null],[928181,'A. Keita','CF','01:09:03',null],[13149,'B. Moltenis','CF','01:03:16',null],[70531,'P. Ferrer','CF','00:00:00','01:03:16'],[745374,'José Luis Cortés','CF','00:00:00','01:09:03'],[826951,'Borja Vázquez','RW','00:00:00','01:27:25'],[23777,'Fede San Emeterio','RM','00:00:00',null],[736606,'E. Frimpong','LM','00:00:00',null],[258595,'Mario Jorrín','RB','00:00:00',null],[31972,'David Andújar','RCB','00:00:00','01:00:58'],[62134,'Eneko Undabarrena','LCB','00:00:00',null],[24021,'Andrés Prieto','GK','00:00:00',null]],
+    2050287:[[1029735,'V. Kisil','LM','01:39:17',null],[69380,'Xemi Fernández','LW','01:22:58',null],[532819,'Eneko Aguilar','RW','01:22:58',null],[928181,'A. Keita','CF','01:04:01',null],[3156,'Erik Morán','CF','01:04:01',null],[70531,'P. Ferrer','CF','00:00:00','01:04:01'],[745374,'José Luis Cortés','CF','00:00:00','01:04:01'],[826951,'Borja Vázquez','RW','00:00:00','01:22:58'],[736606,'E. Frimpong','RM','00:00:00','00:59:49'],[23777,'Fede San Emeterio','LM','00:00:00','01:39:17'],[25796,'Borja Valle','LW','00:00:00','01:22:58'],[258595,'Mario Jorrín','RB','00:00:00',null],[746539,'Germán Novoa','RCB','00:00:00',null],[62134,'Eneko Undabarrena','LCB','00:00:00',null],[25640,'Andoni López','LB','00:00:00',null],[24021,'Andrés Prieto','GK','00:00:00',null]],
+    2051795:[[826951,'Borja Vázquez','RW','00:00:00',null],[24345,'Vicente Esquerdo','LM','01:16:13',null],[531656,'Carlos Calderón','RW','01:22:30',null],[258595,'Mario Jorrín','RB','00:00:00',null],[928181,'A. Keita','RW','01:16:13',null],[1029735,'V. Kisil','RM','01:29:36',null],[25796,'Borja Valle','LW','00:00:00','01:16:13'],[69380,'Xemi Fernández','CF','00:45:01',null],[745374,'José Luis Cortés','CF','00:00:00','01:22:30'],[3156,'Erik Morán','LM','00:00:00','01:16:13'],[70531,'P. Ferrer','CF','00:00:00','00:45:01'],[23777,'Fede San Emeterio','RM','00:00:00','01:29:36'],[746539,'Germán Novoa','LCB','00:00:00',null],[13149,'B. Moltenis','RCB','00:00:00',null],[24021,'Andrés Prieto','GK','00:00:00',null],[25640,'Andoni López','LB','00:00:00',null]],
+    2052263:[[826951,'Borja Vázquez','RW','00:00:00',null],[23777,'Fede San Emeterio','RDM','00:00:00','00:55:44'],[24345,'Vicente Esquerdo','RDM','01:31:10',null],[486534,'S. Petkov','CF','01:31:10',null],[736606,'E. Frimpong','LDM','00:55:44',null],[531656,'Carlos Calderón','RW','00:55:44',null],[819170,'Koke','RB','00:48:29',null],[746539,'Germán Novoa','RB','00:00:00',null],[62134,'Eneko Undabarrena','RCB','00:00:00',null],[25796,'Borja Valle','LW','00:00:00',null],[24021,'Andrés Prieto','GK','00:00:00',null],[25640,'Andoni López','LB','00:00:00',null],[69380,'Xemi Fernández','CF','00:00:00','01:31:10'],[3156,'Erik Morán','LDM','00:00:00','01:31:10'],[745374,'José Luis Cortés','AM','00:00:00','00:55:44'],[31972,'David Andújar','LCB','00:00:00','00:48:29']],
+    2053348:[[928181,'A. Keita','LW','01:20:59',null],[531656,'Carlos Calderón','CF','01:20:59',null],[486534,'S. Petkov','AM','00:53:23',null],[736606,'E. Frimpong','RDM','00:53:23',null],[24345,'Vicente Esquerdo','LDM','00:38:28',null],[69380,'Xemi Fernández','CF','00:00:00','01:20:59'],[826951,'Borja Vázquez','RW','00:00:00',null],[745374,'José Luis Cortés','AM','00:00:00','00:53:23'],[25796,'Borja Valle','LW','00:00:00','01:20:59'],[23777,'Fede San Emeterio','RDM','00:00:00','00:53:23'],[3156,'Erik Morán','LDM','00:00:00','00:38:28'],[746539,'Germán Novoa','RB','00:00:00',null],[62134,'Eneko Undabarrena','RCB','00:00:00',null],[180393,'Vasco Sousa','LCB','00:00:00',null],[819170,'Koke','LB','00:00:00',null],[24021,'Andrés Prieto','GK','00:00:00',null]],
+    2054294:[[745374,'José Luis Cortés','CF','00:00:00','01:11:56'],[1029735,'V. Kisil','RM','01:36:38',null],[69915,'Borislav Ivanov Stankov','CF','01:11:56',null],[531656,'Carlos Calderón','RW','01:20:41',null],[826951,'Borja Vázquez','RW','00:00:00','01:20:41'],[928181,'A. Keita','CF','01:11:56',null],[819170,'Koke','RB','00:00:00',null],[25796,'Borja Valle','LW','00:00:00',null],[24345,'Vicente Esquerdo','RM','00:00:00','01:36:38'],[25640,'Andoni López','LB','00:00:00',null],[69380,'Xemi Fernández','CF','00:00:00','01:11:56'],[746539,'Germán Novoa','LCB','00:00:00',null],[62134,'Eneko Undabarrena','RCB','00:00:00',null],[736606,'E. Frimpong','LM','00:00:00',null],[24021,'Andrés Prieto','GK','00:00:00',null]],
+    2054952:[[24345,'Vicente Esquerdo','RM','00:00:00','01:19:35'],[25796,'Borja Valle','LW','00:00:00',null],[1029735,'V. Kisil','RM','01:29:46',null],[258595,'Mario Jorrín','RB','01:29:46',null],[62134,'Eneko Undabarrena','RCB','00:00:00',null],[826951,'Borja Vázquez','RW','00:00:00','01:29:46'],[25640,'Andoni López','LB','00:00:00',null],[746539,'Germán Novoa','LCB','00:00:00',null],[531656,'Carlos Calderón','RW','01:02:17',null],[69380,'Xemi Fernández','CF','00:00:00','01:02:17'],[928181,'A. Keita','CF','01:19:35',null],[819170,'Koke','RB','00:00:00',null],[736606,'E. Frimpong','LM','00:00:00','01:29:46'],[69915,'Borislav Ivanov Stankov','CF','01:02:17',null],[745374,'José Luis Cortés','CF','00:00:00','01:02:17'],[24021,'Andrés Prieto','GK','00:00:00',null]],
+    2056593:[[531656,'Carlos Calderón','RF','01:00:59',null],[258595,'Mario Jorrín','RB','01:00:59',null],[928181,'A. Keita','RF','00:00:00','01:00:59'],[70531,'P. Ferrer','LF','01:29:10',null],[826951,'Borja Vázquez','LF','00:00:00','01:29:10'],[745374,'José Luis Cortés','CF','00:00:00','01:10:15'],[24345,'Vicente Esquerdo','RM','01:10:15',null],[69915,'Borislav Ivanov Stankov','CF','01:10:15',null],[1029735,'V. Kisil','RM','00:00:00','01:10:15'],[819170,'Koke','RB','00:00:00','01:00:59'],[736606,'E. Frimpong','CM','00:00:00',null],[25796,'Borja Valle','LM','00:00:00',null],[746539,'Germán Novoa','RCB','00:00:00',null],[62134,'Eneko Undabarrena','LCB','00:00:00',null],[25640,'Andoni López','LB','00:00:00',null],[24021,'Andrés Prieto','GK','00:00:00',null]],
+    2057466:[[736606,'E. Frimpong','RW','00:00:00','01:24:46'],[70531,'P. Ferrer','RW','01:24:46',null],[69915,'Borislav Ivanov Stankov','CF','00:00:00','01:06:41'],[486534,'S. Petkov','CF','01:06:41',null],[928181,'A. Keita','CF','01:06:41',null],[258595,'Mario Jorrín','RB','00:45:00',null],[69380,'Xemi Fernández','RCB','00:45:00',null],[745374,'José Luis Cortés','CF','00:00:00','01:06:41'],[25796,'Borja Valle','RM','00:00:00',null],[62134,'Eneko Undabarrena','LM','00:00:00',null],[826951,'Borja Vázquez','LW','00:00:00',null],[819170,'Koke','RB','00:00:00','00:45:00'],[24345,'Vicente Esquerdo','RCB','00:00:00','00:45:00'],[746539,'Germán Novoa','LCB','00:00:00',null],[25640,'Andoni López','LB','00:00:00',null],[24021,'Andrés Prieto','GK','00:00:00',null]],
+    2058792:[[746539,'Germán Novoa','LCB','00:00:00',null],[928181,'A. Keita','CF','00:00:00','01:08:10'],[24345,'Vicente Esquerdo','LDM','01:20:25',null],[25640,'Andoni López','LB','00:00:00','01:11:17'],[25796,'Borja Valle','LW','00:00:00',null],[69380,'Xemi Fernández','AM','00:00:00','01:08:10'],[180393,'Vasco Sousa','LB','01:11:17',null],[531656,'Carlos Calderón','RDM','00:45:00',null],[826951,'Borja Vázquez','RW','00:00:00',null],[1029735,'V. Kisil','RDM','00:00:00','00:45:00'],[62134,'Eneko Undabarrena','RCB','00:00:00',null],[69915,'Borislav Ivanov Stankov','AM','01:08:10',null],[745374,'José Luis Cortés','CF','01:08:10',null],[736606,'E. Frimpong','LDM','00:00:00','01:20:25'],[258595,'Mario Jorrín','RB','00:00:00',null],[24021,'Andrés Prieto','GK','00:00:00',null]],
+    2061313:[[928181,'A. Keita','CF','01:13:25',null],[745374,'José Luis Cortés','CF','01:28:04',null],[736606,'E. Frimpong','RM','00:00:00',null],[24345,'Vicente Esquerdo','LM','00:00:00','01:13:25'],[531656,'Carlos Calderón','RW','00:00:00',null],[819170,'Koke','LB','00:00:00','01:28:04'],[746539,'Germán Novoa','RCB','00:00:00',null],[826951,'Borja Vázquez','CF','00:00:00','01:28:04'],[69915,'Borislav Ivanov Stankov','CF','00:00:00','01:13:25'],[258595,'Mario Jorrín','LB','01:28:04',null],[62134,'Eneko Undabarrena','RB','00:00:00',null],[25640,'Andoni López','LCB','00:00:00',null],[25796,'Borja Valle','LW','00:00:00','01:32:59'],[3156,'Erik Morán','LW','01:32:59',null],[70531,'P. Ferrer','LM','01:13:25',null],[34150,'Ángel Jiménez','GK','00:00:00',null]],
+    2062716:[[69380,'Xemi Fernández','RW','01:27:26',null],[928181,'A. Keita','RB','01:03:46',null],[69915,'Borislav Ivanov Stankov','CF','00:00:00','01:03:46'],[62134,'Eneko Undabarrena','RCB','00:00:00',null],[531656,'Carlos Calderón','RW','00:00:00','01:27:26'],[24345,'Vicente Esquerdo','RM','00:00:00','01:03:46'],[819170,'Koke','RB','00:00:00','01:03:46'],[826951,'Borja Vázquez','CF','00:00:00','01:17:38'],[745374,'José Luis Cortés','CF','01:03:46',null],[258595,'Mario Jorrín','CF','01:17:38',null],[746539,'Germán Novoa','LCB','00:00:00',null],[25796,'Borja Valle','LW','00:00:00',null],[736606,'E. Frimpong','LM','00:00:00',null],[70531,'P. Ferrer','RM','01:03:46',null],[25640,'Andoni López','LB','00:00:00',null],[34150,'Ángel Jiménez','GK','00:00:00',null]],
+    2063736:[[25796,'Borja Valle','RM','00:00:00',null],[258595,'Mario Jorrín','RB','00:00:00','01:07:12'],[13149,'B. Moltenis','LF','01:24:44',null],[531656,'Carlos Calderón','RF','00:00:00','01:24:44'],[69915,'Borislav Ivanov Stankov','RF','01:24:44',null],[70531,'P. Ferrer','CF','00:00:00','01:07:12'],[25640,'Andoni López','LB','00:00:00',null],[736606,'E. Frimpong','LM','00:00:00',null],[24345,'Vicente Esquerdo','CM','00:00:00','01:17:23'],[31972,'David Andújar','RCB','00:00:00',null],[746539,'Germán Novoa','LCB','00:00:00',null],[819170,'Koke','RB','01:07:12',null],[69380,'Xemi Fernández','CM','01:17:23',null],[826951,'Borja Vázquez','LF','00:00:00','01:24:44'],[928181,'A. Keita','CF','01:07:12',null],[34150,'Ángel Jiménez','GK','00:00:00',null]],
+    2064907:[[69915,'Borislav Ivanov Stankov','CF','01:28:35',null],[1066888,'O. Mfulu','RM','01:17:17',null],[13149,'B. Moltenis','RW','01:17:17',null],[745374,'José Luis Cortés','RB','01:05:50',null],[819170,'Koke','CF','01:05:50',null],[826951,'Borja Vázquez','CF','00:00:00','01:28:35'],[928181,'A. Keita','CF','00:00:00','01:05:50'],[531656,'Carlos Calderón','RW','00:00:00','01:17:17'],[24345,'Vicente Esquerdo','RM','00:00:00','01:17:17'],[736606,'E. Frimpong','LM','00:00:00',null],[25796,'Borja Valle','LW','00:00:00',null],[258595,'Mario Jorrín','RB','00:00:00','01:05:50'],[62134,'Eneko Undabarrena','RCB','00:00:00',null],[746539,'Germán Novoa','LCB','00:00:00',null],[25640,'Andoni López','LB','00:00:00','01:31:48'],[24021,'Andrés Prieto','GK','00:00:00',null]],
+    2066099:[[70531,'P. Ferrer','RB','01:16:33',null],[69380,'Xemi Fernández','RW','01:16:33',null],[745374,'José Luis Cortés','RM','01:10:21',null],[531656,'Carlos Calderón','CF','00:58:20',null],[819170,'Koke','LB','00:58:20',null],[69915,'Borislav Ivanov Stankov','CF','00:00:00','00:58:20'],[826951,'Borja Vázquez','CF','00:00:00',null],[928181,'A. Keita','RW','00:00:00','01:16:33'],[736606,'E. Frimpong','RM','00:00:00','01:10:21'],[24345,'Vicente Esquerdo','LM','00:00:00',null],[25796,'Borja Valle','LW','00:00:00',null],[258595,'Mario Jorrín','RB','00:00:00','01:16:33'],[62134,'Eneko Undabarrena','RCB','00:00:00',null],[746539,'Germán Novoa','LCB','00:00:00',null],[180393,'Vasco Sousa','LB','00:00:00','00:58:20'],[24021,'Andrés Prieto','GK','00:00:00',null]],
+    2067181:[[69915,'Borislav Ivanov Stankov','RF','01:22:53',null],[23777,'Fede San Emeterio','CF','01:03:24',null],[69380,'Xemi Fernández','LM','01:03:24',null],[745374,'José Luis Cortés','LF','01:11:34',null],[31972,'David Andújar','CM','01:11:34',null],[531656,'Carlos Calderón','RF','00:00:00','01:22:53'],[70531,'P. Ferrer','CF','00:00:00','01:03:24'],[928181,'A. Keita','LF','00:00:00','01:11:34'],[826951,'Borja Vázquez','RM','00:00:00',null],[24345,'Vicente Esquerdo','CM','00:00:00','01:11:34'],[736606,'E. Frimpong','LM','00:00:00','01:03:24'],[819170,'Koke','RB','00:00:00',null],[746539,'Germán Novoa','RCB','00:00:00',null],[62134,'Eneko Undabarrena','LCB','00:00:00',null],[25640,'Andoni López','LB','00:00:00',null],[24021,'Andrés Prieto','GK','00:00:00',null]],
+  };
 
   async function sbGet(table, params) {
     const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, {
@@ -386,6 +421,11 @@
   }
 
   async function getLineup(matchId, teamId) {
+    // Para Ponferradina usamos los datos embebidos directamente (el RPC solo tiene J2)
+    if(parseInt(teamId) === 923) {
+      const rows = PONF_LINEUPS[parseInt(matchId)] || [];
+      return rows.map(r => ({id:r[0], name:r[1], position:r[2], start_time:r[3], end_time:r[4], team_id:923}));
+    }
     const r = await fetch(`${SB_URL}/rest/v1/rpc/get_lineup`, {
       method: 'POST',
       headers: { 'apikey':SB_KEY, 'Authorization':`Bearer ${SB_KEY}`, 'Content-Type':'application/json' },
