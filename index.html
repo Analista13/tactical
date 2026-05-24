@@ -251,12 +251,11 @@
 
   async function sbGet(table, params) {
     const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, {
-      headers: { 'apikey':SB_KEY, 'Authorization':`Bearer ${SB_KEY}`, 'Prefer':'count=exact' }
+      headers: { 'apikey':SB_KEY, 'Authorization':`Bearer ${SB_KEY}` }
     });
-    const count = r.headers.get('content-range')?.split('/')[1];
     const json = await r.json();
     const data = Array.isArray(json) ? json : [];
-    return { data, count: parseInt(count)||data.length };
+    return { data, count: data.length };
   }
 
   function loading() {
