@@ -1463,7 +1463,7 @@
         const metDefs=[
           {abbr:'ENV',    col:'var(--text2)', label:'Pases enviados',    desc:'Total pases completados al equipo en el partido'},
           {abbr:'ÚLT⅓',  col:'var(--text2)', label:'Último tercio',     desc:'Pases cuyo destino entra en el tercio final del campo (x>17.5)'},
-          {abbr:'DIST',   col:'var(--text2)', label:'Distancia media',   desc:'Longitud media de sus pases (metros), calculada por SkillCorner'},
+          {abbr:'DIST',   col:'var(--text2)', label:'Distancia media',   desc:'Longitud media de sus pases en metros'},
           {abbr:'CORTOS', col:'#58a6ff',      label:'Pases cortos',      desc:'Pases completados de menos de 15 m — circulación y apoyo'},
           {abbr:'LARGOS', col:'#58a6ff',      label:'Pases largos',      desc:'Pases completados de más de 32 m — cambios de juego y pelotazos'},
           {abbr:'xT↑',   col:'var(--accent)',label:'xThreat generado',  desc:'Aumento de prob. de gol acumulado. Cada pase sube el valor de zona de destino menos la de origen'},
@@ -1479,7 +1479,7 @@
             <div style="font-size:10px;color:var(--text3);line-height:1.4">${d.desc}</div>
           </div>`).join('')}
         </div>`;
-        html=matchHeader('📊 Métricas avanzadas · SkillCorner', metLegend);
+        html=matchHeader('📊 Métricas avanzadas', metLegend);
 
         for(let t=0;t<=3;t++){
           const tp=metRows.filter(p=>p.tier===t); if(!tp.length) continue;
