@@ -811,107 +811,154 @@
     cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando tendencias...</span></div>`;
     const partido=PARTIDOS.find(p=>p.id==mid);
     try {
-      const {data}=await sbGet('eventos',`select=x_start,y_start&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&x_start=not.is.null&limit=5000`);
+      const {data}=await sbGet('eventos',`select=x_start,y_start,period&team_id=eq.${tid}&match_id=eq.${mid}&event_type=eq.player_possession&pass_outcome=eq.successful&x_start=not.is.null&limit=5000`);
       if(!data.length){cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de pases</div>`;return;}
 
-      // zones[col][lane]: col 0-2 = Z1/Z2/Z3, lane 0-4 = C5→C1 (der→izq)
-      const zones=Array.from({length:3},()=>Array(5).fill(0));
-      data.forEach(e=>{
-        const col=e.x_start<-17.5?0:e.x_start<17.5?1:2;
-        const lane=e.y_start<-20.4?0:e.y_start<-6.8?1:e.y_start<6.8?2:e.y_start<20.4?3:4;
-        zones[col][lane]++;
-      });
-      const total=data.length;
-      const maxZone=Math.max(...zones.flat());
+      // Separar por periodo
+      const d1=data.filter(e=>e.period===1), d2=data.filter(e=>e.period===2);
+      const buildZones=(rows)=>{
+        const z=Array.from({length:3},()=>Array(5).fill(0));
+        rows.forEach(e=>{
+          const col=e.x_start<-17.5?0:e.x_start<17.5?1:2;
+          const lane=e.y_start<-20.4?0:e.y_start<-6.8?1:e.y_start<6.8?2:e.y_start<20.4?3:4;
+          z[col][lane]++;
+        });
+        return z;
+      };
+      const zones1=buildZones(d1), zones2=buildZones(d2);
+      const total=data.length, t1=d1.length, t2=d2.length;
 
-      const W=820,H=540,MX=50,MY=40,PW=W-MX*2,PH=H-MY*2;
+      // SVG campo de zonas — función reutilizable
+      const W=500,H=340,MX=38,MY=30,PW=W-MX*2,PH=H-MY*2;
       const sv=(x,y)=>({sx:MX+((x+52.5)/105)*PW,sy:MY+((34-y)/68)*PH});
       const xR=[[-52.5,-17.5],[-17.5,17.5],[17.5,52.5]];
-      // 5 carriles top→bottom en SVG (y decrece hacia abajo)
       const yR=[[34,20.4],[20.4,6.8],[6.8,-6.8],[-6.8,-20.4],[-20.4,-34]];
+      const xLabels=['Z1','Z2','Z3'], yLabels=['C1','C2','C3','C4','C5'];
+      const xMids=[MX+PW*0.167,MX+PW*0.5,MX+PW*0.833];
+      const yMids=[MY+PH*0.1,MY+PH*0.3,MY+PH*0.5,MY+PH*0.7,MY+PH*0.9];
 
-      let zoneSVG='';
-      for(let c=0;c<3;c++){
-        for(let vr=0;vr<5;vr++){
-          const count=zones[c][4-vr]; // vr 0=C1(top/izq), vr 4=C5(bottom/der)
+      const buildFieldSVG=(zones,tot)=>{
+        const maxZ=Math.max(1,...zones.flat());
+        let z='';
+        for(let c=0;c<3;c++) for(let vr=0;vr<5;vr++){
+          const count=zones[c][4-vr];
           const {sx:sx1,sy:sy1}=sv(xR[c][0],yR[vr][0]);
           const {sx:sx2,sy:sy2}=sv(xR[c][1],yR[vr][1]);
           const zw=sx2-sx1,zh=sy2-sy1,cx=sx1+zw/2,cy=sy1+zh/2;
-          const pct=((count/total)*100).toFixed(1);
-          const op=count>0?Math.max(0.06,(count/maxZone)*0.78):0;
+          const pct=tot>0?((count/tot)*100).toFixed(1):'0.0';
+          const op=count>0?Math.max(0.06,(count/maxZ)*0.78):0;
           const dark=op>0.35;
-          zoneSVG+=`<rect x="${sx1.toFixed(1)}" y="${sy1.toFixed(1)}" width="${zw.toFixed(1)}" height="${zh.toFixed(1)}" fill="#c8a96e" fill-opacity="${op.toFixed(3)}" stroke="#1e3a1e" stroke-width="0.8"/>
-          <text x="${cx.toFixed(1)}" y="${(cy-3).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="15" font-weight="700" fill="${dark?'#0d1117':'#e8c98e'}">${pct}%</text>
-          <text x="${cx.toFixed(1)}" y="${(cy+12).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" fill="${dark?'#1c2333':'#8b949e'}">${count} pases</text>`;
+          z+=`<rect x="${sx1.toFixed(1)}" y="${sy1.toFixed(1)}" width="${zw.toFixed(1)}" height="${zh.toFixed(1)}" fill="#c8a96e" fill-opacity="${op.toFixed(3)}" stroke="#1e3a1e" stroke-width="0.5"/>
+          <text x="${cx.toFixed(1)}" y="${(cy+1).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-family="'Bebas Neue',sans-serif" font-size="13" fill="${dark?'#0d1117':'#e8c98e'}">${pct}%</text>
+          <text x="${cx.toFixed(1)}" y="${(cy+13).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="${dark?'#1c2333':'#8b949e'}">${count}</text>`;
         }
-      }
+        const ax=xLabels.map((l,i)=>`<text x="${xMids[i].toFixed(1)}" y="${(MY-8).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="600" fill="#484f58" font-family="'DM Mono',monospace">${l}</text>`).join('')
+          +yLabels.map((l,i)=>`<text x="${(MX-5).toFixed(1)}" y="${yMids[i].toFixed(1)}" text-anchor="end" dominant-baseline="middle" font-size="9" font-weight="600" fill="#484f58" font-family="'DM Mono',monospace">${l}</text>`).join('');
+        return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+          <rect x="0" y="0" width="${W}" height="${H}" fill="#0b150b"/>
+          <rect x="${MX}" y="${MY}" width="${PW}" height="${PH}" fill="#0d1a0d" stroke="#1e3a1e" stroke-width="1.2"/>
+          ${z}
+          <line x1="${W/2}" y1="${MY}" x2="${W/2}" y2="${H-MY}" stroke="#1e3a1e" stroke-width="0.8" stroke-dasharray="3,3"/>
+          <circle cx="${W/2}" cy="${H/2}" r="${(PH*9.15/68).toFixed(0)}" fill="none" stroke="#1e3a1e" stroke-width="0.7"/>
+          <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.6"/>
+          <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.6"/>
+          ${ax}
+        </svg>`;
+      };
 
-      // Etiquetas de eje
-      const xMids=[MX+PW*0.167, MX+PW*0.5, MX+PW*0.833];
-      const xLabels=['Z1','Z2','Z3'];
-      const yMids=[MY+PH*0.1, MY+PH*0.3, MY+PH*0.5, MY+PH*0.7, MY+PH*0.9];
-      const yLabels=['C1','C2','C3','C4','C5'];
-      const axisLabels=xLabels.map((l,i)=>`<text x="${xMids[i].toFixed(1)}" y="${(MY-10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#484f58">${l}</text>`).join('')
-        +yLabels.map((l,i)=>`<text x="${(MX-10).toFixed(1)}" y="${yMids[i].toFixed(1)}" text-anchor="end" dominant-baseline="middle" font-size="11" font-weight="600" fill="#484f58">${l}</text>`).join('');
-
-      // Resumen por carril (C1=izq exterior … C5=der exterior)
-      const corr=[
-        {label:'C1 — Izq. exterior', n:zones[0][4]+zones[1][4]+zones[2][4]},
-        {label:'C2 — Izq. interior', n:zones[0][3]+zones[1][3]+zones[2][3]},
-        {label:'C3 — Central',       n:zones[0][2]+zones[1][2]+zones[2][2]},
-        {label:'C4 — Der. interior', n:zones[0][1]+zones[1][1]+zones[2][1]},
-        {label:'C5 — Der. exterior', n:zones[0][0]+zones[1][0]+zones[2][0]},
-      ];
-      const thirds=[
-        {label:'Zona 1', n:zones[0].reduce((a,b)=>a+b,0)},
-        {label:'Zona 2', n:zones[1].reduce((a,b)=>a+b,0)},
-        {label:'Zona 3', n:zones[2].reduce((a,b)=>a+b,0)},
-      ];
-      const bar=(n,color)=>`<div style="flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden"><div style="width:${((n/total)*100).toFixed(1)}%;height:100%;background:${color};border-radius:4px"></div></div>`;
-      const corrHTML=corr.map(({label,n})=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <span style="font-size:12px;color:var(--text2);width:130px;flex-shrink:0">${label}</span>
-        ${bar(n,'#c8a96e')}
-        <span style="font-size:13px;font-weight:700;color:var(--accent);width:44px;text-align:right">${((n/total)*100).toFixed(1)}%</span>
-      </div>`).join('');
-      const thirdHTML=thirds.map(({label,n})=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <span style="font-size:12px;color:var(--text2);width:130px;flex-shrink:0">${label}</span>
-        ${bar(n,'#58a6ff')}
-        <span style="font-size:13px;font-weight:700;color:var(--blue);width:44px;text-align:right">${((n/total)*100).toFixed(1)}%</span>
-      </div>`).join('');
+      // Barras comparativas por corredor
+      const CORR_LABELS=['C1 · Banda Izq','C2 · Semi Izq','C3 · Centro','C4 · Semi Dch','C5 · Banda Dch'];
+      const TERCIO_LABELS=['Zona 1','Zona 2','Zona 3'];
+      const corrRows=CORR_LABELS.map((label,i)=>{
+        const li=4-i; // C1=lane 4, C5=lane 0
+        const n1=zones1[0][li]+zones1[1][li]+zones1[2][li];
+        const n2=zones2[0][li]+zones2[1][li]+zones2[2][li];
+        const p1=t1>0?((n1/t1)*100).toFixed(1):'0.0';
+        const p2=t2>0?((n2/t2)*100).toFixed(1):'0.0';
+        return `<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:7px 10px;font-size:11px;color:var(--text2);white-space:nowrap">${label}</td>
+          <td style="padding:7px 14px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--accent)">${p1}%</td>
+          <td style="padding:7px 14px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:16px;color:#58a6ff">${p2}%</td>
+          <td style="padding:7px 10px;width:100px">
+            <div style="height:4px;background:var(--bg4);border-radius:2px;position:relative;overflow:hidden">
+              <div style="position:absolute;left:0;top:0;height:4px;width:${p1}%;background:var(--accent);border-radius:2px;opacity:0.8"></div>
+            </div>
+            <div style="height:4px;background:var(--bg4);border-radius:2px;margin-top:2px;position:relative;overflow:hidden">
+              <div style="position:absolute;left:0;top:0;height:4px;width:${p2}%;background:#58a6ff;border-radius:2px;opacity:0.8"></div>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+      const tercioRows=TERCIO_LABELS.map((label,i)=>{
+        const n1=zones1[i].reduce((a,b)=>a+b,0);
+        const n2=zones2[i].reduce((a,b)=>a+b,0);
+        const p1=t1>0?((n1/t1)*100).toFixed(1):'0.0';
+        const p2=t2>0?((n2/t2)*100).toFixed(1):'0.0';
+        return `<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:7px 10px;font-size:11px;color:var(--text2)">${label}</td>
+          <td style="padding:7px 14px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--accent)">${p1}%</td>
+          <td style="padding:7px 14px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:16px;color:#58a6ff">${p2}%</td>
+          <td style="padding:7px 10px;width:100px">
+            <div style="height:4px;background:var(--bg4);border-radius:2px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:4px;width:${p1}%;background:var(--accent);border-radius:2px;opacity:0.8"></div></div>
+            <div style="height:4px;background:var(--bg4);border-radius:2px;margin-top:2px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:4px;width:${p2}%;background:#58a6ff;border-radius:2px;opacity:0.8"></div></div>
+          </td>
+        </tr>`;
+      }).join('');
 
       const rival=partido.local===currentTeam.name?partido.vis:partido.local;
       const lugar=partido.local===currentTeam.name?'🏠':'✈️';
 
       cont.innerHTML=`
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:18px">
           <div><div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · Tendencia de juego</div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">${currentTeam.name} vs ${rival}</div></div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
-          <div style="margin-left:auto;font-size:12px;color:var(--text2)">${total} pases exitosos</div>
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px">
-          <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
-            <rect x="${MX}" y="${MY}" width="${PW}" height="${PH}" fill="#0d1a0d" stroke="#1e3a1e" stroke-width="1.5"/>
-            ${zoneSVG}
-            <line x1="${W/2}" y1="${MY}" x2="${W/2}" y2="${H-MY}" stroke="#1e3a1e" stroke-width="1" stroke-dasharray="4,4"/>
-            <circle cx="${W/2}" cy="${H/2}" r="${(PH*9.15/68).toFixed(0)}" fill="none" stroke="#1e3a1e" stroke-width="1"/>
-            <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.8"/>
-            <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.8"/>
-            ${axisLabels}
-            <text x="${MX+8}" y="${H-MY+22}" font-size="10" fill="#2a4a2a">← Portería propia</text>
-            <text x="${W-MX-8}" y="${H-MY+22}" text-anchor="end" font-size="10" fill="#2a4a2a">Portería rival →</text>
-          </svg>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px">
-            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:14px">Por carril</div>
-            ${corrHTML}
+          <div style="margin-left:auto;display:flex;gap:16px;font-size:12px">
+            <span style="color:var(--accent)">● 1ª Parte <b>${t1}</b> pases</span>
+            <span style="color:#58a6ff">● 2ª Parte <b>${t2}</b> pases</span>
           </div>
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px">
-            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:14px">Por tercio de campo</div>
-            ${thirdHTML}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+          <div>
+            <div style="font-size:11px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;font-weight:700;margin-bottom:8px;padding-left:2px">⚽ 1ª Parte</div>
+            <div style="background:var(--bg2);border:1px solid rgba(200,169,110,0.25);border-radius:var(--radius);overflow:hidden">
+              ${buildFieldSVG(zones1,t1)}
+            </div>
           </div>
-        </div>`;
+          <div>
+            <div style="font-size:11px;letter-spacing:2px;color:#58a6ff;text-transform:uppercase;font-weight:700;margin-bottom:8px;padding-left:2px">⚽ 2ª Parte</div>
+            <div style="background:var(--bg2);border:1px solid rgba(88,166,255,0.25);border-radius:var(--radius);overflow:hidden">
+              ${buildFieldSVG(zones2,t2)}
+            </div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase">Por corredor</div>
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr style="border-bottom:1px solid var(--border)">
+                <th style="padding:6px 10px;text-align:left;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace"></th>
+                <th style="padding:6px 14px;text-align:right;font-size:9px;color:var(--accent);font-family:'DM Mono',monospace">1ª P</th>
+                <th style="padding:6px 14px;text-align:right;font-size:9px;color:#58a6ff;font-family:'DM Mono',monospace">2ª P</th>
+                <th style="padding:6px 10px;width:100px"></th>
+              </tr></thead>
+              <tbody>${corrRows}</tbody>
+            </table>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase">Por tercio</div>
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr style="border-bottom:1px solid var(--border)">
+                <th style="padding:6px 10px;text-align:left;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace"></th>
+                <th style="padding:6px 14px;text-align:right;font-size:9px;color:var(--accent);font-family:'DM Mono',monospace">1ª P</th>
+                <th style="padding:6px 14px;text-align:right;font-size:9px;color:#58a6ff;font-family:'DM Mono',monospace">2ª P</th>
+                <th style="padding:6px 10px;width:100px"></th>
+              </tr></thead>
+              <tbody>${tercioRows}</tbody>
+            </table>
+          </div>
+        </div>
+        `;
     } catch(e){
       cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
     }
