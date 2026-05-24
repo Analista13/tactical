@@ -134,6 +134,7 @@
   let redPrimaryTab = 'equipo';
   let redSubTab     = '1parte';
   let jugSubTab     = 'mapa';
+  let telaranaMode  = 'todos'; // 'todos' | 'titulares'
 
   // Dorsales por equipo y player_id (fuente: Transfermarkt 2025-26)
   const PLAYER_DORSALES_MAP_D = {
@@ -318,6 +319,7 @@
     document.getElementById('headerLogo').src = escudo;
     redMatchId = null;
     jugSubTab = 'mapa';
+    telaranaMode = 'todos';
     loadRedPases();
   }
 
@@ -361,7 +363,7 @@
 
     document.getElementById('content').innerHTML = `<div class="anim">${head()}
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-        <select id="matchSel" onchange="redMatchId=parseInt(this.value);renderRedTab()"
+        <select id="matchSel" onchange="redMatchId=parseInt(this.value);telaranaMode='todos';renderRedTab()"
           style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;flex:1;min-width:280px">
           <option value="">— Selecciona un partido —</option>${matchOpts}
         </select>
@@ -401,6 +403,11 @@
 
   function setJugSubTab(tab) {
     jugSubTab=tab;
+    renderJugadores();
+  }
+
+  function setTelaranaMode(mode) {
+    telaranaMode=mode;
     renderJugadores();
   }
 
@@ -1301,66 +1308,73 @@
 
       } else if(jugSubTab==='telarana'){
         // ── TELARAÑA ────────────────────────────────────────────────────────────
-        // Pares bilaterales únicos
-        const teaPairs=[];
-        const seen=new Set();
-        allPlayers.forEach(a=>allPlayers.forEach(b=>{
-          if(a===b) return;
-          const key=[a,b].sort().join('|||');
-          if(seen.has(key)) return; seen.add(key);
-          const cnt=((playerPasses[a]?.[b]?.total)||0)+((playerPasses[b]?.[a]?.total)||0);
-          if(cnt>0) teaPairs.push({a,b,cnt});
-        }));
-        const maxCnt=Math.max(1,...teaPairs.map(p=>p.cnt));
-        const maxTotal=Math.max(1,...allPlayers.map(n=>playerTotal[n]||0));
+        // Starters = jugadores con start_time == '00:00:00'
+        const starterNames=new Set(lineup.filter(p=>p.start_time==='00:00:00').map(p=>p.name));
 
-        // Dimensiones SVG campo grande
-        const TW=860,TH=560,TMX=60,TMY=44,TPW=860-120,TPH=560-88;
-        const tsv=(x,y)=>({sx:TMX+((x+52.5)/105)*TPW,sy:TMY+((34-y)/68)*TPH});
+        // Función que construye un SVG de red dado un array de jugadores activos
+        const buildRed=(activePlayers)=>{
+          const activeSet=new Set(activePlayers);
+          const teaPairs=[];
+          const seen=new Set();
+          activePlayers.forEach(a=>activePlayers.forEach(b=>{
+            if(a===b) return;
+            const key=[a,b].sort().join('|||');
+            if(seen.has(key)) return; seen.add(key);
+            const cnt=((playerPasses[a]?.[b]?.total)||0)+((playerPasses[b]?.[a]?.total)||0);
+            if(cnt>0) teaPairs.push({a,b,cnt});
+          }));
+          const maxCnt=Math.max(1,...teaPairs.map(p=>p.cnt));
+          const maxTotal=Math.max(1,...activePlayers.map(n=>playerTotal[n]||0));
 
-        // Campo base
-        const tField=`
-          <rect x="${TMX}" y="${TMY}" width="${TPW}" height="${TPH}" fill="#0a1a0a" stroke="#1a3a1a" stroke-width="1.5"/>
-          <line x1="${TW/2}" y1="${TMY}" x2="${TW/2}" y2="${TH-TMY}" stroke="#1a3a1a" stroke-width="1"/>
-          <circle cx="${TW/2}" cy="${TH/2}" r="${(TPH*9.15/68).toFixed(0)}" fill="none" stroke="#1a3a1a" stroke-width="1"/>
-          <rect x="${TMX}" y="${(TMY+TPH*(68-40.32)/2/68).toFixed(1)}" width="${(TPW*16.5/105).toFixed(1)}" height="${(TPH*40.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.8"/>
-          <rect x="${(TW-TMX-TPW*16.5/105).toFixed(1)}" y="${(TMY+TPH*(68-40.32)/2/68).toFixed(1)}" width="${(TPW*16.5/105).toFixed(1)}" height="${(TPH*40.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.8"/>
-          <rect x="${TMX}" y="${(TMY+TPH*(68-18.32)/2/68).toFixed(1)}" width="${(TPW*5.5/105).toFixed(1)}" height="${(TPH*18.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.5"/>
-          <rect x="${(TW-TMX-TPW*5.5/105).toFixed(1)}" y="${(TMY+TPH*(68-18.32)/2/68).toFixed(1)}" width="${(TPW*5.5/105).toFixed(1)}" height="${(TPH*18.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.5"/>`;
+          const TW=860,TH=560,TMX=60,TMY=44,TPW=860-120,TPH=560-88;
+          const tsv=(x,y)=>({sx:TMX+((x+52.5)/105)*TPW,sy:TMY+((34-y)/68)*TPH});
 
-        // Líneas bilaterales (de menor a mayor → las fuertes encima)
-        let tLines='',tNodes='';
-        teaPairs.sort((a,b)=>a.cnt-b.cnt).forEach(({a,b,cnt})=>{
-          const pa=posM[a],pb=posM[b]; if(!pa||!pb) return;
-          const {sx:ax,sy:ay}=tsv(pa.x,pa.y);
-          const {sx:bx,sy:by}=tsv(pb.x,pb.y);
-          const ratio=cnt/maxCnt;
-          const op=(0.05+ratio*0.55).toFixed(2);
-          const sw=(0.4+ratio*5.5).toFixed(1);
-          tLines+=`<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}" stroke="#c8a96e" stroke-width="${sw}" stroke-opacity="${op}" stroke-linecap="round"/>`;
-        });
+          const tField=`
+            <rect x="${TMX}" y="${TMY}" width="${TPW}" height="${TPH}" fill="#0a1a0a" stroke="#1a3a1a" stroke-width="1.5"/>
+            <line x1="${TW/2}" y1="${TMY}" x2="${TW/2}" y2="${TH-TMY}" stroke="#1a3a1a" stroke-width="1"/>
+            <circle cx="${TW/2}" cy="${TH/2}" r="${(TPH*9.15/68).toFixed(0)}" fill="none" stroke="#1a3a1a" stroke-width="1"/>
+            <rect x="${TMX}" y="${(TMY+TPH*(68-40.32)/2/68).toFixed(1)}" width="${(TPW*16.5/105).toFixed(1)}" height="${(TPH*40.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.8"/>
+            <rect x="${(TW-TMX-TPW*16.5/105).toFixed(1)}" y="${(TMY+TPH*(68-40.32)/2/68).toFixed(1)}" width="${(TPW*16.5/105).toFixed(1)}" height="${(TPH*40.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.8"/>
+            <rect x="${TMX}" y="${(TMY+TPH*(68-18.32)/2/68).toFixed(1)}" width="${(TPW*5.5/105).toFixed(1)}" height="${(TPH*18.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.5"/>
+            <rect x="${(TW-TMX-TPW*5.5/105).toFixed(1)}" y="${(TMY+TPH*(68-18.32)/2/68).toFixed(1)}" width="${(TPW*5.5/105).toFixed(1)}" height="${(TPH*18.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.5"/>`;
 
-        // Nodos (encima de líneas)
-        sorted.forEach(({name,id})=>{
-          const p=posM[name]; if(!p) return;
-          const {sx,sy}=tsv(p.x,p.y);
-          const {tier}=getPosTier(playerMap[name]);
-          const tc=TIER_COL[tier]||'#c8a96e';
-          const total=playerTotal[name]||0;
-          const r=10+(total/maxTotal)*11; // radio 10–21
-          const dorsal=id&&PLAYER_DORSALES[id];
-          const fs=(r*0.75).toFixed(1);
-          // Aura
-          tNodes+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${(r+6).toFixed(1)}" fill="${tc}" fill-opacity="0.07"/>`;
-          // Nodo
-          tNodes+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${r.toFixed(1)}" fill="#0d1117" stroke="${tc}" stroke-width="2"/>`;
-          // Dorsal
-          if(dorsal!=null){
-            tNodes+=`<text x="${sx.toFixed(1)}" y="${(sy+r*0.38).toFixed(1)}" fill="${tc}" font-size="${fs}" font-family="'Bebas Neue',sans-serif" text-anchor="middle">${dorsal}</text>`;
-          }
-          // Nombre debajo
-          tNodes+=`<text x="${sx.toFixed(1)}" y="${(sy+r+11).toFixed(1)}" fill="#8b949e" font-size="9.5" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="500">${dispN(name)}</text>`;
-        });
+          let tLines='',tNodes='';
+          teaPairs.sort((a,b)=>a.cnt-b.cnt).forEach(({a,b,cnt})=>{
+            const pa=posM[a],pb=posM[b]; if(!pa||!pb) return;
+            const {sx:ax,sy:ay}=tsv(pa.x,pa.y);
+            const {sx:bx,sy:by}=tsv(pb.x,pb.y);
+            const ratio=cnt/maxCnt;
+            const op=(0.05+ratio*0.55).toFixed(2);
+            const sw=(0.4+ratio*5.5).toFixed(1);
+            tLines+=`<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}" stroke="#c8a96e" stroke-width="${sw}" stroke-opacity="${op}" stroke-linecap="round"/>`;
+          });
+
+          const activeSorted=sorted.filter(s=>activeSet.has(s.name));
+          activeSorted.forEach(({name,id})=>{
+            const p=posM[name]; if(!p) return;
+            const {sx,sy}=tsv(p.x,p.y);
+            const {tier}=getPosTier(playerMap[name]);
+            const tc=TIER_COL[tier]||'#c8a96e';
+            const total=playerTotal[name]||0;
+            const r=10+(total/maxTotal)*11;
+            const dorsal=id&&PLAYER_DORSALES[id];
+            const fs=(r*0.75).toFixed(1);
+            tNodes+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${(r+6).toFixed(1)}" fill="${tc}" fill-opacity="0.07"/>`;
+            tNodes+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${r.toFixed(1)}" fill="#0d1117" stroke="${tc}" stroke-width="2"/>`;
+            if(dorsal!=null){
+              tNodes+=`<text x="${sx.toFixed(1)}" y="${(sy+r*0.38).toFixed(1)}" fill="${tc}" font-size="${fs}" font-family="'Bebas Neue',sans-serif" text-anchor="middle">${dorsal}</text>`;
+            }
+            tNodes+=`<text x="${sx.toFixed(1)}" y="${(sy+r+11).toFixed(1)}" fill="#8b949e" font-size="9.5" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="500">${dispN(name)}</text>`;
+          });
+
+          return `<svg viewBox="0 0 ${TW} ${TH}" style="width:100%;display:block">${tField}${tLines}${tNodes}</svg>`;
+        };
+
+        // Toggle Todos / XI Inicial
+        const modeToggle=`<div style="display:flex;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;width:fit-content;margin-bottom:16px">
+          ${[['todos','👥 Todos'],['titulares','🟡 XI Inicial']].map(([m,lbl])=>`
+            <button onclick="setTelaranaMode('${m}')" style="background:${telaranaMode===m?'var(--accent)':'transparent'};color:${telaranaMode===m?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:6px 16px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s;white-space:nowrap">${lbl}</button>`).join('')}
+        </div>`;
 
         const tLegend=`
           ${[0,1,2,3].map((t,i)=>`<div style="display:flex;align-items:center;gap:5px">
@@ -1372,10 +1386,18 @@
             <span>Pases bilaterales</span>
           </div>`;
 
-        html=matchHeader('🕸️ Telaraña de pases',tLegend);
-        html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-          <svg viewBox="0 0 ${TW} ${TH}" style="width:100%;display:block">${tField}${tLines}${tNodes}</svg>
-        </div>`;
+        const activePlayers = telaranaMode==='titulares'
+          ? allPlayers.filter(n=>starterNames.has(n))
+          : allPlayers;
+
+        const svgRed = buildRed(activePlayers);
+        const teLabel = telaranaMode==='titulares'
+          ? `🟡 XI Inicial · ${activePlayers.length} jugadores`
+          : `👥 Todos · ${activePlayers.length} jugadores`;
+
+        html=matchHeader(`🕸️ Telaraña — ${teLabel}`,tLegend);
+        html+=modeToggle;
+        html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">${svgRed}</div>`;
 
       } else if(jugSubTab==='metricas'){
         // ── MÉTRICAS ─────────────────────────────────────────────────────────────
