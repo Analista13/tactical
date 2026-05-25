@@ -146,6 +146,7 @@
   let bloqueMatchId = null;
   let bloquePhase   = 'ataque';   // 'ataque' | 'defensa'
   let bloqueSubTab  = 'general';  // 'general' | '1parte' | '2parte' | 'comparativa'
+  let bloqueNMatches = 1;         // 1 | 3 | 5 | 10 — filmstrip en General
 
   // Dorsales por equipo y player_id (fuente: Transfermarkt 2025-26)
   const PLAYER_DORSALES_MAP_D = {
@@ -2706,9 +2707,88 @@
     </div>`;
   }
 
+  // ── Barra de filtro N partidos (solo en General) ────────────────────────────
+  function buildBloqueNFilterBar() {
+    const opts = [[1,'1 partido'],[3,'Últimos 3'],[5,'Últimos 5'],[10,'Últimos 10']];
+    const btns = opts.map(([n,lbl]) => {
+      const act = bloqueNMatches === n;
+      return `<button onclick="setBloqueNMatches(${n})"
+        style="background:${act?'rgba(200,169,110,0.12)':'var(--bg2)'};border:1px solid ${act?'rgba(200,169,110,0.3)':'var(--border)'};color:${act?'var(--accent)':'var(--text2)'};padding:5px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap">${lbl}</button>`;
+    }).join('');
+    return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+      <span style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-right:2px">Vista</span>
+      ${btns}
+    </div>`;
+  }
+
+  function setBloqueNMatches(n) {
+    bloqueNMatches = n;
+    renderBloque();
+  }
+
+  // ── Filmstrip: N campos mini en fila ─────────────────────────────────────────
+  async function renderBloqueFilmstrip(cont) {
+    const filterBar = buildBloqueNFilterBar();
+    cont.innerHTML = filterBar + `<div class="loading"><div class="spinner"></div><span>Cargando últimos ${bloqueNMatches} partidos...</span></div>`;
+
+    const lastN = PARTIDOS.slice(-bloqueNMatches);
+    try {
+      const allData = await Promise.all(lastN.map(p => getMatchData(p.id)));
+      const items   = lastN.map((p, i) => ({
+        partido: p,
+        shape: computeTeamShape(allData[i], bloquePhase, 0, p.id)
+      }));
+
+      const cards = items.map(({partido:p, shape}) => {
+        const rival  = p.local === currentTeam.name ? p.vis : p.local;
+        const isHome = p.local === currentTeam.name;
+        const bt = shape.blockType;
+        const btEmoji = {high:'🔴',mid:'🟡',low:'🔵'}[bt]||'';
+        const btLabel = {high:'HIGH',mid:'MID',low:'LOW'}[bt]||'—';
+        const btColor = {high:'#f85149',mid:'#e3b341',low:'#58a6ff'}[bt]||'#888';
+        // Resultado con color
+        const [gl,gv] = (p.s||'').split('-').map(Number);
+        const resColor = isHome
+          ? (gl>gv?'var(--green)':gl<gv?'var(--red)':'var(--accent)')
+          : (gv>gl?'var(--green)':gv<gl?'var(--red)':'var(--accent)');
+        return `<div style="flex:1;min-width:220px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;height:100%;display:flex;flex-direction:column">
+            <div style="padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+                <span style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--accent)">${p.j}</span>
+                ${bt ? `<span style="font-size:10px;font-weight:700;color:${btColor};background:${btColor}22;padding:2px 8px;border-radius:20px">${btEmoji} ${btLabel}</span>` : ''}
+              </div>
+              <div style="font-size:12px;color:var(--text);font-weight:500">${isHome?'🏠':'✈️'} ${rival}</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:2px">
+                <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${resColor}">${p.s||''}</span>
+                <span style="font-size:11px;color:var(--text3)">${p.f||''}</span>
+              </div>
+            </div>
+            <div style="flex:1">${buildBloqueSVG(shape, bloquePhase)}</div>
+          </div>
+        </div>`;
+      }).join('');
+
+      cont.innerHTML = filterBar + `
+        <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px">
+          ${cards}
+        </div>`;
+    } catch(e) {
+      cont.innerHTML = filterBar + `<div style="padding:40px;text-align:center;color:var(--red)">Error: ${e.message}</div>`;
+    }
+  }
+
   async function renderBloque() {
     const cont=document.getElementById('bloqueCont');
-    if(!cont||!bloqueMatchId) return;
+    if(!cont) return;
+
+    // ── Filmstrip: General + N>1 (no necesita bloqueMatchId) ──
+    if(bloqueSubTab==='general' && bloqueNMatches>1){
+      await renderBloqueFilmstrip(cont);
+      return;
+    }
+
+    if(!bloqueMatchId) return;
     cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando posición...</span></div>`;
     try {
       const matchData=await getMatchData(bloqueMatchId);
@@ -2727,7 +2807,8 @@
         const phCol=isAtq?'#f0883e':'#58a6ff';
         const phBg =isAtq?'rgba(240,136,62,0.08)':'rgba(88,166,255,0.08)';
         const {cards,table,legend}=buildBloqueMetrics(shape,bloquePhase);
-        cont.innerHTML=`<div style="display:grid;gap:20px">
+        const filterBarSingle = bloqueSubTab==='general' ? buildBloqueNFilterBar() : '';
+        cont.innerHTML=filterBarSingle+`<div style="display:grid;gap:20px">
           <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
             <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
               <span style="font-size:11px;font-weight:700;color:${phCol};background:${phBg};padding:3px 12px;border-radius:20px;letter-spacing:1px">${isAtq?'ATAQUE':'DEFENSA'}</span>
@@ -2758,7 +2839,7 @@
     document.getElementById('bst-'+tab)?.classList.add('active');
     const cont=document.getElementById('bloqueCont');
     if(cont) cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando...</span></div>`;
-    if(bloqueMatchId) renderBloque();
+    if(bloqueMatchId||(tab==='general'&&bloqueNMatches>1)) renderBloque();
   }
 
   function loadBloque(){
@@ -2794,7 +2875,7 @@
         <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>
       </div>
     </div>`;
-    if(bloqueMatchId) renderBloque();
+    if(bloqueMatchId||(bloqueSubTab==='general'&&bloqueNMatches>1)) renderBloque();
   }
 
   // INIT
