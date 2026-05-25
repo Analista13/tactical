@@ -2739,6 +2739,9 @@
         shape: computeTeamShape(allData[i], bloquePhase, 0, p.id)
       }));
 
+      // Ancho fijo por carta: N≤3 → reparto equitativo, N>3 → fijo 360px + scroll horizontal
+      const cardW = bloqueNMatches <= 3 ? `flex:1;min-width:300px` : `flex:0 0 360px`;
+
       const cards = items.map(({partido:p, shape}) => {
         const rival  = p.local === currentTeam.name ? p.vis : p.local;
         const isHome = p.local === currentTeam.name;
@@ -2746,12 +2749,11 @@
         const btEmoji = {high:'🔴',mid:'🟡',low:'🔵'}[bt]||'';
         const btLabel = {high:'HIGH',mid:'MID',low:'LOW'}[bt]||'—';
         const btColor = {high:'#f85149',mid:'#e3b341',low:'#58a6ff'}[bt]||'#888';
-        // Resultado con color
         const [gl,gv] = (p.s||'').split('-').map(Number);
         const resColor = isHome
           ? (gl>gv?'var(--green)':gl<gv?'var(--red)':'var(--accent)')
           : (gv>gl?'var(--green)':gv<gl?'var(--red)':'var(--accent)');
-        return `<div style="flex:1;min-width:220px">
+        return `<div style="${cardW}">
           <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;height:100%;display:flex;flex-direction:column">
             <div style="padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
@@ -2770,7 +2772,7 @@
       }).join('');
 
       cont.innerHTML = filterBar + `
-        <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px">
+        <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x mandatory">
           ${cards}
         </div>`;
     } catch(e) {
