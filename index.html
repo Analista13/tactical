@@ -2548,20 +2548,72 @@
       return '<span style="color:'+(d>0.5?'var(--green)':d<-0.5?'var(--red)':'var(--text3)')+'">'+sign+d.toFixed(1)+'</span>';
     };
 
-    // Reutilizamos buildBloqueSVG para cada mitad con su color
-    // Patch temporal: reemplaza el color de fase en los SVG generados
-    const mkPitchPanel=(shape,col,label,sublabel)=>{
-      // Generar SVG con la fase real pero sobreescribir el color de hull/centroide con col
-      const svg=buildBloqueSVG(shape, phase, col);
-      return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;min-width:0">
-        <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+    // SVG de campo inline — completamente autónomo, sin llamar a buildBloqueSVG
+    const mkSVG=(shape,phCol)=>{
+      const AW=920,AH=590,AMX=55,AMY=40,APW=AW-AMX*2,APH=AH-AMY*2;
+      const sv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW, sy:AMY+((34-y)/68)*APH});
+
+      const pitch=`<rect x="0" y="0" width="${AW}" height="${AH}" fill="#0b150b"/>
+        <rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="#0d1f0d" stroke="#1c3a1c" stroke-width="1.5"/>
+        <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="#1c3a1c" stroke-width="1"/>
+        <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="#1c3a1c" stroke-width="1"/>
+        <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+        <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+        <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+        <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>`;
+
+      let hullSVG='';
+      if(shape.hull&&shape.hull.length>=3){
+        const pts=shape.hull.map(p=>{const{sx,sy}=sv(p.x,p.y);return sx.toFixed(1)+','+sy.toFixed(1);}).join(' ');
+        hullSVG=`<polygon points="${pts}" fill="${phCol}" fill-opacity="0.1" stroke="${phCol}" stroke-width="1.5" stroke-opacity="0.6" stroke-dasharray="8,4"/>`;
+      }
+
+      let linesSVG='';
+      [[shape.defLine,'#58a6ff'],[shape.midLine,'#3fb950'],[shape.fwdLine,'#f85149']].forEach(([lx,lc])=>{
+        if(lx==null) return;
+        const{sx}=sv(lx,0);
+        linesSVG+=`<line x1="${sx.toFixed(1)}" y1="${AMY}" x2="${sx.toFixed(1)}" y2="${AH-AMY}" stroke="${lc}" stroke-width="1.2" stroke-opacity="0.45" stroke-dasharray="5,5"/>`;
+      });
+
+      let centroidSVG='';
+      if(shape.centroidX!=null){
+        const{sx:cx,sy:cy}=sv(shape.centroidX,shape.centroidY);
+        centroidSVG=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="8" fill="none" stroke="${phCol}" stroke-width="1.8"/>
+          <line x1="${(cx-7).toFixed(1)}" y1="${cy.toFixed(1)}" x2="${(cx+7).toFixed(1)}" y2="${cy.toFixed(1)}" stroke="${phCol}" stroke-width="1.5"/>
+          <line x1="${cx.toFixed(1)}" y1="${(cy-7).toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(cy+7).toFixed(1)}" stroke="${phCol}" stroke-width="1.5"/>`;
+      }
+
+      let dotsSVG='';
+      // GK
+      shape.gk.forEach(p=>{
+        const{sx,sy}=sv(p.x,p.y);
+        const op=p.fromLineup?0.5:1;
+        dotsSVG+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="13" fill="#1a1a2e" stroke="${TIER_COL[0]}" stroke-width="2" opacity="${op}"/>
+          <text x="${sx.toFixed(1)}" y="${(sy+4).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="700" fill="${TIER_COL[0]}" opacity="${op}">GK</text>`;
+      });
+      // Outfield
+      shape.players.forEach(p=>{
+        const{sx,sy}=sv(p.x,p.y);
+        const{tier}=getPosTier(p.position);
+        const dc=TIER_COL[tier]||'#c8a96e';
+        const op=p.fromLineup?0.45:1;
+        dotsSVG+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="12" fill="#111c11" stroke="${dc}" stroke-width="2" opacity="${op}"/>
+          <text x="${sx.toFixed(1)}" y="${(sy+1).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" font-weight="700" fill="${dc}" opacity="${op}">${p.position}</text>
+          <text x="${sx.toFixed(1)}" y="${(sy+11).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7" fill="#8b949e" opacity="${op}">${p.name.split(' ').pop().substring(0,9)}</text>`;
+      });
+
+      return `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block;max-height:340px">${pitch}${linesSVG}${hullSVG}${centroidSVG}${dotsSVG}</svg>`;
+    };
+
+    const mkPanel=(shape,col,label,sublabel)=>
+      `<div style="flex:1;min-width:0;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <div style="width:16px;height:3px;background:${col};border-radius:2px;flex-shrink:0"></div>
           <span style="font-size:13px;font-weight:700;color:${col}">${label}</span>
-          <span style="font-size:11px;color:var(--text3);margin-left:auto">${sublabel}</span>
+          <span style="font-size:11px;color:var(--text3)">${sublabel}</span>
         </div>
-        ${svg}
+        ${mkSVG(shape,col)}
       </div>`;
-    };
 
     const rows=[
       ['Anchura total',          s1.teamWidth,  s2.teamWidth,  'm'],
@@ -2593,10 +2645,10 @@
       </tbody>
     </table></div>`;
 
-    cont.innerHTML=`<div style="display:grid;gap:20px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        ${mkPitchPanel(s1,col1,'1ª Parte','once inicial')}
-        ${mkPitchPanel(s2,col2,'2ª Parte','once final')}
+    cont.innerHTML=`<div style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+        ${mkPanel(s1,col1,'⬤ 1ª Parte','once inicial')}
+        ${mkPanel(s2,col2,'⬤ 2ª Parte','once final')}
       </div>
       ${tableHtml}
     </div>`;
