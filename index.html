@@ -2286,55 +2286,75 @@
 
   // Compute avg positions per player for a given phase & period from match data
   function computeTeamShape(matchData, phase, period, matchId) {
-    // Filter by period (0 = whole match)
-    let data = period ? matchData.filter(e=>e.period===period) : matchData;
-    // Filter by attack/defense half
-    if(phase==='ataque') data = data.filter(e=>e.x_start!=null && e.x_start > 0);
-    else                 data = data.filter(e=>e.x_start!=null && e.x_start < 0);
+    // ── Selección de los 11 jugadores según el momento del partido ──
+    // period=2 (2ª parte) → los 11 que ACABARON (end_time=null)
+    // period=0/1 (general / 1ª parte) → los 11 TITULARES (start_time="00:00:00")
+    const rawLineup = PONF_LINEUPS[matchId] || [];
+    let squad11 = period === 2
+      ? rawLineup.filter(r => r[4] === null)        // jugaron hasta el final
+      : rawLineup.filter(r => r[3] === '00:00:00'); // salieron de inicio
+    if (!squad11.length) squad11 = rawLineup;       // fallback seguridad
 
-    // Accumulate positions per player
+    // Mapa nombre → posición corregida
+    const posMap = {};
+    squad11.forEach(r => { posMap[r[1]] = resolvePlayerPosition({id:r[0], position:r[2]}); });
+
+    // Filtrar tracking solo a esos 11 jugadores + periodo + fase
+    const squadNames = new Set(squad11.map(r => r[1]));
+    let data = matchData.filter(e => e.player_name && squadNames.has(e.player_name));
+    if (period) data = data.filter(e => e.period === period);
+    if (phase === 'ataque') data = data.filter(e => e.x_start != null && e.x_start > 0);
+    else                    data = data.filter(e => e.x_start != null && e.x_start < 0);
+
+    // Acumular posiciones por jugador
     const acc = {};
-    for(const e of data){
-      if(e.x_start==null||e.y_start==null) continue;
-      if(!acc[e.player_name]) acc[e.player_name]={xs:[],ys:[]};
+    for (const e of data) {
+      if (e.x_start == null || e.y_start == null) continue;
+      if (!acc[e.player_name]) acc[e.player_name] = {xs:[], ys:[]};
       acc[e.player_name].xs.push(e.x_start);
       acc[e.player_name].ys.push(e.y_start);
     }
 
-    // Build name→corrected-position map from embedded lineup
-    const rawLineup = PONF_LINEUPS[matchId] || [];
-    const posMap = {};
-    rawLineup.forEach(r=>{posMap[r[1]] = resolvePlayerPosition({id:r[0],position:r[2]});});
-
-    // Build player list (min 3 possessions in phase)
-    const MIN_P = 3;
-    const allPlayers = Object.entries(acc)
-      .filter(([,{xs}])=>xs.length>=MIN_P)
-      .map(([name,{xs,ys}])=>({
-        name, n:xs.length, position: posMap[name]||'CM',
-        x: xs.reduce((a,b)=>a+b,0)/xs.length,
-        y: ys.reduce((a,b)=>a+b,0)/ys.length,
-      }));
+    // Construir exactamente los 11 jugadores del squad
+    // Si un jugador no tiene posesiones en esa fase → usar avg_x/avg_y del lineup como fallback
+    const allPlayers = squad11.map(r => {
+      const name = r[1];
+      const position = posMap[name] || r[2] || 'CM';
+      const entry = acc[name];
+      if (entry && entry.xs.length >= 1) {
+        return {
+          name, n:entry.xs.length, position,
+          x: entry.xs.reduce((a,b)=>a+b,0)/entry.xs.length,
+          y: entry.ys.reduce((a,b)=>a+b,0)/entry.ys.length,
+          fromLineup: false,
+        };
+      }
+      // Fallback: coordenadas medias del partido (del lineup embebido)
+      if (r[5] != null && r[6] != null) {
+        return { name, n:0, position, x:r[5], y:r[6], fromLineup:true };
+      }
+      return null; // sin datos — omitir
+    }).filter(Boolean);
 
     const GKS = ['GK','PT','POR','PORTERO','P','GOALKEEPER'];
     const isGK = p => GKS.includes((p.position||'').toUpperCase().trim());
-    const gk       = allPlayers.filter(isGK);
-    const outfield = allPlayers.filter(p=>!isGK(p));
+    const gk      = allPlayers.filter(isGK);
+    const outfield = allPlayers.filter(p => !isGK(p));
 
-    // Convex hull & area (outfield only, GK excluded)
-    const hull = convexHull(outfield.map(p=>({x:p.x,y:p.y})));
+    // Convex hull & área (sin portero)
+    const hull = convexHull(outfield.map(p => ({x:p.x, y:p.y})));
     const area = hullArea(hull);
 
-    // Group by positional tier for line metrics
+    // Agrupar por línea para métricas
     const DEF_P=['RB','RWB','RCB','CB','LCB','LB','LWB','DC','DF','DEF'];
     const MID_P=['RM','RDM','RCM','RAM','CDM','DM','SD','CM','MC','MID','CAM','AM','MF','M','MO','LM','LDM','LCM','LAM'];
     const FWD_P=['RW','RF','CF','ST','FW','ATT','DEL','SS','LW','LF'];
     const posUp = p => (p.position||'').toUpperCase();
-    const defs = outfield.filter(p=>DEF_P.includes(posUp(p)));
-    const mids = outfield.filter(p=>MID_P.includes(posUp(p)));
-    const fwds = outfield.filter(p=>FWD_P.includes(posUp(p)));
+    const defs = outfield.filter(p => DEF_P.includes(posUp(p)));
+    const mids = outfield.filter(p => MID_P.includes(posUp(p)));
+    const fwds = outfield.filter(p => FWD_P.includes(posUp(p)));
 
-    const avgX  = arr => arr.length ? arr.reduce((s,p)=>s+p.x,0)/arr.length : null;
+    const avgX   = arr => arr.length ? arr.reduce((s,p)=>s+p.x,0)/arr.length : null;
     const spreadY = arr => arr.length>=2 ? Math.max(...arr.map(p=>p.y))-Math.min(...arr.map(p=>p.y)) : null;
 
     const defLine = avgX(defs), midLine = avgX(mids), fwdLine = avgX(fwds);
@@ -2409,27 +2429,31 @@
         <text x="${(ax+8)}" y="${((ay1+ay2)/2+4).toFixed(0)}" font-family="DM Sans,sans-serif" font-size="10" fill="${phCol}" fill-opacity="0.75">${shape.teamWidth.toFixed(0)}m</text>`;
     }
 
-    // GK dots
+    // GK dot (always shown; dimmed if no phase possessions, using lineup global coords)
     let dots = '';
     shape.gk.forEach(p=>{
       const{sx,sy}=sv(p.x,p.y);
-      dots+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="15" fill="#1a1a2e" stroke="${TIER_COL[0]}" stroke-width="2"/>
-        <text x="${sx.toFixed(1)}" y="${(sy+5).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="${TIER_COL[0]}">GK</text>
-        <text x="${sx.toFixed(1)}" y="${(sy+28).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#c9d1d9">${dispN(p.name)}</text>`;
+      const op=p.fromLineup?0.5:1;
+      dots+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="15" fill="#1a1a2e" stroke="${TIER_COL[0]}" stroke-width="2" opacity="${op}"/>
+        <text x="${sx.toFixed(1)}" y="${(sy+5).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="${TIER_COL[0]}" opacity="${op}">GK</text>
+        <text x="${sx.toFixed(1)}" y="${(sy+28).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#c9d1d9" opacity="${op}">${dispN(p.name)}</text>`;
     });
 
-    // Outfield dots (size proportional to possession count)
+    // Outfield dots (size proportional to possession count; semi-transparent if using lineup fallback)
     shape.players.forEach(p=>{
       const{sx,sy}=sv(p.x,p.y);
       const{tier}=getPosTier(p.position);
       const col=TIER_COL[tier]||'#c8a96e';
       const R=14+Math.min(p.n,40)/7;
-      dots+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${(R+5).toFixed(0)}" fill="${col}" fill-opacity="0.07"/>
-        <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${R.toFixed(0)}" fill="#111c11" stroke="${col}" stroke-width="2"/>
-        <text x="${sx.toFixed(1)}" y="${(sy-1).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="700" fill="${col}">${p.position}</text>
-        <text x="${sx.toFixed(1)}" y="${(sy+9).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#8b949e">${p.name.split(' ').pop().substring(0,9)}</text>
-        <text x="${sx.toFixed(1)}" y="${(sy+R+14).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#c9d1d9">${dispN(p.name)}</text>
-        <text x="${sx.toFixed(1)}" y="${(sy+R+25).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#484f58">${p.n} pos.</text>`;
+      const op=p.fromLineup?0.45:1;
+      const posLabel=p.fromLineup?`${p.position}*`:p.position;
+      const nLabel=p.fromLineup?'(global)':`${p.n} pos.`;
+      dots+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${(R+5).toFixed(0)}" fill="${col}" fill-opacity="${(op*0.07).toFixed(2)}"/>
+        <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${R.toFixed(0)}" fill="#111c11" stroke="${col}" stroke-width="2" opacity="${op}"/>
+        <text x="${sx.toFixed(1)}" y="${(sy-1).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="700" fill="${col}" opacity="${op}">${posLabel}</text>
+        <text x="${sx.toFixed(1)}" y="${(sy+9).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#8b949e" opacity="${op}">${p.name.split(' ').pop().substring(0,9)}</text>
+        <text x="${sx.toFixed(1)}" y="${(sy+R+14).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#c9d1d9" opacity="${op}">${dispN(p.name)}</text>
+        <text x="${sx.toFixed(1)}" y="${(sy+R+25).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#484f58" opacity="${op}">${nLabel}</text>`;
     });
 
     return `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${pitch}${lines}${hull}${centroid}${widthAnnot}${dots}</svg>`;
@@ -2504,6 +2528,10 @@
         <span style="font-size:11px">●</span>
         <span>Tamaño del nodo = nº de posesiones en la fase</span>
       </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">
+        <span style="opacity:0.45">●*</span>
+        <span>Nodo semitransparente = sin posesiones en esa fase; coordenadas del partido completo</span>
+      </div>
     </div>`;
 
     return {cards, table, legend};
@@ -2538,8 +2566,15 @@
     };
     const mkDots=(shape,col)=>shape.players.map(p=>{
       const{sx,sy}=sv(p.x,p.y);
-      return `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="11" fill="#111c11" stroke="${col}" stroke-width="1.8"/>
-        <text x="${sx.toFixed(1)}" y="${(sy+4).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="700" fill="${col}">${p.position}</text>`;
+      const op=p.fromLineup?'0.45':'1';
+      return `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="11" fill="#111c11" stroke="${col}" stroke-width="1.8" opacity="${op}"/>
+        <text x="${sx.toFixed(1)}" y="${(sy+4).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="700" fill="${col}" opacity="${op}">${p.position}</text>`;
+    }).join('');
+    const mkGKDots=(shape,col)=>shape.gk.map(p=>{
+      const{sx,sy}=sv(p.x,p.y);
+      const op=p.fromLineup?'0.45':'1';
+      return `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="11" fill="#111c11" stroke="${TIER_COL[0]}" stroke-width="1.8" opacity="${op}"/>
+        <text x="${sx.toFixed(1)}" y="${(sy+4).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="700" fill="${TIER_COL[0]}" opacity="${op}">GK</text>`;
     }).join('');
     const mkCentroid=(shape,col)=>{
       if(shape.centroidX==null) return '';
@@ -2564,6 +2599,7 @@
       ${pitch}
       ${mkLines(s1,col1)}${mkLines(s2,col2)}
       ${mkHull(s1,col1)}${mkHull(s2,col2)}
+      ${mkGKDots(s1,col1)}${mkGKDots(s2,col2)}
       ${mkDots(s1,col1)}${mkDots(s2,col2)}
       ${mkCentroid(s1,col1)}${mkCentroid(s2,col2)}
     </svg>`;
@@ -2642,8 +2678,8 @@
           <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
             <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
               <span style="font-size:11px;font-weight:700;color:${phCol};background:${phBg};padding:3px 12px;border-radius:20px;letter-spacing:1px">${isAtq?'ATAQUE':'DEFENSA'}</span>
-              <span style="font-size:12px;color:var(--text2)">${shape.players.length+shape.gk.length} jugadores</span>
-              <span style="font-size:11px;color:var(--text3);margin-left:auto">${isAtq?'campo contrario (x > 0)':'campo propio (x < 0)'} · posición media de posesiones</span>
+              <span style="font-size:12px;color:var(--text2)">${shape.players.length+shape.gk.length} jugadores · ${bloqueSubTab==='2parte'?'once final':'once inicial'}</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:auto">${isAtq?'campo contrario (x > 0)':'campo propio (x < 0)'} · posición media · nodos opacos = sin posesiones en fase (coord. globales)</span>
             </div>
             ${buildBloqueSVG(shape,bloquePhase)}
           </div>
