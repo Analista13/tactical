@@ -3612,7 +3612,7 @@
 
     const LANE_NAME  = ['IZQ EXT','IZQ INT','CENTRO','DCH INT','DCH EXT'];
     const LANE_LONG  = ['Carril Izquierdo Exterior','Carril Izquierdo Interior','Carril Central','Carril Derecho Interior','Carril Derecho Exterior'];
-    const LANE_COL   = ['#c8a96e','#c8a96e','#c8a96e','#c8a96e','#c8a96e'];
+    const LANE_COL   = ['#f0883e','#c8a96e','#3fb950','#c8a96e','#f0883e'];
     const perLabel   = carrilesPeriodo==='t'?'90 min':carrilesPeriodo==='1'?'1ª parte':'2ª parte';
 
     // ── filter bar ────────────────────────────────────────────────────────────
@@ -3635,59 +3635,57 @@
 
     // ── SVG pitch builder ──────────────────────────────────────────────────────
     function buildCarrilesPitch(cData, size='large') {
-      const LH     = 136; // 680/5
-      const maxPct = Math.max(...cData.c);
-      const BASE   = '#c8a96e'; // amber accent
+      // Exact same style as buildZonaPitch — 5 horizontal bands
+      const PVW=1050, PVH=680, PP=22;
+      const PLH = (PVH - 2*PP) / 5;           // lane height in SVG units ≈ 127.2
+      const CL  = LANE_COL;                    // ['#f0883e','#c8a96e','#3fb950','#c8a96e','#f0883e']
+      const LBL = ['C1','C2','C3','C4','C5']; // short lane labels
 
-      // Lane fills: amber with opacity proportional to usage
+      const ops = cData.c.map(p => Math.min(0.55, p/100*0.7+0.06).toFixed(2));
+
+      // Horizontal lane fills (within pitch boundary)
       const fills = cData.c.map((pct, i) => {
-        const op = (0.06 + (pct / maxPct) * 0.78).toFixed(2);
-        return `<rect x="0" y="${i*LH}" width="1050" height="${LH}" fill="${BASE}" opacity="${op}"/>`;
+        const y = (PP + i*PLH).toFixed(1);
+        const h = PLH.toFixed(1);
+        return `<rect x="${PP}" y="${y}" width="${PVW-2*PP}" height="${h}" fill="${CL[i]}" fill-opacity="${ops[i]}"/>`;
       }).join('');
 
-      // Pitch markings
-      const pitchLines = `
-        <rect x="0" y="0" width="1050" height="680" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="3"/>
-        <line x1="525" y1="0" x2="525" y2="680" stroke="rgba(255,255,255,0.28)" stroke-width="2"/>
-        <circle cx="525" cy="340" r="91.5" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="2"/>
-        <circle cx="525" cy="340" r="5" fill="rgba(255,255,255,0.4)"/>
-        <rect x="0" y="170" width="165" height="340" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="2"/>
-        <rect x="0" y="255" width="55" height="170" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="2"/>
-        <rect x="885" y="170" width="165" height="340" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="2"/>
-        <rect x="995" y="255" width="55" height="170" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="2"/>
-        <rect x="-15" y="289" width="15" height="102" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="2"/>
-        <rect x="1050" y="289" width="15" height="102" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="2"/>`;
+      // Lane dividers: horizontal dashed lines
+      const dividers = [1,2,3,4].map(i => {
+        const y = (PP + i*PLH).toFixed(1);
+        return `<line x1="${PP}" y1="${y}" x2="${PVW-PP}" y2="${y}" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="16 10"/>`;
+      }).join('');
 
-      // Lane dividers (dashed, subtle)
-      const separators = [1,2,3,4].map(i =>
-        `<line x1="0" y1="${i*LH}" x2="1050" y2="${i*LH}" stroke="rgba(255,255,255,0.14)" stroke-width="1.5" stroke-dasharray="8,5"/>`
-      ).join('');
+      // Font sizes — same logic as buildZonaPitch
+      const fs    = size==='large' ? 72 : 90;
+      const fsLbl = size==='large' ? 28 : 34;
+      const w     = size==='large' ? '60%;max-width:480px' : '100%';
 
-      // Labels: % big + lane name small, top-right corner of each lane
-      const fBig   = size==='large' ? 44 : 26;
-      const fLabel = size==='large' ? 17 : 11;
+      // % + label centered in each band
       const labels = cData.c.map((pct, i) => {
-        const cy   = i * LH + LH / 2;
-        const isMax = pct === maxPct;
-        const textFill = isMax ? '#fff' : 'rgba(255,255,255,0.78)';
+        const cy = (PP + (i + 0.5) * PLH).toFixed(1);
         return `
-          <text x="525" y="${cy + fBig*0.36}" text-anchor="middle"
-            fill="${textFill}" font-size="${fBig}"
-            font-weight="${isMax?800:600}" font-family="'DM Sans',sans-serif">${pct}%</text>
-          <text x="18" y="${i*LH + fLabel + 6}" text-anchor="start"
-            fill="rgba(255,255,255,0.45)" font-size="${fLabel}"
-            font-family="'DM Sans',sans-serif" font-weight="700">${LANE_NAME[i]}</text>`;
+          <text x="${PVW/2}" y="${(PP + (i+0.5)*PLH - 10).toFixed(1)}" text-anchor="middle" fill="${CL[i]}" font-size="${fs}" font-weight="700" font-family="'Bebas Neue',sans-serif" opacity="0.9">${pct}%</text>
+          <text x="${PVW/2}" y="${(PP + (i+0.5)*PLH + fsLbl*0.85).toFixed(1)}" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="${fsLbl}" font-family="'DM Sans',sans-serif" font-weight="700">${LBL[i]}</text>`;
       }).join('');
 
-      const wStyle = size==='large'
-        ? 'width:62%;max-width:510px;display:block;margin:0 auto'
-        : 'width:100%;display:block';
-
-      return `<div style="${wStyle}">
-        <svg viewBox="-15 0 1080 680" style="width:100%;border-radius:10px;overflow:hidden">
-          <rect x="-15" y="0" width="1080" height="680" fill="#1a6b3c"/>
-          ${fills}${pitchLines}${separators}${labels}
-        </svg></div>`;
+      return `<svg viewBox="0 0 ${PVW} ${PVH}" style="width:${w};display:block;margin:0 auto;border-radius:6px">
+        <rect width="${PVW}" height="${PVH}" fill="#0f2218" rx="6"/>
+        ${fills}
+        <rect x="${PP}" y="${PP}" width="${PVW-2*PP}" height="${PVH-2*PP}" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="4" rx="3"/>
+        <line x1="${PVW/2}" y1="${PP}" x2="${PVW/2}" y2="${PVH-PP}" stroke="rgba(255,255,255,0.22)" stroke-width="3"/>
+        ${dividers}
+        <circle cx="${PVW/2}" cy="${PVH/2}" r="91.5" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
+        <circle cx="${PVW/2}" cy="${PVH/2}" r="5" fill="rgba(255,255,255,0.25)"/>
+        <rect x="${PP}"         y="${((PVH-403)/2).toFixed(0)}" width="165" height="403" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
+        <rect x="${PP}"         y="${((PVH-183)/2).toFixed(0)}" width="55"  height="183" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+        <rect x="${PP-22}"      y="${((PVH-73)/2).toFixed(0)}"  width="22"  height="73"  fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
+        <rect x="${PVW-PP-165}" y="${((PVH-403)/2).toFixed(0)}" width="165" height="403" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
+        <rect x="${PVW-PP-55}"  y="${((PVH-183)/2).toFixed(0)}" width="55"  height="183" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+        <rect x="${PVW-PP}"     y="${((PVH-73)/2).toFixed(0)}"  width="22"  height="73"  fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
+        ${labels}
+        <text x="${PVW-PP-10}" y="${PVH-10}" text-anchor="end" fill="rgba(255,255,255,0.15)" font-size="24" font-family="'DM Sans',sans-serif">↑ izq · dcH ↓</text>
+      </svg>`;
     }
 
     // ── 1J MODE ───────────────────────────────────────────────────────────────
@@ -3736,23 +3734,18 @@
       // KPI: dominant lane
       const maxIdx  = entry.c.indexOf(Math.max(...entry.c));
       const balance = (Math.max(...entry.c) - Math.min(...entry.c)).toFixed(1);
-      const kpis = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0">
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Carril dominante</div>
-          <div style="font-size:20px;font-weight:800;color:var(--accent)">${LANE_NAME[maxIdx]}</div>
-          <div style="font-size:12px;color:var(--text2)">${entry.c[maxIdx]}%</div>
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Más equilibrado</div>
-          <div style="font-size:20px;font-weight:800;color:${Math.max(...entry.c)-Math.min(...entry.c)<8?'#3fb950':'var(--text)'}">
-            ${Math.max(...entry.c)-Math.min(...entry.c)<8?'Sí':'No'}</div>
-          <div style="font-size:12px;color:var(--text2)">Δ ${balance}%</div>
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Carriles activos</div>
-          <div style="font-size:20px;font-weight:800;color:var(--text)">${entry.c.filter(p=>p>=15).length}<span style="font-size:13px;color:var(--text3)">/5</span></div>
-          <div style="font-size:12px;color:var(--text2)">≥ 15% uso</div>
-        </div>
+      const kpis = `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0">
+        ${entry.c.map((val,i) => `
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+            <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px">
+              <div style="width:8px;height:8px;border-radius:50%;background:${LANE_COL[i]}"></div>
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:600">${LANE_NAME[i]}</div>
+            </div>
+            <div style="font-size:40px;font-family:'Bebas Neue',sans-serif;color:${LANE_COL[i]};line-height:1">${val}%</div>
+            <div style="height:4px;border-radius:2px;overflow:hidden;margin-top:10px;background:rgba(255,255,255,0.06)">
+              <div style="width:${val}%;height:100%;background:${LANE_COL[i]};opacity:0.7"></div>
+            </div>
+          </div>`).join('')}
       </div>`;
 
       const pitchBlock = buildCarrilesPitch(entry, 'large');
@@ -3813,10 +3806,10 @@
 
       // Mini bar
       const miniBar = entry ? `<div style="display:flex;height:5px;border-radius:3px;overflow:hidden;margin:8px 12px 4px">
-        ${entry.c.map((p,i)=>`<div style="width:${p}%;background:#c8a96e;opacity:${(0.25+i*0.1).toFixed(2)}"></div>`).join('')}
+        ${entry.c.map((p,i)=>`<div style="width:${p}%;background:${LANE_COL[i]};opacity:0.8"></div>`).join('')}
       </div>
       <div style="display:flex;justify-content:space-around;padding:0 12px 8px;font-size:10px">
-        ${entry.c.map((p,i)=>`<span style="color:var(--accent);font-weight:${entry.c[i]===Math.max(...entry.c)?'800':'500'}">${p}%</span>`).join('')}
+        ${entry.c.map((p,i)=>`<span style="color:${LANE_COL[i]};font-weight:${entry.c[i]===Math.max(...entry.c)?'800':'500'}">${p}%</span>`).join('')}
       </div>` : '';
 
       return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
@@ -3834,7 +3827,7 @@
     // Legend
     const legend = `<div style="display:flex;justify-content:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">
       ${LANE_NAME.map((n,i)=>`<div style="display:flex;align-items:center;gap:5px">
-        <div style="width:14px;height:14px;border-radius:3px;background:#c8a96e;opacity:${0.3+i*0.15}"></div>
+        <div style="width:14px;height:14px;border-radius:3px;background:${LANE_COL[i]};opacity:0.82"></div>
         <span style="font-size:11px;color:var(--text3)">${n}</span>
       </div>`).join('')}
     </div>`;
