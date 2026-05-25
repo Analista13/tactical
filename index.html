@@ -2155,38 +2155,42 @@
     });
 
     // ── Banquillo ──────────────────────────────────────────────────────────────
-    const BENCH_H  = benchPlayers.length > 0 ? 95 : 0;
+    const bR      = 20;
+    const BENCH_H = benchPlayers.length > 0 ? 30 + bR*2 + 38 : 0; // label+circle+name+min
     const AH_TOTAL = AH + BENCH_H;
-    let benchSVG   = '';
+    let benchSVG  = '';
     if (benchPlayers.length > 0) {
-      const bSepY  = AH + 6;
-      const bLblY  = AH + 20;
-      const bR     = 17;
-      const bCircY = AH + 55;
+      const bBgY   = AH;
+      const bLblY  = AH + 18;
+      const bCircY = AH + 30 + bR;          // centro de círculos
       const n      = benchPlayers.length;
-      const step   = (AW - AMX * 2) / (n + 1);
+      // Distribuir en toda la anchura del campo
+      const usableW = AW - AMX * 2;
+      const step    = usableW / n;
 
-      benchSVG += `<line x1="${AMX}" y1="${bSepY}" x2="${AW-AMX}" y2="${bSepY}" stroke="#21262d" stroke-width="1" stroke-dasharray="4 3"/>`;
-      benchSVG += `<text x="${AW/2}" y="${bLblY}" text-anchor="middle" fill="#484f58" font-size="10" font-family="'DM Sans',sans-serif" letter-spacing="2" font-weight="600">BANQUILLO</text>`;
+      // Fondo de banquillo
+      benchSVG += `<rect x="0" y="${bBgY}" width="${AW}" height="${BENCH_H}" fill="#0a1a0a"/>`;
+      benchSVG += `<line x1="${AMX}" y1="${bBgY+1}" x2="${AW-AMX}" y2="${bBgY+1}" stroke="#1c3a1c" stroke-width="1"/>`;
+      benchSVG += `<text x="${AW/2}" y="${bLblY}" text-anchor="middle" fill="#3d5c3d" font-size="11" font-family="'DM Sans',sans-serif" letter-spacing="3" font-weight="700">BANQUILLO</text>`;
 
       benchPlayers.forEach((p, i) => {
-        const bX     = AMX + step * (i + 1);
+        const bX     = AMX + step * i + step / 2;
         const {tier} = getPosTier(p.position);
         const tc     = TIER_COL[tier] || '#c8a96e';
         const dorsal = PLAYER_DORSALES[p.id];
         const minIn  = p.start_time && p.start_time !== '00:00:00' ? Math.floor(timeToMin(p.start_time)) : null;
 
-        benchSVG += `<circle cx="${bX}" cy="${bCircY}" r="${bR+5}" fill="${tc}" fill-opacity="0.05"/>`;
-        benchSVG += `<circle cx="${bX}" cy="${bCircY}" r="${bR}" fill="#111c11" stroke="${tc}" stroke-width="1.8" stroke-dasharray="3 2"/>`;
+        benchSVG += `<circle cx="${bX.toFixed(0)}" cy="${bCircY}" r="${bR+6}" fill="${tc}" fill-opacity="0.05"/>`;
+        benchSVG += `<circle cx="${bX.toFixed(0)}" cy="${bCircY}" r="${bR}" fill="#0d1f0d" stroke="${tc}" stroke-width="2" stroke-dasharray="4 2"/>`;
         if (dorsal != null) {
-          benchSVG += `<text x="${bX}" y="${(bCircY+6).toFixed(0)}" fill="${tc}" font-size="14" font-family="'Bebas Neue',sans-serif" text-anchor="middle" font-weight="bold">${dorsal}</text>`;
+          benchSVG += `<text x="${bX.toFixed(0)}" y="${(bCircY+7).toFixed(0)}" fill="${tc}" font-size="15" font-family="'Bebas Neue',sans-serif" text-anchor="middle" font-weight="bold">${dorsal}</text>`;
         } else {
-          benchSVG += `<text x="${bX}" y="${(bCircY+4).toFixed(0)}" fill="${tc}" font-size="10" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="600">${p.position}</text>`;
+          benchSVG += `<text x="${bX.toFixed(0)}" y="${(bCircY+4).toFixed(0)}" fill="${tc}" font-size="11" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="600">${p.position}</text>`;
         }
-        const shortName = p.name.split(' ')[0].length > 8 ? p.name.split(' ')[0] : dispN(p.name);
-        benchSVG += `<text x="${bX}" y="${(bCircY+bR+13).toFixed(0)}" fill="#c9d1d9" font-size="10" font-family="'DM Sans',sans-serif" text-anchor="middle">${shortName}</text>`;
+        const shortName = dispN(p.name);
+        benchSVG += `<text x="${bX.toFixed(0)}" y="${(bCircY+bR+14).toFixed(0)}" fill="#8b949e" font-size="10" font-family="'DM Sans',sans-serif" text-anchor="middle">${shortName}</text>`;
         if (minIn != null) {
-          benchSVG += `<text x="${bX}" y="${(bCircY+bR+25).toFixed(0)}" fill="#3fb950" font-size="9" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="700">▲ ${minIn}'</text>`;
+          benchSVG += `<text x="${bX.toFixed(0)}" y="${(bCircY+bR+26).toFixed(0)}" fill="#3fb950" font-size="10" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="700">▲ ${minIn}'</text>`;
         }
       });
     }
