@@ -2300,11 +2300,14 @@
     squad11.forEach(r => { posMap[r[1]] = resolvePlayerPosition({id:r[0], position:r[2]}); });
 
     // Filtrar tracking solo a esos 11 jugadores + periodo + fase
+    // Metodología SkillCorner: fases por TERCIO del campo (no simple x>0/x<0)
+    // Ataque  = tercio rival   → x_start >  17.5 m
+    // Defensa = tercio propio  → x_start < -17.5 m
     const squadNames = new Set(squad11.map(r => r[1]));
     let data = matchData.filter(e => e.player_name && squadNames.has(e.player_name));
     if (period) data = data.filter(e => e.period === period);
-    if (phase === 'ataque') data = data.filter(e => e.x_start != null && e.x_start > 0);
-    else                    data = data.filter(e => e.x_start != null && e.x_start < 0);
+    if (phase === 'ataque') data = data.filter(e => e.x_start != null && e.x_start >  17.5);
+    else                    data = data.filter(e => e.x_start != null && e.x_start < -17.5);
 
     // Acumular posiciones por jugador
     const acc = {};
@@ -2345,23 +2348,36 @@
     const hull = convexHull(outfield.map(p => ({x:p.x, y:p.y})));
     const area = hullArea(hull);
 
-    // Agrupar por línea para métricas
-    const DEF_P=['RB','RWB','RCB','CB','LCB','LB','LWB','DC','DF','DEF'];
-    const MID_P=['RM','RDM','RCM','RAM','CDM','DM','SD','CM','MC','MID','CAM','AM','MF','M','MO','LM','LDM','LCM','LAM'];
-    const FWD_P=['RW','RF','CF','ST','FW','ATT','DEL','SS','LW','LF'];
-    const posUp = p => (p.position||'').toUpperCase();
-    const defs = outfield.filter(p => DEF_P.includes(posUp(p)));
-    const mids = outfield.filter(p => MID_P.includes(posUp(p)));
-    const fwds = outfield.filter(p => FWD_P.includes(posUp(p)));
+    // ── Líneas por PROFUNDIDAD (metodología SkillCorner) ──
+    // Ordenar por x ascendente: los más profundos primero
+    const sorted = outfield.slice().sort((a,b) => a.x - b.x);
+    const n = sorted.length; // debería ser 10
+    // 4 más profundos → línea defensiva
+    // 3 más adelantados → línea de presión
+    // Resto (centro) → mediocampo
+    const nDef = Math.min(4, n);
+    const nFwd = n > nDef ? Math.min(3, n - nDef) : 0;
+    const defs = sorted.slice(0, nDef);
+    const fwds = sorted.slice(n - nFwd);
+    const mids = sorted.slice(nDef, n - nFwd);
 
     const avgX   = arr => arr.length ? arr.reduce((s,p)=>s+p.x,0)/arr.length : null;
     const spreadY = arr => arr.length>=2 ? Math.max(...arr.map(p=>p.y))-Math.min(...arr.map(p=>p.y)) : null;
 
     const defLine = avgX(defs), midLine = avgX(mids), fwdLine = avgX(fwds);
-    const teamWidth  = outfield.length>=2 ? Math.max(...outfield.map(p=>p.y))-Math.min(...outfield.map(p=>p.y)) : null;
-    const teamDepth  = outfield.length>=2 ? Math.max(...outfield.map(p=>p.x))-Math.min(...outfield.map(p=>p.x)) : null;
-    const centroidX  = outfield.length ? outfield.reduce((s,p)=>s+p.x,0)/outfield.length : null;
-    const centroidY  = outfield.length ? outfield.reduce((s,p)=>s+p.y,0)/outfield.length : null;
+    const teamWidth  = n>=2 ? Math.max(...outfield.map(p=>p.y))-Math.min(...outfield.map(p=>p.y)) : null;
+    const teamDepth  = n>=2 ? Math.max(...outfield.map(p=>p.x))-Math.min(...outfield.map(p=>p.x)) : null;
+    const centroidX  = n ? outfield.reduce((s,p)=>s+p.x,0)/n : null;
+    const centroidY  = n ? outfield.reduce((s,p)=>s+p.y,0)/n : null;
+
+    // ── Clasificación del bloque (metodología SkillCorner) ──
+    // Basada en la posición media de los 4 más profundos
+    let blockType = null;
+    if (defLine != null) {
+      if (defLine >  0)     blockType = 'high';  // línea defensiva en campo rival
+      else if (defLine > -17.5) blockType = 'mid';   // en zona central
+      else                  blockType = 'low';   // en tercio propio
+    }
 
     return {
       players:outfield, gk, hull, area,
@@ -2370,7 +2386,7 @@
       defMidGap: defLine!=null&&midLine!=null ? midLine-defLine : null,
       midFwdGap: midLine!=null&&fwdLine!=null ? fwdLine-midLine : null,
       teamWidth, teamDepth, defWidth:spreadY(defs), fwdWidth:spreadY(fwds),
-      centroidX, centroidY,
+      centroidX, centroidY, blockType,
     };
   }
 
@@ -2497,10 +2513,12 @@
     const table = `<div class="table-wrap"><table>
       <thead><tr><th>Métrica</th><th style="text-align:right">Valor</th></tr></thead>
       <tbody>
-        ${rowSep('LÍNEAS — altura media en x (m desde línea de medio campo)')}
-        ${row('Línea defensiva', fmt(shape.defLine)+' m', '#58a6ff')}
-        ${row('Línea de mediocampo', fmt(shape.midLine)+' m', '#3fb950')}
-        ${row('Línea de presión (atacantes)', fmt(shape.fwdLine)+' m', '#f85149')}
+        ${rowSep('BLOQUE (metodología SkillCorner)')}
+        ${(()=>{const bt=shape.blockType;if(!bt)return '';const[bl,bc]={high:['🔴 HIGH BLOCK — línea def. en campo rival','#f85149'],mid:['🟡 MID BLOCK — línea def. en zona central','#e3b341'],low:['🔵 LOW BLOCK — línea def. en tercio propio','#58a6ff']}[bt]||['—','#888'];return row(bl,'',bc);})()}
+        ${rowSep('LÍNEAS — altura media en x · 4 más profundos / 3 centros / 3 más adelantados')}
+        ${row('Línea defensiva (4 más profundos)', fmt(shape.defLine)+' m', '#58a6ff')}
+        ${row('Línea de mediocampo (3 centrales)', fmt(shape.midLine)+' m', '#3fb950')}
+        ${row('Línea de presión (3 más adelantados)', fmt(shape.fwdLine)+' m', '#f85149')}
         ${rowSep('COMPACTIDAD ENTRE LÍNEAS')}
         ${row('Brecha Def → Mediocampo', fmt(shape.defMidGap)+' m', null)}
         ${row('Brecha Mediocampo → Ataque', fmt(shape.midFwdGap)+' m', null)}
@@ -2679,8 +2697,9 @@
           <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
             <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
               <span style="font-size:11px;font-weight:700;color:${phCol};background:${phBg};padding:3px 12px;border-radius:20px;letter-spacing:1px">${isAtq?'ATAQUE':'DEFENSA'}</span>
+              ${(()=>{const bt=shape.blockType;if(!bt)return '';const[bl,bc]={high:['🔴 HIGH BLOCK','#f85149'],mid:['🟡 MID BLOCK','#e3b341'],low:['🔵 LOW BLOCK','#58a6ff']}[bt]||['',''];return `<span style="font-size:11px;font-weight:700;color:${bc};background:${bc}22;padding:3px 10px;border-radius:20px">${bl}</span>`;})()}
               <span style="font-size:12px;color:var(--text2)">${shape.players.length+shape.gk.length} jugadores · ${bloqueSubTab==='2parte'?'once final':'once inicial'}</span>
-              <span style="font-size:11px;color:var(--text3);margin-left:auto">${isAtq?'campo contrario (x > 0)':'campo propio (x < 0)'} · posición media · nodos opacos = sin posesiones en fase (coord. globales)</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:auto">${isAtq?'tercio rival (x > 17.5 m)':'tercio propio (x < −17.5 m)'} · posición media</span>
             </div>
             ${buildBloqueSVG(shape,bloquePhase)}
           </div>
@@ -2726,8 +2745,8 @@
         </select>
       </div>
       <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">
-        ${phBtn('ataque','⚽ Ataque')}
-        ${phBtn('defensa','🛡️ Defensa')}
+        ${phBtn('ataque','⚽ Ataque (tercio rival)')}
+        ${phBtn('defensa','🛡️ Defensa (tercio propio)')}
       </div>
       <div id="bloqueSubTabs" style="overflow-x:auto;margin-bottom:20px;padding-bottom:2px">
         <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content;min-width:100%">
