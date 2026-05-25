@@ -2300,14 +2300,13 @@
     squad11.forEach(r => { posMap[r[1]] = resolvePlayerPosition({id:r[0], position:r[2]}); });
 
     // Filtrar tracking solo a esos 11 jugadores + periodo + fase
-    // Metodología SkillCorner: fases por TERCIO del campo (no simple x>0/x<0)
-    // Ataque  = tercio rival   → x_start >  17.5 m
-    // Defensa = tercio propio  → x_start < -17.5 m
+    // Ataque  = campo rival (x > 0), Defensa = campo propio (x < 0)
+    // Split por mitad del campo — suficientes eventos para todos los jugadores
     const squadNames = new Set(squad11.map(r => r[1]));
     let data = matchData.filter(e => e.player_name && squadNames.has(e.player_name));
     if (period) data = data.filter(e => e.period === period);
-    if (phase === 'ataque') data = data.filter(e => e.x_start != null && e.x_start >  17.5);
-    else                    data = data.filter(e => e.x_start != null && e.x_start < -17.5);
+    if (phase === 'ataque') data = data.filter(e => e.x_start != null && e.x_start > 0);
+    else                    data = data.filter(e => e.x_start != null && e.x_start < 0);
 
     // Acumular posiciones por jugador
     const acc = {};
@@ -2319,12 +2318,14 @@
     }
 
     // Construir exactamente los 11 jugadores del squad
-    // Si un jugador no tiene posesiones en esa fase → usar avg_x/avg_y del lineup como fallback
+    // MIN_P = 5: necesitamos al menos 5 posesiones en la fase para usar esas coords
+    // Si no → usar avg_x/avg_y del lineup (promedio de tracking global de SkillCorner)
+    const MIN_P = 5;
     const allPlayers = squad11.map(r => {
       const name = r[1];
       const position = posMap[name] || r[2] || 'CM';
       const entry = acc[name];
-      if (entry && entry.xs.length >= 1) {
+      if (entry && entry.xs.length >= MIN_P) {
         return {
           name, n:entry.xs.length, position,
           x: entry.xs.reduce((a,b)=>a+b,0)/entry.xs.length,
@@ -2332,11 +2333,12 @@
           fromLineup: false,
         };
       }
-      // Fallback: coordenadas medias del partido (del lineup embebido)
+      // Fallback: coordenadas globales del partido (tracking completo SkillCorner)
       if (r[5] != null && r[6] != null) {
-        return { name, n:0, position, x:r[5], y:r[6], fromLineup:true };
+        const n = entry ? entry.xs.length : 0;
+        return { name, n, position, x:r[5], y:r[6], fromLineup:true };
       }
-      return null; // sin datos — omitir
+      return null;
     }).filter(Boolean);
 
     const GKS = ['GK','PT','POR','PORTERO','P','GOALKEEPER'];
@@ -2699,7 +2701,7 @@
               <span style="font-size:11px;font-weight:700;color:${phCol};background:${phBg};padding:3px 12px;border-radius:20px;letter-spacing:1px">${isAtq?'ATAQUE':'DEFENSA'}</span>
               ${(()=>{const bt=shape.blockType;if(!bt)return '';const[bl,bc]={high:['🔴 HIGH BLOCK','#f85149'],mid:['🟡 MID BLOCK','#e3b341'],low:['🔵 LOW BLOCK','#58a6ff']}[bt]||['',''];return `<span style="font-size:11px;font-weight:700;color:${bc};background:${bc}22;padding:3px 10px;border-radius:20px">${bl}</span>`;})()}
               <span style="font-size:12px;color:var(--text2)">${shape.players.length+shape.gk.length} jugadores · ${bloqueSubTab==='2parte'?'once final':'once inicial'}</span>
-              <span style="font-size:11px;color:var(--text3);margin-left:auto">${isAtq?'tercio rival (x > 17.5 m)':'tercio propio (x < −17.5 m)'} · posición media</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:auto">${isAtq?'campo rival (x > 0)':'campo propio (x < 0)'} · posición media · mín. 5 posesiones en fase</span>
             </div>
             ${buildBloqueSVG(shape,bloquePhase)}
           </div>
@@ -2745,8 +2747,8 @@
         </select>
       </div>
       <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">
-        ${phBtn('ataque','⚽ Ataque (tercio rival)')}
-        ${phBtn('defensa','🛡️ Defensa (tercio propio)')}
+        ${phBtn('ataque','⚽ Ataque')}
+        ${phBtn('defensa','🛡️ Defensa')}
       </div>
       <div id="bloqueSubTabs" style="overflow-x:auto;margin-bottom:20px;padding-bottom:2px">
         <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content;min-width:100%">
