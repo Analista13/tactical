@@ -3657,16 +3657,16 @@
       }).join('');
 
       // Font sizes — same logic as buildZonaPitch
-      const fs    = size==='large' ? 72 : 90;
-      const fsLbl = size==='large' ? 28 : 34;
-      const w     = size==='large' ? '60%;max-width:480px' : '100%';
+      const fs  = size==='large' ? 72 : 90;
+      const w   = size==='large' ? '60%;max-width:480px' : '100%';
 
-      // % + label centered in each band
+      // % centered + small label chip in top-left corner of each band
       const labels = cData.c.map((pct, i) => {
-        const cy = (PP + (i + 0.5) * PLH).toFixed(1);
+        const bandTop = PP + i * PLH;
+        const cy      = bandTop + PLH / 2;
         return `
-          <text x="${PVW/2}" y="${(PP + (i+0.5)*PLH - 10).toFixed(1)}" text-anchor="middle" fill="${CL[i]}" font-size="${fs}" font-weight="700" font-family="'Bebas Neue',sans-serif" opacity="0.9">${pct}%</text>
-          <text x="${PVW/2}" y="${(PP + (i+0.5)*PLH + fsLbl*0.85).toFixed(1)}" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="${fsLbl}" font-family="'DM Sans',sans-serif" font-weight="700">${LBL[i]}</text>`;
+          <text x="${PVW/2}" y="${(cy + fs*0.36).toFixed(1)}" text-anchor="middle" fill="${CL[i]}" font-size="${fs}" font-weight="700" font-family="'Bebas Neue',sans-serif" opacity="0.9">${pct}%</text>
+          <text x="${(PP+10).toFixed(1)}" y="${(bandTop+22).toFixed(1)}" text-anchor="start" fill="rgba(255,255,255,0.32)" font-size="20" font-family="'DM Sans',sans-serif" font-weight="700">${LBL[i]}</text>`;
       }).join('');
 
       return `<svg viewBox="0 0 ${PVW} ${PVH}" style="width:${w};display:block;margin:0 auto;border-radius:6px">
