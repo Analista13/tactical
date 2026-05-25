@@ -2116,29 +2116,19 @@
   }
 
   function buildAlineacionSVG(players, parte, benchPlayers = []) {
-    // Coordenadas reales de SkillCorner (avg x,y de posesiones) cuando disponibles
-    // Fallback a POS_XY con resolución de colisiones para jugadores sin tracking
+    // Alineaciones usa siempre POS_XY (posición táctica por rol),
+    // NO las coordenadas de tracking de SkillCorner (esas son para el tab Bloque).
+    // Anti-colisión: si varios jugadores tienen la misma posición, se dispersan en Y.
     const coords={};
-    const noCoords=[];   // jugadores sin avg_x/avg_y → usar POS_XY
-
-    players.forEach(p=>{
-      if(p.avg_x!==null && p.avg_x!==undefined && p.avg_y!==null && p.avg_y!==undefined){
-        coords[p.id]={x:p.avg_x, y:p.avg_y};  // posición real SkillCorner
-      } else {
-        noCoords.push(p);
-      }
-    });
-
-    // Para jugadores sin datos reales: POS_XY + anticolisión
     const byPos={};
-    noCoords.forEach(p=>{
+    players.forEach(p=>{
       const k=p.position;
       if(!byPos[k]) byPos[k]=[];
       byPos[k].push(p);
     });
     Object.entries(byPos).forEach(([pos,grp])=>{
       const base=POS_XY[pos]||{x:0,y:0};
-      const spread=grp.length>1?10:0;
+      const spread=grp.length>1?11:0;
       grp.forEach((p,i)=>{
         coords[p.id]={x:base.x, y:base.y+(i-(grp.length-1)/2)*spread};
       });
