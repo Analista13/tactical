@@ -143,6 +143,8 @@
   let currentMainTab = 'redpases';
   let aliMatchId    = null;
   let aliParte      = '1';    // '1' | '2'
+  let aliNMatches   = 1;      // 1 | 3 | 5 | 10 | 0(custom) — filmstrip
+  let aliCustomIds  = [];     // IDs seleccionados en modo custom
   let bloqueMatchId = null;
   let bloquePhase   = 'ataque';   // 'ataque' | 'defensa'
   let bloqueSubTab  = 'general';  // 'general' | '1parte' | '2parte' | 'comparativa'
@@ -352,6 +354,8 @@
     aliMatchId = null;
     bloqueMatchId = null;
     bloqueCustomIds = [];
+    aliNMatches = 1;
+    aliCustomIds = [];
     jugSubTab = 'mapa';
     jugCalorPlayer = null;
     telaranaMode = 'todos';
@@ -2153,6 +2157,122 @@
     return `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${fieldSVG}${nodes}</svg>`;
   }
 
+  // ── Filmstrip Alineaciones ────────────────────────────────────────────────────
+  function buildAliNFilterBar() {
+    const opts = [[1,'1 partido'],[3,'Últimos 3'],[5,'Últimos 5'],[10,'Últimos 10']];
+    const btns = opts.map(([n,lbl]) => {
+      const act = aliNMatches === n;
+      return `<button onclick="setAliNMatches(${n})"
+        style="background:${act?'rgba(200,169,110,0.12)':'var(--bg2)'};border:1px solid ${act?'rgba(200,169,110,0.3)':'var(--border)'};color:${act?'var(--accent)':'var(--text2)'};padding:5px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap">${lbl}</button>`;
+    }).join('');
+    const customAct = aliNMatches === 0;
+    const customLabel = customAct && aliCustomIds.length > 0 ? `✎ Elegir (${aliCustomIds.length})` : '✎ Elegir';
+    const customBtn = `<button onclick="setAliNMatches(0)"
+      style="background:${customAct?'rgba(88,166,255,0.12)':'var(--bg2)'};border:1px solid ${customAct?'rgba(88,166,255,0.45)':'var(--border)'};color:${customAct?'var(--blue)':'var(--text2)'};padding:5px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap">${customLabel}</button>`;
+    // Toggle parte (siempre visible en filmstrip)
+    const parteToggle = `<div style="display:flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;margin-left:auto">
+      ${['1','2'].map(p=>{const act=aliParte===p;return `<button onclick="aliParte='${p}';renderAlineacion()" style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:5px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s;white-space:nowrap">${p==='1'?'⚽ 1ª Parte':'🔄 2ª Parte'}</button>`;}).join('')}
+    </div>`;
+    return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+      <span style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-right:2px">Vista</span>
+      ${btns}
+      ${customBtn}
+      ${aliNMatches !== 1 ? parteToggle : ''}
+    </div>`;
+  }
+
+  function buildAliCustomPanel() {
+    if (aliNMatches !== 0) return '';
+    const chips = PARTIDOS.map(p => {
+      const rival  = p.local === currentTeam.name ? p.vis : p.local;
+      const isHome = p.local === currentTeam.name;
+      const sel    = aliCustomIds.includes(p.id);
+      return `<button onclick="toggleAliCustomId(${p.id})"
+        style="background:${sel?'rgba(88,166,255,0.1)':'var(--bg3)'};border:1px solid ${sel?'rgba(88,166,255,0.5)':'var(--border)'};color:${sel?'var(--blue)':'var(--text2)'};padding:6px 10px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all 0.15s;text-align:left;display:flex;flex-direction:column;gap:1px;min-width:90px">
+        <span style="font-weight:700;font-size:10px;color:${sel?'var(--blue)':'var(--accent)'}">${p.j}</span>
+        <span>${isHome?'🏠':'✈️'} ${rival}</span>
+        <span style="color:var(--text3);font-size:10px">${p.s}</span>
+      </button>`;
+    }).join('');
+    return `<div style="background:var(--bg2);border:1px solid rgba(88,166,255,0.2);border-radius:var(--radius);padding:12px 14px;margin-bottom:16px">
+      <div style="font-size:10px;color:var(--blue);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:10px">
+        Selecciona los partidos · <span style="color:var(--text2)">${aliCustomIds.length > 0 ? aliCustomIds.length+' seleccionados' : 'ninguno seleccionado'}</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${chips}</div>
+    </div>`;
+  }
+
+  function setAliNMatches(n) {
+    aliNMatches = n;
+    renderAlineacion();
+  }
+
+  function toggleAliCustomId(id) {
+    const idx = aliCustomIds.indexOf(id);
+    if (idx >= 0) aliCustomIds.splice(idx, 1);
+    else aliCustomIds.push(id);
+    renderAlineacion();
+  }
+
+  function renderAliFilmstrip(cont) {
+    const filterBar   = buildAliNFilterBar();
+    const customPanel = buildAliCustomPanel();
+
+    // Custom sin selección → mostrar panel
+    if (aliNMatches === 0 && aliCustomIds.length === 0) {
+      cont.innerHTML = filterBar + customPanel +
+        `<div style="text-align:center;padding:50px 20px;color:var(--text3);font-size:13px">
+          <div style="font-size:22px;margin-bottom:10px">☝️</div>
+          Selecciona los partidos que quieres comparar
+        </div>`;
+      return;
+    }
+
+    const partidos = aliNMatches === 0
+      ? PARTIDOS.filter(p => aliCustomIds.includes(p.id))
+      : PARTIDOS.slice(-aliNMatches);
+
+    const cards = partidos.map(p => {
+      const rawLineup = PONF_LINEUPS[p.id] || [];
+      if (!rawLineup.length) return '';
+      const lineup = rawLineup.map(r => ({
+        id:r[0], name:r[1], position:r[2], start_time:r[3], end_time:r[4],
+        avg_x: r[5]!=null ? r[5] : null,
+        avg_y: r[6]!=null ? r[6] : null
+      }));
+      const activePlayers = aliParte === '1'
+        ? lineup.filter(pl => pl.start_time === '00:00:00')
+        : lineup.filter(pl => pl.end_time === null);
+      const resolved  = activePlayers.map(pl => ({...pl, position: resolvePlayerPosition(pl)}));
+      const formacion = detectFormacion(resolved.filter(pl => pl.position !== 'GK'));
+
+      const rival  = p.local === currentTeam.name ? p.vis : p.local;
+      const isHome = p.local === currentTeam.name;
+      const [gl,gv] = (p.s||'').split('-').map(Number);
+      const resColor = isHome
+        ? (gl>gv?'var(--green)':gl<gv?'var(--red)':'var(--accent)')
+        : (gv>gl?'var(--green)':gv<gl?'var(--red)':'var(--accent)');
+
+      return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column">
+        <div style="padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0">
+          <div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--accent);line-height:1">${p.j}</div>
+            <div style="font-size:12px;color:var(--text);font-weight:500;margin-top:1px">${isHome?'🏠':'✈️'} ${rival}</div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:2px">
+              <span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${resColor}">${p.s||''}</span>
+              <span style="font-size:10px;color:var(--text3)">${p.f||''}</span>
+            </div>
+          </div>
+          <div style="background:rgba(200,169,110,0.1);border:1px solid rgba(200,169,110,0.2);border-radius:16px;padding:3px 10px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.5px;color:var(--accent);flex-shrink:0">${formacion}</div>
+        </div>
+        <div style="flex:1">${buildAlineacionSVG(resolved, aliParte)}</div>
+      </div>`;
+    }).join('');
+
+    cont.innerHTML = filterBar + customPanel +
+      `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${cards}</div>`;
+  }
+
   function loadAlineaciones() {
     const matchOpts = PARTIDOS.map(p=>{
       const rival = p.local===currentTeam.name?p.vis:p.local;
@@ -2172,12 +2292,20 @@
       </div>
     </div>`;
 
-    if(aliMatchId) renderAlineacion();
+    if(aliMatchId||(aliNMatches!==1)) renderAlineacion();
   }
 
   function renderAlineacion() {
     const cont=document.getElementById('aliCont');
     if(!cont) return;
+
+    // ── Filmstrip mode ──
+    if(aliNMatches !== 1) {
+      renderAliFilmstrip(cont);
+      return;
+    }
+
+    if(!aliMatchId) return;
     const partido=PARTIDOS.find(p=>p.id==aliMatchId);
     const rawLineup=PONF_LINEUPS[aliMatchId]||[];
     if(!rawLineup.length){
@@ -2234,7 +2362,7 @@
       cambiosHtml+='</div>';
     }
 
-    cont.innerHTML=`
+    cont.innerHTML=buildAliNFilterBar()+`
       <!-- Header de partido -->
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px">
         <div>
