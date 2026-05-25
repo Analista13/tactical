@@ -119,6 +119,7 @@
 <main>
   <div class="tabs-bar" id="tabsBar">
     <div class="tab active" data-tab="redpases" onclick="switchTab('redpases')">🕸️ Red de Pases</div>
+    <div class="tab" data-tab="bloque" onclick="switchTab('bloque')">📐 Bloque</div>
     <div class="tab" data-tab="alineaciones" onclick="switchTab('alineaciones')">📋 Alineaciones</div>
   </div>
   <div class="content" id="content">
@@ -142,6 +143,9 @@
   let currentMainTab = 'redpases';
   let aliMatchId    = null;
   let aliParte      = '1';    // '1' | '2'
+  let bloqueMatchId = null;
+  let bloquePhase   = 'ataque';   // 'ataque' | 'defensa'
+  let bloqueSubTab  = 'general';  // 'general' | '1parte' | '2parte' | 'comparativa'
 
   // Dorsales por equipo y player_id (fuente: Transfermarkt 2025-26)
   const PLAYER_DORSALES_MAP_D = {
@@ -334,13 +338,15 @@
     document.getElementById('headerLogo').src = escudo;
     redMatchId = null;
     aliMatchId = null;
+    bloqueMatchId = null;
     jugSubTab = 'mapa';
     jugCalorPlayer = null;
     telaranaMode = 'todos';
     perdidasPart = 'total';
     aliParte = '1';
-    if(currentMainTab === 'redpases') loadRedPases();
-    else loadAlineaciones();
+    if(currentMainTab === 'redpases')     loadRedPases();
+    else if(currentMainTab === 'bloque') loadBloque();
+    else                                 loadAlineaciones();
   }
 
   // Betweenness centrality (Brandes) — módulo compartido
@@ -1936,7 +1942,8 @@
   function switchTab(tab) {
     currentMainTab = tab;
     document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-    if(tab === 'redpases')     loadRedPases();
+    if(tab === 'redpases')          loadRedPases();
+    else if(tab === 'bloque')       loadBloque();
     else if(tab === 'alineaciones') loadAlineaciones();
   }
 
@@ -2254,6 +2261,450 @@
           <span>Entró como suplente</span>
         </div>`:''}
       </div>`;
+  }
+
+  // ─── BLOQUE · Posición media de equipo en ataque y defensa ──────────────────
+
+  // Andrew's monotone chain convex hull algorithm
+  function convexHull(pts) {
+    if(pts.length < 3) return pts.slice();
+    const cross = (O,A,B) => (A.x-O.x)*(B.y-O.y)-(A.y-O.y)*(B.x-O.x);
+    const s = pts.slice().sort((a,b)=>a.x===b.x?a.y-b.y:a.x-b.x);
+    const lo=[], hi=[];
+    for(const p of s){while(lo.length>=2&&cross(lo[lo.length-2],lo[lo.length-1],p)<=0)lo.pop();lo.push(p);}
+    for(let i=s.length-1;i>=0;i--){const p=s[i];while(hi.length>=2&&cross(hi[hi.length-2],hi[hi.length-1],p)<=0)hi.pop();hi.push(p);}
+    hi.pop(); lo.pop();
+    return lo.concat(hi);
+  }
+
+  function hullArea(hull) {
+    if(hull.length < 3) return 0;
+    let a = 0;
+    for(let i=0;i<hull.length;i++){const j=(i+1)%hull.length;a+=hull[i].x*hull[j].y-hull[j].x*hull[i].y;}
+    return Math.abs(a)/2;
+  }
+
+  // Compute avg positions per player for a given phase & period from match data
+  function computeTeamShape(matchData, phase, period, mid) {
+    // Filter by period (0 = whole match)
+    let data = period ? matchData.filter(e=>e.period===period) : matchData;
+    // Filter by attack/defense half
+    if(phase==='ataque') data = data.filter(e=>e.x_start!=null && e.x_start > 0);
+    else                 data = data.filter(e=>e.x_start!=null && e.x_start < 0);
+
+    // Accumulate positions per player
+    const acc = {};
+    for(const e of data){
+      if(e.x_start==null||e.y_start==null) continue;
+      if(!acc[e.player_name]) acc[e.player_name]={xs:[],ys:[]};
+      acc[e.player_name].xs.push(e.x_start);
+      acc[e.player_name].ys.push(e.y_start);
+    }
+
+    // Build name→corrected-position map from embedded lineup
+    const rawLineup = PONF_LINEUPS[mid] || [];
+    const posMap = {};
+    rawLineup.forEach(r=>{posMap[r[1]] = resolvePlayerPosition({id:r[0],position:r[2]});});
+
+    // Build player list (min 3 possessions in phase)
+    const MIN_P = 3;
+    const allPlayers = Object.entries(acc)
+      .filter(([,{xs}])=>xs.length>=MIN_P)
+      .map(([name,{xs,ys}])=>({
+        name, n:xs.length, position: posMap[name]||'CM',
+        x: xs.reduce((a,b)=>a+b,0)/xs.length,
+        y: ys.reduce((a,b)=>a+b,0)/ys.length,
+      }));
+
+    const GKS = ['GK','PT','POR','PORTERO','P','GOALKEEPER'];
+    const isGK = p => GKS.includes((p.position||'').toUpperCase().trim());
+    const gk       = allPlayers.filter(isGK);
+    const outfield = allPlayers.filter(p=>!isGK(p));
+
+    // Convex hull & area (outfield only, GK excluded)
+    const hull = convexHull(outfield.map(p=>({x:p.x,y:p.y})));
+    const area = hullArea(hull);
+
+    // Group by positional tier for line metrics
+    const DEF_P=['RB','RWB','RCB','CB','LCB','LB','LWB','DC','DF','DEF'];
+    const MID_P=['RM','RDM','RCM','RAM','CDM','DM','SD','CM','MC','MID','CAM','AM','MF','M','MO','LM','LDM','LCM','LAM'];
+    const FWD_P=['RW','RF','CF','ST','FW','ATT','DEL','SS','LW','LF'];
+    const posUp = p => (p.position||'').toUpperCase();
+    const def = outfield.filter(p=>DEF_P.includes(posUp(p)));
+    const mid = outfield.filter(p=>MID_P.includes(posUp(p)));
+    const fwd = outfield.filter(p=>FWD_P.includes(posUp(p)));
+
+    const avgX  = arr => arr.length ? arr.reduce((s,p)=>s+p.x,0)/arr.length : null;
+    const spreadY = arr => arr.length>=2 ? Math.max(...arr.map(p=>p.y))-Math.min(...arr.map(p=>p.y)) : null;
+
+    const defLine = avgX(def), midLine = avgX(mid), fwdLine = avgX(fwd);
+    const teamWidth  = outfield.length>=2 ? Math.max(...outfield.map(p=>p.y))-Math.min(...outfield.map(p=>p.y)) : null;
+    const teamDepth  = outfield.length>=2 ? Math.max(...outfield.map(p=>p.x))-Math.min(...outfield.map(p=>p.x)) : null;
+    const centroidX  = outfield.length ? outfield.reduce((s,p)=>s+p.x,0)/outfield.length : null;
+    const centroidY  = outfield.length ? outfield.reduce((s,p)=>s+p.y,0)/outfield.length : null;
+
+    return {
+      players:outfield, gk, hull, area,
+      defLine, midLine, fwdLine,
+      defFwdGap: defLine!=null&&fwdLine!=null ? fwdLine-defLine : null,
+      defMidGap: defLine!=null&&midLine!=null ? midLine-defLine : null,
+      midFwdGap: midLine!=null&&fwdLine!=null ? fwdLine-midLine : null,
+      teamWidth, teamDepth, defWidth:spreadY(def), fwdWidth:spreadY(fwd),
+      centroidX, centroidY,
+    };
+  }
+
+  // Build the SVG pitch + convex hull + player dots for a single shape
+  function buildBloqueSVG(shape, phase) {
+    const phCol = phase==='ataque' ? '#f0883e' : '#58a6ff';
+    const AW=920, AH=590, AMX=55, AMY=40, APW=AW-AMX*2, APH=AH-AMY*2;
+    const sv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW, sy:AMY+((34-y)/68)*APH});
+
+    const pitch = `
+      <rect x="0" y="0" width="${AW}" height="${AH}" fill="#0b150b"/>
+      <rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="#0d1f0d" stroke="#1c3a1c" stroke-width="1.5"/>
+      <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="#1c3a1c" stroke-width="1"/>
+      <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="#1c3a1c" stroke-width="1"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>`;
+
+    // Convex hull polygon
+    let hull = '';
+    if(shape.hull.length>=3){
+      const pts=shape.hull.map(p=>{const{sx,sy}=sv(p.x,p.y);return sx.toFixed(1)+','+sy.toFixed(1);}).join(' ');
+      hull=`<polygon points="${pts}" fill="${phCol}" fill-opacity="0.09" stroke="${phCol}" stroke-width="1.5" stroke-opacity="0.55" stroke-dasharray="8,4"/>`;
+    }
+
+    // Vertical line per tier (avg x)
+    let lines = '';
+    [[shape.defLine,'#58a6ff'],[shape.midLine,'#3fb950'],[shape.fwdLine,'#f85149']].forEach(([lx,col])=>{
+      if(lx==null) return;
+      const{sx}=sv(lx,0);
+      lines+=`<line x1="${sx.toFixed(1)}" y1="${AMY}" x2="${sx.toFixed(1)}" y2="${AH-AMY}" stroke="${col}" stroke-width="1.2" stroke-opacity="0.45" stroke-dasharray="5,5"/>`;
+    });
+
+    // Centroid crosshair
+    let centroid = '';
+    if(shape.centroidX!=null){
+      const{sx:cx,sy:cy}=sv(shape.centroidX,shape.centroidY);
+      centroid=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="8" fill="none" stroke="${phCol}" stroke-width="1.8"/>
+        <line x1="${(cx-7).toFixed(1)}" y1="${cy.toFixed(1)}" x2="${(cx+7).toFixed(1)}" y2="${cy.toFixed(1)}" stroke="${phCol}" stroke-width="1.5"/>
+        <line x1="${cx.toFixed(1)}" y1="${(cy-7).toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(cy+7).toFixed(1)}" stroke="${phCol}" stroke-width="1.5"/>`;
+    }
+
+    // Width annotation arrow
+    let widthAnnot = '';
+    if(shape.teamWidth!=null && shape.players.length>=2){
+      const maxX=Math.max(...shape.players.map(p=>p.x));
+      const maxY=Math.max(...shape.players.map(p=>p.y));
+      const minY=Math.min(...shape.players.map(p=>p.y));
+      const{sx:ax}=sv(Math.min(maxX+9,48),0);
+      const{sy:ay1}=sv(0,maxY);
+      const{sy:ay2}=sv(0,minY);
+      widthAnnot=`<line x1="${ax}" y1="${ay1.toFixed(0)}" x2="${ax}" y2="${ay2.toFixed(0)}" stroke="${phCol}" stroke-width="1" stroke-opacity="0.45"/>
+        <line x1="${(ax-4)}" y1="${ay1.toFixed(0)}" x2="${(ax+4)}" y2="${ay1.toFixed(0)}" stroke="${phCol}" stroke-width="1" stroke-opacity="0.45"/>
+        <line x1="${(ax-4)}" y1="${ay2.toFixed(0)}" x2="${(ax+4)}" y2="${ay2.toFixed(0)}" stroke="${phCol}" stroke-width="1" stroke-opacity="0.45"/>
+        <text x="${(ax+8)}" y="${((ay1+ay2)/2+4).toFixed(0)}" font-family="DM Sans,sans-serif" font-size="10" fill="${phCol}" fill-opacity="0.75">${shape.teamWidth.toFixed(0)}m</text>`;
+    }
+
+    // GK dots
+    let dots = '';
+    shape.gk.forEach(p=>{
+      const{sx,sy}=sv(p.x,p.y);
+      dots+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="15" fill="#1a1a2e" stroke="${TIER_COL[0]}" stroke-width="2"/>
+        <text x="${sx.toFixed(1)}" y="${(sy+5).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="${TIER_COL[0]}">GK</text>
+        <text x="${sx.toFixed(1)}" y="${(sy+28).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#c9d1d9">${dispN(p.name)}</text>`;
+    });
+
+    // Outfield dots (size proportional to possession count)
+    shape.players.forEach(p=>{
+      const{sx,sy}=sv(p.x,p.y);
+      const{tier}=getPosTier(p.position);
+      const col=TIER_COL[tier]||'#c8a96e';
+      const R=14+Math.min(p.n,40)/7;
+      dots+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${(R+5).toFixed(0)}" fill="${col}" fill-opacity="0.07"/>
+        <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${R.toFixed(0)}" fill="#111c11" stroke="${col}" stroke-width="2"/>
+        <text x="${sx.toFixed(1)}" y="${(sy-1).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="700" fill="${col}">${p.position}</text>
+        <text x="${sx.toFixed(1)}" y="${(sy+9).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#8b949e">${p.name.split(' ').pop().substring(0,9)}</text>
+        <text x="${sx.toFixed(1)}" y="${(sy+R+14).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#c9d1d9">${dispN(p.name)}</text>
+        <text x="${sx.toFixed(1)}" y="${(sy+R+25).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#484f58">${p.n} pos.</text>`;
+    });
+
+    return `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${pitch}${lines}${hull}${centroid}${widthAnnot}${dots}</svg>`;
+  }
+
+  // Build metrics cards + table for a single shape
+  function buildBloqueMetrics(shape, phase) {
+    const phCol = phase==='ataque' ? '#f0883e' : '#58a6ff';
+    const fmt = v => v!=null ? v.toFixed(1) : '—';
+
+    const cards = `<div class="cards" style="margin-bottom:20px">
+      <div class="card">
+        <div class="card-label">Anchura del equipo</div>
+        <div class="card-value">${fmt(shape.teamWidth)}<span style="font-size:14px;color:var(--text3)"> m</span></div>
+        <div class="card-sub">Spread lateral máximo (eje y)</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Profundidad del bloque</div>
+        <div class="card-value">${fmt(shape.teamDepth)}<span style="font-size:14px;color:var(--text3)"> m</span></div>
+        <div class="card-sub">Longitud de campo cubierta</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Área del bloque</div>
+        <div class="card-value" style="font-size:26px">${shape.area!=null?Math.round(shape.area).toLocaleString():'—'}<span style="font-size:12px;color:var(--text3)"> m²</span></div>
+        <div class="card-sub">Convex hull (sin portero)</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Centroide del equipo</div>
+        <div class="card-value" style="font-size:26px">${fmt(shape.centroidX)}<span style="font-size:14px;color:var(--text3)"> m</span></div>
+        <div class="card-sub">Posición media en x</div>
+      </div>
+    </div>`;
+
+    const rowSep = lb => `<tr><td colspan="2" style="padding-top:14px;padding-bottom:4px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-weight:600">${lb}</td></tr>`;
+    const row = (lb,val,col) => {
+      const dot = col ? `<span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block;margin-right:7px;vertical-align:middle"></span>` : '';
+      return `<tr><td>${dot}${lb}</td><td style="text-align:right;font-family:'DM Mono',monospace;color:var(--accent)">${val}</td></tr>`;
+    };
+
+    const table = `<div class="table-wrap"><table>
+      <thead><tr><th>Métrica</th><th style="text-align:right">Valor</th></tr></thead>
+      <tbody>
+        ${rowSep('LÍNEAS — altura media en x (m desde línea de medio campo)')}
+        ${row('Línea defensiva', fmt(shape.defLine)+' m', '#58a6ff')}
+        ${row('Línea de mediocampo', fmt(shape.midLine)+' m', '#3fb950')}
+        ${row('Línea de presión (atacantes)', fmt(shape.fwdLine)+' m', '#f85149')}
+        ${rowSep('COMPACTIDAD ENTRE LÍNEAS')}
+        ${row('Brecha Def → Mediocampo', fmt(shape.defMidGap)+' m', null)}
+        ${row('Brecha Mediocampo → Ataque', fmt(shape.midFwdGap)+' m', null)}
+        ${row('Distancia Def → Ataque (bloque total)', fmt(shape.defFwdGap)+' m', null)}
+        ${rowSep('ANCHURA POR LÍNEA')}
+        ${row('Anchura línea defensiva', fmt(shape.defWidth)+' m', '#58a6ff')}
+        ${row('Anchura línea delantera', fmt(shape.fwdWidth)+' m', '#f85149')}
+      </tbody>
+    </table></div>`;
+
+    const legend = `<div style="display:flex;gap:16px;flex-wrap:wrap;padding:0 4px">
+      ${[['#58a6ff','Línea defensiva'],['#3fb950','Línea de mediocampo'],['#f85149','Línea de presión']].map(([c,lb])=>`
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">
+          <div style="width:20px;border-top:2px dashed ${c}"></div>
+          <span style="color:${c}">${lb}</span>
+        </div>`).join('')}
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">
+        <div style="width:16px;height:10px;border:1.5px dashed ${phCol};opacity:0.6;border-radius:2px"></div>
+        <span>Convex hull del bloque (sin portero)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">
+        <span style="color:${phCol};font-size:16px">⊕</span>
+        <span>Centroide del equipo</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">
+        <span style="font-size:11px">●</span>
+        <span>Tamaño del nodo = nº de posesiones en la fase</span>
+      </div>
+    </div>`;
+
+    return {cards, table, legend};
+  }
+
+  // Comparativa view: two shapes overlaid on same pitch
+  function renderBloqueComp(cont, s1, s2) {
+    const col1='#58a6ff', col2='#f0883e';
+    const fmt=v=>v!=null?v.toFixed(1):'—';
+    const delta=(a,b)=>{
+      if(a==null||b==null) return '<span style="color:var(--text3)">—</span>';
+      const d=b-a, sign=d>=0?'+':'';
+      return '<span style="color:'+(d>0.5?'var(--green)':d<-0.5?'var(--red)':'var(--text3)')+'">'+sign+d.toFixed(1)+'</span>';
+    };
+
+    const AW=920,AH=590,AMX=55,AMY=40,APW=AW-AMX*2,APH=AH-AMY*2;
+    const sv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW, sy:AMY+((34-y)/68)*APH});
+
+    const pitch=`<rect x="0" y="0" width="${AW}" height="${AH}" fill="#0b150b"/>
+      <rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="#0d1f0d" stroke="#1c3a1c" stroke-width="1.5"/>
+      <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="#1c3a1c" stroke-width="1"/>
+      <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="#1c3a1c" stroke-width="1"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>`;
+
+    const mkHull=(shape,col)=>{
+      if(shape.hull.length<3) return '';
+      const pts=shape.hull.map(p=>{const{sx,sy}=sv(p.x,p.y);return sx.toFixed(1)+','+sy.toFixed(1);}).join(' ');
+      return `<polygon points="${pts}" fill="${col}" fill-opacity="0.09" stroke="${col}" stroke-width="1.5" stroke-opacity="0.65" stroke-dasharray="7,4"/>`;
+    };
+    const mkDots=(shape,col)=>shape.players.map(p=>{
+      const{sx,sy}=sv(p.x,p.y);
+      return `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="11" fill="#111c11" stroke="${col}" stroke-width="1.8"/>
+        <text x="${sx.toFixed(1)}" y="${(sy+4).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="700" fill="${col}">${p.position}</text>`;
+    }).join('');
+    const mkCentroid=(shape,col)=>{
+      if(shape.centroidX==null) return '';
+      const{sx:cx,sy:cy}=sv(shape.centroidX,shape.centroidY);
+      return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="8" fill="none" stroke="${col}" stroke-width="2"/>
+        <line x1="${(cx-7).toFixed(1)}" y1="${cy.toFixed(1)}" x2="${(cx+7).toFixed(1)}" y2="${cy.toFixed(1)}" stroke="${col}" stroke-width="1.5"/>
+        <line x1="${cx.toFixed(1)}" y1="${(cy-7).toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(cy+7).toFixed(1)}" stroke="${col}" stroke-width="1.5"/>`;
+    };
+    // Lines per tier for each half
+    const mkLines=(shape,col)=>{
+      const lxDef=shape.defLine,lxMid=shape.midLine,lxFwd=shape.fwdLine;
+      let out='';
+      [[lxDef,'#58a6ff'],[lxMid,'#3fb950'],[lxFwd,'#f85149']].forEach(([lx,lc])=>{
+        if(lx==null) return;
+        const{sx}=sv(lx,0);
+        out+=`<line x1="${sx.toFixed(1)}" y1="${AMY}" x2="${sx.toFixed(1)}" y2="${AH-AMY}" stroke="${col}" stroke-width="1" stroke-opacity="0.3" stroke-dasharray="4,6"/>`;
+      });
+      return out;
+    };
+
+    const svgHTML=`<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">
+      ${pitch}
+      ${mkLines(s1,col1)}${mkLines(s2,col2)}
+      ${mkHull(s1,col1)}${mkHull(s2,col2)}
+      ${mkDots(s1,col1)}${mkDots(s2,col2)}
+      ${mkCentroid(s1,col1)}${mkCentroid(s2,col2)}
+    </svg>`;
+
+    const rows=[
+      ['Anchura total',        s1.teamWidth, s2.teamWidth,  'm'],
+      ['Profundidad del bloque',s1.teamDepth, s2.teamDepth,  'm'],
+      ['Área del bloque',      s1.area,      s2.area,       'm²'],
+      ['Centroide (x)',         s1.centroidX, s2.centroidX,  'm'],
+      ['Línea defensiva',       s1.defLine,   s2.defLine,    'm'],
+      ['Línea de mediocampo',   s1.midLine,   s2.midLine,    'm'],
+      ['Línea de presión',      s1.fwdLine,   s2.fwdLine,    'm'],
+      ['Brecha Def → Ataque',   s1.defFwdGap, s2.defFwdGap,  'm'],
+      ['Anchura defensiva',     s1.defWidth,  s2.defWidth,   'm'],
+      ['Anchura delantera',     s1.fwdWidth,  s2.fwdWidth,   'm'],
+    ];
+
+    const tableHtml=`<div class="table-wrap"><table>
+      <thead><tr>
+        <th>Métrica</th>
+        <th style="color:${col1}">1ª Parte</th>
+        <th style="color:${col2}">2ª Parte</th>
+        <th style="text-align:right">Δ 2ª − 1ª</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(([lb,v1,v2,unit])=>`<tr>
+          <td>${lb}</td>
+          <td style="font-family:'DM Mono',monospace;color:${col1}">${fmt(v1)} ${unit}</td>
+          <td style="font-family:'DM Mono',monospace;color:${col2}">${fmt(v2)} ${unit}</td>
+          <td style="text-align:right;font-family:'DM Mono',monospace">${delta(v1,v2)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+
+    cont.innerHTML=`<div style="display:grid;gap:20px">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:7px">
+            <div style="width:20px;height:3px;background:${col1};border-radius:2px"></div>
+            <span style="font-size:13px;font-weight:700;color:${col1}">1ª Parte</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:7px">
+            <div style="width:20px;height:3px;background:${col2};border-radius:2px"></div>
+            <span style="font-size:13px;font-weight:700;color:${col2}">2ª Parte</span>
+          </div>
+          <span style="font-size:11px;color:var(--text3);margin-left:auto">Evolución del bloque — posición media de posesiones</span>
+        </div>
+        ${svgHTML}
+      </div>
+      ${tableHtml}
+    </div>`;
+  }
+
+  async function renderBloque() {
+    const cont=document.getElementById('bloqueCont');
+    if(!cont||!bloqueMatchId) return;
+    cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando posición...</span></div>`;
+    try {
+      const matchData=await getMatchData(bloqueMatchId);
+      if(bloqueSubTab==='comparativa'){
+        const s1=computeTeamShape(matchData,bloquePhase,1,bloqueMatchId);
+        const s2=computeTeamShape(matchData,bloquePhase,2,bloqueMatchId);
+        renderBloqueComp(cont,s1,s2);
+      } else {
+        const period=bloqueSubTab==='1parte'?1:bloqueSubTab==='2parte'?2:0;
+        const shape=computeTeamShape(matchData,bloquePhase,period,bloqueMatchId);
+        if(!shape.players.length&&!shape.gk.length){
+          cont.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3)">Sin posesiones suficientes en esta fase del partido</div>`;
+          return;
+        }
+        const isAtq=bloquePhase==='ataque';
+        const phCol=isAtq?'#f0883e':'#58a6ff';
+        const phBg =isAtq?'rgba(240,136,62,0.08)':'rgba(88,166,255,0.08)';
+        const {cards,table,legend}=buildBloqueMetrics(shape,bloquePhase);
+        cont.innerHTML=`<div style="display:grid;gap:20px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-size:11px;font-weight:700;color:${phCol};background:${phBg};padding:3px 12px;border-radius:20px;letter-spacing:1px">${isAtq?'ATAQUE':'DEFENSA'}</span>
+              <span style="font-size:12px;color:var(--text2)">${shape.players.length+shape.gk.length} jugadores</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:auto">${isAtq?'campo contrario (x > 0)':'campo propio (x < 0)'} · posición media de posesiones</span>
+            </div>
+            ${buildBloqueSVG(shape,bloquePhase)}
+          </div>
+          ${cards}
+          ${table}
+          ${legend}
+        </div>`;
+      }
+    } catch(e){
+      cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">Error: ${e.message}</div>`;
+    }
+  }
+
+  function setBloquePhase(phase){
+    bloquePhase=phase;
+    loadBloque();
+  }
+
+  function setBloqueSubTab(tab){
+    bloqueSubTab=tab;
+    document.querySelectorAll('#bloqueSubTabs .subtab').forEach(b=>b.classList.remove('active'));
+    document.getElementById('bst-'+tab)?.classList.add('active');
+    const cont=document.getElementById('bloqueCont');
+    if(cont) cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando...</span></div>`;
+    if(bloqueMatchId) renderBloque();
+  }
+
+  function loadBloque(){
+    const matchOpts=PARTIDOS.map(p=>{
+      const rival=p.local===currentTeam.name?p.vis:p.local;
+      const s=p.local===currentTeam.name?'🏠':'✈️';
+      return `<option value="${p.id}" ${p.id==bloqueMatchId?'selected':''}>${s} ${p.j} · ${rival} · ${p.s} · ${p.f}</option>`;
+    }).join('');
+    const phBtn=(id,label)=>{
+      const active=bloquePhase===id;
+      return `<button onclick="setBloquePhase('${id}')" style="background:transparent;border:none;border-bottom:2px solid ${active?'var(--accent)':'transparent'};color:${active?'var(--accent)':'var(--text2)'};padding:10px 22px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${label}</button>`;
+    };
+    document.getElementById('content').innerHTML=`<div class="anim">${head()}
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+        <select id="bloqueSel" onchange="bloqueMatchId=parseInt(this.value);renderBloque()"
+          style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;flex:1;min-width:280px">
+          <option value="">— Selecciona un partido —</option>${matchOpts}
+        </select>
+      </div>
+      <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">
+        ${phBtn('ataque','⚽ Ataque')}
+        ${phBtn('defensa','🛡️ Defensa')}
+      </div>
+      <div id="bloqueSubTabs" style="overflow-x:auto;margin-bottom:20px;padding-bottom:2px">
+        <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content;min-width:100%">
+          <button id="bst-general"     class="subtab ${bloqueSubTab==='general'?'active':''}"     onclick="setBloqueSubTab('general')">General</button>
+          <button id="bst-1parte"      class="subtab ${bloqueSubTab==='1parte'?'active':''}"      onclick="setBloqueSubTab('1parte')">1ª Parte</button>
+          <button id="bst-2parte"      class="subtab ${bloqueSubTab==='2parte'?'active':''}"      onclick="setBloqueSubTab('2parte')">2ª Parte</button>
+          <button id="bst-comparativa" class="subtab ${bloqueSubTab==='comparativa'?'active':''}" onclick="setBloqueSubTab('comparativa')">⚡ Comparativa</button>
+        </div>
+      </div>
+      <div id="bloqueCont">
+        <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>
+      </div>
+    </div>`;
+    if(bloqueMatchId) renderBloque();
   }
 
   // INIT
