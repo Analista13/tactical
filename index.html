@@ -2080,7 +2080,7 @@
     return parts.filter(Boolean).join('-');
   }
 
-  function buildAlineacionSVG(players, parte) {
+  function buildAlineacionSVG(players, parte, benchPlayers = []) {
     // Coordenadas reales de SkillCorner (avg x,y de posesiones) cuando disponibles
     // Fallback a POS_XY con resolución de colisiones para jugadores sin tracking
     const coords={};
@@ -2154,7 +2154,44 @@
       }
     });
 
-    return `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${fieldSVG}${nodes}</svg>`;
+    // ── Banquillo ──────────────────────────────────────────────────────────────
+    const BENCH_H  = benchPlayers.length > 0 ? 95 : 0;
+    const AH_TOTAL = AH + BENCH_H;
+    let benchSVG   = '';
+    if (benchPlayers.length > 0) {
+      const bSepY  = AH + 6;
+      const bLblY  = AH + 20;
+      const bR     = 17;
+      const bCircY = AH + 55;
+      const n      = benchPlayers.length;
+      const step   = (AW - AMX * 2) / (n + 1);
+
+      benchSVG += `<line x1="${AMX}" y1="${bSepY}" x2="${AW-AMX}" y2="${bSepY}" stroke="#21262d" stroke-width="1" stroke-dasharray="4 3"/>`;
+      benchSVG += `<text x="${AW/2}" y="${bLblY}" text-anchor="middle" fill="#484f58" font-size="10" font-family="'DM Sans',sans-serif" letter-spacing="2" font-weight="600">BANQUILLO</text>`;
+
+      benchPlayers.forEach((p, i) => {
+        const bX     = AMX + step * (i + 1);
+        const {tier} = getPosTier(p.position);
+        const tc     = TIER_COL[tier] || '#c8a96e';
+        const dorsal = PLAYER_DORSALES[p.id];
+        const minIn  = p.start_time && p.start_time !== '00:00:00' ? Math.floor(timeToMin(p.start_time)) : null;
+
+        benchSVG += `<circle cx="${bX}" cy="${bCircY}" r="${bR+5}" fill="${tc}" fill-opacity="0.05"/>`;
+        benchSVG += `<circle cx="${bX}" cy="${bCircY}" r="${bR}" fill="#111c11" stroke="${tc}" stroke-width="1.8" stroke-dasharray="3 2"/>`;
+        if (dorsal != null) {
+          benchSVG += `<text x="${bX}" y="${(bCircY+6).toFixed(0)}" fill="${tc}" font-size="14" font-family="'Bebas Neue',sans-serif" text-anchor="middle" font-weight="bold">${dorsal}</text>`;
+        } else {
+          benchSVG += `<text x="${bX}" y="${(bCircY+4).toFixed(0)}" fill="${tc}" font-size="10" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="600">${p.position}</text>`;
+        }
+        const shortName = p.name.split(' ')[0].length > 8 ? p.name.split(' ')[0] : dispN(p.name);
+        benchSVG += `<text x="${bX}" y="${(bCircY+bR+13).toFixed(0)}" fill="#c9d1d9" font-size="10" font-family="'DM Sans',sans-serif" text-anchor="middle">${shortName}</text>`;
+        if (minIn != null) {
+          benchSVG += `<text x="${bX}" y="${(bCircY+bR+25).toFixed(0)}" fill="#3fb950" font-size="9" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="700">▲ ${minIn}'</text>`;
+        }
+      });
+    }
+
+    return `<svg viewBox="0 0 ${AW} ${AH_TOTAL}" style="width:100%;display:block">${fieldSVG}${nodes}${benchSVG}</svg>`;
   }
 
   // ── Filmstrip Alineaciones ────────────────────────────────────────────────────
@@ -2245,6 +2282,9 @@
         : lineup.filter(pl => pl.end_time === null);
       const resolved  = activePlayers.map(pl => ({...pl, position: resolvePlayerPosition(pl)}));
       const formacion = detectFormacion(resolved.filter(pl => pl.position !== 'GK'));
+      const bench = aliParte === '1'
+        ? lineup.filter(pl => pl.start_time !== '00:00:00').map(pl => ({...pl, position: resolvePlayerPosition(pl)}))
+        : [];
 
       const rival  = p.local === currentTeam.name ? p.vis : p.local;
       const isHome = p.local === currentTeam.name;
@@ -2265,7 +2305,7 @@
           </div>
           <div style="background:rgba(200,169,110,0.1);border:1px solid rgba(200,169,110,0.2);border-radius:16px;padding:3px 10px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.5px;color:var(--accent);flex-shrink:0">${formacion}</div>
         </div>
-        <div style="flex:1">${buildAlineacionSVG(resolved, aliParte)}</div>
+        <div style="flex:1">${buildAlineacionSVG(resolved, aliParte, bench)}</div>
       </div>`;
     }).join('');
 
@@ -2329,6 +2369,10 @@
 
     // Jugadores que salieron si es 2ª parte (para mostrar cambios)
     const outPlayers = aliParte==='2' ? lineup.filter(p=>p.start_time==='00:00:00'&&p.end_time!==null) : [];
+    // Banquillo: suplentes que entraron (solo para 1ª parte — los de 2ª ya están en el campo)
+    const benchPlayers = aliParte==='1'
+      ? lineup.filter(p=>p.start_time!=='00:00:00').map(p=>({...p, position:resolvePlayerPosition(p)}))
+      : [];
 
     // Subtabs parte
     const parteBtn=(id,lbl)=>{
@@ -2388,7 +2432,7 @@
 
       <!-- Campo con jugadores -->
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-        ${buildAlineacionSVG(resolvedPlayers, aliParte)}
+        ${buildAlineacionSVG(resolvedPlayers, aliParte, benchPlayers)}
       </div>
 
       <!-- Leyenda -->
