@@ -2375,8 +2375,9 @@
   }
 
   // Build the SVG pitch + convex hull + player dots for a single shape
-  function buildBloqueSVG(shape, phase) {
-    const phCol = phase==='ataque' ? '#f0883e' : '#58a6ff';
+  // colorOverride: optional hex to replace the phase color (used in comparativa)
+  function buildBloqueSVG(shape, phase, colorOverride) {
+    const phCol = colorOverride || (phase==='ataque' ? '#f0883e' : '#58a6ff');
     const AW=920, AH=590, AMX=55, AMY=40, APW=AW-AMX*2, APH=AH-AMY*2;
     const sv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW, sy:AMY+((34-y)/68)*APH});
 
@@ -2537,8 +2538,8 @@
     return {cards, table, legend};
   }
 
-  // Comparativa view: two shapes overlaid on same pitch
-  function renderBloqueComp(cont, s1, s2) {
+  // Comparativa view: dos campos separados lado a lado
+  function renderBloqueComp(cont, s1, s2, phase) {
     const col1='#58a6ff', col2='#f0883e';
     const fmt=v=>v!=null?v.toFixed(1):'—';
     const delta=(a,b)=>{
@@ -2547,74 +2548,32 @@
       return '<span style="color:'+(d>0.5?'var(--green)':d<-0.5?'var(--red)':'var(--text3)')+'">'+sign+d.toFixed(1)+'</span>';
     };
 
-    const AW=920,AH=590,AMX=55,AMY=40,APW=AW-AMX*2,APH=AH-AMY*2;
-    const sv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW, sy:AMY+((34-y)/68)*APH});
-
-    const pitch=`<rect x="0" y="0" width="${AW}" height="${AH}" fill="#0b150b"/>
-      <rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="#0d1f0d" stroke="#1c3a1c" stroke-width="1.5"/>
-      <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="#1c3a1c" stroke-width="1"/>
-      <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="#1c3a1c" stroke-width="1"/>
-      <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
-      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
-      <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
-      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>`;
-
-    const mkHull=(shape,col)=>{
-      if(shape.hull.length<3) return '';
-      const pts=shape.hull.map(p=>{const{sx,sy}=sv(p.x,p.y);return sx.toFixed(1)+','+sy.toFixed(1);}).join(' ');
-      return `<polygon points="${pts}" fill="${col}" fill-opacity="0.09" stroke="${col}" stroke-width="1.5" stroke-opacity="0.65" stroke-dasharray="7,4"/>`;
+    // Reutilizamos buildBloqueSVG para cada mitad con su color
+    // Patch temporal: reemplaza el color de fase en los SVG generados
+    const mkPitchPanel=(shape,col,label,sublabel)=>{
+      // Generar SVG con la fase real pero sobreescribir el color de hull/centroide con col
+      const svg=buildBloqueSVG(shape, phase, col);
+      return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;min-width:0">
+        <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+          <div style="width:16px;height:3px;background:${col};border-radius:2px;flex-shrink:0"></div>
+          <span style="font-size:13px;font-weight:700;color:${col}">${label}</span>
+          <span style="font-size:11px;color:var(--text3);margin-left:auto">${sublabel}</span>
+        </div>
+        ${svg}
+      </div>`;
     };
-    const mkDots=(shape,col)=>shape.players.map(p=>{
-      const{sx,sy}=sv(p.x,p.y);
-      const op=p.fromLineup?'0.45':'1';
-      return `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="11" fill="#111c11" stroke="${col}" stroke-width="1.8" opacity="${op}"/>
-        <text x="${sx.toFixed(1)}" y="${(sy+4).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="700" fill="${col}" opacity="${op}">${p.position}</text>`;
-    }).join('');
-    const mkGKDots=(shape,col)=>shape.gk.map(p=>{
-      const{sx,sy}=sv(p.x,p.y);
-      const op=p.fromLineup?'0.45':'1';
-      return `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="11" fill="#111c11" stroke="${TIER_COL[0]}" stroke-width="1.8" opacity="${op}"/>
-        <text x="${sx.toFixed(1)}" y="${(sy+4).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="700" fill="${TIER_COL[0]}" opacity="${op}">GK</text>`;
-    }).join('');
-    const mkCentroid=(shape,col)=>{
-      if(shape.centroidX==null) return '';
-      const{sx:cx,sy:cy}=sv(shape.centroidX,shape.centroidY);
-      return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="8" fill="none" stroke="${col}" stroke-width="2"/>
-        <line x1="${(cx-7).toFixed(1)}" y1="${cy.toFixed(1)}" x2="${(cx+7).toFixed(1)}" y2="${cy.toFixed(1)}" stroke="${col}" stroke-width="1.5"/>
-        <line x1="${cx.toFixed(1)}" y1="${(cy-7).toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(cy+7).toFixed(1)}" stroke="${col}" stroke-width="1.5"/>`;
-    };
-    // Lines per tier for each half
-    const mkLines=(shape,col)=>{
-      const lxDef=shape.defLine,lxMid=shape.midLine,lxFwd=shape.fwdLine;
-      let out='';
-      [[lxDef,'#58a6ff'],[lxMid,'#3fb950'],[lxFwd,'#f85149']].forEach(([lx,lc])=>{
-        if(lx==null) return;
-        const{sx}=sv(lx,0);
-        out+=`<line x1="${sx.toFixed(1)}" y1="${AMY}" x2="${sx.toFixed(1)}" y2="${AH-AMY}" stroke="${col}" stroke-width="1" stroke-opacity="0.3" stroke-dasharray="4,6"/>`;
-      });
-      return out;
-    };
-
-    const svgHTML=`<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">
-      ${pitch}
-      ${mkLines(s1,col1)}${mkLines(s2,col2)}
-      ${mkHull(s1,col1)}${mkHull(s2,col2)}
-      ${mkGKDots(s1,col1)}${mkGKDots(s2,col2)}
-      ${mkDots(s1,col1)}${mkDots(s2,col2)}
-      ${mkCentroid(s1,col1)}${mkCentroid(s2,col2)}
-    </svg>`;
 
     const rows=[
-      ['Anchura total',        s1.teamWidth, s2.teamWidth,  'm'],
-      ['Profundidad del bloque',s1.teamDepth, s2.teamDepth,  'm'],
-      ['Área del bloque',      s1.area,      s2.area,       'm²'],
-      ['Centroide (x)',         s1.centroidX, s2.centroidX,  'm'],
-      ['Línea defensiva',       s1.defLine,   s2.defLine,    'm'],
-      ['Línea de mediocampo',   s1.midLine,   s2.midLine,    'm'],
-      ['Línea de presión',      s1.fwdLine,   s2.fwdLine,    'm'],
-      ['Brecha Def → Ataque',   s1.defFwdGap, s2.defFwdGap,  'm'],
-      ['Anchura defensiva',     s1.defWidth,  s2.defWidth,   'm'],
-      ['Anchura delantera',     s1.fwdWidth,  s2.fwdWidth,   'm'],
+      ['Anchura total',          s1.teamWidth,  s2.teamWidth,  'm'],
+      ['Profundidad del bloque', s1.teamDepth,  s2.teamDepth,  'm'],
+      ['Área del bloque',        s1.area,       s2.area,       'm²'],
+      ['Centroide (x)',          s1.centroidX,  s2.centroidX,  'm'],
+      ['Línea defensiva',        s1.defLine,    s2.defLine,    'm'],
+      ['Línea de mediocampo',    s1.midLine,    s2.midLine,    'm'],
+      ['Línea de presión',       s1.fwdLine,    s2.fwdLine,    'm'],
+      ['Brecha Def → Ataque',    s1.defFwdGap,  s2.defFwdGap,  'm'],
+      ['Anchura defensiva',      s1.defWidth,   s2.defWidth,   'm'],
+      ['Anchura delantera',      s1.fwdWidth,   s2.fwdWidth,   'm'],
     ];
 
     const tableHtml=`<div class="table-wrap"><table>
@@ -2635,19 +2594,9 @@
     </table></div>`;
 
     cont.innerHTML=`<div style="display:grid;gap:20px">
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-        <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:18px;align-items:center;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:7px">
-            <div style="width:20px;height:3px;background:${col1};border-radius:2px"></div>
-            <span style="font-size:13px;font-weight:700;color:${col1}">1ª Parte</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:7px">
-            <div style="width:20px;height:3px;background:${col2};border-radius:2px"></div>
-            <span style="font-size:13px;font-weight:700;color:${col2}">2ª Parte</span>
-          </div>
-          <span style="font-size:11px;color:var(--text3);margin-left:auto">Evolución del bloque — posición media de posesiones</span>
-        </div>
-        ${svgHTML}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        ${mkPitchPanel(s1,col1,'1ª Parte','once inicial')}
+        ${mkPitchPanel(s2,col2,'2ª Parte','once final')}
       </div>
       ${tableHtml}
     </div>`;
@@ -2662,7 +2611,7 @@
       if(bloqueSubTab==='comparativa'){
         const s1=computeTeamShape(matchData,bloquePhase,1,bloqueMatchId);
         const s2=computeTeamShape(matchData,bloquePhase,2,bloqueMatchId);
-        renderBloqueComp(cont,s1,s2);
+        renderBloqueComp(cont,s1,s2,bloquePhase);
       } else {
         const period=bloqueSubTab==='1parte'?1:bloqueSubTab==='2parte'?2:0;
         const shape=computeTeamShape(matchData,bloquePhase,period,bloqueMatchId);
