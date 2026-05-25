@@ -272,6 +272,41 @@
 
   // Alineaciones embebidas de Ponferradina (30 partidos, desde JSONs SkillCorner)
   // Formato: [id, name, position, start_time, end_time]
+    // Suplentes no usados por partido — fuente: SofaScore [jersey, shortName, pos]
+    const BENCH_UNUSED = {
+      2038965:[[1,'A. Prieto','G'],[25,'P. Barredo','G'],[11,'Á. Mula','M'],[18,'B. Vázquez','M'],[30,'B. Baeza','M'],[12,'Lian','F']],
+      2040148:[[25,'P. Barredo','G'],[1,'A. Prieto','G'],[15,'V. Sousa','D'],[26,'V. Kisil','D'],[11,'Á. Mula','M'],[7,'S. Benito','F']],
+      2040246:[[25,'P. Barredo','G'],[15,'V. Sousa','D'],[26,'V. Kisil','D'],[12,'Lian','F']],
+      2040391:[[25,'P. Barredo','G'],[13,'Á. Jiménez','G'],[23,'M. Jorrín','D'],[4,'B. Moltenis','D'],[3,'G. N. Enríquez','D'],[30,'B. Baeza','M']],
+      2040430:[[25,'P. Barredo','G'],[13,'Á. Jiménez','G'],[4,'B. Moltenis','D'],[23,'M. Jorrín','D'],[11,'Á. Mula','M'],[30,'B. Baeza','M'],[12,'Lian','F']],
+      2040906:[[1,'A. Prieto','G'],[25,'P. Barredo','G'],[2,'D. Andújar','D'],[15,'V. Sousa','D'],[23,'M. Jorrín','D'],[26,'V. Kisil','D'],[11,'Á. Mula','M']],
+      2040921:[[25,'P. Barredo','G'],[13,'Á. Jiménez','G'],[23,'M. Jorrín','D'],[15,'V. Sousa','D'],[26,'V. Kisil','D'],[16,'E. Frimpong','M'],[7,'S. Benito','F']],
+      2041110:[[25,'P. Barredo','G'],[23,'M. Jorrín','D'],[26,'V. Kisil','D'],[15,'V. Sousa','D'],[22,'V. Esquerdo','M'],[16,'E. Frimpong','M']],
+      2043900:[],
+      2044962:[[1,'A. Prieto','G'],[25,'P. Barredo','G'],[15,'V. Sousa','D'],[26,'V. Kisil','D'],[12,'Lian','F']],
+      2046155:[[1,'A. Prieto','G'],[25,'P. Barredo','G'],[23,'M. Jorrín','D'],[26,'V. Kisil','D'],[15,'V. Sousa','D'],[30,'B. Baeza','M'],[12,'Lian','F']],
+      2047298:[[13,'Á. Jiménez','G'],[25,'P. Barredo','G'],[26,'V. Kisil','D'],[12,'Lian','F']],
+      2047799:[[13,'Á. Jiménez','G'],[25,'P. Barredo','G'],[26,'V. Kisil','D'],[5,'E. Undabarrena','M'],[10,'B. V. Balonga','M'],[12,'Lian','F']],
+      2048312:[[13,'Á. Jiménez','G'],[15,'V. Sousa','D'],[26,'V. Kisil','D'],[5,'E. Undabarrena','M'],[10,'B. V. Balonga','M'],[12,'Lian','F']],
+      2049811:[[13,'Á. Jiménez','G'],[25,'P. Barredo','G'],[21,'D. Moreno','D'],[26,'V. Kisil','D'],[7,'S. Benito','F'],[12,'Lian','F']],
+      2050287:[[13,'Á. Jiménez','G'],[25,'P. Barredo','G'],[21,'D. Moreno','D'],[15,'V. Sousa','D'],[4,'B. Moltenis','D'],[7,'S. Benito','F'],[12,'Lian','F']],
+      2051795:[[13,'Á. Jiménez','G'],[25,'P. Barredo','G'],[15,'V. Sousa','D'],[21,'D. Moreno','D'],[8,'E. Aguilar','M'],[12,'Lian','F']],
+      2052263:[[25,'P. Barredo','G'],[13,'Á. Jiménez','G'],[15,'V. Sousa','D'],[20,'P. Ferrer','F']],
+      2053348:[[25,'P. Barredo','G'],[13,'Á. Jiménez','G'],[4,'B. Moltenis','D'],[23,'M. Jorrín','D'],[26,'V. Kisil','D'],[20,'P. Ferrer','F'],[8,'Slavy','F']],
+      2054294:[[6,'F. S. E. Diaz','M'],[13,'Á. Jiménez','G'],[23,'M. Jorrín','D'],[4,'B. Moltenis','D'],[15,'V. Sousa','D'],[20,'P. Ferrer','F'],[11,'S. Petkov','F']],
+      2054952:[[25,'P. Barredo','G'],[13,'Á. Jiménez','G'],[4,'B. Moltenis','D'],[15,'V. Sousa','D'],[6,'F. S. E. Diaz','M'],[11,'S. Petkov','F'],[20,'P. Ferrer','F']],
+      2056593:[[13,'Á. Jiménez','G'],[25,'P. Barredo','G'],[4,'B. Moltenis','D'],[15,'V. Sousa','D'],[11,'S. Petkov','F']],
+      2057466:[[13,'Á. Jiménez','G'],[25,'P. Barredo','G'],[4,'B. Moltenis','D'],[15,'V. Sousa','D'],[26,'V. Kisil','D']],
+      2058792:[[25,'P. Barredo','G'],[13,'Á. Jiménez','G'],[4,'B. Moltenis','D'],[12,'Koke','D'],[11,'S. Petkov','F'],[20,'P. Ferrer','F']],
+      2061313:[[25,'P. Barredo','G'],[2,'D. Andújar','D'],[4,'B. Moltenis','D'],[15,'V. Sousa','D'],[26,'V. Kisil','D'],[14,'X. Fernández','M'],[11,'S. Petkov','F']],
+      2062716:[[25,'P. Barredo','G'],[4,'B. Moltenis','D'],[26,'V. Kisil','D'],[15,'V. Sousa','D'],[24,'E. Morán','M'],[11,'S. Petkov','F']],
+      2063736:[[25,'P. Barredo','G'],[15,'V. Sousa','D'],[26,'V. Kisil','D'],[27,'X. R. I. Alvarez','M'],[11,'S. Petkov','F']],
+      2064907:[[13,'Á. Jiménez','G'],[25,'P. Barredo','G'],[2,'D. Andújar','D'],[15,'V. Sousa','D'],[26,'V. Kisil','D'],[14,'X. Fernández','M'],[20,'P. Ferrer','F']],
+      2066099:[[13,'Á. Jiménez','G'],[25,'P. Barredo','G'],[2,'D. Andújar','D'],[4,'B. Moltenis','D'],[26,'V. Kisil','D'],[6,'F. S. E. Diaz','M'],[21,'O. Mfulu','M']],
+      2067181:[[13,'Á. Jiménez','G'],[25,'P. Barredo','G'],[4,'B. Moltenis','D'],[23,'M. Jorrín','D'],[26,'V. Kisil','D'],[10,'B. V. Balonga','M'],[21,'O. Mfulu','M']],
+      2069357:[[13,'Á. Jiménez','G'],[2,'D. Andújar','D'],[4,'B. Moltenis','D'],[26,'V. Kisil','D'],[21,'O. Mfulu','M'],[24,'E. Morán','M'],[9,'J. L. Cortés','F']],
+    };
+
     const PONF_LINEUPS = {
     2038965:[[826951,'Borja Vázquez','RB','01:18:17',null,9.2,-6.8],[180393,'Vasco Sousa','CF','01:18:17',null,-5.1,26.2],[70531,'P. Ferrer','RW','01:13:20',null,14.8,-6.2],[25796,'Borja Valle','RDM','01:01:05',null,-0.8,2.1],[745374,'José Luis Cortés','CF','00:00:00','01:18:17',20.1,9.4],[928181,'A. Keita','RW','00:00:00','01:13:20',18.5,0.1],[69380,'Xemi Fernández','AM','00:00:00',null,9.9,15.2],[505184,'Diego Moreno','LW','00:00:00',null,-0.5,-22.9],[23777,'Fede San Emeterio','RDM','00:00:00','01:01:05',-1.1,6.5],[62134,'Eneko Undabarrena','DM','00:00:00',null,0.3,1.7],[25640,'Andoni López','RB','00:00:00','01:18:17',8.5,27.9],[746539,'Germán Novoa','RCB','00:00:00',null,-11.0,-15.5],[31972,'David Andújar','LCB','00:00:00',null,-19.3,-1.1],[13149,'B. Moltenis','LB','00:00:00',null,-14.7,19.1],[34150,'Ángel Jiménez','GK','00:00:00',null,-42.2,3.7]],
     2040148:[[258595,'Mario Jorrín','RF','01:24:16',null,1.3,-8.6],[736606,'E. Frimpong','LM','01:21:53',null,-2.1,7.5],[745374,'José Luis Cortés','CF','01:03:48',null,24.5,15.7],[25796,'Borja Valle','RM','01:03:48',null,12.0,0.4],[826951,'Borja Vázquez','CF','00:45:00',null,12.6,18.9],[746539,'Germán Novoa','RCB','00:00:00',null,-3.8,-16.8],[62134,'Eneko Undabarrena','CM','00:00:00',null,2.3,-3.7],[31972,'David Andújar','CB','00:00:00',null,-16.2,-2.8],[13149,'B. Moltenis','LCB','00:00:00',null,-17.3,13.7],[34150,'Ángel Jiménez','GK','00:00:00',null,-40.2,3.4],[25640,'Andoni López','LWB','00:00:00',null,-7.7,27.5],[505184,'Diego Moreno','RWB','00:00:00','01:24:16',1.6,-23.8],[69380,'Xemi Fernández','LM','00:00:00','01:21:53',4.3,11.5],[70531,'P. Ferrer','CF','00:00:00','01:03:48',18.9,1.5],[23777,'Fede San Emeterio','DM','00:00:00','01:03:48',-3.9,-4.1],[928181,'A. Keita','CF','00:00:00','00:45:00',9.4,-5.0]],
@@ -2175,20 +2210,21 @@
 
       benchPlayers.forEach((p, i) => {
         const bX     = AMX + step * i + step / 2;
-        const {tier} = getPosTier(p.position);
-        const tc     = TIER_COL[tier] || '#c8a96e';
-        const dorsal = PLAYER_DORSALES[p.id];
-        const minIn  = p.start_time && p.start_time !== '00:00:00' ? Math.floor(timeToMin(p.start_time)) : null;
+        // pos puede ser string ('G','D','M','F') o código SkillCorner ('GK','CB',etc)
+        const posNorm = {G:'GK',D:'CB',M:'CM',F:'CF'}[p.pos] || p.pos || 'CM';
+        const {tier} = getPosTier(posNorm);
+        const tc     = p.used ? (TIER_COL[tier]||'#c8a96e') : '#484f58'; // gris si no jugó
+        const dorsal = p.jersey;
+        const minIn  = p.minIn;
 
         benchSVG += `<circle cx="${bX.toFixed(0)}" cy="${bCircY}" r="${bR+6}" fill="${tc}" fill-opacity="0.05"/>`;
         benchSVG += `<circle cx="${bX.toFixed(0)}" cy="${bCircY}" r="${bR}" fill="#0d1f0d" stroke="${tc}" stroke-width="2" stroke-dasharray="4 2"/>`;
         if (dorsal != null) {
           benchSVG += `<text x="${bX.toFixed(0)}" y="${(bCircY+7).toFixed(0)}" fill="${tc}" font-size="15" font-family="'Bebas Neue',sans-serif" text-anchor="middle" font-weight="bold">${dorsal}</text>`;
         } else {
-          benchSVG += `<text x="${bX.toFixed(0)}" y="${(bCircY+4).toFixed(0)}" fill="${tc}" font-size="11" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="600">${p.position}</text>`;
+          benchSVG += `<text x="${bX.toFixed(0)}" y="${(bCircY+4).toFixed(0)}" fill="${tc}" font-size="11" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="600">${posNorm}</text>`;
         }
-        const shortName = dispN(p.name);
-        benchSVG += `<text x="${bX.toFixed(0)}" y="${(bCircY+bR+14).toFixed(0)}" fill="#8b949e" font-size="10" font-family="'DM Sans',sans-serif" text-anchor="middle">${shortName}</text>`;
+        benchSVG += `<text x="${bX.toFixed(0)}" y="${(bCircY+bR+14).toFixed(0)}" fill="${p.used?'#8b949e':'#484f58'}" font-size="10" font-family="'DM Sans',sans-serif" text-anchor="middle">${p.name}</text>`;
         if (minIn != null) {
           benchSVG += `<text x="${bX.toFixed(0)}" y="${(bCircY+bR+26).toFixed(0)}" fill="#3fb950" font-size="10" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="700">▲ ${minIn}'</text>`;
         }
@@ -2286,9 +2322,17 @@
         : lineup.filter(pl => pl.end_time === null);
       const resolved  = activePlayers.map(pl => ({...pl, position: resolvePlayerPosition(pl)}));
       const formacion = detectFormacion(resolved.filter(pl => pl.position !== 'GK'));
-      const bench = aliParte === '1'
-        ? lineup.filter(pl => pl.start_time !== '00:00:00').map(pl => ({...pl, position: resolvePlayerPosition(pl)}))
-        : [];
+      const bench = aliParte === '1' ? (() => {
+        const used = lineup
+          .filter(pl => pl.start_time !== '00:00:00')
+          .map(pl => ({name:pl.name, jersey:null, pos:resolvePlayerPosition(pl), minIn:Math.floor(timeToMin(pl.start_time)), used:true}));
+        const unusedRaw = BENCH_UNUSED[p.id] || [];
+        const usedNames = new Set(used.map(pl => pl.name.toLowerCase().slice(0,6)));
+        const unused = unusedRaw
+          .filter(u => !usedNames.has(u[1].toLowerCase().slice(0,6)))
+          .map(u => ({name:u[1], jersey:u[0], pos:u[2], minIn:null, used:false}));
+        return [...used, ...unused];
+      })() : [];
 
       const rival  = p.local === currentTeam.name ? p.vis : p.local;
       const isHome = p.local === currentTeam.name;
@@ -2373,10 +2417,20 @@
 
     // Jugadores que salieron si es 2ª parte (para mostrar cambios)
     const outPlayers = aliParte==='2' ? lineup.filter(p=>p.start_time==='00:00:00'&&p.end_time!==null) : [];
-    // Banquillo: suplentes que entraron (solo para 1ª parte — los de 2ª ya están en el campo)
-    const benchPlayers = aliParte==='1'
-      ? lineup.filter(p=>p.start_time!=='00:00:00').map(p=>({...p, position:resolvePlayerPosition(p)}))
-      : [];
+    // Banquillo completo (solo para 1ª parte):
+    // - Suplentes que entraron (de PONF_LINEUPS, con minuto de entrada)
+    // - Suplentes no usados (de BENCH_UNUSED, fuente SofaScore)
+    const benchPlayers = aliParte === '1' ? (() => {
+      const used = lineup
+        .filter(p => p.start_time !== '00:00:00')
+        .map(p => ({name:p.name, jersey:null, pos:resolvePlayerPosition(p), minIn:Math.floor(timeToMin(p.start_time)), used:true}));
+      const unusedRaw = BENCH_UNUSED[aliMatchId] || [];
+      const usedNames = new Set(used.map(p => p.name.toLowerCase().slice(0,6)));
+      const unused = unusedRaw
+        .filter(u => !usedNames.has(u[1].toLowerCase().slice(0,6)))
+        .map(u => ({name:u[1], jersey:u[0], pos:u[2], minIn:null, used:false}));
+      return [...used, ...unused];
+    })() : [];
 
     // Subtabs parte
     const parteBtn=(id,lbl)=>{
