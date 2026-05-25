@@ -312,9 +312,19 @@
     const url = `data/${mid}.json`;
     const r = await fetch(url);
     if (!r.ok) throw new Error(`No se pudo cargar el partido ${mid} (HTTP ${r.status})`);
-    const data = await r.json();
-    _matchDataCache.set(mid, data);
-    return data;
+    const raw = await r.json();
+    // Soporte formato nuevo {e:[...], b:{...}} y legacy (array puro)
+    let events;
+    if (Array.isArray(raw)) {
+      events = raw;
+      events.blockPhases = null;
+    } else {
+      events = raw.e || raw.events || [];
+      // blockPhases: {1:{high_block:N,medium_block:N,low_block:N}, 2:{...}}
+      events.blockPhases = raw.b || raw.blockPhases || null;
+    }
+    _matchDataCache.set(mid, events);
+    return events;
   }
 
   function loading() {
@@ -2373,13 +2383,34 @@
     const centroidX  = n ? outfield.reduce((s,p)=>s+p.x,0)/n : null;
     const centroidY  = n ? outfield.reduce((s,p)=>s+p.y,0)/n : null;
 
-    // ── Clasificación del bloque (metodología SkillCorner) ──
-    // Basada en la posición media de los 4 más profundos
+    // ── Clasificación del bloque (SkillCorner: team_out_of_possession_phase_type) ──
+    // Usa los eventos del RIVAL: cuando ellos tienen el balón, SkillCorner clasifica
+    // el bloque defensivo de Ponferradina como high_block / medium_block / low_block.
+    // Si no hay datos (JSONs aún sin regenerar), cae al cálculo por posición.
     let blockType = null;
-    if (defLine != null) {
-      if (defLine >  0)     blockType = 'high';  // línea defensiva en campo rival
-      else if (defLine > -17.5) blockType = 'mid';   // en zona central
-      else                  blockType = 'low';   // en tercio propio
+    const bp = matchData.blockPhases; // {1:{high_block:N,...}, 2:{...}} o null
+    if (bp) {
+      let counts = {};
+      if (period === 0 || period == null) {
+        // General: sumar ambas partes
+        for (const p of ['1','2']) {
+          if (bp[p]) for (const [k,v] of Object.entries(bp[p])) counts[k] = (counts[k]||0)+v;
+        }
+      } else {
+        counts = bp[String(period)] || {};
+      }
+      const dominant = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+      if (dominant && dominant[1] > 0) {
+        if      (dominant[0]==='high_block')   blockType = 'high';
+        else if (dominant[0]==='medium_block') blockType = 'mid';
+        else if (dominant[0]==='low_block')    blockType = 'low';
+      }
+    }
+    // Fallback por posición si no hay datos SkillCorner de bloque
+    if (!blockType && defLine != null) {
+      if (defLine >  0)         blockType = 'high';
+      else if (defLine > -17.5) blockType = 'mid';
+      else                      blockType = 'low';
     }
 
     return {
