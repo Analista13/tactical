@@ -99,6 +99,7 @@
   </style>
 </head>
 <body>
+<div id="pos-tip" style="display:none;position:fixed;background:#1c2128;border:1px solid rgba(255,255,255,0.13);border-radius:8px;padding:9px 13px;font-family:'DM Sans',sans-serif;pointer-events:none;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.55);min-width:130px"></div>
 
 <header>
   <img class="header-logo" id="headerLogo" src="https://tmssl.akamaized.net/images/wappen/head/4032.png" alt="">
@@ -3493,6 +3494,19 @@
 
   let posesionTipo = 'completa'; // 'completa' | 'activa'
 
+  function posShowTip(el, show, evt) {
+    const tip = document.getElementById('pos-tip');
+    if (!tip) return;
+    if (!show) { tip.style.display='none'; return; }
+    tip.innerHTML = el.dataset.tip;
+    tip.style.display = 'block';
+    const x = evt ? evt.clientX : 0;
+    const y = evt ? evt.clientY : 0;
+    // position above cursor, centered
+    tip.style.left = (x - tip.offsetWidth/2) + 'px';
+    tip.style.top  = (y - tip.offsetHeight - 14) + 'px';
+  }
+
   function loadPosesion() {
     document.getElementById('content').innerHTML = `<div class="anim">${head()}
       <div id="posesionCont"></div>
@@ -3557,21 +3571,27 @@
     const worst = [...matches].sort((a,b) => a.pct - b.pct)[0];
 
     // ── Line + area chart (Athletic style) ──
-    const W=920, H=300, ML=44, MR=20, MT=28, MB=52;
+    const W=920, H=310, ML=44, MR=38, MT=28, MB=58;
     const cW=W-ML-MR, cH=H-MT-MB;
     const n=matches.length;
-    const xS = i  => ML + (i/(n-1))*cW;
+    const xS = i   => ML + (i/(n-1))*cW;
     const yS = pct => MT + cH - (pct/100)*cH;
     const y50 = yS(50);
 
-    // Closed area path (along Ponf line, then back along 50% baseline)
-    const linePts = matches.map((m,i) => `${xS(i).toFixed(1)},${yS(m.pct).toFixed(1)}`);
-    const areaPth = `M${xS(0).toFixed(1)},${y50.toFixed(1)} ` +
+    // Ponferradina line path
+    const linePts  = matches.map((m,i) => `${xS(i).toFixed(1)},${yS(m.pct).toFixed(1)}`);
+    const linePth  = 'M' + linePts.join('L');
+
+    // Rival line path (mirror: 100 - ponf%)
+    const rivalPts = matches.map((m,i) => `${xS(i).toFixed(1)},${yS(100-m.pct).toFixed(1)}`);
+    const rivalPth = 'M' + rivalPts.join('L');
+
+    // Area closed polygon (Ponf vs 50% baseline)
+    const areaPth  = `M${xS(0).toFixed(1)},${y50.toFixed(1)} ` +
       linePts.map(p=>'L'+p).join(' ') +
       ` L${xS(n-1).toFixed(1)},${y50.toFixed(1)} Z`;
-    const linePth = 'M' + linePts.join('L');
 
-    // Rolling avg (3-match)
+    // Rolling avg 3-match (Ponf only)
     const rollPts = matches.map((m,i) => {
       const slice = matches.slice(Math.max(0,i-2), i+1);
       const avg3  = slice.reduce((s,x)=>s+x.pct,0)/slice.length;
@@ -3593,40 +3613,64 @@
         font-family="'DM Sans',sans-serif">${v}%</text>`;
     }).join('');
 
-    // X labels (jornada)
-    const xLbls = matches.map((m,i) => {
-      if(n<=15 || i%2===0 || i===n-1)
-        return `<text x="${xS(i).toFixed(1)}" y="${H-MB+18}" text-anchor="middle"
-          fill="rgba(255,255,255,0.28)" font-size="9" font-family="'DM Sans',sans-serif">${m.partido.j.replace('J','')}</text>`;
-      return '';
-    }).join('');
+    // X labels — todas las jornadas
+    const xLbls = matches.map((m,i) =>
+      `<text x="${xS(i).toFixed(1)}" y="${H-MB+18}" text-anchor="middle"
+        fill="rgba(255,255,255,0.25)" font-size="8.5"
+        font-family="'DM Sans',sans-serif">${m.partido.j.replace('J','')}</text>`
+    ).join('');
 
-    // Dots with rival name tooltip approach (title tag)
-    const dots = matches.map((m,i) => {
-      const cx = xS(i).toFixed(1), cy = yS(m.pct).toFixed(1);
-      const col = posColor(m.pct);
-      const rv  = m.rival.length>18 ? m.rival.slice(0,17)+'…' : m.rival;
+    // Helper: build tooltip HTML (single-quote style attrs, safe in data-attr)
+    const mkTip = (name, col, pct, jornada, rival, rc, disp) =>
+      `<div style='font-size:11px;font-weight:700;color:${col};margin-bottom:3px'>${name} · ${pct}%</div>` +
+      `<div style='font-size:10px;color:rgba(230,237,243,0.65);margin-bottom:2px'>${jornada} · ${rival}</div>` +
+      `<div style='font-size:11px;color:${rc};font-weight:600'>${disp}</div>`;
+
+    // Dots — Ponferradina (blue, on top)
+    const dotsPonf = matches.map((m,i) => {
+      const cx  = xS(i).toFixed(1), cy = yS(m.pct).toFixed(1);
       const won  = m.esLocal ? m.mg>m.mv : m.mv>m.mg;
       const draw = m.mg===m.mv;
       const rc   = won?'#3fb950':draw?'#c8a96e':'#f85149';
       const disp = m.esLocal?`${m.mg}-${m.mv}`:`${m.mv}-${m.mg}`;
-      return `<circle cx="${cx}" cy="${cy}" r="4" fill="${col}" stroke="#0d1117" stroke-width="1.5">
-        <title>${m.partido.j} · ${rv} ${disp} · ${m.pct}%</title>
-      </circle>`;
+      const rv   = m.rival.length>22 ? m.rival.slice(0,21)+'…' : m.rival;
+      const tip  = mkTip('SD Ponferradina','#58a6ff',m.pct,m.partido.j,rv,rc,disp);
+      return `<circle cx="${cx}" cy="${cy}" r="4.5" fill="#58a6ff" stroke="#0d1117" stroke-width="1.5"
+        style="cursor:pointer" data-tip="${tip}"
+        onmouseenter="posShowTip(this,true,event)" onmouseleave="posShowTip(this,false)"/>`;
     }).join('');
 
-    // Team labels on Y axis right
-    const lbPonf = `<text x="${W-MR+4}" y="${yS(matches[n-1].pct).toFixed(0)}" fill="#58a6ff" font-size="9.5" font-family="'DM Sans',sans-serif" font-weight="700" dominant-baseline="middle">Ponf</text>`;
-    const lbRival= `<text x="${W-MR+4}" y="${yS(100-matches[n-1].pct).toFixed(0)}" fill="rgba(248,81,73,0.7)" font-size="9.5" font-family="'DM Sans',sans-serif" font-weight="700" dominant-baseline="middle">Rival</text>`;
+    // Dots — Rival (orange)
+    const dotsRival = matches.map((m,i) => {
+      const cx  = xS(i).toFixed(1), cy = yS(100-m.pct).toFixed(1);
+      const won  = m.esLocal ? m.mg>m.mv : m.mv>m.mg;
+      const draw = m.mg===m.mv;
+      const rc   = won?'#3fb950':draw?'#c8a96e':'#f85149';
+      const disp = m.esLocal?`${m.mg}-${m.mv}`:`${m.mv}-${m.mg}`;
+      const rv   = m.rival.length>22 ? m.rival.slice(0,21)+'…' : m.rival;
+      const rivalPct = 100-m.pct;
+      const tip  = mkTip(rv,'#f0883e',rivalPct,m.partido.j,'',rc,disp);
+      return `<circle cx="${cx}" cy="${cy}" r="4.5" fill="#f0883e" stroke="#0d1117" stroke-width="1.5"
+        style="cursor:pointer" data-tip="${tip}"
+        onmouseenter="posShowTip(this,true,event)" onmouseleave="posShowTip(this,false)"/>`;
+    }).join('');
+
+    // Team labels right axis
+    const lbPonf  = `<text x="${W-MR+5}" y="${yS(matches[n-1].pct).toFixed(0)}" fill="#58a6ff" font-size="9" font-family="'DM Sans',sans-serif" font-weight="700" dominant-baseline="middle">Ponf</text>`;
+    const lbRival = `<text x="${W-MR+5}" y="${yS(100-matches[n-1].pct).toFixed(0)}" fill="#f0883e" font-size="9" font-family="'DM Sans',sans-serif" font-weight="700" dominant-baseline="middle">Rival</text>`;
 
     // Legend
     const legend = `
-      <rect x="${ML}" y="${H-MB+28}" width="10" height="3" fill="#3fb950" fill-opacity="0.6" rx="1"/>
-      <text x="${ML+14}" y="${H-MB+32}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Ponferradina &gt; 50%</text>
-      <rect x="${ML+130}" y="${H-MB+28}" width="10" height="3" fill="#f85149" fill-opacity="0.6" rx="1"/>
-      <text x="${ML+144}" y="${H-MB+32}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Rival &gt; 50%</text>
-      <line x1="${ML+260}" y1="${H-MB+30}" x2="${ML+276}" y2="${H-MB+30}" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-dasharray="3 2"/>
-      <text x="${ML+280}" y="${H-MB+33}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Media 3J</text>`;
+      <circle cx="${ML+5}"   cy="${H-MB+30}" r="3.5" fill="#58a6ff"/>
+      <text x="${ML+14}"  y="${H-MB+34}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Ponferradina</text>
+      <circle cx="${ML+112}" cy="${H-MB+30}" r="3.5" fill="#f0883e"/>
+      <text x="${ML+121}" y="${H-MB+34}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Rival</text>
+      <rect x="${ML+172}" y="${H-MB+27}" width="9" height="3" fill="#3fb950" fill-opacity="0.6" rx="1"/>
+      <text x="${ML+185}" y="${H-MB+31}" fill="rgba(255,255,255,0.32)" font-size="8.5" font-family="'DM Sans',sans-serif">Ponf &gt;50%</text>
+      <rect x="${ML+262}" y="${H-MB+27}" width="9" height="3" fill="#f85149" fill-opacity="0.6" rx="1"/>
+      <text x="${ML+275}" y="${H-MB+31}" fill="rgba(255,255,255,0.32)" font-size="8.5" font-family="'DM Sans',sans-serif">Rival &gt;50%</text>
+      <line x1="${ML+352}" y1="${H-MB+30}" x2="${ML+366}" y2="${H-MB+30}" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-dasharray="3 2"/>
+      <text x="${ML+370}" y="${H-MB+33}" fill="rgba(255,255,255,0.32)" font-size="8.5" font-family="'DM Sans',sans-serif">Media 3J</text>`;
 
     const chartTitle = isCompleta
       ? 'Posesión completa por jornada'
@@ -3642,15 +3686,21 @@
         </defs>
         ${gridLines}
         <!-- Area fill: green above 50%, red below -->
-        <path d="${areaPth}" fill="#3fb950" fill-opacity="0.18" clip-path="url(#cp-up-${uid})"/>
-        <path d="${areaPth}" fill="#f85149" fill-opacity="0.18" clip-path="url(#cp-dn-${uid})"/>
-        <!-- Ponferradina line -->
+        <path d="${areaPth}" fill="#3fb950" fill-opacity="0.15" clip-path="url(#cp-up-${uid})"/>
+        <path d="${areaPth}" fill="#f85149" fill-opacity="0.15" clip-path="url(#cp-dn-${uid})"/>
+        <!-- Rival line (behind) -->
+        <path d="${rivalPth}" fill="none" stroke="#f0883e" stroke-width="1.5" stroke-linejoin="round" stroke-opacity="0.55"/>
+        <!-- Ponferradina line (front) -->
         <path d="${linePth}" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linejoin="round"/>
-        <!-- Rolling avg line -->
-        <path d="${rollPth}" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-dasharray="4 3" stroke-linejoin="round"/>
-        <!-- Dots -->
-        ${dots}
+        <!-- Rolling avg (Ponf, dashed white) -->
+        <path d="${rollPth}" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-dasharray="4 3" stroke-linejoin="round"/>
+        <!-- Rival dots (z-below Ponf dots) -->
+        ${dotsRival}
+        <!-- Ponf dots -->
+        ${dotsPonf}
         ${xLbls}
+        ${lbPonf}
+        ${lbRival}
         ${legend}
       </svg>
     </div>`;
