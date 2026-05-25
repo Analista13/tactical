@@ -3495,7 +3495,8 @@
   let posesionTipo   = 'completa'; // 'completa' | 'activa' | 'zonas'
   let _zonaCache     = null;
   let zonasPeriodo   = 't';        // 't' | '1' | '2'
-  let zonasMatchN    = 0;          // 0=todos | 1 | 3 | 6
+  let zonasMatchN    = 3;          // 1 | 3 | 6
+  let zonasMatchId   = null;       // partido seleccionado (modo 1J)
 
   // ─── ZONAS ─────────────────────────────────────────────────────────────────
   async function loadZonaData() {
@@ -3536,223 +3537,199 @@
   }
 
   async function renderPosesionZonas(cont, controls) {
-    cont.innerHTML = controls +
-      `<div style="text-align:center;padding:60px 0;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:13px">
-        Cargando datos de zonas…</div>`;
-
-    const zd = await loadZonaData();
     const CZ1='#388bfd', CZ2='#c8a96e', CZ3='#3fb950';
 
-    // All matches with zone data
-    const allMatches = PARTIDOS.map(p => {
-      const entry = zd[p.id]; if (!entry) return null;
-      const z = entry[zonasPeriodo]; if (!z) return null;
-      const rival   = p.local === currentTeam.name ? p.vis : p.local;
-      const esLocal = p.local === currentTeam.name;
-      const [mg, mv] = (p.s||'0-0').split('-').map(Number);
-      return { partido:p, z, rival, esLocal, mg, mv };
-    }).filter(Boolean);
-
-    if (!allMatches.length) {
-      cont.innerHTML = controls + `<div style="padding:40px;text-align:center;color:var(--text3)">Sin datos disponibles.</div>`;
-      return;
-    }
-
-    // Apply N-match filter (last N)
-    const matches = zonasMatchN > 0 ? allMatches.slice(-zonasMatchN) : allMatches;
-    const n = matches.length;
-
-    // ── Zonas-specific controls (period + N filter) ──────────────────────
-    const perBtn2 = (id, lbl) => {
+    // ── Filter bar ───────────────────────────────────────────────────────────
+    const perBtn = (id, lbl) => {
       const act = zonasPeriodo === id;
-      return `<button onclick="zonasPeriodo='${id}';renderPosesion()" style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:6px 16px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s">${lbl}</button>`;
+      return `<button onclick="zonasPeriodo='${id}';renderPosesion()" style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:5px 15px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s">${lbl}</button>`;
     };
     const nBtn = (val, lbl) => {
       const act = zonasMatchN === val;
       return `<button onclick="zonasMatchN=${val};renderPosesion()" style="background:${act?'rgba(200,169,110,0.18)':'transparent'};color:${act?'var(--accent)':'var(--text2)'};border:${act?'1px solid rgba(200,169,110,0.35)':'1px solid transparent'};border-radius:16px;padding:5px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:${act?'700':'500'};cursor:pointer;transition:all 0.15s">${lbl}</button>`;
     };
 
-    const zonaControls = `<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:20px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px">
+    const filterBar = `<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:20px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px">
       <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Periodo</span>
+        <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;white-space:nowrap">Periodo</span>
         <div style="display:flex;gap:2px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px">
-          ${perBtn2('t','Total')}${perBtn2('1','1ª Parte')}${perBtn2('2','2ª Parte')}
+          ${perBtn('t','Total')}${perBtn('1','1ª Parte')}${perBtn('2','2ª Parte')}
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Partidos</span>
+        <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;white-space:nowrap">Partidos</span>
         <div style="display:flex;gap:4px">
-          ${nBtn(0,'Todos')}${nBtn(6,'Últ. 6J')}${nBtn(3,'Últ. 3J')}${nBtn(1,'Últ. 1J')}
+          ${nBtn(1,'1J')}${nBtn(3,'3J')}${nBtn(6,'6J')}
         </div>
       </div>
     </div>`;
 
-    // ── Stats ────────────────────────────────────────────────────────────────
-    const avgD = (matches.reduce((s,m)=>s+m.z.d,0)/n).toFixed(1);
-    const avgM = (matches.reduce((s,m)=>s+m.z.m,0)/n).toFixed(1);
-    const avgA = (matches.reduce((s,m)=>s+m.z.a,0)/n).toFixed(1);
-    const minD = Math.min(...matches.map(m=>m.z.d)).toFixed(1);
-    const maxD = Math.max(...matches.map(m=>m.z.d)).toFixed(1);
-    const minM = Math.min(...matches.map(m=>m.z.m)).toFixed(1);
-    const maxM = Math.max(...matches.map(m=>m.z.m)).toFixed(1);
-    const minA = Math.min(...matches.map(m=>m.z.a)).toFixed(1);
-    const maxA = Math.max(...matches.map(m=>m.z.a)).toFixed(1);
+    // Show loading while data fetches
+    cont.innerHTML = controls + filterBar +
+      `<div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Cargando datos…</div>`;
 
-    // ── KPI cards ─────────────────────────────────────────────────────────────
-    const mkKpi = (label, avg, min, max, col) => `
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px">
-        <div style="display:flex;align-items:center;gap:7px;margin-bottom:12px">
-          <div style="width:9px;height:9px;border-radius:50%;background:${col}"></div>
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;font-weight:600">${label}</div>
-        </div>
-        <div style="font-size:44px;font-family:'Bebas Neue',sans-serif;color:${col};letter-spacing:1px;line-height:1">${avg}%</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:4px">Media · ${n} partido${n!==1?'s':''}</div>
-        <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
-          <div style="font-size:11px;color:var(--text2)">Mín <span style="color:${col};font-weight:700">${min}%</span></div>
-          <div style="font-size:11px;color:var(--text2)">Máx <span style="color:${col};font-weight:700">${max}%</span></div>
-        </div>
-      </div>`;
-
-    const kpiRow = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
-      ${mkKpi('Zona 1', avgD, minD, maxD, CZ1)}
-      ${mkKpi('Zona 2', avgM, minM, maxM, CZ2)}
-      ${mkKpi('Zona 3', avgA, minA, maxA, CZ3)}
-    </div>`;
-
-    // ── Pitch (ratio real 105:68) ─────────────────────────────────────────────
-    const PVW=1050, PVH=680, PP=22;
-    const PZW=(PVW-2*PP)/3;
-    const opD = Math.min(0.55, parseFloat(avgD)/100*0.7+0.06).toFixed(2);
-    const opM = Math.min(0.55, parseFloat(avgM)/100*0.7+0.06).toFixed(2);
-    const opA = Math.min(0.55, parseFloat(avgA)/100*0.7+0.06).toFixed(2);
+    const zd = await loadZonaData();
     const perLabel = zonasPeriodo==='t'?'90 min':zonasPeriodo==='1'?'1ª parte':'2ª parte';
 
-    const pitchSvg = `<svg viewBox="0 0 ${PVW} ${PVH}" style="width:60%;max-width:480px;display:block;margin:0 auto;border-radius:6px;overflow:visible">
-      <rect width="${PVW}" height="${PVH}" fill="#0f2218" rx="6"/>
-      <rect x="${PP}" y="${PP}" width="${PZW.toFixed(0)}" height="${PVH-2*PP}" fill="${CZ1}" fill-opacity="${opD}" rx="3"/>
-      <rect x="${(PP+PZW).toFixed(0)}" y="${PP}" width="${PZW.toFixed(0)}" height="${PVH-2*PP}" fill="${CZ2}" fill-opacity="${opM}"/>
-      <rect x="${(PP+2*PZW).toFixed(0)}" y="${PP}" width="${PZW.toFixed(0)}" height="${PVH-2*PP}" fill="${CZ3}" fill-opacity="${opA}" rx="3"/>
-      <rect x="${PP}" y="${PP}" width="${PVW-2*PP}" height="${PVH-2*PP}" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="4" rx="3"/>
-      <line x1="${PVW/2}" y1="${PP}" x2="${PVW/2}" y2="${PVH-PP}" stroke="rgba(255,255,255,0.22)" stroke-width="3"/>
-      <line x1="${(PP+PZW).toFixed(0)}" y1="${PP}" x2="${(PP+PZW).toFixed(0)}" y2="${PVH-PP}" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="16 10"/>
-      <line x1="${(PP+2*PZW).toFixed(0)}" y1="${PP}" x2="${(PP+2*PZW).toFixed(0)}" y2="${PVH-PP}" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="16 10"/>
-      <circle cx="${PVW/2}" cy="${PVH/2}" r="91.5" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
-      <circle cx="${PVW/2}" cy="${PVH/2}" r="5" fill="rgba(255,255,255,0.25)"/>
-      <rect x="${PP}"         y="${((PVH-403)/2).toFixed(0)}" width="165" height="403" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
-      <rect x="${PP}"         y="${((PVH-183)/2).toFixed(0)}" width="55"  height="183" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
-      <rect x="${PP-22}"      y="${((PVH-73 )/2).toFixed(0)}" width="22"  height="73"  fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
-      <rect x="${PVW-PP-165}" y="${((PVH-403)/2).toFixed(0)}" width="165" height="403" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
-      <rect x="${PVW-PP-55}"  y="${((PVH-183)/2).toFixed(0)}" width="55"  height="183" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
-      <rect x="${PVW-PP}"     y="${((PVH-73 )/2).toFixed(0)}" width="22"  height="73"  fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
-      <text x="${(PP+PZW/2).toFixed(0)}"   y="${(PVH/2-28).toFixed(0)}" text-anchor="middle" fill="${CZ1}" font-size="90" font-weight="700" font-family="'Bebas Neue',sans-serif" opacity="0.9">${avgD}%</text>
-      <text x="${(PP+PZW*1.5).toFixed(0)}" y="${(PVH/2-28).toFixed(0)}" text-anchor="middle" fill="${CZ2}" font-size="90" font-weight="700" font-family="'Bebas Neue',sans-serif" opacity="0.9">${avgM}%</text>
-      <text x="${(PP+PZW*2.5).toFixed(0)}" y="${(PVH/2-28).toFixed(0)}" text-anchor="middle" fill="${CZ3}" font-size="90" font-weight="700" font-family="'Bebas Neue',sans-serif" opacity="0.9">${avgA}%</text>
-      <text x="${(PP+PZW/2).toFixed(0)}"   y="${(PVH/2+48).toFixed(0)}" text-anchor="middle" fill="rgba(255,255,255,0.42)" font-size="34" font-family="'DM Sans',sans-serif" font-weight="700">ZONA 1</text>
-      <text x="${(PP+PZW*1.5).toFixed(0)}" y="${(PVH/2+48).toFixed(0)}" text-anchor="middle" fill="rgba(255,255,255,0.42)" font-size="34" font-family="'DM Sans',sans-serif" font-weight="700">ZONA 2</text>
-      <text x="${(PP+PZW*2.5).toFixed(0)}" y="${(PVH/2+48).toFixed(0)}" text-anchor="middle" fill="rgba(255,255,255,0.42)" font-size="34" font-family="'DM Sans',sans-serif" font-weight="700">ZONA 3</text>
-      <text x="${PVW-PP-10}" y="${PVH-10}" text-anchor="end" fill="rgba(255,255,255,0.15)" font-size="24" font-family="'DM Sans',sans-serif">→ ataque</text>
-    </svg>`;
+    // ── Pitch builder (reusable, scaled) ─────────────────────────────────────
+    // size: 'large' | 'small'
+    function buildZonaPitch(zData, size='large') {
+      const PVW=1050, PVH=680, PP=22;
+      const PZW=(PVW-2*PP)/3;
+      const opD = Math.min(0.55, zData.d/100*0.7+0.06).toFixed(2);
+      const opM = Math.min(0.55, zData.m/100*0.7+0.06).toFixed(2);
+      const opA = Math.min(0.55, zData.a/100*0.7+0.06).toFixed(2);
+      const fs   = size==='large' ? 90 : 110;  // font-size for % (scales with viewBox)
+      const fsLbl= size==='large' ? 34 : 40;
+      const w    = size==='large' ? '60%;max-width:480px' : '100%';
 
-    const pitchBlock = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px">
-      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px">Posesión por zona · ${n} partido${n!==1?'s':''} · ${perLabel}</div>
-      ${pitchSvg}
-    </div>`;
+      return `<svg viewBox="0 0 ${PVW} ${PVH}" style="width:${w};display:block;margin:0 auto;border-radius:6px">
+        <rect width="${PVW}" height="${PVH}" fill="#0f2218" rx="6"/>
+        <rect x="${PP}" y="${PP}" width="${PZW.toFixed(0)}" height="${PVH-2*PP}" fill="${CZ1}" fill-opacity="${opD}" rx="3"/>
+        <rect x="${(PP+PZW).toFixed(0)}" y="${PP}" width="${PZW.toFixed(0)}" height="${PVH-2*PP}" fill="${CZ2}" fill-opacity="${opM}"/>
+        <rect x="${(PP+2*PZW).toFixed(0)}" y="${PP}" width="${PZW.toFixed(0)}" height="${PVH-2*PP}" fill="${CZ3}" fill-opacity="${opA}" rx="3"/>
+        <rect x="${PP}" y="${PP}" width="${PVW-2*PP}" height="${PVH-2*PP}" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="4" rx="3"/>
+        <line x1="${PVW/2}" y1="${PP}" x2="${PVW/2}" y2="${PVH-PP}" stroke="rgba(255,255,255,0.22)" stroke-width="3"/>
+        <line x1="${(PP+PZW).toFixed(0)}" y1="${PP}" x2="${(PP+PZW).toFixed(0)}" y2="${PVH-PP}" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="16 10"/>
+        <line x1="${(PP+2*PZW).toFixed(0)}" y1="${PP}" x2="${(PP+2*PZW).toFixed(0)}" y2="${PVH-PP}" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="16 10"/>
+        <circle cx="${PVW/2}" cy="${PVH/2}" r="91.5" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
+        <circle cx="${PVW/2}" cy="${PVH/2}" r="5" fill="rgba(255,255,255,0.25)"/>
+        <rect x="${PP}"         y="${((PVH-403)/2).toFixed(0)}" width="165" height="403" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
+        <rect x="${PP}"         y="${((PVH-183)/2).toFixed(0)}" width="55"  height="183" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+        <rect x="${PP-22}"      y="${((PVH-73)/2).toFixed(0)}"  width="22"  height="73"  fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
+        <rect x="${PVW-PP-165}" y="${((PVH-403)/2).toFixed(0)}" width="165" height="403" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
+        <rect x="${PVW-PP-55}"  y="${((PVH-183)/2).toFixed(0)}" width="55"  height="183" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+        <rect x="${PVW-PP}"     y="${((PVH-73)/2).toFixed(0)}"  width="22"  height="73"  fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
+        <text x="${(PP+PZW/2).toFixed(0)}"   y="${(PVH/2-28).toFixed(0)}" text-anchor="middle" fill="${CZ1}" font-size="${fs}" font-weight="700" font-family="'Bebas Neue',sans-serif" opacity="0.9">${zData.d}%</text>
+        <text x="${(PP+PZW*1.5).toFixed(0)}" y="${(PVH/2-28).toFixed(0)}" text-anchor="middle" fill="${CZ2}" font-size="${fs}" font-weight="700" font-family="'Bebas Neue',sans-serif" opacity="0.9">${zData.m}%</text>
+        <text x="${(PP+PZW*2.5).toFixed(0)}" y="${(PVH/2-28).toFixed(0)}" text-anchor="middle" fill="${CZ3}" font-size="${fs}" font-weight="700" font-family="'Bebas Neue',sans-serif" opacity="0.9">${zData.a}%</text>
+        <text x="${(PP+PZW/2).toFixed(0)}"   y="${(PVH/2+48).toFixed(0)}" text-anchor="middle" fill="rgba(255,255,255,0.42)" font-size="${fsLbl}" font-family="'DM Sans',sans-serif" font-weight="700">Z1</text>
+        <text x="${(PP+PZW*1.5).toFixed(0)}" y="${(PVH/2+48).toFixed(0)}" text-anchor="middle" fill="rgba(255,255,255,0.42)" font-size="${fsLbl}" font-family="'DM Sans',sans-serif" font-weight="700">Z2</text>
+        <text x="${(PP+PZW*2.5).toFixed(0)}" y="${(PVH/2+48).toFixed(0)}" text-anchor="middle" fill="rgba(255,255,255,0.42)" font-size="${fsLbl}" font-family="'DM Sans',sans-serif" font-weight="700">Z3</text>
+        <text x="${PVW-PP-10}" y="${PVH-10}" text-anchor="end" fill="rgba(255,255,255,0.15)" font-size="24" font-family="'DM Sans',sans-serif">→ ataque</text>
+      </svg>`;
+    }
 
-    // ── Three-line trend chart ────────────────────────────────────────────────
-    const TW=920, TH=240, TML=44, TMR=20, TMT=20, TMB=50;
-    const tCW=TW-TML-TMR, tCH=TH-TMT-TMB;
-    const txS = i => TML + (n>1 ? (i/(n-1))*tCW : tCW/2);
-    const yMax=70, yMin=5;
-    const tyS = v => TMT + tCH - ((v-yMin)/(yMax-yMin))*tCH;
+    // ── MODO 1J: vista partido individual ─────────────────────────────────────
+    if (zonasMatchN === 1) {
+      const matchOpts = PARTIDOS.map(p => {
+        const rival = p.local===currentTeam.name ? p.vis : p.local;
+        const loc   = p.local===currentTeam.name ? '🏠' : '✈️';
+        return `<option value="${p.id}" ${p.id==zonasMatchId?'selected':''}>${loc} ${p.j} · ${rival} · ${p.s} · ${p.f}</option>`;
+      }).join('');
 
-    const tGrid = [10,20,30,33.3,40,50,60].map(v => {
-      const y = tyS(v).toFixed(1);
-      const is33 = v===33.3;
-      return `<line x1="${TML}" y1="${y}" x2="${TW-TMR}" y2="${y}"
-        stroke="${is33?'rgba(255,255,255,0.1)':'rgba(255,255,255,0.04)'}"
-        stroke-width="${is33?1:0.5}" stroke-dasharray="${is33?'6 4':''}"/>
-        <text x="${TML-5}" y="${(parseFloat(y)+3.5).toFixed(0)}" text-anchor="end"
-          fill="${is33?'rgba(255,255,255,0.28)':'rgba(255,255,255,0.14)'}" font-size="${is33?8.5:7.5}"
-          font-family="'DM Sans',sans-serif">${is33?'33%':v+'%'}</text>`;
-    }).join('');
+      const selector = `<div style="margin-bottom:20px">
+        <select onchange="zonasMatchId=parseInt(this.value);renderPosesion()"
+          style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;width:100%">
+          <option value="">— Selecciona un partido —</option>${matchOpts}
+        </select>
+      </div>`;
 
-    const mkPath = get => n>1
-      ? 'M' + matches.map((m,i)=>`${txS(i).toFixed(1)},${tyS(get(m)).toFixed(1)}`).join('L')
-      : '';
+      if (!zonasMatchId) {
+        cont.innerHTML = controls + filterBar + selector +
+          `<div style="text-align:center;padding:50px;color:var(--text3);font-size:13px">
+            <div style="font-size:28px;margin-bottom:10px">☝️</div>Selecciona un partido para ver la distribución por zonas</div>`;
+        return;
+      }
 
-    const tXlbls = matches.map((m,i) =>
-      `<text x="${txS(i).toFixed(1)}" y="${TH-TMB+17}" text-anchor="middle"
-        fill="rgba(255,255,255,0.2)" font-size="8.5" font-family="'DM Sans',sans-serif">${m.partido.j.replace('J','')}</text>`
-    ).join('');
+      const entry = zd[zonasMatchId]?.[zonasPeriodo];
+      const partido = PARTIDOS.find(p => p.id === zonasMatchId);
 
-    const mkDots = (get, col, label) => matches.map((m,i) => {
-      const cx=txS(i).toFixed(1), cy=tyS(get(m)).toFixed(1);
-      const won=m.esLocal?m.mg>m.mv:m.mv>m.mg, draw=m.mg===m.mv;
+      if (!entry || !partido) {
+        cont.innerHTML = controls + filterBar + selector +
+          `<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos para este partido.</div>`;
+        return;
+      }
+
+      const rival   = partido.local===currentTeam.name ? partido.vis : partido.local;
+      const esLocal = partido.local===currentTeam.name;
+      const [mg,mv] = (partido.s||'0-0').split('-').map(Number);
+      const won=esLocal?mg>mv:mv>mg, draw=mg===mv;
       const rc=won?'#3fb950':draw?'#c8a96e':'#f85149';
-      const disp=m.esLocal?`${m.mg}-${m.mv}`:`${m.mv}-${m.mg}`;
-      const rv=m.rival.length>20?m.rival.slice(0,19)+'…':m.rival;
-      const tip=`<div style='font-weight:700;color:${col};margin-bottom:3px'>${label} · ${get(m)}%</div>` +
-        `<div style='font-size:10px;color:rgba(230,237,243,0.6);margin-bottom:2px'>${m.partido.j} · ${rv}</div>` +
-        `<div style='font-size:10px;color:${rc};font-weight:600'>${disp}</div>`;
-      return `<circle cx="${cx}" cy="${cy}" r="${n===1?6:3.5}" fill="${col}" stroke="#0d1117" stroke-width="1.2"
-        style="cursor:pointer" data-tip="${tip}"
-        onmouseenter="posShowTip(this,true,event)" onmouseleave="posShowTip(this,false)"/>`;
-    }).join('');
+      const disp=esLocal?`${mg}-${mv}`:`${mv}-${mg}`;
 
-    const tLegend = `
-      <circle cx="${TML+5}"   cy="${TH-TMB+30}" r="3" fill="${CZ1}"/>
-      <text x="${TML+13}"  y="${TH-TMB+34}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Zona 1</text>
-      <circle cx="${TML+68}" cy="${TH-TMB+30}" r="3" fill="${CZ2}"/>
-      <text x="${TML+76}" y="${TH-TMB+34}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Zona 2</text>
-      <circle cx="${TML+131}" cy="${TH-TMB+30}" r="3" fill="${CZ3}"/>
-      <text x="${TML+139}" y="${TH-TMB+34}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Zona 3</text>
-      <line x1="${TML+200}" y1="${TH-TMB+30}" x2="${TML+216}" y2="${TH-TMB+30}" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="5 3"/>
-      <text x="${TML+220}" y="${TH-TMB+33}" fill="rgba(255,255,255,0.28)" font-size="8.5" font-family="'DM Sans',sans-serif">Distribución igual (33%)</text>`;
+      // Header card
+      const header = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:16px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent)">${partido.j}</div>
+        <div>
+          <div style="font-size:14px;color:var(--text);font-weight:600">${esLocal?'🏠':'✈️'} ${rival}</div>
+          <div style="font-size:11px;color:var(--text3)">${partido.f}</div>
+        </div>
+        <div style="margin-left:auto;font-family:'Bebas Neue',sans-serif;font-size:28px;color:${rc}">${disp}</div>
+        <div style="font-size:11px;color:var(--text3);border-left:1px solid var(--border);padding-left:14px">${perLabel}</div>
+      </div>`;
 
-    const trendChart = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
-      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">Evolución por zona · ${perLabel}</div>
-      <svg viewBox="0 0 ${TW} ${TH}" style="width:100%;display:block;overflow:visible">
-        ${tGrid}
-        <path d="${mkPath(m=>m.z.d)}" fill="none" stroke="${CZ1}" stroke-width="1.8" stroke-linejoin="round" stroke-opacity="0.75"/>
-        <path d="${mkPath(m=>m.z.m)}" fill="none" stroke="${CZ2}" stroke-width="1.8" stroke-linejoin="round" stroke-opacity="0.75"/>
-        <path d="${mkPath(m=>m.z.a)}" fill="none" stroke="${CZ3}" stroke-width="1.8" stroke-linejoin="round" stroke-opacity="0.75"/>
-        ${mkDots(m=>m.z.d, CZ1, 'Zona 1')}
-        ${mkDots(m=>m.z.m, CZ2, 'Zona 2')}
-        ${mkDots(m=>m.z.a, CZ3, 'Zona 3')}
-        ${tXlbls}${tLegend}
-      </svg>
-    </div>`;
+      // Large pitch
+      const pitchBlock = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px">
+        ${buildZonaPitch(entry, 'large')}
+      </div>`;
 
-    // ── Match cards ───────────────────────────────────────────────────────────
-    const cards = matches.map(m => {
-      const won=m.esLocal?m.mg>m.mv:m.mv>m.mg, draw=m.mg===m.mv;
+      // KPI cards
+      const kpis = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        ${[['Zona 1',entry.d,CZ1],['Zona 2',entry.m,CZ2],['Zona 3',entry.a,CZ3]].map(([lbl,val,col])=>`
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center">
+            <div style="display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:10px">
+              <div style="width:8px;height:8px;border-radius:50%;background:${col}"></div>
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;font-weight:600">${lbl}</div>
+            </div>
+            <div style="font-size:48px;font-family:'Bebas Neue',sans-serif;color:${col};letter-spacing:1px;line-height:1">${val}%</div>
+            <div style="display:flex;height:5px;border-radius:3px;overflow:hidden;margin-top:12px;background:rgba(255,255,255,0.06)">
+              <div style="width:${val}%;background:${col};opacity:0.7;transition:width 0.4s"></div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+
+      cont.innerHTML = controls + filterBar + selector + header + pitchBlock + kpis;
+      return;
+    }
+
+    // ── MODO FILMSTRIP (3J / 6J) ──────────────────────────────────────────────
+    const lastN   = PARTIDOS.slice(-zonasMatchN);
+    const cols    = 3;
+
+    const cards = lastN.map(p => {
+      const entry = zd[p.id]?.[zonasPeriodo];
+      const rival   = p.local===currentTeam.name ? p.vis : p.local;
+      const esLocal = p.local===currentTeam.name;
+      const [mg,mv] = (p.s||'0-0').split('-').map(Number);
+      const won=esLocal?mg>mv:mv>mg, draw=mg===mv;
       const rc=won?'#3fb950':draw?'#c8a96e':'#f85149';
-      const disp=m.esLocal?`${m.mg}-${m.mv}`:`${m.mv}-${m.mg}`;
-      return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-          <div>
-            <div style="font-size:10px;color:var(--text3)">${m.partido.j}</div>
-            <div style="font-size:12px;color:var(--text);font-weight:600;line-height:1.3">${m.esLocal?'🏠':'✈️'} ${m.rival.length>15?m.rival.slice(0,14)+'…':m.rival}</div>
+      const disp=esLocal?`${mg}-${mv}`:`${mv}-${mg}`;
+      const rvShort = rival.length>18?rival.slice(0,17)+'…':rival;
+
+      const pitchContent = entry
+        ? buildZonaPitch(entry, 'small')
+        : `<div style="padding:40px;text-align:center;color:var(--text3);font-size:12px">Sin datos</div>`;
+
+      const zBar = entry ? `
+        <div style="display:flex;height:5px;border-radius:3px;overflow:hidden;margin:10px 12px 4px">
+          <div style="width:${entry.d}%;background:${CZ1};opacity:0.85"></div>
+          <div style="width:${entry.m}%;background:${CZ2};opacity:0.85"></div>
+          <div style="width:${entry.a}%;background:${CZ3};opacity:0.85"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0 12px 10px;font-size:10px">
+          <span style="color:${CZ1};font-weight:600">${entry.d}%</span>
+          <span style="color:${CZ2};font-weight:600">${entry.m}%</span>
+          <span style="color:${CZ3};font-weight:600">${entry.a}%</span>
+        </div>` : '';
+
+      return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column">
+        <div style="padding:8px 12px;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--accent)">${p.j}</span>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${rc}">${disp}</span>
           </div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${rc}">${disp}</div>
+          <div style="font-size:12px;color:var(--text);font-weight:500">${esLocal?'🏠':'✈️'} ${rvShort}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px">${p.f} · ${perLabel}</div>
         </div>
-        <div style="display:flex;height:6px;border-radius:3px;overflow:hidden;margin-bottom:6px">
-          <div style="width:${m.z.d}%;background:${CZ1};opacity:0.85"></div>
-          <div style="width:${m.z.m}%;background:${CZ2};opacity:0.85"></div>
-          <div style="width:${m.z.a}%;background:${CZ3};opacity:0.85"></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:10px">
-          <span style="color:${CZ1};font-weight:600">${m.z.d}%</span>
-          <span style="color:${CZ2};font-weight:600">${m.z.m}%</span>
-          <span style="color:${CZ3};font-weight:600">${m.z.a}%</span>
-        </div>
+        <div style="flex:1;padding:10px">${pitchContent}</div>
+        ${zBar}
       </div>`;
     }).join('');
 
-    cont.innerHTML = controls + zonaControls + kpiRow + pitchBlock + trendChart +
-      `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px">${cards}</div>`;
+    cont.innerHTML = controls + filterBar +
+      `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:12px">${cards}</div>`;
   }
-
 
   function posShowTip(el, show, evt) {
     const tip = document.getElementById('pos-tip');
