@@ -2300,13 +2300,14 @@
     squad11.forEach(r => { posMap[r[1]] = resolvePlayerPosition({id:r[0], position:r[2]}); });
 
     // Filtrar tracking solo a esos 11 jugadores + periodo + fase
-    // Ataque  = campo rival (x > 0), Defensa = campo propio (x < 0)
-    // Split por mitad del campo — suficientes eventos para todos los jugadores
+    // Fase usando el campo third_start de SkillCorner (más preciso que x > 0)
+    // Ataque  = attacking_third  (tercio rival, calculado por SkillCorner con tracking real)
+    // Defensa = defensive_third  (tercio propio)
     const squadNames = new Set(squad11.map(r => r[1]));
     let data = matchData.filter(e => e.player_name && squadNames.has(e.player_name));
     if (period) data = data.filter(e => e.period === period);
-    if (phase === 'ataque') data = data.filter(e => e.x_start != null && e.x_start > 0);
-    else                    data = data.filter(e => e.x_start != null && e.x_start < 0);
+    if (phase === 'ataque') data = data.filter(e => e.third_start === 'attacking_third');
+    else                    data = data.filter(e => e.third_start === 'defensive_third');
 
     // Acumular posiciones por jugador
     const acc = {};
@@ -2701,7 +2702,7 @@
               <span style="font-size:11px;font-weight:700;color:${phCol};background:${phBg};padding:3px 12px;border-radius:20px;letter-spacing:1px">${isAtq?'ATAQUE':'DEFENSA'}</span>
               ${(()=>{const bt=shape.blockType;if(!bt)return '';const[bl,bc]={high:['🔴 HIGH BLOCK','#f85149'],mid:['🟡 MID BLOCK','#e3b341'],low:['🔵 LOW BLOCK','#58a6ff']}[bt]||['',''];return `<span style="font-size:11px;font-weight:700;color:${bc};background:${bc}22;padding:3px 10px;border-radius:20px">${bl}</span>`;})()}
               <span style="font-size:12px;color:var(--text2)">${shape.players.length+shape.gk.length} jugadores · ${bloqueSubTab==='2parte'?'once final':'once inicial'}</span>
-              <span style="font-size:11px;color:var(--text3);margin-left:auto">${isAtq?'campo rival (x > 0)':'campo propio (x < 0)'} · posición media · mín. 5 posesiones en fase</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:auto">${isAtq?'attacking_third':'defensive_third'} (SkillCorner) · mín. 5 pos. · resto = global</span>
             </div>
             ${buildBloqueSVG(shape,bloquePhase)}
           </div>
