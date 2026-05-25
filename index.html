@@ -3497,6 +3497,10 @@
   let zonasPeriodo   = 't';        // 't' | '1' | '2'
   let zonasMatchN    = 3;          // 1 | 3 | 6
   let zonasMatchId   = null;       // partido seleccionado (modo 1J)
+  let _carrilesCache  = null;
+  let carrilesPeriodo = 't';        // 't' | '1' | '2'
+  let carrilesMatchN  = 3;          // 1 | 3 | 6
+  let carrilesMatchId = null;       // partido seleccionado (modo 1J)
 
   // ─── ZONAS ─────────────────────────────────────────────────────────────────
   async function loadZonaData() {
@@ -3553,6 +3557,277 @@
     });
     _zonaCache = cache;
     return cache;
+  }
+
+
+  // ── CARRILES: carga y caché ──────────────────────────────────────────────────
+  async function loadCarrilesData() {
+    if (_carrilesCache) return _carrilesCache;
+    const ids = PARTIDOS.map(p => p.id);
+    const results = await Promise.all(
+      ids.map(id => fetch(`data/${id}.json`).then(r => r.json()).catch(() => null))
+    );
+    const cache = {};
+    results.forEach((data, i) => {
+      if (!data || !data.e) return;
+      // [l0, l1, l2, l3, l4, total]  l0=IzqExt … l4=DchExt
+      const bk = { t:[0,0,0,0,0,0], '1':[0,0,0,0,0,0], '2':[0,0,0,0,0,0] };
+      const pk = { t:[{},{},{},{},{}], '1':[{},{},{},{},{}], '2':[{},{},{},{},{}] };
+      data.e.forEach(ev => {
+        const dur = ev.duration || 0;
+        if (!dur || ev.y_start == null) return;
+        const y = ev.y_start;
+        const lane = y > 20.4 ? 0 : y > 6.8 ? 1 : y >= -6.8 ? 2 : y >= -20.4 ? 3 : 4;
+        const per  = String(ev.period);
+        ['t', per].forEach(k => {
+          bk[k][lane] += dur;
+          bk[k][5]    += dur;
+          if (ev.player_name) {
+            pk[k][lane][ev.player_name] = (pk[k][lane][ev.player_name] || 0) + dur;
+          }
+        });
+      });
+      const toL = (b, p) => {
+        if (!b[5]) return null;
+        return {
+          c: [0,1,2,3,4].map(l => +(b[l]/b[5]*100).toFixed(1)),
+          players: p.map(lm =>
+            Object.entries(lm).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([n,d])=>({name:n,dur:d}))
+          )
+        };
+      };
+      const entry = {};
+      ['t','1','2'].forEach(k => { const v=toL(bk[k],pk[k]); if(v) entry[k]=v; });
+      if (entry.t) cache[ids[i]] = entry;
+    });
+    _carrilesCache = cache;
+    return cache;
+  }
+
+  // ── CARRILES: render ──────────────────────────────────────────────────────────
+  async function renderPosesionCarriles(cont, controls) {
+    cont.innerHTML = controls + `<div style="text-align:center;padding:48px;color:var(--text3);font-size:14px">⏳ Cargando datos de carriles…</div>`;
+    const cd = await loadCarrilesData();
+
+    const LANE_NAME  = ['IZQ EXT','IZQ INT','CENTRO','DCH INT','DCH EXT'];
+    const LANE_LONG  = ['Carril Izquierdo Exterior','Carril Izquierdo Interior','Carril Central','Carril Derecho Interior','Carril Derecho Exterior'];
+    const LANE_COL   = ['#388bfd','#58a6ff','#c8a96e','#58a6ff','#388bfd'];
+    const perLabel   = carrilesPeriodo==='t'?'90 min':carrilesPeriodo==='1'?'1ª parte':'2ª parte';
+
+    // ── filter bar ────────────────────────────────────────────────────────────
+    const pbC = (id, lbl) => {
+      const act = carrilesPeriodo === id;
+      return `<button onclick="carrilesPeriodo='${id}';renderPosesion()" style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:5px 15px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s">${lbl}</button>`;
+    };
+    const nbC = (val, lbl) => {
+      const act = carrilesMatchN === val;
+      return `<button onclick="carrilesMatchN=${val};renderPosesion()" style="background:${act?'rgba(200,169,110,0.18)':'transparent'};color:${act?'var(--accent)':'var(--text2)'};border:${act?'1px solid rgba(200,169,110,0.35)':'1px solid transparent'};border-radius:16px;padding:5px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:${act?'700':'500'};cursor:pointer;transition:all 0.15s">${lbl}</button>`;
+    };
+    const filterBar = `<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px">
+      <div style="display:flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px">
+        ${pbC('t','Total')}${pbC('1','1ª')}${pbC('2','2ª')}
+      </div>
+      <div style="display:flex;gap:6px">
+        ${nbC(1,'1 Partido')}${nbC(3,'Últimas 3J')}${nbC(6,'Últimas 6J')}
+      </div>
+    </div>`;
+
+    // ── SVG pitch builder ──────────────────────────────────────────────────────
+    function buildCarrilesPitch(cData, size='large') {
+      const LH = 136; // lane height in viewBox (680/5)
+      const maxPct = Math.max(...cData.c);
+      const fills = cData.c.map((pct, i) => {
+        const op = (0.12 + (pct / maxPct) * 0.72).toFixed(2);
+        return `<rect x="0" y="${i*LH}" width="1050" height="${LH}" fill="${LANE_COL[i]}" opacity="${op}"/>`;
+      }).join('');
+      const separators = [1,2,3,4].map(i =>
+        `<line x1="0" y1="${i*LH}" x2="1050" y2="${i*LH}" stroke="rgba(255,255,255,0.18)" stroke-width="2" stroke-dasharray="10,6"/>`
+      ).join('');
+      const pitchLines = `
+        <rect x="0" y="0" width="1050" height="680" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+        <line x1="525" y1="0" x2="525" y2="680" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+        <circle cx="525" cy="340" r="91.5" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+        <circle cx="525" cy="340" r="6" fill="rgba(255,255,255,0.45)"/>
+        <rect x="0" y="170" width="165" height="340" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+        <rect x="0" y="255" width="55" height="170" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+        <rect x="885" y="170" width="165" height="340" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+        <rect x="995" y="255" width="55" height="170" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+        <rect x="-15" y="289" width="15" height="102" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+        <rect x="1050" y="289" width="15" height="102" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>`;
+      const fBig  = size==='large' ? 46 : 30;
+      const fSmall = size==='large' ? 19 : 13;
+      const labels = cData.c.map((pct, i) => {
+        const cy   = i * LH + LH / 2;
+        const bold = pct === maxPct;
+        return `
+          <text x="525" y="${cy + fBig*0.35}" text-anchor="middle"
+            fill="${bold?'#fff':'rgba(255,255,255,0.88)'}"
+            font-size="${fBig}" font-weight="${bold?800:600}"
+            font-family="'DM Sans',sans-serif" letter-spacing="-0.5">${pct}%</text>
+          <text x="22" y="${cy + fSmall*0.35}" text-anchor="start"
+            fill="rgba(255,255,255,0.55)" font-size="${fSmall}"
+            font-family="'DM Sans',sans-serif" font-weight="600">${LANE_NAME[i]}</text>`;
+      }).join('');
+      const wStyle = size==='large'
+        ? 'width:60%;max-width:500px;display:block;margin:0 auto'
+        : 'width:100%;display:block';
+      return `<div style="${wStyle}">
+        <svg viewBox="-15 0 1080 680" style="width:100%;border-radius:10px;overflow:hidden">
+          <rect x="-15" y="0" width="1080" height="680" fill="#1a6b3c"/>
+          ${fills}${pitchLines}${separators}${labels}
+        </svg></div>`;
+    }
+
+    // ── 1J MODE ───────────────────────────────────────────────────────────────
+    if (carrilesMatchN === 1) {
+      const opts = PARTIDOS.map(p => {
+        const loc    = p.local === currentTeam.name ? '🏠' : '✈️';
+        const rival  = p.local === currentTeam.name ? p.vis : p.local;
+        const sel    = p.id === carrilesMatchId ? 'selected' : '';
+        return `<option value="${p.id}" ${sel}>${loc} ${p.j} · ${rival} · ${p.s} · ${p.f}</option>`;
+      }).join('');
+      const selector = `<div style="margin-bottom:16px">
+        <select onchange="carrilesMatchId=parseInt(this.value);renderPosesion()"
+          style="width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">
+          <option value="">— Selecciona un partido —</option>${opts}
+        </select></div>`;
+
+      if (!carrilesMatchId) {
+        cont.innerHTML = controls + filterBar + selector +
+          `<div style="text-align:center;padding:48px;color:var(--text3)">
+            <div style="font-size:28px;margin-bottom:10px">☝️</div>
+            Selecciona un partido para ver la distribución por carriles</div>`;
+        return;
+      }
+
+      const entry  = cd[carrilesMatchId]?.[carrilesPeriodo];
+      const partido = PARTIDOS.find(p => p.id === carrilesMatchId);
+      if (!entry || !partido) {
+        cont.innerHTML = controls + filterBar + selector +
+          `<div style="text-align:center;padding:48px;color:var(--text3)">Sin datos para este partido</div>`;
+        return;
+      }
+
+      const rival   = partido.local === currentTeam.name ? partido.vis : partido.local;
+      const esLocal = partido.local === currentTeam.name;
+      const [mg, mv] = (partido.s || '0-0').split('-').map(Number);
+      const won = esLocal ? mg > mv : mv > mg, draw = mg === mv;
+      const rc = won ? '#3fb950' : draw ? '#c8a96e' : '#f85149';
+      const disp = esLocal ? `${mg}-${mv}` : `${mv}-${mg}`;
+
+      const header = `<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <span style="font-size:13px;font-weight:700;color:var(--text)">${partido.j} · ${rival}</span>
+        <span style="font-size:13px;font-weight:800;color:${rc}">${disp}</span>
+        <span style="font-size:11px;color:var(--text3);margin-left:auto">${perLabel}</span>
+      </div>`;
+
+      // KPI: dominant lane
+      const maxIdx  = entry.c.indexOf(Math.max(...entry.c));
+      const balance = (Math.max(...entry.c) - Math.min(...entry.c)).toFixed(1);
+      const kpis = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Carril dominante</div>
+          <div style="font-size:20px;font-weight:800;color:${LANE_COL[maxIdx]}">${LANE_NAME[maxIdx]}</div>
+          <div style="font-size:12px;color:var(--text2)">${entry.c[maxIdx]}%</div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Más equilibrado</div>
+          <div style="font-size:20px;font-weight:800;color:${Math.max(...entry.c)-Math.min(...entry.c)<8?'#3fb950':'var(--text)'}">
+            ${Math.max(...entry.c)-Math.min(...entry.c)<8?'Sí':'No'}</div>
+          <div style="font-size:12px;color:var(--text2)">Δ ${balance}%</div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Carriles activos</div>
+          <div style="font-size:20px;font-weight:800;color:var(--text)">${entry.c.filter(p=>p>=15).length}<span style="font-size:13px;color:var(--text3)">/5</span></div>
+          <div style="font-size:12px;color:var(--text2)">≥ 15% uso</div>
+        </div>
+      </div>`;
+
+      const pitchBlock = buildCarrilesPitch(entry, 'large');
+
+      // Player table per lane
+      const lineupData = (typeof PONF_LINEUPS !== 'undefined' && PONF_LINEUPS[carrilesMatchId]) || [];
+      const posMapC = {};
+      lineupData.forEach(row => { if (row[1] && row[2]) posMapC[row[1]] = row[2]; });
+
+      const laneRows = entry.players.map((topPlayers, li) => {
+        if (!topPlayers.length) return '';
+        const cols = topPlayers.map(pl => {
+          const pos  = posMapC[pl.name] || '';
+          const secs = Math.round(pl.dur);
+          const mm   = Math.floor(secs/60), ss = String(secs%60).padStart(2,'0');
+          const sn   = pl.name.length > 18 ? pl.name.slice(0,17)+'…' : pl.name;
+          const posBadge = pos ? `<span style="font-size:9px;color:var(--text3);background:rgba(255,255,255,0.07);border-radius:5px;padding:1px 5px;margin-left:4px">${pos}</span>` : '';
+          return `<div style="flex:1;padding:8px 10px;background:var(--bg3);border-radius:7px;min-width:0">
+            <div style="font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sn}${posBadge}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">${mm}:${ss}</div>
+          </div>`;
+        }).join('');
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="width:72px;flex-shrink:0">
+            <span style="font-size:9px;font-weight:700;background:${LANE_COL[li]};color:#0d1117;border-radius:6px;padding:2px 7px">${LANE_NAME[li]}</span>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">${entry.c[li]}%</div>
+          </div>
+          <div style="display:flex;gap:6px;flex:1;min-width:0">${cols}</div>
+        </div>`;
+      }).join('');
+
+      const playerTable = laneRows ? `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:14px">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">Top jugadores por carril · ${perLabel}</div>
+        ${laneRows}
+      </div>` : '';
+
+      cont.innerHTML = controls + filterBar + selector + header + pitchBlock + kpis + playerTable;
+      return;
+    }
+
+    // ── FILMSTRIP MODE (3J / 6J) ──────────────────────────────────────────────
+    const lastN = PARTIDOS.slice(-carrilesMatchN);
+    const cols  = 3;
+
+    const cards = lastN.map(p => {
+      const entry  = cd[p.id]?.[carrilesPeriodo];
+      const rival  = p.local === currentTeam.name ? p.vis : p.local;
+      const esLocal = p.local === currentTeam.name;
+      const [mg, mv] = (p.s || '0-0').split('-').map(Number);
+      const won = esLocal?mg>mv:mv>mg, draw = mg===mv;
+      const rc  = won?'#3fb950':draw?'#c8a96e':'#f85149';
+      const disp = esLocal?`${mg}-${mv}`:`${mv}-${mg}`;
+      const rvShort = rival.length>18?rival.slice(0,17)+'…':rival;
+
+      const pitchSVG = entry
+        ? buildCarrilesPitch(entry, 'small')
+        : `<div style="padding:40px;text-align:center;color:var(--text3);font-size:12px">Sin datos</div>`;
+
+      // Mini bar
+      const miniBar = entry ? `<div style="display:flex;height:5px;border-radius:3px;overflow:hidden;margin:8px 12px 4px">
+        ${entry.c.map((p,i)=>`<div style="width:${p}%;background:${LANE_COL[i]};opacity:0.85"></div>`).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-around;padding:0 12px 8px;font-size:10px">
+        ${entry.c.map((p,i)=>`<span style="color:${LANE_COL[i]};font-weight:700">${p}%</span>`).join('')}
+      </div>` : '';
+
+      return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+        <div style="padding:8px 12px 6px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px;font-weight:700;color:var(--text2)">${p.j}</span>
+          <span style="font-size:11px;color:var(--text3);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${rvShort}</span>
+          <span style="font-size:13px;font-weight:800;color:${rc}">${disp}</span>
+        </div>
+        ${pitchSVG}${miniBar}
+      </div>`;
+    });
+
+    const grid = `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:14px">${cards.join('')}</div>`;
+
+    // Legend
+    const legend = `<div style="display:flex;justify-content:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+      ${LANE_NAME.map((n,i)=>`<div style="display:flex;align-items:center;gap:5px">
+        <div style="width:14px;height:14px;border-radius:3px;background:${LANE_COL[i]};opacity:0.85"></div>
+        <span style="font-size:11px;color:var(--text3)">${n}</span>
+      </div>`).join('')}
+    </div>`;
+
+    cont.innerHTML = controls + filterBar + legend + grid;
   }
 
   async function renderPosesionZonas(cont, controls) {
@@ -3840,12 +4115,15 @@
 
     const isCompleta = posesionTipo === 'completa';
     const isZonas    = posesionTipo === 'zonas';
+    const isCarriles = posesionTipo === 'carriles';
 
     // Description text
     const desc = isCompleta
       ? 'Porcentaje total de tiempo con el balón incluyendo todas las fases del juego: balón parado, saques de banda, faltas y situaciones de juego dinámico.'
       : isZonas
         ? 'Distribución de la posesión activa por zona del campo: sector defensivo, centro del campo y sector de ataque.'
+        : isCarriles
+          ? 'Distribución de la posesión activa por los 5 carriles verticales del campo: exterior izquierdo, interior izquierdo, central, interior derecho y exterior derecho.'
         : 'Tiempo de control real del balón en situaciones de juego activo, excluyendo interrupciones y balón parado. Refleja cuánto domina el equipo el juego en movimiento.';
 
     // Controls header
@@ -3855,6 +4133,7 @@
           ${tipoBtn('completa','📊 Posesión Completa')}
           ${tipoBtn('activa','⚡ Posesión Activa')}
           ${tipoBtn('zonas','🗺️ Por Zonas')}
+          ${tipoBtn('carriles','🛣️ Por Carriles')}
         </div>
         <div style="font-size:11px;color:var(--text3);max-width:480px;line-height:1.6">${desc}</div>
       </div>
@@ -3864,7 +4143,8 @@
     </div>`;
 
     // Route to zonas renderer
-    if (isZonas) { renderPosesionZonas(cont, controls); return; }
+    if (isZonas)     { renderPosesionZonas(cont, controls); return; }
+    if (posesionTipo === 'carriles') { renderPosesionCarriles(cont, controls); return; }
 
     // Get match data
     const matches = PARTIDOS.map(p => {
