@@ -2739,8 +2739,9 @@
         shape: computeTeamShape(allData[i], bloquePhase, 0, p.id)
       }));
 
-      // Ancho fijo por carta: N≤3 → reparto equitativo, N>3 → fijo 360px + scroll horizontal
-      const cardW = bloqueNMatches <= 3 ? `flex:1;min-width:300px` : `flex:0 0 360px`;
+      // Grid responsivo: N=3→3 cols, N=5→3 cols (3+2), N=10→5 cols (5+5)
+      const cols = bloqueNMatches <= 3 ? bloqueNMatches : bloqueNMatches <= 5 ? 3 : 5;
+      const cardW = ``; // el grid controla el tamaño
 
       const cards = items.map(({partido:p, shape}) => {
         const rival  = p.local === currentTeam.name ? p.vis : p.local;
@@ -2772,7 +2773,7 @@
       }).join('');
 
       cont.innerHTML = filterBar + `
-        <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x mandatory">
+        <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:12px">
           ${cards}
         </div>`;
     } catch(e) {
