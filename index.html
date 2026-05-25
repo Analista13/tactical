@@ -3492,7 +3492,192 @@
 
   // ─── POSESIÓN ────────────────────────────────────────────────────────────────
 
-  let posesionTipo = 'completa'; // 'completa' | 'activa'
+  let posesionTipo = 'completa'; // 'completa' | 'activa' | 'zonas'
+  let _zonaCache   = null;
+
+  // ─── ZONAS ─────────────────────────────────────────────────────────────────
+  async function loadZonaData() {
+    if (_zonaCache) return _zonaCache;
+    const ids = PARTIDOS.map(p => p.id);
+    const results = await Promise.all(
+      ids.map(id => fetch(`data/${id}.json`).then(r => r.json()).catch(() => null))
+    );
+    const cache = {};
+    results.forEach((data, i) => {
+      if (!data || !data.e) return;
+      let d=0, m=0, a=0, tot=0;
+      data.e.forEach(ev => {
+        const dur = ev.duration || 0;
+        tot += dur;
+        if      (ev.third_start === 'defensive_third')  d += dur;
+        else if (ev.third_start === 'middle_third')     m += dur;
+        else if (ev.third_start === 'attacking_third')  a += dur;
+      });
+      if (tot > 0) cache[ids[i]] = {
+        d: +(d/tot*100).toFixed(1),
+        m: +(m/tot*100).toFixed(1),
+        a: +(a/tot*100).toFixed(1)
+      };
+    });
+    _zonaCache = cache;
+    return cache;
+  }
+
+  async function renderPosesionZonas(cont, controls) {
+    cont.innerHTML = controls +
+      `<div style="text-align:center;padding:60px 0;color:var(--text3);font-family:'DM Sans',sans-serif">
+        <div style="font-size:28px;margin-bottom:10px">⏳</div>Cargando datos de zonas…</div>`;
+
+    const zd = await loadZonaData();
+    const CZ1='#388bfd', CZ2='#c8a96e', CZ3='#3fb950';
+
+    const matches = PARTIDOS.map(p => {
+      const z = zd[p.id]; if (!z) return null;
+      const rival = p.local === currentTeam.name ? p.vis : p.local;
+      const esLocal = p.local === currentTeam.name;
+      const [mg, mv] = (p.s||'0-0').split('-').map(Number);
+      return { partido:p, z, rival, esLocal, mg, mv };
+    }).filter(Boolean);
+
+    if (!matches.length) {
+      cont.innerHTML = controls + `<div style="text-align:center;padding:60px;color:var(--text3)">Sin datos de zona disponibles.</div>`;
+      return;
+    }
+
+    // Season averages
+    const avgD = (matches.reduce((s,m)=>s+m.z.d,0)/matches.length).toFixed(1);
+    const avgM = (matches.reduce((s,m)=>s+m.z.m,0)/matches.length).toFixed(1);
+    const avgA = (matches.reduce((s,m)=>s+m.z.a,0)/matches.length).toFixed(1);
+
+    // ── Pitch diagram ──────────────────────────────────────────────────────
+    const PW=780, PH=170, PP=14;
+    const ZW=(PW-2*PP)/3;
+    // opacity = base + % contribution
+    const opD = (parseFloat(avgD)/100*0.5+0.07).toFixed(2);
+    const opM = (parseFloat(avgM)/100*0.5+0.07).toFixed(2);
+    const opA = (parseFloat(avgA)/100*0.5+0.07).toFixed(2);
+
+    const pitchSvg = `<svg viewBox="0 0 ${PW} ${PH}" style="width:100%;display:block;border-radius:8px">
+      <rect width="${PW}" height="${PH}" fill="#162d1e" rx="8"/>
+      <!-- zone fills -->
+      <rect x="${PP}" y="${PP}" width="${ZW.toFixed(1)}" height="${PH-2*PP}" fill="${CZ1}" fill-opacity="${opD}" rx="4"/>
+      <rect x="${(PP+ZW).toFixed(1)}" y="${PP}" width="${ZW.toFixed(1)}" height="${PH-2*PP}" fill="${CZ2}" fill-opacity="${opM}"/>
+      <rect x="${(PP+2*ZW).toFixed(1)}" y="${PP}" width="${ZW.toFixed(1)}" height="${PH-2*PP}" fill="${CZ3}" fill-opacity="${opA}" rx="4"/>
+      <!-- outline -->
+      <rect x="${PP}" y="${PP}" width="${(PW-2*PP).toFixed(1)}" height="${PH-2*PP}" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1" rx="4"/>
+      <!-- dividers -->
+      <line x1="${(PP+ZW).toFixed(1)}" y1="${PP}" x2="${(PP+ZW).toFixed(1)}" y2="${PH-PP}" stroke="rgba(255,255,255,0.18)" stroke-width="1" stroke-dasharray="5 4"/>
+      <line x1="${(PP+2*ZW).toFixed(1)}" y1="${PP}" x2="${(PP+2*ZW).toFixed(1)}" y2="${PH-PP}" stroke="rgba(255,255,255,0.18)" stroke-width="1" stroke-dasharray="5 4"/>
+      <!-- center circle -->
+      <circle cx="${(PW/2).toFixed(1)}" cy="${(PH/2).toFixed(1)}" r="${((PH-2*PP)*0.26).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+      <circle cx="${(PW/2).toFixed(1)}" cy="${(PH/2).toFixed(1)}" r="3" fill="rgba(255,255,255,0.08)"/>
+      <!-- penalty arcs -->
+      <rect x="${PP}" y="${(PH/2-22).toFixed(1)}" width="28" height="44" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+      <rect x="${(PW-PP-28).toFixed(1)}" y="${(PH/2-22).toFixed(1)}" width="28" height="44" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+      <!-- % values -->
+      <text x="${(PP+ZW/2).toFixed(1)}" y="${(PH/2-6).toFixed(1)}" text-anchor="middle" fill="${CZ1}" font-size="30" font-weight="700" font-family="'Bebas Neue',sans-serif">${avgD}%</text>
+      <text x="${(PP+ZW*1.5).toFixed(1)}" y="${(PH/2-6).toFixed(1)}" text-anchor="middle" fill="${CZ2}" font-size="30" font-weight="700" font-family="'Bebas Neue',sans-serif">${avgM}%</text>
+      <text x="${(PP+ZW*2.5).toFixed(1)}" y="${(PH/2-6).toFixed(1)}" text-anchor="middle" fill="${CZ3}" font-size="30" font-weight="700" font-family="'Bebas Neue',sans-serif">${avgA}%</text>
+      <!-- zone labels -->
+      <text x="${(PP+ZW/2).toFixed(1)}" y="${(PH/2+16).toFixed(1)}" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="10" font-family="'DM Sans',sans-serif" font-weight="600">DEFENSIVO</text>
+      <text x="${(PP+ZW*1.5).toFixed(1)}" y="${(PH/2+16).toFixed(1)}" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="10" font-family="'DM Sans',sans-serif" font-weight="600">CENTRO</text>
+      <text x="${(PP+ZW*2.5).toFixed(1)}" y="${(PH/2+16).toFixed(1)}" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="10" font-family="'DM Sans',sans-serif" font-weight="600">ATAQUE</text>
+      <!-- direction -->
+      <text x="${PW-PP-2}" y="${PH-PP-4}" text-anchor="end" fill="rgba(255,255,255,0.18)" font-size="9" font-family="'DM Sans',sans-serif">→ dirección de ataque</text>
+    </svg>`;
+
+    const pitchBlock = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">Distribución por zona · Media temporada (${matches.length} partidos)</div>
+      ${pitchSvg}
+    </div>`;
+
+    // ── Stacked bar chart ──────────────────────────────────────────────────
+    const CW=920, CH=210, CML=44, CMR=20, CMT=16, CMB=48;
+    const chartW=CW-CML-CMR, chartH=CH-CMT-CMB;
+    const barW = chartW/matches.length;
+    const barPad = Math.max(1, barW*0.12);
+
+    const bars = matches.map((m,i) => {
+      const x  = CML + i*barW + barPad;
+      const bw = barW - 2*barPad;
+      const hA = m.z.a/100*chartH;
+      const hM = m.z.m/100*chartH;
+      const hD = m.z.d/100*chartH;
+      const yA = CMT;
+      const yM = CMT + hA;
+      const yD = CMT + hA + hM;
+      const won  = m.esLocal ? m.mg>m.mv : m.mv>m.mg;
+      const draw = m.mg===m.mv;
+      const rc   = won?'#3fb950':draw?'#c8a96e':'#f85149';
+      const disp = m.esLocal?`${m.mg}-${m.mv}`:`${m.mv}-${m.mg}`;
+      const rv   = m.rival.length>16?m.rival.slice(0,15)+'…':m.rival;
+      const tip  =
+        `<div style='font-weight:700;color:rgba(255,255,255,0.9);margin-bottom:3px'>${m.partido.j} · ${rv}</div>` +
+        `<div style='font-size:10px;color:${rc};margin-bottom:5px'>${disp}</div>` +
+        `<div style='font-size:10px;display:flex;flex-direction:column;gap:2px'>` +
+        `<span><span style='display:inline-block;width:8px;height:8px;background:${CZ3};border-radius:2px;margin-right:4px;vertical-align:middle'></span>Ataque ${m.z.a}%</span>` +
+        `<span><span style='display:inline-block;width:8px;height:8px;background:${CZ2};border-radius:2px;margin-right:4px;vertical-align:middle'></span>Centro ${m.z.m}%</span>` +
+        `<span><span style='display:inline-block;width:8px;height:8px;background:${CZ1};border-radius:2px;margin-right:4px;vertical-align:middle'></span>Defensivo ${m.z.d}%</span></div>`;
+      return `<g style='cursor:pointer' data-tip="${tip}" onmouseenter="posShowTip(this,true,event)" onmouseleave="posShowTip(this,false)">
+        <rect x="${x.toFixed(1)}" y="${yA.toFixed(1)}" width="${bw.toFixed(1)}" height="${hA.toFixed(1)}" fill="${CZ3}" fill-opacity="0.78"/>
+        <rect x="${x.toFixed(1)}" y="${yM.toFixed(1)}" width="${bw.toFixed(1)}" height="${hM.toFixed(1)}" fill="${CZ2}" fill-opacity="0.78"/>
+        <rect x="${x.toFixed(1)}" y="${yD.toFixed(1)}" width="${bw.toFixed(1)}" height="${hD.toFixed(1)}" fill="${CZ1}" fill-opacity="0.78"/>
+        <rect x="${x.toFixed(1)}" y="${CMT}" width="${bw.toFixed(1)}" height="${chartH}" fill="transparent"/>
+      </g>
+      <text x="${(x+bw/2).toFixed(1)}" y="${CH-CMB+17}" text-anchor="middle" fill="rgba(255,255,255,0.22)" font-size="8.5" font-family="'DM Sans',sans-serif">${m.partido.j.replace('J','')}</text>`;
+    }).join('');
+
+    const yAxis = [0,25,50,75,100].map(v => {
+      const y = CMT + chartH*(1-v/100);
+      return `<line x1="${CML}" y1="${y.toFixed(1)}" x2="${CW-CMR}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-width="0.6"/>
+      <text x="${CML-5}" y="${(y+3.5).toFixed(1)}" text-anchor="end" fill="rgba(255,255,255,0.18)" font-size="8" font-family="'DM Sans',sans-serif">${v}%</text>`;
+    }).join('');
+
+    const legend = `
+      <rect x="${CML}"     y="${CH-CMB+28}" width="9" height="9" fill="${CZ3}" fill-opacity="0.78" rx="2"/>
+      <text x="${CML+13}"  y="${CH-CMB+36}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Z3 Ataque</text>
+      <rect x="${CML+92}"  y="${CH-CMB+28}" width="9" height="9" fill="${CZ2}" fill-opacity="0.78" rx="2"/>
+      <text x="${CML+105}" y="${CH-CMB+36}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Z2 Centro</text>
+      <rect x="${CML+185}" y="${CH-CMB+28}" width="9" height="9" fill="${CZ1}" fill-opacity="0.78" rx="2"/>
+      <text x="${CML+198}" y="${CH-CMB+36}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Z1 Defensivo</text>`;
+
+    const stackedChart = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">Distribución por zona · Por jornada</div>
+      <svg viewBox="0 0 ${CW} ${CH}" style="width:100%;display:block;overflow:visible">
+        ${yAxis}${bars}${legend}
+      </svg>
+    </div>`;
+
+    // ── Match cards ────────────────────────────────────────────────────────
+    const cards = matches.map(m => {
+      const won  = m.esLocal ? m.mg>m.mv : m.mv>m.mg;
+      const draw = m.mg===m.mv;
+      const rc   = won?'#3fb950':draw?'#c8a96e':'#f85149';
+      const disp = m.esLocal?`${m.mg}-${m.mv}`:`${m.mv}-${m.mg}`;
+      return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <div style="font-size:10px;color:var(--text3)">${m.partido.j}</div>
+            <div style="font-size:12px;color:var(--text);font-weight:600;line-height:1.3">${m.esLocal?'🏠':'✈️'} ${m.rival.length>15?m.rival.slice(0,14)+'…':m.rival}</div>
+          </div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${rc}">${disp}</div>
+        </div>
+        <div style="display:flex;height:6px;border-radius:3px;overflow:hidden;margin-bottom:6px">
+          <div style="width:${m.z.d}%;background:${CZ1};opacity:0.8"></div>
+          <div style="width:${m.z.m}%;background:${CZ2};opacity:0.8"></div>
+          <div style="width:${m.z.a}%;background:${CZ3};opacity:0.8"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px">
+          <span style="color:${CZ1};font-weight:600">${m.z.d}%</span>
+          <span style="color:${CZ2};font-weight:600">${m.z.m}%</span>
+          <span style="color:${CZ3};font-weight:600">${m.z.a}%</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    cont.innerHTML = controls + pitchBlock + stackedChart +
+      `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px">${cards}</div>`;
+  }
 
   function posShowTip(el, show, evt) {
     const tip = document.getElementById('pos-tip');
@@ -3529,11 +3714,14 @@
     };
 
     const isCompleta = posesionTipo === 'completa';
+    const isZonas    = posesionTipo === 'zonas';
 
     // Description text
     const desc = isCompleta
       ? 'Porcentaje total de tiempo con el balón incluyendo todas las fases del juego: balón parado, saques de banda, faltas y situaciones de juego dinámico.'
-      : 'Tiempo de control real del balón en situaciones de juego activo, excluyendo interrupciones y balón parado. Refleja cuánto domina el equipo el juego en movimiento.';
+      : isZonas
+        ? 'Distribución de la posesión activa por zona del campo: sector defensivo, centro del campo y sector de ataque.'
+        : 'Tiempo de control real del balón en situaciones de juego activo, excluyendo interrupciones y balón parado. Refleja cuánto domina el equipo el juego en movimiento.';
 
     // Controls header
     const controls = `<div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:20px">
@@ -3541,13 +3729,17 @@
         <div style="display:flex;gap:8px;margin-bottom:10px">
           ${tipoBtn('completa','📊 Posesión Completa')}
           ${tipoBtn('activa','⚡ Posesión Activa')}
+          ${tipoBtn('zonas','🗺️ Por Zonas')}
         </div>
         <div style="font-size:11px;color:var(--text3);max-width:480px;line-height:1.6">${desc}</div>
       </div>
-      ${isCompleta ? '' : `<div style="display:flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px">
+      ${(!isCompleta && !isZonas) ? `<div style="display:flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px">
         ${perBtn('t','Total')}${perBtn('1','1ª Parte')}${perBtn('2','2ª Parte')}
-      </div>`}
+      </div>` : ''}
     </div>`;
+
+    // Route to zonas renderer
+    if (isZonas) { renderPosesionZonas(cont, controls); return; }
 
     // Get match data
     const matches = PARTIDOS.map(p => {
