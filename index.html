@@ -146,7 +146,8 @@
   let bloqueMatchId = null;
   let bloquePhase   = 'ataque';   // 'ataque' | 'defensa'
   let bloqueSubTab  = 'general';  // 'general' | '1parte' | '2parte' | 'comparativa'
-  let bloqueNMatches = 1;         // 1 | 3 | 5 | 10 — filmstrip en General
+  let bloqueNMatches = 1;         // 1 | 3 | 5 | 10 | 0(custom) — filmstrip en General
+  let bloqueCustomIds = [];       // IDs seleccionados en modo custom
 
   // Dorsales por equipo y player_id (fuente: Transfermarkt 2025-26)
   const PLAYER_DORSALES_MAP_D = {
@@ -350,6 +351,7 @@
     redMatchId = null;
     aliMatchId = null;
     bloqueMatchId = null;
+    bloqueCustomIds = [];
     jugSubTab = 'mapa';
     jugCalorPlayer = null;
     telaranaMode = 'todos';
@@ -2715,10 +2717,44 @@
       return `<button onclick="setBloqueNMatches(${n})"
         style="background:${act?'rgba(200,169,110,0.12)':'var(--bg2)'};border:1px solid ${act?'rgba(200,169,110,0.3)':'var(--border)'};color:${act?'var(--accent)':'var(--text2)'};padding:5px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap">${lbl}</button>`;
     }).join('');
+    const customAct = bloqueNMatches === 0;
+    const customLabel = customAct && bloqueCustomIds.length > 0 ? `✎ Elegir (${bloqueCustomIds.length})` : '✎ Elegir';
+    const customBtn = `<button onclick="setBloqueNMatches(0)"
+      style="background:${customAct?'rgba(88,166,255,0.12)':'var(--bg2)'};border:1px solid ${customAct?'rgba(88,166,255,0.45)':'var(--border)'};color:${customAct?'var(--blue)':'var(--text2)'};padding:5px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap">${customLabel}</button>`;
     return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap">
       <span style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-right:2px">Vista</span>
       ${btns}
+      ${customBtn}
     </div>`;
+  }
+
+  function buildBloqueCustomPanel() {
+    if (bloqueNMatches !== 0) return '';
+    const chips = PARTIDOS.map(p => {
+      const rival  = p.local === currentTeam.name ? p.vis : p.local;
+      const isHome = p.local === currentTeam.name;
+      const sel    = bloqueCustomIds.includes(p.id);
+      return `<button onclick="toggleBloqueCustomId(${p.id})"
+        style="background:${sel?'rgba(88,166,255,0.1)':'var(--bg3)'};border:1px solid ${sel?'rgba(88,166,255,0.5)':'var(--border)'};color:${sel?'var(--blue)':'var(--text2)'};padding:6px 10px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all 0.15s;text-align:left;display:flex;flex-direction:column;gap:1px;min-width:90px">
+        <span style="font-weight:700;font-size:10px;color:${sel?'var(--blue)':'var(--accent)'}">${p.j}</span>
+        <span>${isHome?'🏠':'✈️'} ${rival}</span>
+        <span style="color:var(--text3);font-size:10px">${p.s}</span>
+      </button>`;
+    }).join('');
+    const selCount = bloqueCustomIds.length;
+    return `<div style="background:var(--bg2);border:1px solid rgba(88,166,255,0.2);border-radius:var(--radius);padding:12px 14px;margin-bottom:16px">
+      <div style="font-size:10px;color:var(--blue);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:10px">
+        Selecciona los partidos que quieres comparar · <span style="color:var(--text2)">${selCount > 0 ? selCount+' seleccionados' : 'ninguno seleccionado'}</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${chips}</div>
+    </div>`;
+  }
+
+  function toggleBloqueCustomId(id) {
+    const idx = bloqueCustomIds.indexOf(id);
+    if (idx >= 0) bloqueCustomIds.splice(idx, 1);
+    else bloqueCustomIds.push(id);
+    renderBloque();
   }
 
   function setBloqueNMatches(n) {
@@ -2728,10 +2764,26 @@
 
   // ── Filmstrip: N campos mini en fila ─────────────────────────────────────────
   async function renderBloqueFilmstrip(cont) {
-    const filterBar = buildBloqueNFilterBar();
-    cont.innerHTML = filterBar + `<div class="loading"><div class="spinner"></div><span>Cargando últimos ${bloqueNMatches} partidos...</span></div>`;
+    const filterBar  = buildBloqueNFilterBar();
+    const customPanel = buildBloqueCustomPanel();
 
-    const lastN = PARTIDOS.slice(-bloqueNMatches);
+    // Modo custom sin selección → mostrar panel de selección y esperar
+    if (bloqueNMatches === 0 && bloqueCustomIds.length === 0) {
+      cont.innerHTML = filterBar + customPanel +
+        `<div style="text-align:center;padding:50px 20px;color:var(--text3);font-size:13px">
+          <div style="font-size:22px;margin-bottom:10px">☝️</div>
+          Selecciona los partidos que quieres comparar
+        </div>`;
+      return;
+    }
+
+    cont.innerHTML = filterBar + customPanel +
+      `<div class="loading"><div class="spinner"></div><span>Cargando partidos...</span></div>`;
+
+    // Selección de partidos: custom o últimos N
+    const lastN = bloqueNMatches === 0
+      ? PARTIDOS.filter(p => bloqueCustomIds.includes(p.id))
+      : PARTIDOS.slice(-bloqueNMatches);
     try {
       const allData = await Promise.all(lastN.map(p => getMatchData(p.id)));
       const items   = lastN.map((p, i) => ({
@@ -2739,8 +2791,8 @@
         shape: computeTeamShape(allData[i], bloquePhase, 0, p.id)
       }));
 
-      // Siempre 3 columnas: 3→1 fila, 5→2 filas (3+2), 10→4 filas (3+3+3+1)
-      const cols = bloqueNMatches === 1 ? 1 : 3;
+      // Siempre 3 columnas en filmstrip
+      const cols = 3;
       const cardW = ``; // el grid controla el tamaño
 
       const cards = items.map(({partido:p, shape}) => {
@@ -2772,12 +2824,12 @@
         </div>`;
       }).join('');
 
-      cont.innerHTML = filterBar + `
+      cont.innerHTML = filterBar + customPanel + `
         <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:12px">
           ${cards}
         </div>`;
     } catch(e) {
-      cont.innerHTML = filterBar + `<div style="padding:40px;text-align:center;color:var(--red)">Error: ${e.message}</div>`;
+      cont.innerHTML = filterBar + customPanel + `<div style="padding:40px;text-align:center;color:var(--red)">Error: ${e.message}</div>`;
     }
   }
 
@@ -2785,8 +2837,8 @@
     const cont=document.getElementById('bloqueCont');
     if(!cont) return;
 
-    // ── Filmstrip: General + N>1 (no necesita bloqueMatchId) ──
-    if(bloqueSubTab==='general' && bloqueNMatches>1){
+    // ── Filmstrip: General + N>1 o modo custom ──
+    if(bloqueSubTab==='general' && (bloqueNMatches>1 || bloqueNMatches===0)){
       await renderBloqueFilmstrip(cont);
       return;
     }
@@ -2842,7 +2894,7 @@
     document.getElementById('bst-'+tab)?.classList.add('active');
     const cont=document.getElementById('bloqueCont');
     if(cont) cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando...</span></div>`;
-    if(bloqueMatchId||(tab==='general'&&bloqueNMatches>1)) renderBloque();
+    if(bloqueMatchId||(tab==='general'&&(bloqueNMatches>1||bloqueNMatches===0))) renderBloque();
   }
 
   function loadBloque(){
@@ -2878,7 +2930,7 @@
         <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>
       </div>
     </div>`;
-    if(bloqueMatchId||(bloqueSubTab==='general'&&bloqueNMatches>1)) renderBloque();
+    if(bloqueMatchId||(bloqueSubTab==='general'&&(bloqueNMatches>1||bloqueNMatches===0))) renderBloque();
   }
 
   // INIT
