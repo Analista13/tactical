@@ -3590,7 +3590,8 @@
       const toL = (b, p) => {
         if (!b[5]) return null;
         return {
-          c: [0,1,2,3,4].map(l => +(b[l]/b[5]*100).toFixed(1)),
+          c:   [0,1,2,3,4].map(l => +(b[l]/b[5]*100).toFixed(1)),
+          dur: b[5],  // total possession duration (seconds) — used for player %
           players: p.map(lm =>
             Object.entries(lm).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([n,d])=>({name:n,dur:d}))
           )
@@ -3611,7 +3612,7 @@
 
     const LANE_NAME  = ['IZQ EXT','IZQ INT','CENTRO','DCH INT','DCH EXT'];
     const LANE_LONG  = ['Carril Izquierdo Exterior','Carril Izquierdo Interior','Carril Central','Carril Derecho Interior','Carril Derecho Exterior'];
-    const LANE_COL   = ['#388bfd','#58a6ff','#c8a96e','#58a6ff','#388bfd'];
+    const LANE_COL   = ['#c8a96e','#c8a96e','#c8a96e','#c8a96e','#c8a96e'];
     const perLabel   = carrilesPeriodo==='t'?'90 min':carrilesPeriodo==='1'?'1ª parte':'2ª parte';
 
     // ── filter bar ────────────────────────────────────────────────────────────
@@ -3634,43 +3635,54 @@
 
     // ── SVG pitch builder ──────────────────────────────────────────────────────
     function buildCarrilesPitch(cData, size='large') {
-      const LH = 136; // lane height in viewBox (680/5)
+      const LH     = 136; // 680/5
       const maxPct = Math.max(...cData.c);
+      const BASE   = '#c8a96e'; // amber accent
+
+      // Lane fills: amber with opacity proportional to usage
       const fills = cData.c.map((pct, i) => {
-        const op = (0.12 + (pct / maxPct) * 0.72).toFixed(2);
-        return `<rect x="0" y="${i*LH}" width="1050" height="${LH}" fill="${LANE_COL[i]}" opacity="${op}"/>`;
+        const op = (0.06 + (pct / maxPct) * 0.78).toFixed(2);
+        return `<rect x="0" y="${i*LH}" width="1050" height="${LH}" fill="${BASE}" opacity="${op}"/>`;
       }).join('');
-      const separators = [1,2,3,4].map(i =>
-        `<line x1="0" y1="${i*LH}" x2="1050" y2="${i*LH}" stroke="rgba(255,255,255,0.18)" stroke-width="2" stroke-dasharray="10,6"/>`
-      ).join('');
+
+      // Pitch markings
       const pitchLines = `
-        <rect x="0" y="0" width="1050" height="680" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
-        <line x1="525" y1="0" x2="525" y2="680" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
-        <circle cx="525" cy="340" r="91.5" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
-        <circle cx="525" cy="340" r="6" fill="rgba(255,255,255,0.45)"/>
-        <rect x="0" y="170" width="165" height="340" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
-        <rect x="0" y="255" width="55" height="170" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
-        <rect x="885" y="170" width="165" height="340" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
-        <rect x="995" y="255" width="55" height="170" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
-        <rect x="-15" y="289" width="15" height="102" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
-        <rect x="1050" y="289" width="15" height="102" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>`;
-      const fBig  = size==='large' ? 46 : 30;
-      const fSmall = size==='large' ? 19 : 13;
+        <rect x="0" y="0" width="1050" height="680" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="3"/>
+        <line x1="525" y1="0" x2="525" y2="680" stroke="rgba(255,255,255,0.28)" stroke-width="2"/>
+        <circle cx="525" cy="340" r="91.5" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="2"/>
+        <circle cx="525" cy="340" r="5" fill="rgba(255,255,255,0.4)"/>
+        <rect x="0" y="170" width="165" height="340" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="2"/>
+        <rect x="0" y="255" width="55" height="170" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="2"/>
+        <rect x="885" y="170" width="165" height="340" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="2"/>
+        <rect x="995" y="255" width="55" height="170" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="2"/>
+        <rect x="-15" y="289" width="15" height="102" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="2"/>
+        <rect x="1050" y="289" width="15" height="102" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="2"/>`;
+
+      // Lane dividers (dashed, subtle)
+      const separators = [1,2,3,4].map(i =>
+        `<line x1="0" y1="${i*LH}" x2="1050" y2="${i*LH}" stroke="rgba(255,255,255,0.14)" stroke-width="1.5" stroke-dasharray="8,5"/>`
+      ).join('');
+
+      // Labels: % big + lane name small, top-right corner of each lane
+      const fBig   = size==='large' ? 44 : 26;
+      const fLabel = size==='large' ? 17 : 11;
       const labels = cData.c.map((pct, i) => {
         const cy   = i * LH + LH / 2;
-        const bold = pct === maxPct;
+        const isMax = pct === maxPct;
+        const textFill = isMax ? '#fff' : 'rgba(255,255,255,0.78)';
         return `
-          <text x="525" y="${cy + fBig*0.35}" text-anchor="middle"
-            fill="${bold?'#fff':'rgba(255,255,255,0.88)'}"
-            font-size="${fBig}" font-weight="${bold?800:600}"
-            font-family="'DM Sans',sans-serif" letter-spacing="-0.5">${pct}%</text>
-          <text x="22" y="${cy + fSmall*0.35}" text-anchor="start"
-            fill="rgba(255,255,255,0.55)" font-size="${fSmall}"
-            font-family="'DM Sans',sans-serif" font-weight="600">${LANE_NAME[i]}</text>`;
+          <text x="525" y="${cy + fBig*0.36}" text-anchor="middle"
+            fill="${textFill}" font-size="${fBig}"
+            font-weight="${isMax?800:600}" font-family="'DM Sans',sans-serif">${pct}%</text>
+          <text x="18" y="${i*LH + fLabel + 6}" text-anchor="start"
+            fill="rgba(255,255,255,0.45)" font-size="${fLabel}"
+            font-family="'DM Sans',sans-serif" font-weight="700">${LANE_NAME[i]}</text>`;
       }).join('');
+
       const wStyle = size==='large'
-        ? 'width:60%;max-width:500px;display:block;margin:0 auto'
+        ? 'width:62%;max-width:510px;display:block;margin:0 auto'
         : 'width:100%;display:block';
+
       return `<div style="${wStyle}">
         <svg viewBox="-15 0 1080 680" style="width:100%;border-radius:10px;overflow:hidden">
           <rect x="-15" y="0" width="1080" height="680" fill="#1a6b3c"/>
@@ -3727,7 +3739,7 @@
       const kpis = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0">
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
           <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Carril dominante</div>
-          <div style="font-size:20px;font-weight:800;color:${LANE_COL[maxIdx]}">${LANE_NAME[maxIdx]}</div>
+          <div style="font-size:20px;font-weight:800;color:var(--accent)">${LANE_NAME[maxIdx]}</div>
           <div style="font-size:12px;color:var(--text2)">${entry.c[maxIdx]}%</div>
         </div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
@@ -3752,20 +3764,20 @@
 
       const laneRows = entry.players.map((topPlayers, li) => {
         if (!topPlayers.length) return '';
+        const totalDur = entry.dur || 1; // total match possession seconds
         const cols = topPlayers.map(pl => {
-          const pos  = posMapC[pl.name] || '';
-          const secs = Math.round(pl.dur);
-          const mm   = Math.floor(secs/60), ss = String(secs%60).padStart(2,'0');
-          const sn   = pl.name.length > 18 ? pl.name.slice(0,17)+'…' : pl.name;
+          const pos    = posMapC[pl.name] || '';
+          const plPct  = (pl.dur / totalDur * 100).toFixed(1); // % of total match possession
+          const sn     = pl.name.length > 18 ? pl.name.slice(0,17)+'…' : pl.name;
           const posBadge = pos ? `<span style="font-size:9px;color:var(--text3);background:rgba(255,255,255,0.07);border-radius:5px;padding:1px 5px;margin-left:4px">${pos}</span>` : '';
           return `<div style="flex:1;padding:8px 10px;background:var(--bg3);border-radius:7px;min-width:0">
             <div style="font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sn}${posBadge}</div>
-            <div style="font-size:10px;color:var(--text3);margin-top:2px">${mm}:${ss}</div>
+            <div style="font-size:12px;font-weight:700;color:var(--accent);margin-top:2px">${plPct}%</div>
           </div>`;
         }).join('');
         return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <div style="width:72px;flex-shrink:0">
-            <span style="font-size:9px;font-weight:700;background:${LANE_COL[li]};color:#0d1117;border-radius:6px;padding:2px 7px">${LANE_NAME[li]}</span>
+            <span style="font-size:9px;font-weight:700;background:rgba(200,169,110,0.2);color:var(--accent);border:1px solid rgba(200,169,110,0.4);border-radius:6px;padding:2px 7px">${LANE_NAME[li]}</span>
             <div style="font-size:10px;color:var(--text3);margin-top:2px">${entry.c[li]}%</div>
           </div>
           <div style="display:flex;gap:6px;flex:1;min-width:0">${cols}</div>
@@ -3801,10 +3813,10 @@
 
       // Mini bar
       const miniBar = entry ? `<div style="display:flex;height:5px;border-radius:3px;overflow:hidden;margin:8px 12px 4px">
-        ${entry.c.map((p,i)=>`<div style="width:${p}%;background:${LANE_COL[i]};opacity:0.85"></div>`).join('')}
+        ${entry.c.map((p,i)=>`<div style="width:${p}%;background:#c8a96e;opacity:${(0.25+i*0.1).toFixed(2)}"></div>`).join('')}
       </div>
       <div style="display:flex;justify-content:space-around;padding:0 12px 8px;font-size:10px">
-        ${entry.c.map((p,i)=>`<span style="color:${LANE_COL[i]};font-weight:700">${p}%</span>`).join('')}
+        ${entry.c.map((p,i)=>`<span style="color:var(--accent);font-weight:${entry.c[i]===Math.max(...entry.c)?'800':'500'}">${p}%</span>`).join('')}
       </div>` : '';
 
       return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
@@ -3822,7 +3834,7 @@
     // Legend
     const legend = `<div style="display:flex;justify-content:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">
       ${LANE_NAME.map((n,i)=>`<div style="display:flex;align-items:center;gap:5px">
-        <div style="width:14px;height:14px;border-radius:3px;background:${LANE_COL[i]};opacity:0.85"></div>
+        <div style="width:14px;height:14px;border-radius:3px;background:#c8a96e;opacity:${0.3+i*0.15}"></div>
         <span style="font-size:11px;color:var(--text3)">${n}</span>
       </div>`).join('')}
     </div>`;
