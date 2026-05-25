@@ -145,6 +145,7 @@
   let aliParte      = '1';    // '1' | '2'
   let aliNMatches   = 1;      // 1 | 3 | 5 | 10 | 0(custom) — filmstrip
   let aliCustomIds  = [];     // IDs seleccionados en modo custom
+  let aliMainTab    = 'alineacion'; // 'alineacion' | 'plantilla' | 'sistemas'
   let bloqueMatchId = null;
   let bloquePhase   = 'ataque';   // 'ataque' | 'defensa'
   let bloqueSubTab  = 'general';  // 'general' | '1parte' | '2parte' | 'comparativa'
@@ -2351,6 +2352,272 @@
       `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${cards}</div>`;
   }
 
+  // ── Plantilla & Sistemas ──────────────────────────────────────────────────
+
+  function computePlayerStats() {
+    const players = {};
+
+    PARTIDOS.forEach(partido => {
+      const mid = partido.id;
+      const rawLineup = PONF_LINEUPS[mid] || [];
+
+      rawLineup.forEach(r => {
+        const id = r[0], name = r[1], pos = r[2], start_t = r[3], end_t = r[4];
+        if (!players[id]) {
+          players[id] = { id, name, position: pos, starts: 0, subs: 0, dnp: 0, minutes: 0 };
+        }
+        const pl = players[id];
+        const isStarter = start_t === '00:00:00';
+        isStarter ? pl.starts++ : pl.subs++;
+        const minIn  = isStarter ? 0 : timeToMin(start_t);
+        const minOut = end_t ? Math.min(timeToMin(end_t), 95) : 90;
+        pl.minutes  += Math.max(0, minOut - minIn);
+      });
+
+      // DNP desde BENCH_UNUSED
+      (BENCH_UNUSED[mid] || []).forEach(u => {
+        const uName = u[1].toLowerCase();
+        const matched = Object.values(players).find(pl =>
+          pl.name.toLowerCase().slice(0,7) === uName.slice(0,7)
+        );
+        const posMap = { G:'GK', D:'CB', M:'CM', F:'CF' };
+        if (matched) {
+          matched.dnp++;
+        } else {
+          const fakeId = 'bench_' + u[1];
+          if (!players[fakeId]) {
+            players[fakeId] = {
+              id: fakeId, name: u[1], jersey: u[0],
+              position: posMap[u[2]] || 'CM',
+              starts: 0, subs: 0, dnp: 0, minutes: 0
+            };
+          }
+          players[fakeId].dnp++;
+        }
+      });
+    });
+
+    // Resolver posiciones canónicas para IDs numéricos
+    Object.values(players).forEach(pl => {
+      if (typeof pl.id === 'number') {
+        pl.position = resolvePlayerPosition(pl);
+      }
+    });
+
+    return Object.values(players);
+  }
+
+  function renderPlantilla() {
+    const cont = document.getElementById('aliSecCont');
+    if (!cont) return;
+
+    const stats  = computePlayerStats();
+    const byTier = [[], [], [], []];
+    stats.forEach(p => {
+      const { tier } = getPosTier(p.position);
+      byTier[Math.min(tier, 3)].push(p);
+    });
+    byTier.forEach(grp => grp.sort((a,b) => b.minutes - a.minutes));
+
+    let html = '';
+
+    byTier.forEach((grp, tier) => {
+      if (!grp.length) return;
+      const col = TIER_COL[tier];
+      html += `
+      <div style="margin-bottom:24px">
+        <div style="font-size:10px;color:${col};text-transform:uppercase;letter-spacing:2.5px;font-weight:700;margin-bottom:10px">${TIER_LABEL[tier]}</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <div style="display:grid;grid-template-columns:36px 1fr 56px 42px 42px 44px 66px 52px;padding:8px 14px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:600">
+            <div>#</div><div>Jugador</div><div>Pos</div>
+            <div style="text-align:center" title="Titularidades">T</div>
+            <div style="text-align:center" title="Entradas desde banquillo">E</div>
+            <div style="text-align:center" title="En banquillo sin jugar">DNP</div>
+            <div style="text-align:right">Min</div>
+            <div style="text-align:right">Avg</div>
+          </div>`;
+
+      grp.forEach((p, i) => {
+        const dorsal = typeof p.id === 'number' && PLAYER_DORSALES[p.id] != null
+                       ? PLAYER_DORSALES[p.id]
+                       : (p.jersey != null ? p.jersey : '—');
+        const played  = p.starts + p.subs;
+        const avg     = played > 0 ? Math.round(p.minutes / played) : 0;
+        const rowBg   = i % 2 ? 'rgba(255,255,255,0.02)' : 'transparent';
+        html += `<div style="display:grid;grid-template-columns:36px 1fr 56px 42px 42px 44px 66px 52px;padding:9px 14px;background:${rowBg};align-items:center;border-bottom:1px solid rgba(255,255,255,0.04)">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${col};opacity:0.85">${dorsal}</div>
+          <div style="font-size:13px;color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+          <div><span style="background:${TIER_BG[tier]};border:1px solid ${TIER_BO[tier]};color:${col};border-radius:4px;padding:2px 5px;font-size:10px;font-weight:700">${p.position}</span></div>
+          <div style="text-align:center;font-size:13px;color:var(--text);font-weight:700">${p.starts}</div>
+          <div style="text-align:center;font-size:13px;color:${p.subs?'#3fb950':'var(--text3)'}">${p.subs || '—'}</div>
+          <div style="text-align:center;font-size:13px;color:var(--text3)">${p.dnp || '—'}</div>
+          <div style="text-align:right;font-size:13px;color:var(--text);font-weight:600">${Math.round(p.minutes)}'</div>
+          <div style="text-align:right;font-size:11px;color:var(--text3)">${played ? avg+"'" : '—'}</div>
+        </div>`;
+      });
+
+      html += `</div></div>`;
+    });
+
+    html += buildXIProbable(stats);
+    cont.innerHTML = html;
+  }
+
+  function buildXIProbable(stats) {
+    const byTier = [[], [], [], []];
+    stats.forEach(p => {
+      const { tier } = getPosTier(p.position);
+      byTier[Math.min(tier, 3)].push(p);
+    });
+
+    // 1 GK · 4 DEF · 4 MID · 2 FWD — ordenados por titularidades luego minutos
+    const nByTier = [1, 4, 4, 2];
+    const picks = byTier.map((grp, t) =>
+      [...grp].sort((a,b) => b.starts - a.starts || b.minutes - a.minutes).slice(0, nByTier[t])
+    ).flat();
+
+    const fakePlayers = picks.map(p => ({
+      id: typeof p.id === 'number' ? p.id : p.name,
+      name: p.name,
+      position: p.position,
+      start_time: '00:00:00',
+      end_time: null
+    }));
+
+    const formacion = detectFormacion(fakePlayers.filter(p => p.position !== 'GK'));
+
+    return `
+    <div style="margin-top:8px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div style="font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:2px;font-weight:700">⭐ XI Probable</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Basado en titularidades acumuladas · temporada completa</div>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent);letter-spacing:2px;background:rgba(200,169,110,0.1);border:1px solid rgba(200,169,110,0.2);border-radius:8px;padding:4px 14px">${formacion}</div>
+      </div>
+      <div style="max-width:700px;margin:0 auto">
+        ${buildAlineacionSVG(fakePlayers, '1', [])}
+      </div>
+    </div>`;
+  }
+
+  function renderSistemas() {
+    const cont = document.getElementById('aliSecCont');
+    if (!cont) return;
+
+    const sistemas = {};
+    PARTIDOS.forEach(partido => {
+      const mid = partido.id;
+      const raw = PONF_LINEUPS[mid] || [];
+      if (!raw.length) return;
+
+      const starters = raw
+        .filter(r => r[3] === '00:00:00')
+        .map(r => ({ id:r[0], name:r[1], position: resolvePlayerPosition({id:r[0], position:r[2]}), start_time:r[3], end_time:r[4] }));
+
+      const form = detectFormacion(starters.filter(p => p.position !== 'GK'));
+      if (!sistemas[form]) sistemas[form] = [];
+      sistemas[form].push({ partido, starters });
+    });
+
+    const sorted = Object.entries(sistemas).sort((a,b) => b[1].length - a[1].length);
+    const totalM = sorted.reduce((s,[,ms]) => s + ms.length, 0);
+
+    let html = `<div style="margin-bottom:16px;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px">
+      ${totalM} partidos · ${sorted.length} sistema${sorted.length>1?'s':''} detectado${sorted.length>1?'s':''}
+    </div>`;
+
+    // Gráfico de barras resumen
+    html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:28px">`;
+    sorted.forEach(([form, ms]) => {
+      const pct  = Math.round((ms.length / totalM) * 100);
+      const barW = (ms.length / sorted[0][1].length) * 100;
+      html += `<div style="margin-bottom:16px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:5px">
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--accent);letter-spacing:2px">${form}</span>
+          <span style="font-size:12px;color:var(--text3)">${ms.length} partido${ms.length>1?'s':''} · ${pct}%</span>
+        </div>
+        <div style="height:6px;background:rgba(255,255,255,0.07);border-radius:3px">
+          <div style="height:100%;width:${barW}%;background:linear-gradient(90deg,rgba(200,169,110,0.8),rgba(200,169,110,0.2));border-radius:3px"></div>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+
+    // Detalle por sistema
+    sorted.forEach(([form, ms]) => {
+      // Jugadores más frecuentes en este sistema
+      const playerCount = {};
+      ms.forEach(({ starters }) => {
+        starters.forEach(p => {
+          if (!playerCount[p.id]) playerCount[p.id] = { ...p, count: 0 };
+          playerCount[p.id].count++;
+        });
+      });
+      const topPlayers = Object.values(playerCount).sort((a,b) => b.count - a.count);
+
+      html += `<div style="margin-bottom:30px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--accent);letter-spacing:2px">${form}</div>
+          <div style="font-size:12px;color:var(--text3)">${ms.length} partido${ms.length>1?'s':''}</div>
+        </div>
+
+        <!-- Jugadores más frecuentes -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:12px">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">Jugadores más frecuentes en este sistema</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">`;
+
+      topPlayers.forEach(p => {
+        const { tier } = getPosTier(p.position);
+        const col = TIER_COL[tier];
+        const pct = Math.round((p.count / ms.length) * 100);
+        html += `<div style="display:flex;align-items:center;gap:5px;background:${TIER_BG[tier]};border:1px solid ${TIER_BO[tier]};border-radius:6px;padding:4px 10px">
+          <span style="font-size:10px;color:${col};font-weight:700">${p.position}</span>
+          <span style="font-size:12px;color:var(--text);font-weight:600">${p.name.split(' ')[0]}</span>
+          <span style="font-size:10px;color:var(--text3)">${p.count}/${ms.length}</span>
+        </div>`;
+      });
+
+      html += `</div></div>
+
+        <!-- Grid de partidos -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px">`;
+
+      ms.forEach(({ partido, starters }) => {
+        const rival   = partido.local === currentTeam.name ? partido.vis : partido.local;
+        const esLocal = partido.local === currentTeam.name;
+        const [mg, mv] = (partido.s || '0-0').split('-').map(Number);
+        const won  = esLocal ? mg > mv : mv > mg;
+        const draw = mg === mv;
+        const rc   = won ? '#3fb950' : draw ? '#c8a96e' : '#f85149';
+        const disp = esLocal ? `${mg}-${mv}` : `${mv}-${mg}`;
+
+        html += `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div>
+              <div style="font-size:10px;color:var(--text3)">${partido.j} · ${partido.f}</div>
+              <div style="font-size:12px;color:var(--text);font-weight:600">${esLocal?'🏠':'✈️'} ${rival}</div>
+            </div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${rc}">${disp}</div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px">`;
+
+        starters.forEach(p => {
+          const { tier } = getPosTier(p.position);
+          html += `<span style="font-size:9px;color:${TIER_COL[tier]};background:${TIER_BG[tier]};border-radius:3px;padding:2px 5px">${p.name.split(' ')[0]}</span>`;
+        });
+
+        html += `</div></div>`;
+      });
+
+      html += `</div></div>`;
+    });
+
+    cont.innerHTML = html;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   function loadAlineaciones() {
     const matchOpts = PARTIDOS.map(p=>{
       const rival = p.local===currentTeam.name?p.vis:p.local;
@@ -2358,7 +2625,12 @@
       return `<option value="${p.id}" ${p.id==aliMatchId?'selected':''}>${s} ${p.j} · ${rival} · ${p.s} · ${p.f}</option>`;
     }).join('');
 
-    document.getElementById('content').innerHTML=`<div class="anim">${head()}
+    const mtBtn = (id, lbl) => {
+      const act = aliMainTab === id;
+      return `<button onclick="aliMainTab='${id}';loadAlineaciones()" style="padding:10px 18px;background:transparent;border:none;border-bottom:2px solid ${act?'var(--accent)':'transparent'};color:${act?'var(--accent)':'var(--text2)'};font-family:'DM Sans',sans-serif;font-size:13px;font-weight:${act?'700':'500'};cursor:pointer;transition:all 0.15s;white-space:nowrap">${lbl}</button>`;
+    };
+
+    const alineacionContent = aliMainTab === 'alineacion' ? `
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
         <select id="aliSel" onchange="aliMatchId=parseInt(this.value);renderAlineacion()"
           style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;flex:1;min-width:280px">
@@ -2367,10 +2639,24 @@
       </div>
       <div id="aliCont">
         <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido para ver la alineación</div>
+      </div>` : `<div id="aliSecCont" style="padding-top:4px"></div>`;
+
+    document.getElementById('content').innerHTML=`<div class="anim">${head()}
+      <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;gap:0;overflow-x:auto">
+        ${mtBtn('alineacion','📋 Alineación')}
+        ${mtBtn('plantilla','📊 Plantilla')}
+        ${mtBtn('sistemas','⚙️ Sistemas')}
       </div>
+      ${alineacionContent}
     </div>`;
 
-    if(aliMatchId||(aliNMatches!==1)) renderAlineacion();
+    if (aliMainTab === 'alineacion') {
+      if (aliMatchId || aliNMatches !== 1) renderAlineacion();
+    } else if (aliMainTab === 'plantilla') {
+      renderPlantilla();
+    } else if (aliMainTab === 'sistemas') {
+      renderSistemas();
+    }
   }
 
   function renderAlineacion() {
