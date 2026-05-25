@@ -3556,37 +3556,103 @@
     const best  = [...matches].sort((a,b) => b.pct - a.pct)[0];
     const worst = [...matches].sort((a,b) => a.pct - b.pct)[0];
 
-    // ── SVG bar chart ──
-    const W=900,H=240,ML=36,MR=8,MT=24,MB=46;
+    // ── Line + area chart (Athletic style) ──
+    const W=920, H=300, ML=44, MR=20, MT=28, MB=52;
     const cW=W-ML-MR, cH=H-MT-MB;
     const n=matches.length;
-    const slot=cW/n, bW=Math.max(4,slot-4);
+    const xS = i  => ML + (i/(n-1))*cW;
+    const yS = pct => MT + cH - (pct/100)*cH;
+    const y50 = yS(50);
 
-    let bars='', lbls='';
-    matches.forEach((m,i) => {
-      const x = ML + i*slot + (slot-bW)/2;
-      const ph = (m.pct/100)*cH;
-      const by = MT+cH-ph;
-      const col = posColor(m.pct);
-      bars += `<rect x="${x.toFixed(1)}" y="${MT}" width="${bW.toFixed(1)}" height="${cH}" fill="rgba(255,255,255,0.05)" rx="2"/>`;
-      bars += `<rect x="${x.toFixed(1)}" y="${by.toFixed(1)}" width="${bW.toFixed(1)}" height="${ph.toFixed(1)}" fill="${col}" fill-opacity="0.75" rx="2"/>`;
-      if(bW>16) bars += `<text x="${(x+bW/2).toFixed(0)}" y="${(by-4).toFixed(0)}" text-anchor="middle" fill="${col}" font-size="8.5" font-family="'DM Sans',sans-serif" font-weight="700">${m.pct}</text>`;
-      lbls += `<text x="${(x+bW/2).toFixed(0)}" y="${H-MB+14}" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="8.5" font-family="'DM Sans',sans-serif">${m.partido.j.replace('J','')}</text>`;
+    // Closed area path (along Ponf line, then back along 50% baseline)
+    const linePts = matches.map((m,i) => `${xS(i).toFixed(1)},${yS(m.pct).toFixed(1)}`);
+    const areaPth = `M${xS(0).toFixed(1)},${y50.toFixed(1)} ` +
+      linePts.map(p=>'L'+p).join(' ') +
+      ` L${xS(n-1).toFixed(1)},${y50.toFixed(1)} Z`;
+    const linePth = 'M' + linePts.join('L');
+
+    // Rolling avg (3-match)
+    const rollPts = matches.map((m,i) => {
+      const slice = matches.slice(Math.max(0,i-2), i+1);
+      const avg3  = slice.reduce((s,x)=>s+x.pct,0)/slice.length;
+      return `${xS(i).toFixed(1)},${yS(avg3).toFixed(1)}`;
     });
+    const rollPth = 'M' + rollPts.join('L');
 
-    const yAx = [25,50,75].map(v => {
-      const y = (MT+cH-(v/100)*cH).toFixed(1);
-      return `<line x1="${ML}" y1="${y}" x2="${W-MR}" y2="${y}" stroke="rgba(255,255,255,${v===50?'0.18':'0.07'})" stroke-width="${v===50?'1':'0.7'}" stroke-dasharray="${v===50?'5 3':''}"/>
-              <text x="${ML-4}" y="${(parseFloat(y)+3).toFixed(0)}" text-anchor="end" fill="rgba(255,255,255,0.25)" font-size="8" font-family="'DM Sans',sans-serif">${v}</text>`;
+    // Grid & axis
+    const gridLines = [25,50,75,100].map(v => {
+      const y = yS(v).toFixed(1);
+      const hl = v===50;
+      return `<line x1="${ML}" y1="${y}" x2="${W-MR}" y2="${y}"
+        stroke="rgba(255,255,255,${hl?'0.15':'0.05'})"
+        stroke-width="${hl?'1.2':'0.6'}"
+        stroke-dasharray="${hl?'6 4':''}"/>
+      <text x="${ML-6}" y="${(parseFloat(y)+3.5).toFixed(0)}" text-anchor="end"
+        fill="rgba(255,255,255,${hl?'0.4':'0.2'})" font-size="${hl?9:8}"
+        font-weight="${hl?'600':'400'}"
+        font-family="'DM Sans',sans-serif">${v}%</text>`;
     }).join('');
+
+    // X labels (jornada)
+    const xLbls = matches.map((m,i) => {
+      if(n<=15 || i%2===0 || i===n-1)
+        return `<text x="${xS(i).toFixed(1)}" y="${H-MB+18}" text-anchor="middle"
+          fill="rgba(255,255,255,0.28)" font-size="9" font-family="'DM Sans',sans-serif">${m.partido.j.replace('J','')}</text>`;
+      return '';
+    }).join('');
+
+    // Dots with rival name tooltip approach (title tag)
+    const dots = matches.map((m,i) => {
+      const cx = xS(i).toFixed(1), cy = yS(m.pct).toFixed(1);
+      const col = posColor(m.pct);
+      const rv  = m.rival.length>18 ? m.rival.slice(0,17)+'…' : m.rival;
+      const won  = m.esLocal ? m.mg>m.mv : m.mv>m.mg;
+      const draw = m.mg===m.mv;
+      const rc   = won?'#3fb950':draw?'#c8a96e':'#f85149';
+      const disp = m.esLocal?`${m.mg}-${m.mv}`:`${m.mv}-${m.mg}`;
+      return `<circle cx="${cx}" cy="${cy}" r="4" fill="${col}" stroke="#0d1117" stroke-width="1.5">
+        <title>${m.partido.j} · ${rv} ${disp} · ${m.pct}%</title>
+      </circle>`;
+    }).join('');
+
+    // Team labels on Y axis right
+    const lbPonf = `<text x="${W-MR+4}" y="${yS(matches[n-1].pct).toFixed(0)}" fill="#58a6ff" font-size="9.5" font-family="'DM Sans',sans-serif" font-weight="700" dominant-baseline="middle">Ponf</text>`;
+    const lbRival= `<text x="${W-MR+4}" y="${yS(100-matches[n-1].pct).toFixed(0)}" fill="rgba(248,81,73,0.7)" font-size="9.5" font-family="'DM Sans',sans-serif" font-weight="700" dominant-baseline="middle">Rival</text>`;
+
+    // Legend
+    const legend = `
+      <rect x="${ML}" y="${H-MB+28}" width="10" height="3" fill="#3fb950" fill-opacity="0.6" rx="1"/>
+      <text x="${ML+14}" y="${H-MB+32}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Ponferradina &gt; 50%</text>
+      <rect x="${ML+130}" y="${H-MB+28}" width="10" height="3" fill="#f85149" fill-opacity="0.6" rx="1"/>
+      <text x="${ML+144}" y="${H-MB+32}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Rival &gt; 50%</text>
+      <line x1="${ML+260}" y1="${H-MB+30}" x2="${ML+276}" y2="${H-MB+30}" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-dasharray="3 2"/>
+      <text x="${ML+280}" y="${H-MB+33}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Media 3J</text>`;
 
     const chartTitle = isCompleta
       ? 'Posesión completa por jornada'
       : `Posesión activa · ${posesionPeriodo==='t'?'90 min':posesionPeriodo==='1'?'1ª parte':'2ª parte'}`;
 
+    const uid = Math.random().toString(36).slice(2,7);
     const chart = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
       <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">${chartTitle}</div>
-      <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${yAx}${bars}${lbls}</svg>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;overflow:visible">
+        <defs>
+          <clipPath id="cp-up-${uid}"><rect x="${ML}" y="${MT}" width="${cW}" height="${(y50-MT).toFixed(1)}"/></clipPath>
+          <clipPath id="cp-dn-${uid}"><rect x="${ML}" y="${y50.toFixed(1)}" width="${cW}" height="${(MT+cH-y50).toFixed(1)}"/></clipPath>
+        </defs>
+        ${gridLines}
+        <!-- Area fill: green above 50%, red below -->
+        <path d="${areaPth}" fill="#3fb950" fill-opacity="0.18" clip-path="url(#cp-up-${uid})"/>
+        <path d="${areaPth}" fill="#f85149" fill-opacity="0.18" clip-path="url(#cp-dn-${uid})"/>
+        <!-- Ponferradina line -->
+        <path d="${linePth}" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linejoin="round"/>
+        <!-- Rolling avg line -->
+        <path d="${rollPth}" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-dasharray="4 3" stroke-linejoin="round"/>
+        <!-- Dots -->
+        ${dots}
+        ${xLbls}
+        ${legend}
+      </svg>
     </div>`;
 
     // ── Summary cards ──
