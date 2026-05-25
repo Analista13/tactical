@@ -141,8 +141,20 @@
   let telaranaMode  = 'todos'; // 'todos' | 'titulares'
   let perdidasPart  = 'total'; // 'total' | '1' | '2'
   let _redRenderSeq = 0;       // cancel stale async renders
-  // % posesión de equipo por partido (fuente: SkillCorner duration field)
-  // {matchId: {t: total, '1': 1ª parte, '2': 2ª parte}}
+  // Posesión completa por partido (fuente: estadísticas oficiales de competición)
+  // Incluye todas las fases del juego: balón parado, saques, faltas, etc.
+  const POSSESSION_SOF = {
+    2038965:46, 2040148:43, 2040246:52, 2040391:52, 2040430:49,
+    2040906:66, 2040921:57, 2041110:38, 2043900:33, 2044962:33,
+    2046155:51, 2047298:36, 2047799:52, 2048312:31, 2049811:42,
+    2050287:42, 2051795:43, 2052263:32, 2053348:41, 2054294:46,
+    2054952:41, 2056593:35, 2057466:60, 2058792:61, 2061313:52,
+    2062716:51, 2063736:35, 2064907:34, 2066099:46, 2067181:48,
+    2069357:44,
+  };
+
+  // Posesión activa por partido (fuente: eventos de posesión de jugador)
+  // Solo cuenta el tiempo real de control del balón en juego dinámico
   const POSSESSION_DATA = {
     2038965:{t:48.1,'1':43.1,'2':52.4},
     2040148:{t:39.3,'1':47.0,'2':31.5},
@@ -3479,15 +3491,11 @@
 
   // ─── POSESIÓN ────────────────────────────────────────────────────────────────
 
+  let posesionTipo = 'completa'; // 'completa' | 'activa'
+  let posesionPeriodo = 't';     // 't' | '1' | '2'
+
   function loadPosesion() {
-    const perBtn = (id, lbl) => {
-      const act = posesionPeriodo === id;
-      return `<button onclick="posesionPeriodo='${id}';renderPosesion()" style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:7px 20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.18s">${lbl}</button>`;
-    };
     document.getElementById('content').innerHTML = `<div class="anim">${head()}
-      <div style="display:flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;width:fit-content;margin-bottom:20px">
-        ${perBtn('t','Total')}${perBtn('1','1ª Parte')}${perBtn('2','2ª Parte')}
-      </div>
       <div id="posesionCont"></div>
     </div>`;
     renderPosesion();
@@ -3496,18 +3504,53 @@
   function renderPosesion() {
     const cont = document.getElementById('posesionCont');
     if (!cont) return;
-    const key = posesionPeriodo;
     const posColor = p => p >= 50 ? '#3fb950' : p >= 40 ? '#c8a96e' : '#f85149';
 
-    const matches = PARTIDOS
-      .filter(p => POSSESSION_DATA[p.id] != null)
-      .map(p => {
-        const pct = POSSESSION_DATA[p.id][key];
-        const rival = p.local === currentTeam.name ? p.vis : p.local;
-        const esLocal = p.local === currentTeam.name;
-        const [mg, mv] = (p.s || '0-0').split('-').map(Number);
-        return { partido: p, pct, rival, esLocal, mg, mv };
-      });
+    const tipoBtn = (id, lbl) => {
+      const act = posesionTipo === id;
+      return `<button onclick="posesionTipo='${id}';renderPosesion()" style="background:${act?'rgba(200,169,110,0.15)':'var(--bg2)'};border:1px solid ${act?'rgba(200,169,110,0.4)':'var(--border)'};color:${act?'var(--accent)':'var(--text2)'};padding:7px 18px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:${act?'700':'500'};cursor:pointer;transition:all 0.15s">${lbl}</button>`;
+    };
+    const perBtn = (id, lbl) => {
+      const act = posesionPeriodo === id;
+      return `<button onclick="posesionPeriodo='${id}';renderPosesion()" style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:6px 16px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s">${lbl}</button>`;
+    };
+
+    const isCompleta = posesionTipo === 'completa';
+
+    // Description text
+    const desc = isCompleta
+      ? 'Porcentaje total de tiempo con el balón incluyendo todas las fases del juego: balón parado, saques de banda, faltas y situaciones de juego dinámico.'
+      : 'Tiempo de control real del balón en situaciones de juego activo, excluyendo interrupciones y balón parado. Refleja cuánto domina el equipo el juego en movimiento.';
+
+    // Controls header
+    const controls = `<div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:20px">
+      <div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          ${tipoBtn('completa','📊 Posesión Completa')}
+          ${tipoBtn('activa','⚡ Posesión Activa')}
+        </div>
+        <div style="font-size:11px;color:var(--text3);max-width:480px;line-height:1.6">${desc}</div>
+      </div>
+      ${isCompleta ? '' : `<div style="display:flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px">
+        ${perBtn('t','Total')}${perBtn('1','1ª Parte')}${perBtn('2','2ª Parte')}
+      </div>`}
+    </div>`;
+
+    // Get match data
+    const matches = PARTIDOS.map(p => {
+      let pct;
+      if (isCompleta) {
+        pct = POSSESSION_SOF[p.id];
+      } else {
+        const pd = POSSESSION_DATA[p.id];
+        pct = pd ? pd[posesionPeriodo] : null;
+      }
+      if (pct == null) return null;
+      const rival = p.local === currentTeam.name ? p.vis : p.local;
+      const esLocal = p.local === currentTeam.name;
+      const [mg, mv] = (p.s || '0-0').split('-').map(Number);
+      return { partido: p, pct, rival, esLocal, mg, mv };
+    }).filter(Boolean);
 
     const avg   = (matches.reduce((s,m) => s + m.pct, 0) / matches.length).toFixed(1);
     const above = matches.filter(m => m.pct >= 50).length;
@@ -3515,7 +3558,7 @@
     const worst = [...matches].sort((a,b) => a.pct - b.pct)[0];
 
     // ── SVG bar chart ──
-    const W=900,H=260,ML=36,MR=8,MT=24,MB=46;
+    const W=900,H=240,ML=36,MR=8,MT=24,MB=46;
     const cW=W-ML-MR, cH=H-MT-MB;
     const n=matches.length;
     const slot=cW/n, bW=Math.max(4,slot-4);
@@ -3532,18 +3575,24 @@
       lbls += `<text x="${(x+bW/2).toFixed(0)}" y="${H-MB+14}" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="8.5" font-family="'DM Sans',sans-serif">${m.partido.j.replace('J','')}</text>`;
     });
 
-    const refY = (MT+cH*0.5).toFixed(1);
     const yAx = [25,50,75].map(v => {
       const y = (MT+cH-(v/100)*cH).toFixed(1);
       return `<line x1="${ML}" y1="${y}" x2="${W-MR}" y2="${y}" stroke="rgba(255,255,255,${v===50?'0.18':'0.07'})" stroke-width="${v===50?'1':'0.7'}" stroke-dasharray="${v===50?'5 3':''}"/>
               <text x="${ML-4}" y="${(parseFloat(y)+3).toFixed(0)}" text-anchor="end" fill="rgba(255,255,255,0.25)" font-size="8" font-family="'DM Sans',sans-serif">${v}</text>`;
     }).join('');
 
-    const chart = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${yAx}${bars}${lbls}</svg>`;
+    const chartTitle = isCompleta
+      ? 'Posesión completa por jornada'
+      : `Posesión activa · ${posesionPeriodo==='t'?'90 min':posesionPeriodo==='1'?'1ª parte':'2ª parte'}`;
+
+    const chart = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">${chartTitle}</div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${yAx}${bars}${lbls}</svg>
+    </div>`;
 
     // ── Summary cards ──
     const avgCol = posColor(parseFloat(avg));
-    const sumCards = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
+    const kpi = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
         <div style="font-size:32px;font-family:'Bebas Neue',sans-serif;color:${avgCol};letter-spacing:1px">${avg}%</div>
         <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px">Media temporada</div>
@@ -3564,19 +3613,14 @@
       </div>
     </div>`;
 
-    // ── Chart wrapper ──
-    const chartWrap = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
-      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">Posesión Ponferradina por jornada · ${key==='t'?'90 minutos':key==='1'?'1ª parte':'2ª parte'}</div>
-      ${chart}
-    </div>`;
-
-    // ── Match cards grid ──
+    // ── Match cards ──
     const cards = matches.map(m => {
       const won  = m.esLocal ? m.mg > m.mv : m.mv > m.mg;
       const draw = m.mg === m.mv;
       const rc   = won ? '#3fb950' : draw ? '#c8a96e' : '#f85149';
       const disp = m.esLocal ? `${m.mg}-${m.mv}` : `${m.mv}-${m.mg}`;
       const col  = posColor(m.pct);
+      const pctStr = isCompleta ? `${m.pct}%` : `${m.pct}%`;
       return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
@@ -3589,13 +3633,13 @@
           <div style="height:100%;width:${m.pct}%;background:${col};border-radius:3px;opacity:0.8"></div>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:11px">
-          <span style="color:${col};font-weight:700">${m.pct}% <span style="font-weight:400;color:var(--text3)">Ponf</span></span>
-          <span style="color:var(--text3)">${(100-m.pct).toFixed(1)}%</span>
+          <span style="color:${col};font-weight:700">${pctStr} <span style="font-weight:400;color:var(--text3)">Ponf</span></span>
+          <span style="color:var(--text3)">${100-m.pct}%</span>
         </div>
       </div>`;
     }).join('');
 
-    cont.innerHTML = sumCards + chartWrap +
+    cont.innerHTML = controls + kpi + chart +
       `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">${cards}</div>`;
   }
 
