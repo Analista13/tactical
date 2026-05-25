@@ -2285,7 +2285,7 @@
   }
 
   // Compute avg positions per player for a given phase & period from match data
-  function computeTeamShape(matchData, phase, period, mid) {
+  function computeTeamShape(matchData, phase, period, matchId) {
     // Filter by period (0 = whole match)
     let data = period ? matchData.filter(e=>e.period===period) : matchData;
     // Filter by attack/defense half
@@ -2302,7 +2302,7 @@
     }
 
     // Build name→corrected-position map from embedded lineup
-    const rawLineup = PONF_LINEUPS[mid] || [];
+    const rawLineup = PONF_LINEUPS[matchId] || [];
     const posMap = {};
     rawLineup.forEach(r=>{posMap[r[1]] = resolvePlayerPosition({id:r[0],position:r[2]});});
 
@@ -2330,14 +2330,14 @@
     const MID_P=['RM','RDM','RCM','RAM','CDM','DM','SD','CM','MC','MID','CAM','AM','MF','M','MO','LM','LDM','LCM','LAM'];
     const FWD_P=['RW','RF','CF','ST','FW','ATT','DEL','SS','LW','LF'];
     const posUp = p => (p.position||'').toUpperCase();
-    const def = outfield.filter(p=>DEF_P.includes(posUp(p)));
-    const mid = outfield.filter(p=>MID_P.includes(posUp(p)));
-    const fwd = outfield.filter(p=>FWD_P.includes(posUp(p)));
+    const defs = outfield.filter(p=>DEF_P.includes(posUp(p)));
+    const mids = outfield.filter(p=>MID_P.includes(posUp(p)));
+    const fwds = outfield.filter(p=>FWD_P.includes(posUp(p)));
 
     const avgX  = arr => arr.length ? arr.reduce((s,p)=>s+p.x,0)/arr.length : null;
     const spreadY = arr => arr.length>=2 ? Math.max(...arr.map(p=>p.y))-Math.min(...arr.map(p=>p.y)) : null;
 
-    const defLine = avgX(def), midLine = avgX(mid), fwdLine = avgX(fwd);
+    const defLine = avgX(defs), midLine = avgX(mids), fwdLine = avgX(fwds);
     const teamWidth  = outfield.length>=2 ? Math.max(...outfield.map(p=>p.y))-Math.min(...outfield.map(p=>p.y)) : null;
     const teamDepth  = outfield.length>=2 ? Math.max(...outfield.map(p=>p.x))-Math.min(...outfield.map(p=>p.x)) : null;
     const centroidX  = outfield.length ? outfield.reduce((s,p)=>s+p.x,0)/outfield.length : null;
@@ -2349,7 +2349,7 @@
       defFwdGap: defLine!=null&&fwdLine!=null ? fwdLine-defLine : null,
       defMidGap: defLine!=null&&midLine!=null ? midLine-defLine : null,
       midFwdGap: midLine!=null&&fwdLine!=null ? fwdLine-midLine : null,
-      teamWidth, teamDepth, defWidth:spreadY(def), fwdWidth:spreadY(fwd),
+      teamWidth, teamDepth, defWidth:spreadY(defs), fwdWidth:spreadY(fwds),
       centroidX, centroidY,
     };
   }
