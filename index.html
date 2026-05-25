@@ -2739,8 +2739,8 @@
         shape: computeTeamShape(allData[i], bloquePhase, 0, p.id)
       }));
 
-      // Grid responsivo: N=3→3 cols, N=5→3 cols (3+2), N=10→5 cols (5+5)
-      const cols = bloqueNMatches <= 3 ? bloqueNMatches : bloqueNMatches <= 5 ? 3 : 5;
+      // Siempre 3 columnas: 3→1 fila, 5→2 filas (3+2), 10→4 filas (3+3+3+1)
+      const cols = bloqueNMatches === 1 ? 1 : 3;
       const cardW = ``; // el grid controla el tamaño
 
       const cards = items.map(({partido:p, shape}) => {
