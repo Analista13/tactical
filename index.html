@@ -3525,147 +3525,175 @@
 
   async function renderPosesionZonas(cont, controls) {
     cont.innerHTML = controls +
-      `<div style="text-align:center;padding:60px 0;color:var(--text3);font-family:'DM Sans',sans-serif">
-        <div style="font-size:28px;margin-bottom:10px">⏳</div>Cargando datos de zonas…</div>`;
+      `<div style="text-align:center;padding:60px 0;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:13px">
+        Cargando datos de zonas…</div>`;
 
     const zd = await loadZonaData();
     const CZ1='#388bfd', CZ2='#c8a96e', CZ3='#3fb950';
 
     const matches = PARTIDOS.map(p => {
       const z = zd[p.id]; if (!z) return null;
-      const rival = p.local === currentTeam.name ? p.vis : p.local;
+      const rival   = p.local === currentTeam.name ? p.vis : p.local;
       const esLocal = p.local === currentTeam.name;
       const [mg, mv] = (p.s||'0-0').split('-').map(Number);
       return { partido:p, z, rival, esLocal, mg, mv };
     }).filter(Boolean);
 
     if (!matches.length) {
-      cont.innerHTML = controls + `<div style="text-align:center;padding:60px;color:var(--text3)">Sin datos de zona disponibles.</div>`;
+      cont.innerHTML = controls + `<div style="padding:40px;text-align:center;color:var(--text3)">Sin datos disponibles.</div>`;
       return;
     }
 
-    // Season averages
-    const avgD = (matches.reduce((s,m)=>s+m.z.d,0)/matches.length).toFixed(1);
-    const avgM = (matches.reduce((s,m)=>s+m.z.m,0)/matches.length).toFixed(1);
-    const avgA = (matches.reduce((s,m)=>s+m.z.a,0)/matches.length).toFixed(1);
+    const n = matches.length;
+    const avgD = (matches.reduce((s,m)=>s+m.z.d,0)/n).toFixed(1);
+    const avgM = (matches.reduce((s,m)=>s+m.z.m,0)/n).toFixed(1);
+    const avgA = (matches.reduce((s,m)=>s+m.z.a,0)/n).toFixed(1);
+    const minD = Math.min(...matches.map(m=>m.z.d)).toFixed(1);
+    const maxD = Math.max(...matches.map(m=>m.z.d)).toFixed(1);
+    const minM = Math.min(...matches.map(m=>m.z.m)).toFixed(1);
+    const maxM = Math.max(...matches.map(m=>m.z.m)).toFixed(1);
+    const minA = Math.min(...matches.map(m=>m.z.a)).toFixed(1);
+    const maxA = Math.max(...matches.map(m=>m.z.a)).toFixed(1);
 
-    // ── Pitch diagram ──────────────────────────────────────────────────────
-    const PW=780, PH=170, PP=14;
-    const ZW=(PW-2*PP)/3;
-    // opacity = base + % contribution
-    const opD = (parseFloat(avgD)/100*0.5+0.07).toFixed(2);
-    const opM = (parseFloat(avgM)/100*0.5+0.07).toFixed(2);
-    const opA = (parseFloat(avgA)/100*0.5+0.07).toFixed(2);
+    // ── KPI cards ───────────────────────────────────────────────────────────
+    const mkKpi = (label, avg, min, max, col) => `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:12px">
+          <div style="width:9px;height:9px;border-radius:50%;background:${col}"></div>
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;font-weight:600">${label}</div>
+        </div>
+        <div style="font-size:44px;font-family:'Bebas Neue',sans-serif;color:${col};letter-spacing:1px;line-height:1">${avg}%</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">Media temporada</div>
+        <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--text2)">Mín <span style="color:${col};font-weight:700">${min}%</span></div>
+          <div style="font-size:11px;color:var(--text2)">Máx <span style="color:${col};font-weight:700">${max}%</span></div>
+        </div>
+      </div>`;
 
-    const pitchSvg = `<svg viewBox="0 0 ${PW} ${PH}" style="width:100%;display:block;border-radius:8px">
-      <rect width="${PW}" height="${PH}" fill="#162d1e" rx="8"/>
-      <!-- zone fills -->
-      <rect x="${PP}" y="${PP}" width="${ZW.toFixed(1)}" height="${PH-2*PP}" fill="${CZ1}" fill-opacity="${opD}" rx="4"/>
-      <rect x="${(PP+ZW).toFixed(1)}" y="${PP}" width="${ZW.toFixed(1)}" height="${PH-2*PP}" fill="${CZ2}" fill-opacity="${opM}"/>
-      <rect x="${(PP+2*ZW).toFixed(1)}" y="${PP}" width="${ZW.toFixed(1)}" height="${PH-2*PP}" fill="${CZ3}" fill-opacity="${opA}" rx="4"/>
-      <!-- outline -->
-      <rect x="${PP}" y="${PP}" width="${(PW-2*PP).toFixed(1)}" height="${PH-2*PP}" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1" rx="4"/>
-      <!-- dividers -->
-      <line x1="${(PP+ZW).toFixed(1)}" y1="${PP}" x2="${(PP+ZW).toFixed(1)}" y2="${PH-PP}" stroke="rgba(255,255,255,0.18)" stroke-width="1" stroke-dasharray="5 4"/>
-      <line x1="${(PP+2*ZW).toFixed(1)}" y1="${PP}" x2="${(PP+2*ZW).toFixed(1)}" y2="${PH-PP}" stroke="rgba(255,255,255,0.18)" stroke-width="1" stroke-dasharray="5 4"/>
-      <!-- center circle -->
-      <circle cx="${(PW/2).toFixed(1)}" cy="${(PH/2).toFixed(1)}" r="${((PH-2*PP)*0.26).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-      <circle cx="${(PW/2).toFixed(1)}" cy="${(PH/2).toFixed(1)}" r="3" fill="rgba(255,255,255,0.08)"/>
-      <!-- penalty arcs -->
-      <rect x="${PP}" y="${(PH/2-22).toFixed(1)}" width="28" height="44" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-      <rect x="${(PW-PP-28).toFixed(1)}" y="${(PH/2-22).toFixed(1)}" width="28" height="44" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-      <!-- % values -->
-      <text x="${(PP+ZW/2).toFixed(1)}" y="${(PH/2-6).toFixed(1)}" text-anchor="middle" fill="${CZ1}" font-size="30" font-weight="700" font-family="'Bebas Neue',sans-serif">${avgD}%</text>
-      <text x="${(PP+ZW*1.5).toFixed(1)}" y="${(PH/2-6).toFixed(1)}" text-anchor="middle" fill="${CZ2}" font-size="30" font-weight="700" font-family="'Bebas Neue',sans-serif">${avgM}%</text>
-      <text x="${(PP+ZW*2.5).toFixed(1)}" y="${(PH/2-6).toFixed(1)}" text-anchor="middle" fill="${CZ3}" font-size="30" font-weight="700" font-family="'Bebas Neue',sans-serif">${avgA}%</text>
-      <!-- zone labels -->
-      <text x="${(PP+ZW/2).toFixed(1)}" y="${(PH/2+16).toFixed(1)}" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="10" font-family="'DM Sans',sans-serif" font-weight="600">DEFENSIVO</text>
-      <text x="${(PP+ZW*1.5).toFixed(1)}" y="${(PH/2+16).toFixed(1)}" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="10" font-family="'DM Sans',sans-serif" font-weight="600">CENTRO</text>
-      <text x="${(PP+ZW*2.5).toFixed(1)}" y="${(PH/2+16).toFixed(1)}" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="10" font-family="'DM Sans',sans-serif" font-weight="600">ATAQUE</text>
-      <!-- direction -->
-      <text x="${PW-PP-2}" y="${PH-PP-4}" text-anchor="end" fill="rgba(255,255,255,0.18)" font-size="9" font-family="'DM Sans',sans-serif">→ dirección de ataque</text>
+    const kpiRow = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+      ${mkKpi('Z1 · Defensivo', avgD, minD, maxD, CZ1)}
+      ${mkKpi('Z2 · Centro',    avgM, minM, maxM, CZ2)}
+      ${mkKpi('Z3 · Ataque',    avgA, minA, maxA, CZ3)}
+    </div>`;
+
+    // ── Pitch (ratio real 105:68) ────────────────────────────────────────────────
+    const PVW=1050, PVH=680, PP=22;
+    const PZW=(PVW-2*PP)/3;
+    const opD = Math.min(0.55, parseFloat(avgD)/100*0.7+0.06).toFixed(2);
+    const opM = Math.min(0.55, parseFloat(avgM)/100*0.7+0.06).toFixed(2);
+    const opA = Math.min(0.55, parseFloat(avgA)/100*0.7+0.06).toFixed(2);
+
+    const pitchSvg = `<svg viewBox="0 0 ${PVW} ${PVH}" style="width:60%;max-width:480px;display:block;margin:0 auto;border-radius:6px;overflow:visible">
+      <rect width="${PVW}" height="${PVH}" fill="#0f2218" rx="6"/>
+      <rect x="${PP}" y="${PP}" width="${PZW.toFixed(0)}" height="${PVH-2*PP}" fill="${CZ1}" fill-opacity="${opD}" rx="3"/>
+      <rect x="${(PP+PZW).toFixed(0)}" y="${PP}" width="${PZW.toFixed(0)}" height="${PVH-2*PP}" fill="${CZ2}" fill-opacity="${opM}"/>
+      <rect x="${(PP+2*PZW).toFixed(0)}" y="${PP}" width="${PZW.toFixed(0)}" height="${PVH-2*PP}" fill="${CZ3}" fill-opacity="${opA}" rx="3"/>
+      <rect x="${PP}" y="${PP}" width="${PVW-2*PP}" height="${PVH-2*PP}" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="4" rx="3"/>
+      <line x1="${PVW/2}" y1="${PP}" x2="${PVW/2}" y2="${PVH-PP}" stroke="rgba(255,255,255,0.22)" stroke-width="3"/>
+      <line x1="${(PP+PZW).toFixed(0)}" y1="${PP}" x2="${(PP+PZW).toFixed(0)}" y2="${PVH-PP}" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="16 10"/>
+      <line x1="${(PP+2*PZW).toFixed(0)}" y1="${PP}" x2="${(PP+2*PZW).toFixed(0)}" y2="${PVH-PP}" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="16 10"/>
+      <circle cx="${PVW/2}" cy="${PVH/2}" r="91.5" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
+      <circle cx="${PVW/2}" cy="${PVH/2}" r="5"    fill="rgba(255,255,255,0.25)"/>
+      <rect x="${PP}"          y="${((PVH-403)/2).toFixed(0)}" width="165" height="403" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
+      <rect x="${PP}"          y="${((PVH-183)/2).toFixed(0)}" width="55"  height="183" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+      <rect x="${PP-22}"       y="${((PVH-73 )/2).toFixed(0)}" width="22"  height="73"  fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
+      <rect x="${PVW-PP-165}"  y="${((PVH-403)/2).toFixed(0)}" width="165" height="403" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
+      <rect x="${PVW-PP-55}"   y="${((PVH-183)/2).toFixed(0)}" width="55"  height="183" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+      <rect x="${PVW-PP}"      y="${((PVH-73 )/2).toFixed(0)}" width="22"  height="73"  fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
+      <text x="${(PP+PZW/2).toFixed(0)}"   y="${(PVH/2-28).toFixed(0)}" text-anchor="middle" fill="${CZ1}" font-size="90" font-weight="700" font-family="'Bebas Neue',sans-serif" opacity="0.9">${avgD}%</text>
+      <text x="${(PP+PZW*1.5).toFixed(0)}" y="${(PVH/2-28).toFixed(0)}" text-anchor="middle" fill="${CZ2}" font-size="90" font-weight="700" font-family="'Bebas Neue',sans-serif" opacity="0.9">${avgM}%</text>
+      <text x="${(PP+PZW*2.5).toFixed(0)}" y="${(PVH/2-28).toFixed(0)}" text-anchor="middle" fill="${CZ3}" font-size="90" font-weight="700" font-family="'Bebas Neue',sans-serif" opacity="0.9">${avgA}%</text>
+      <text x="${(PP+PZW/2).toFixed(0)}"   y="${(PVH/2+48).toFixed(0)}" text-anchor="middle" fill="rgba(255,255,255,0.42)" font-size="34" font-family="'DM Sans',sans-serif" font-weight="700">DEFENSIVO</text>
+      <text x="${(PP+PZW*1.5).toFixed(0)}" y="${(PVH/2+48).toFixed(0)}" text-anchor="middle" fill="rgba(255,255,255,0.42)" font-size="34" font-family="'DM Sans',sans-serif" font-weight="700">CENTRO</text>
+      <text x="${(PP+PZW*2.5).toFixed(0)}" y="${(PVH/2+48).toFixed(0)}" text-anchor="middle" fill="rgba(255,255,255,0.42)" font-size="34" font-family="'DM Sans',sans-serif" font-weight="700">ATAQUE</text>
+      <text x="${PVW-PP-10}" y="${PVH-10}" text-anchor="end" fill="rgba(255,255,255,0.15)" font-size="24" font-family="'DM Sans',sans-serif">→ ataque</text>
     </svg>`;
 
-    const pitchBlock = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
-      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">Distribución por zona · Media temporada (${matches.length} partidos)</div>
+    const pitchBlock = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px">Posesión por zona · Media temporada (${n} partidos)</div>
       ${pitchSvg}
     </div>`;
 
-    // ── Stacked bar chart ──────────────────────────────────────────────────
-    const CW=920, CH=210, CML=44, CMR=20, CMT=16, CMB=48;
-    const chartW=CW-CML-CMR, chartH=CH-CMT-CMB;
-    const barW = chartW/matches.length;
-    const barPad = Math.max(1, barW*0.12);
+    // ── Three-line trend chart ─────────────────────────────────────────────────────
+    const TW=920, TH=240, TML=44, TMR=20, TMT=20, TMB=50;
+    const tCW=TW-TML-TMR, tCH=TH-TMT-TMB;
+    const txS = i => TML + (i/(n-1))*tCW;
+    const yMax=70, yMin=5;
+    const tyS = v => TMT + tCH - ((v-yMin)/(yMax-yMin))*tCH;
 
-    const bars = matches.map((m,i) => {
-      const x  = CML + i*barW + barPad;
-      const bw = barW - 2*barPad;
-      const hA = m.z.a/100*chartH;
-      const hM = m.z.m/100*chartH;
-      const hD = m.z.d/100*chartH;
-      const yA = CMT;
-      const yM = CMT + hA;
-      const yD = CMT + hA + hM;
-      const won  = m.esLocal ? m.mg>m.mv : m.mv>m.mg;
-      const draw = m.mg===m.mv;
-      const rc   = won?'#3fb950':draw?'#c8a96e':'#f85149';
-      const disp = m.esLocal?`${m.mg}-${m.mv}`:`${m.mv}-${m.mg}`;
-      const rv   = m.rival.length>16?m.rival.slice(0,15)+'…':m.rival;
-      const tip  =
-        `<div style='font-weight:700;color:rgba(255,255,255,0.9);margin-bottom:3px'>${m.partido.j} · ${rv}</div>` +
-        `<div style='font-size:10px;color:${rc};margin-bottom:5px'>${disp}</div>` +
-        `<div style='font-size:10px;display:flex;flex-direction:column;gap:2px'>` +
-        `<span><span style='display:inline-block;width:8px;height:8px;background:${CZ3};border-radius:2px;margin-right:4px;vertical-align:middle'></span>Ataque ${m.z.a}%</span>` +
-        `<span><span style='display:inline-block;width:8px;height:8px;background:${CZ2};border-radius:2px;margin-right:4px;vertical-align:middle'></span>Centro ${m.z.m}%</span>` +
-        `<span><span style='display:inline-block;width:8px;height:8px;background:${CZ1};border-radius:2px;margin-right:4px;vertical-align:middle'></span>Defensivo ${m.z.d}%</span></div>`;
-      return `<g style='cursor:pointer' data-tip="${tip}" onmouseenter="posShowTip(this,true,event)" onmouseleave="posShowTip(this,false)">
-        <rect x="${x.toFixed(1)}" y="${yA.toFixed(1)}" width="${bw.toFixed(1)}" height="${hA.toFixed(1)}" fill="${CZ3}" fill-opacity="0.78"/>
-        <rect x="${x.toFixed(1)}" y="${yM.toFixed(1)}" width="${bw.toFixed(1)}" height="${hM.toFixed(1)}" fill="${CZ2}" fill-opacity="0.78"/>
-        <rect x="${x.toFixed(1)}" y="${yD.toFixed(1)}" width="${bw.toFixed(1)}" height="${hD.toFixed(1)}" fill="${CZ1}" fill-opacity="0.78"/>
-        <rect x="${x.toFixed(1)}" y="${CMT}" width="${bw.toFixed(1)}" height="${chartH}" fill="transparent"/>
-      </g>
-      <text x="${(x+bw/2).toFixed(1)}" y="${CH-CMB+17}" text-anchor="middle" fill="rgba(255,255,255,0.22)" font-size="8.5" font-family="'DM Sans',sans-serif">${m.partido.j.replace('J','')}</text>`;
+    const tGrid = [10,20,30,33.3,40,50,60].map(v => {
+      const y = tyS(v).toFixed(1);
+      const is33 = v===33.3;
+      return `<line x1="${TML}" y1="${y}" x2="${TW-TMR}" y2="${y}"
+        stroke="${is33?'rgba(255,255,255,0.1)':'rgba(255,255,255,0.04)'}"
+        stroke-width="${is33?1:0.5}" stroke-dasharray="${is33?'6 4':''}"/>
+        <text x="${TML-5}" y="${(parseFloat(y)+3.5).toFixed(0)}" text-anchor="end"
+          fill="${is33?'rgba(255,255,255,0.28)':'rgba(255,255,255,0.14)'}" font-size="${is33?8.5:7.5}"
+          font-family="'DM Sans',sans-serif">${is33?'33%':v+'%'}</text>`;
     }).join('');
 
-    const yAxis = [0,25,50,75,100].map(v => {
-      const y = CMT + chartH*(1-v/100);
-      return `<line x1="${CML}" y1="${y.toFixed(1)}" x2="${CW-CMR}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-width="0.6"/>
-      <text x="${CML-5}" y="${(y+3.5).toFixed(1)}" text-anchor="end" fill="rgba(255,255,255,0.18)" font-size="8" font-family="'DM Sans',sans-serif">${v}%</text>`;
+    const mkPath = get => 'M' + matches.map((m,i)=>`${txS(i).toFixed(1)},${tyS(get(m)).toFixed(1)}`).join('L');
+
+    const tXlbls = matches.map((m,i) =>
+      `<text x="${txS(i).toFixed(1)}" y="${TH-TMB+17}" text-anchor="middle"
+        fill="rgba(255,255,255,0.2)" font-size="8.5" font-family="'DM Sans',sans-serif">${m.partido.j.replace('J','')}</text>`
+    ).join('');
+
+    const mkDots = (get, col, label) => matches.map((m,i) => {
+      const cx=txS(i).toFixed(1), cy=tyS(get(m)).toFixed(1);
+      const won=m.esLocal?m.mg>m.mv:m.mv>m.mg, draw=m.mg===m.mv;
+      const rc=won?'#3fb950':draw?'#c8a96e':'#f85149';
+      const disp=m.esLocal?`${m.mg}-${m.mv}`:`${m.mv}-${m.mg}`;
+      const rv=m.rival.length>20?m.rival.slice(0,19)+'…':m.rival;
+      const tip=`<div style='font-weight:700;color:${col};margin-bottom:3px'>${label} · ${get(m)}%</div>` +
+        `<div style='font-size:10px;color:rgba(230,237,243,0.6);margin-bottom:2px'>${m.partido.j} · ${rv}</div>` +
+        `<div style='font-size:10px;color:${rc};font-weight:600'>${disp}</div>`;
+      return `<circle cx="${cx}" cy="${cy}" r="3.5" fill="${col}" stroke="#0d1117" stroke-width="1.2"
+        style="cursor:pointer" data-tip="${tip}"
+        onmouseenter="posShowTip(this,true,event)" onmouseleave="posShowTip(this,false)"/>`;
     }).join('');
 
-    const legend = `
-      <rect x="${CML}"     y="${CH-CMB+28}" width="9" height="9" fill="${CZ3}" fill-opacity="0.78" rx="2"/>
-      <text x="${CML+13}"  y="${CH-CMB+36}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Z3 Ataque</text>
-      <rect x="${CML+92}"  y="${CH-CMB+28}" width="9" height="9" fill="${CZ2}" fill-opacity="0.78" rx="2"/>
-      <text x="${CML+105}" y="${CH-CMB+36}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Z2 Centro</text>
-      <rect x="${CML+185}" y="${CH-CMB+28}" width="9" height="9" fill="${CZ1}" fill-opacity="0.78" rx="2"/>
-      <text x="${CML+198}" y="${CH-CMB+36}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Z1 Defensivo</text>`;
+    const tLegend = `
+      <circle cx="${TML+5}"   cy="${TH-TMB+30}" r="3" fill="${CZ1}"/>
+      <text x="${TML+13}"  y="${TH-TMB+34}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Z1 Defensivo</text>
+      <circle cx="${TML+103}" cy="${TH-TMB+30}" r="3" fill="${CZ2}"/>
+      <text x="${TML+111}" y="${TH-TMB+34}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Z2 Centro</text>
+      <circle cx="${TML+190}" cy="${TH-TMB+30}" r="3" fill="${CZ3}"/>
+      <text x="${TML+198}" y="${TH-TMB+34}" fill="rgba(255,255,255,0.45)" font-size="9" font-family="'DM Sans',sans-serif">Z3 Ataque</text>
+      <line x1="${TML+272}" y1="${TH-TMB+30}" x2="${TML+288}" y2="${TH-TMB+30}" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="5 3"/>
+      <text x="${TML+292}" y="${TH-TMB+33}" fill="rgba(255,255,255,0.28)" font-size="8.5" font-family="'DM Sans',sans-serif">Distribución igual (33%)</text>`;
 
-    const stackedChart = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
-      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">Distribución por zona · Por jornada</div>
-      <svg viewBox="0 0 ${CW} ${CH}" style="width:100%;display:block;overflow:visible">
-        ${yAxis}${bars}${legend}
+    const trendChart = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">Evolución por zona · Por jornada</div>
+      <svg viewBox="0 0 ${TW} ${TH}" style="width:100%;display:block;overflow:visible">
+        ${tGrid}
+        <path d="${mkPath(m=>m.z.d)}" fill="none" stroke="${CZ1}" stroke-width="1.8" stroke-linejoin="round" stroke-opacity="0.75"/>
+        <path d="${mkPath(m=>m.z.m)}" fill="none" stroke="${CZ2}" stroke-width="1.8" stroke-linejoin="round" stroke-opacity="0.75"/>
+        <path d="${mkPath(m=>m.z.a)}" fill="none" stroke="${CZ3}" stroke-width="1.8" stroke-linejoin="round" stroke-opacity="0.75"/>
+        ${mkDots(m=>m.z.d, CZ1, 'Z1 Defensivo')}
+        ${mkDots(m=>m.z.m, CZ2, 'Z2 Centro')}
+        ${mkDots(m=>m.z.a, CZ3, 'Z3 Ataque')}
+        ${tXlbls}${tLegend}
       </svg>
     </div>`;
 
-    // ── Match cards ────────────────────────────────────────────────────────
+    // ── Match cards ─────────────────────────────────────────────────────────────────────────────────────
     const cards = matches.map(m => {
-      const won  = m.esLocal ? m.mg>m.mv : m.mv>m.mg;
-      const draw = m.mg===m.mv;
-      const rc   = won?'#3fb950':draw?'#c8a96e':'#f85149';
-      const disp = m.esLocal?`${m.mg}-${m.mv}`:`${m.mv}-${m.mg}`;
+      const won=m.esLocal?m.mg>m.mv:m.mv>m.mg, draw=m.mg===m.mv;
+      const rc=won?'#3fb950':draw?'#c8a96e':'#f85149';
+      const disp=m.esLocal?`${m.mg}-${m.mv}`:`${m.mv}-${m.mg}`;
       return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
             <div style="font-size:10px;color:var(--text3)">${m.partido.j}</div>
-            <div style="font-size:12px;color:var(--text);font-weight:600;line-height:1.3">${m.esLocal?'🏠':'✈️'} ${m.rival.length>15?m.rival.slice(0,14)+'…':m.rival}</div>
+            <div style="font-size:12px;color:var(--text);font-weight:600;line-height:1.3">${m.esLocal?'\uD83C\uDFE0':'\u2708\uFE0F'} ${m.rival.length>15?m.rival.slice(0,14)+'…':m.rival}</div>
           </div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${rc}">${disp}</div>
         </div>
         <div style="display:flex;height:6px;border-radius:3px;overflow:hidden;margin-bottom:6px">
-          <div style="width:${m.z.d}%;background:${CZ1};opacity:0.8"></div>
-          <div style="width:${m.z.m}%;background:${CZ2};opacity:0.8"></div>
-          <div style="width:${m.z.a}%;background:${CZ3};opacity:0.8"></div>
+          <div style="width:${m.z.d}%;background:${CZ1};opacity:0.85"></div>
+          <div style="width:${m.z.m}%;background:${CZ2};opacity:0.85"></div>
+          <div style="width:${m.z.a}%;background:${CZ3};opacity:0.85"></div>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:10px">
           <span style="color:${CZ1};font-weight:600">${m.z.d}%</span>
@@ -3675,7 +3703,7 @@
       </div>`;
     }).join('');
 
-    cont.innerHTML = controls + pitchBlock + stackedChart +
+    cont.innerHTML = controls + kpiRow + pitchBlock + trendChart +
       `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px">${cards}</div>`;
   }
 
