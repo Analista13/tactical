@@ -3500,6 +3500,11 @@
 
   // ─── ZONAS ─────────────────────────────────────────────────────────────────
   async function loadZonaData() {
+    // Reset cache if built without player data (legacy)
+    if (_zonaCache) {
+      const first = Object.values(_zonaCache)[0];
+      if (first && !first.players) _zonaCache = null;
+    }
     if (_zonaCache) return _zonaCache;
     const ids = PARTIDOS.map(p => p.id);
     const results = await Promise.all(
@@ -3530,6 +3535,20 @@
       } : null;
       const entry = {};
       ['t','1','2'].forEach(k => { const z=toZ(bk[k]); if(z) entry[k]=z; });
+
+      // Player possession per period
+      const pk = { t:{}, '1':{}, '2':{} };
+      data.e.forEach(ev => {
+        const dur = ev.duration || 0;
+        if (!dur || !ev.player_name) return;
+        const per = String(ev.period);
+        [per, 't'].forEach(k => {
+          if (!pk[k]) pk[k] = {};
+          pk[k][ev.player_name] = (pk[k][ev.player_name] || 0) + dur;
+        });
+      });
+      entry.players = pk;
+
       if (entry.t) cache[ids[i]] = entry;
     });
     _zonaCache = cache;
@@ -3679,7 +3698,52 @@
           </div>`).join('')}
       </div>`;
 
-      cont.innerHTML = controls + filterBar + selector + header + pitchBlock + kpis;
+      // ── Player possession ranking ────────────────────────────────────────
+      const playerMap = (zd[zonasMatchId].players || {})[zonasPeriodo] || {};
+      const totalDur  = Object.values(playerMap).reduce((s,v)=>s+v, 0);
+      const playerRanking = Object.entries(playerMap)
+        .map(([name, dur]) => ({ name, dur, pct: +(dur/totalDur*100).toFixed(1) }))
+        .sort((a,b) => b.dur - a.dur);
+
+      let playerBlock = '';
+      if (playerRanking.length > 0) {
+        const maxPct = playerRanking[0].pct;
+        const rows = playerRanking.map((p, i) => {
+          const isTop    = i < 3;
+          const isBottom = i >= playerRanking.length - 3;
+          const barCol   = isTop ? '#3fb950' : isBottom ? '#f85149' : 'rgba(255,255,255,0.2)';
+          const nameCol  = isTop ? '#3fb950' : isBottom ? '#f85149' : 'var(--text)';
+          const badge    = isTop ? `<span style="font-size:9px;background:rgba(63,185,80,0.15);color:#3fb950;border-radius:10px;padding:1px 7px;margin-left:6px;font-weight:700">TOP</span>`
+                         : isBottom ? `<span style="font-size:9px;background:rgba(248,81,73,0.15);color:#f85149;border-radius:10px;padding:1px 7px;margin-left:6px;font-weight:700">MIN</span>`
+                         : '';
+          const secs = Math.round(p.dur);
+          const mm   = Math.floor(secs/60), ss = String(secs%60).padStart(2,'0');
+          const shortName = p.name.length > 22 ? p.name.slice(0,21)+'…' : p.name;
+          return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+            <div style="width:26px;text-align:right;font-size:11px;color:var(--text3);flex-shrink:0">${i+1}</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;margin-bottom:4px">
+                <span style="font-size:12px;font-weight:600;color:${nameCol};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${shortName}</span>
+                ${badge}
+              </div>
+              <div style="height:5px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden">
+                <div style="height:100%;width:${(p.pct/maxPct*100).toFixed(1)}%;background:${barCol};opacity:0.75;border-radius:3px"></div>
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:13px;font-weight:700;color:${nameCol}">${p.pct}%</div>
+              <div style="font-size:10px;color:var(--text3)">${mm}:${ss}</div>
+            </div>
+          </div>`;
+        }).join('');
+
+        playerBlock = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:16px">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px">Posesión por jugador · ${perLabel}</div>
+          ${rows}
+        </div>`;
+      }
+
+      cont.innerHTML = controls + filterBar + selector + header + pitchBlock + kpis + playerBlock;
       return;
     }
 
