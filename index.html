@@ -102,7 +102,7 @@
 <div id="pos-tip" style="display:none;position:fixed;background:#1c2128;border:1px solid rgba(255,255,255,0.13);border-radius:8px;padding:9px 13px;font-family:'DM Sans',sans-serif;pointer-events:none;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.55);min-width:130px"></div>
 
 <header>
-  <img class="header-logo" id="headerLogo" src="https://tmssl.akamaized.net/images/wappen/head/4032.png" alt="">
+  <img class="header-logo" id="headerLogo" src="https://tmssl.akamaized.net/images/wappen/head/13.png" alt="Atlético de Madrid">
   <div><div class="header-title">Tactical</div></div>
   <div class="header-sub">Primera Federación · 2025-26</div>
   <div class="header-badge">⚽ 51.036 eventos</div>
@@ -436,7 +436,7 @@
     currentTeam = {id, name, escudo};
     PARTIDOS = PARTIDOS_MAP[id] || PARTIDOS_MAP[2908];
     PLAYER_DORSALES = PLAYER_DORSALES_MAP_D[id] || {};
-    document.getElementById('headerLogo').src = escudo;
+    // headerLogo is fixed (club branding), not updated per team
     redMatchId = null;
     aliMatchId = null;
     bloqueMatchId = null;
