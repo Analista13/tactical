@@ -5433,14 +5433,15 @@
     let passes = raw;
     if (pasesPeriod !== 't') passes = passes.filter(p => p.p == pasesPeriod);
 
-    // Filter by selected zone pair usando third/tthird normalizados (SkillCorner)
-    // — evita que el portero aparezca en Z3 cuando el equipo ataca al otro lado
-    const filtered = passes.filter(p =>
-      p.x != null && p.xe != null &&
-      p.third && p.tthird &&
-      passThirdToZone(p.third)  === pair.fromZ &&
-      passThirdToZone(p.tthird) === pair.toZ
-    );
+    // Filter by selected zone pair:
+    // 1. Normalizar coordenadas con normPassCoords (usa 'third' para detectar dirección de ataque)
+    // 2. Aplicar xToZone a coordenadas ya normalizadas — no depende de 'tthird'
+    //    (tthird puede estar ausente en pases fallidos, cortos o intra-zona)
+    const filtered = passes.filter(p => {
+      if (p.x == null || p.xe == null) return false;
+      const {x: nx, xe: nxe} = normPassCoords(p);
+      return xToZone(nx) === pair.fromZ && xToZone(nxe) === pair.toZ;
+    });
 
     // ── Stats ──────────────────────────────────────────────────────────────────
     const total = filtered.length;
