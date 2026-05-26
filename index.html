@@ -1316,9 +1316,6 @@
           </td>
           <td style="padding:8px 8px;text-align:right;font-size:11px;color:var(--text3)">${p.direct}</td>
           <td style="padding:8px 8px;text-align:right;font-size:11px;color:var(--text3)">${p.pass}</td>
-          <td style="padding:8px 14px;text-align:right">
-            <span style="font-size:11px;color:var(--text3)">${p.rate}</span>
-          </td>
           <td style="padding:8px 14px;min-width:100px">
             <div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden">
               <div style="height:5px;width:${barW}%;background:${isSel?'#f85149':'#f85149'};border-radius:3px;opacity:${isSel?1:0.75}"></div>
@@ -1388,7 +1385,6 @@
                   <th style="padding:8px 10px;text-align:right;font-size:9px;letter-spacing:1px;color:#f85149;font-family:'DM Mono',monospace">TOTAL</th>
                   <th style="padding:8px 8px;text-align:right;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">DIR</th>
                   <th style="padding:8px 8px;text-align:right;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">PAS</th>
-                  <th style="padding:8px 14px;text-align:right;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">/100T</th>
                   <th style="padding:8px 14px;min-width:80px"></th>
                 </tr></thead>
                 <tbody>${rankRows}</tbody>
@@ -1397,7 +1393,6 @@
             <div style="margin-top:12px;font-size:10px;color:var(--text3);line-height:1.8">
               <div><b style="color:var(--text2)">DIR</b> — Pérdida directa (presión, robo)</div>
               <div><b style="color:var(--text2)">PAS</b> — Pase fallado / impreciso</div>
-              <div><b style="color:var(--text2)">/100T</b> — Pérdidas por cada 100 toques</div>
             </div>
           </div>
         </div>`;
