@@ -225,6 +225,9 @@
   let pasesDropdownOpen = false;      // dropdown selector de partido
   let pasesSubTab       = 'equipo';   // 'equipo' | 'jugadores'
   let pasesZonePair     = '1-2';      // '1-2'|'1-3'|'2-1'|'2-3'|'3-2'
+  let pasesJugadoresSub = 'zonas';    // 'zonas' | 'individual'
+  let pasesIndivZone    = 1;          // 1 | 2 | 3
+  let pasesIndivPlayer  = null;       // nombre del jugador seleccionado
   const _pasesCache     = new Map();  // caché passes data por partido
   let locVis = 'todos';            // 'todos' | 'local' | 'visitante'
 
@@ -5166,6 +5169,17 @@
     </div>`;
   }
 
+  // ── Sub-tabs dentro de Jugadores (Zonas | Individual) ─────────────────────
+  function buildPasesJugadoresSubTabs() {
+    return `<div style="display:flex;gap:4px;background:var(--bg4);border:1px solid var(--border);border-radius:16px;padding:3px;width:fit-content;margin-bottom:16px">
+      ${[['zonas','🗺️ Zonas'],['individual','🎯 Individual']].map(([id,lbl]) => {
+        const act = pasesJugadoresSub === id;
+        return `<button onclick="pasesJugadoresSub='${id}';renderPasesJugadores()"
+          style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:12px;padding:5px 16px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.18s;white-space:nowrap">${lbl}</button>`;
+      }).join('')}
+    </div>`;
+  }
+
   // ── Cabecera de partido compartida ────────────────────────────────────────
   function buildPasesHeader(partido, ps) {
     const rival0  = partido.local === currentTeam.name ? partido.vis  : partido.local;
@@ -5382,6 +5396,8 @@
   }
 
   async function renderPasesJugadores() {
+    if (pasesJugadoresSub === 'individual') { await renderPasesIndividual(); return; }
+
     const cont = document.getElementById('pasesCont');
     if (!cont) return;
 
@@ -5392,6 +5408,7 @@
 
     const pair = ZONE_PAIR_META[pasesZonePair] || ZONE_PAIR_META['1-2'];
     const matchSel = buildPasesHeader(partido, ps);
+    const jugSubBar = buildPasesJugadoresSubTabs();
 
     // ── Period bar ─────────────────────────────────────────────────────────────
     const perBtn = (id,lbl) => {
@@ -5419,13 +5436,13 @@
     }).join('');
     const zonePairBar = `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px">${zoneTabs}</div>`;
 
-    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + zonePairBar +
+    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + jugSubBar + zonePairBar +
       `<div class="loading"><div class="spinner"></div><span>Calculando...</span></div>`;
 
     // ── Load & filter ──────────────────────────────────────────────────────────
     const raw = await getPasesData(pasesMatchId);
     if (!raw.length) {
-      cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + zonePairBar +
+      cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + jugSubBar + zonePairBar +
         `<div style="padding:40px;text-align:center;color:var(--text3)">Sin datos para este partido</div>`;
       return;
     }
@@ -5470,7 +5487,7 @@
       </div>`;
 
     if (!total) {
-      cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + zonePairBar + statsRow +
+      cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + jugSubBar + zonePairBar + statsRow +
         `<div style="padding:40px;text-align:center;color:var(--text3);font-size:13px">Sin pases ${pair.label} en este período</div>`;
       return;
     }
@@ -5695,7 +5712,242 @@
         </div>
       </div>`;
 
-    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + zonePairBar + statsRow + mapSVG + rankingCols + summaryTable;
+    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + jugSubBar + zonePairBar + statsRow + mapSVG + rankingCols + summaryTable;
+  }
+
+  // ── Análisis individual por jugador y zona ────────────────────────────────
+  async function renderPasesIndividual() {
+    const cont = document.getElementById('pasesCont');
+    if (!cont) return;
+
+    const ps = getPartidos();
+    const partido = ps.find(p => p.id === pasesMatchId) || ps[ps.length - 1];
+    if (!partido) { cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Sin partidos</div>'; return; }
+    pasesMatchId = partido.id;
+
+    const matchSel  = buildPasesHeader(partido, ps);
+    const jugSubBar = buildPasesJugadoresSubTabs();
+
+    // Period bar
+    const perBtn = (id, lbl) => {
+      const act = pasesPeriod === id;
+      return `<button onclick="pasesPeriod='${id}';renderPasesIndividual()" style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:7px 20px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s">${lbl}</button>`;
+    };
+    const periodBar = `<div style="display:flex;gap:2px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;width:fit-content;margin-bottom:16px">
+      ${perBtn('t','Todo')}${perBtn('1','1ª Parte')}${perBtn('2','2ª Parte')}
+    </div>`;
+
+    // Zone selector
+    const Z_COLS  = ['#58a6ff','#e3b341','#f85149'];
+    const Z_NAMES = ['Defensivo','Mediocampo','Ataque'];
+    const zoneBar = `<div style="display:flex;gap:6px;margin-bottom:20px">
+      ${[1,2,3].map(z => {
+        const act = pasesIndivZone === z;
+        const col = Z_COLS[z-1];
+        return `<button onclick="pasesIndivZone=${z};pasesIndivPlayer=null;renderPasesIndividual()"
+          style="display:flex;flex-direction:column;align-items:center;gap:2px;
+                 background:${act?col+'18':'var(--bg3)'};border:1px solid ${act?col:'var(--border)'};
+                 color:${act?col:'var(--text2)'};padding:8px 22px;border-radius:8px;
+                 font-family:'DM Sans',sans-serif;font-weight:${act?700:500};cursor:pointer;transition:all 0.15s">
+          <span style="font-size:13px;font-weight:700">Z${z}</span>
+          <span style="font-size:10px;opacity:0.85">${Z_NAMES[z-1]}</span>
+        </button>`;
+      }).join('')}
+    </div>`;
+
+    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + jugSubBar + zoneBar +
+      `<div class="loading"><div class="spinner"></div><span>Analizando...</span></div>`;
+
+    // ── Cargar y normalizar datos ──────────────────────────────────────────
+    const raw = await getPasesData(pasesMatchId);
+    if (!raw.length) {
+      cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + jugSubBar + zoneBar +
+        `<div style="padding:40px;text-align:center;color:var(--text3)">Sin datos para este partido</div>`;
+      return;
+    }
+
+    let passes = raw.filter(p => p.x != null && p.xe != null);
+    if (pasesPeriod !== 't') passes = passes.filter(p => p.p == pasesPeriod);
+
+    // Normalizar coordenadas y precalcular zonas
+    const withZ = passes.map(p => {
+      const {x:nx, y:ny, xe:nxe, ye:nye} = normPassCoords(p);
+      return {...p, _nx:nx, _ny:ny, _nxe:nxe, _nye:nye, _fromZ:xToZone(nx), _toZ:xToZone(nxe)};
+    });
+
+    // Filtrar por zona seleccionada
+    const zonePass = withZ.filter(p => p._fromZ === pasesIndivZone);
+
+    // Mapa de jugadores
+    const PRESS = 65;
+    const playerMap = {};
+    zonePass.forEach(p => {
+      if (!playerMap[p.n]) playerMap[p.n] = {total:0, succ:0, pos:p.pos||'', passes:[]};
+      playerMap[p.n].total++;
+      if (p.out === 's') playerMap[p.n].succ++;
+      playerMap[p.n].passes.push(p);
+    });
+
+    const players = Object.entries(playerMap)
+      .map(([name,d]) => ({name, ...d, pct: d.total ? Math.round(d.succ/d.total*100) : 0}))
+      .sort((a,b) => b.total - a.total);
+
+    if (!players.length) {
+      cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + jugSubBar + zoneBar +
+        `<div style="padding:40px;text-align:center;color:var(--text3);font-size:13px">Sin pases desde Zona ${pasesIndivZone} en este período</div>`;
+      return;
+    }
+
+    // Auto-seleccionar primer jugador
+    if (!pasesIndivPlayer || !playerMap[pasesIndivPlayer]) pasesIndivPlayer = players[0].name;
+
+    // ── Grid de jugadores ──────────────────────────────────────────────────
+    const zCol = Z_COLS[pasesIndivZone - 1];
+    const playerCards = players.map(pl => {
+      const act      = pasesIndivPlayer === pl.name;
+      const isTarget = pl.pct < PRESS;
+      const isWeak   = pl.pct >= PRESS && pl.pct < 75;
+      const brdCol   = isTarget ? '#f85149' : isWeak ? '#e3b341' : act ? zCol : 'var(--border)';
+      const pctCol   = pl.pct >= 75 ? 'var(--green)' : pl.pct >= PRESS ? '#e3b341' : '#f85149';
+      const safe     = pl.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return `<button onclick="pasesIndivPlayer='${safe}';renderPasesIndividual()"
+        style="display:flex;flex-direction:column;gap:5px;
+               background:${act?zCol+'12':'var(--bg3)'};
+               border:1px solid ${act?brdCol:isTarget?'#f8514950':'var(--border)'};
+               border-radius:8px;padding:10px 12px;cursor:pointer;text-align:left;
+               transition:all 0.15s;flex:1;min-width:140px;max-width:210px">
+        <div style="display:flex;align-items:center;gap:6px">
+          ${pl.pos?`<span style="font-size:9px;font-weight:700;color:${brdCol};background:${brdCol}22;padding:1px 5px;border-radius:3px;flex-shrink:0">${pl.pos}</span>`:''}
+          <span style="font-size:11px;font-weight:${act?700:500};color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${dispN(pl.name)}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="flex:1;height:4px;background:var(--bg4);border-radius:2px">
+            <div style="height:4px;width:${pl.pct}%;background:${pctCol};border-radius:2px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:${pctCol};flex-shrink:0">${pl.pct}%</span>
+          <span style="font-size:10px;color:var(--text3);flex-shrink:0">${pl.total}p</span>
+        </div>
+        ${isTarget?`<div style="font-size:9px;font-weight:700;color:#f85149">🎯 Objetivo de presión</div>`:isWeak?`<div style="font-size:9px;color:#e3b341">⚠️ Presionable</div>`:''}
+      </button>`;
+    }).join('');
+
+    const playerGrid = `<div style="margin-bottom:22px">
+      <div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:${zCol};font-weight:600;margin-bottom:10px;padding:8px 12px;background:${zCol}12;border:1px solid ${zCol}30;border-radius:6px">
+        Jugadores con pases desde Zona ${pasesIndivZone} — ${Z_NAMES[pasesIndivZone-1]}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">${playerCards}</div>
+    </div>`;
+
+    // ── Análisis del jugador seleccionado ──────────────────────────────────
+    const selData  = playerMap[pasesIndivPlayer];
+    const selP     = selData ? selData.passes : [];
+    const selTot   = selP.length;
+    const selSucc  = selP.filter(p => p.out === 's').length;
+    const selFail  = selTot - selSucc;
+    const selPct   = selTot ? Math.round(selSucc / selTot * 100) : 0;
+    const selPcCol = selPct >= 75 ? 'var(--green)' : selPct >= PRESS ? '#e3b341' : '#f85149';
+    const selIsT   = selPct < PRESS;
+
+    // Cards resumen
+    const mkC = (lbl, val, col) => `<div class="card" style="border-left:3px solid ${col}">
+      <div class="card-label">${lbl}</div>
+      <div class="card-value" style="font-size:28px">${val}</div>
+    </div>`;
+
+    const selHeader = `
+      <div style="background:var(--bg2);border:1px solid ${selIsT?'#f85149':'var(--border)'};border-radius:var(--radius);padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        ${selData?.pos?`<span style="font-size:10px;font-weight:700;color:${selPcCol};background:${selPcCol}22;padding:2px 8px;border-radius:4px">${selData.pos}</span>`:''}
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:var(--text)">${dispN(pasesIndivPlayer)} — Zona ${pasesIndivZone} ${Z_NAMES[pasesIndivZone-1]}</div>
+          <div style="font-size:11px;color:${selPcCol};font-weight:${selIsT?600:400};margin-top:2px">
+            ${selIsT?'🎯 Objetivo de presión — ':''}${selPct}% de completitud · ${selTot} pases
+          </div>
+        </div>
+      </div>
+      <div class="cards" style="margin-bottom:18px">
+        ${mkC('Total',selTot,zCol)}${mkC('Acertados',selSucc,'var(--green)')}${mkC('Fallidos',selFail,'var(--red)')}${mkC('% Precisión',selPct+'%',selPcCol)}
+      </div>`;
+
+    // SVG campo
+    const AW=920,AH=590,AMX=55,AMY=40,APW=AW-AMX*2,APH=AH-AMY*2;
+    const sv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW,sy:AMY+((34-y)/68)*APH});
+    const {sx:z0x}=sv(-52.5,34),{sx:z1x}=sv(-17.5,34),{sx:z2x}=sv(17.5,34),{sx:z3x}=sv(52.5,34);
+    const zXs=[z0x,z1x,z2x,z3x];
+    let zHL='';
+    for(let zi=0;zi<3;zi++){
+      const active=zi+1===pasesIndivZone, col=Z_COLS[zi];
+      zHL+=`<rect x="${zXs[zi].toFixed(1)}" y="${AMY}" width="${(zXs[zi+1]-zXs[zi]).toFixed(1)}" height="${APH}" fill="${col}" fill-opacity="${active?'0.13':'0.02'}" stroke="${col}" stroke-width="${active?1.5:0.5}" stroke-opacity="${active?0.5:0.1}"/>`;
+      zHL+=`<text x="${((zXs[zi]+zXs[zi+1])/2).toFixed(1)}" y="${(AMY+18).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="${active?700:400}" fill="${col}" fill-opacity="${active?0.8:0.2}">${active?`Zona ${zi+1} (origen)`:`Zona ${zi+1}`}</text>`;
+    }
+    let passLines='';
+    [...selP].sort((a,b)=>(a.out==='s'?0:1)-(b.out==='s'?0:1)).forEach(p=>{
+      const {sx:x1,sy:y1}=sv(p._nx,p._ny), {sx:x2,sy:y2}=sv(p._nxe,p._nye);
+      passLines+=buildPassLineGroup(p,x1,y1,x2,y2);
+    });
+    const pitchBg=`<rect x="0" y="0" width="${AW}" height="${AH}" fill="#0b150b"/>
+      <rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="#0d1f0d" stroke="#1c3a1c" stroke-width="1.5"/>
+      <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="#1c3a1c" stroke-width="1"/>
+      <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="#1c3a1c" stroke-width="1"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>`;
+    const mapSVG=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px">
+      <svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block;overflow:visible">${pitchBg}${zHL}${passLines}</svg>
+    </div>`;
+
+    // Tabla por tipo de pase
+    const typeStats={};
+    selP.forEach(p=>{const t=getPassType(p);if(!typeStats[t])typeStats[t]={total:0,succ:0};typeStats[t].total++;if(p.out==='s')typeStats[t].succ++;});
+    const maxTy=Math.max(1,...Object.values(typeStats).map(t=>t.total));
+    const typeRows=['long','prog','back','lat','other'].filter(t=>typeStats[t]).map(t=>{
+      const {total,succ}=typeStats[t],fail=total-succ,pct=Math.round(succ/total*100);
+      const meta=PASS_TYPE_META[t],pc=pct>=70?'var(--green)':pct>=55?'#e3b341':'#f85149';
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:7px 12px"><span style="font-size:10px;font-weight:700;color:${meta.color};background:${meta.color}18;padding:2px 8px;border-radius:3px">${meta.emoji} ${meta.label}</span></td>
+        <td style="padding:7px 10px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text)">${total}</td>
+        <td style="padding:7px 10px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--green)">${succ}</td>
+        <td style="padding:7px 10px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--red)">${fail}</td>
+        <td style="padding:7px 8px;text-align:center"><span style="font-size:12px;font-weight:700;color:${pc}">${pct}%</span></td>
+        <td style="padding:7px 14px;min-width:65px"><div style="height:5px;background:var(--bg4);border-radius:3px"><div style="height:5px;width:${Math.round(total/maxTy*100)}%;background:${meta.color};border-radius:3px;opacity:0.75"></div></div></td>
+      </tr>`;
+    }).join('');
+
+    // Tabla por zona de destino
+    const destStats={1:{total:0,succ:0},2:{total:0,succ:0},3:{total:0,succ:0}};
+    selP.forEach(p=>{if(destStats[p._toZ]){destStats[p._toZ].total++;if(p.out==='s')destStats[p._toZ].succ++;}});
+    const maxDe=Math.max(1,...Object.values(destStats).map(d=>d.total));
+    const destRows=[1,2,3].filter(z=>destStats[z].total>0).map(z=>{
+      const {total,succ}=destStats[z],fail=total-succ,pct=Math.round(succ/total*100);
+      const col=Z_COLS[z-1],pc=pct>=70?'var(--green)':pct>=55?'#e3b341':'#f85149';
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:7px 12px">
+          <span style="font-size:11px;font-weight:700;color:${col}">Z${z} — ${Z_NAMES[z-1]}</span>
+          ${z===pasesIndivZone?`<span style="font-size:9px;color:var(--text3);margin-left:6px">intra-zona</span>`:''}
+        </td>
+        <td style="padding:7px 10px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text)">${total}</td>
+        <td style="padding:7px 10px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--green)">${succ}</td>
+        <td style="padding:7px 10px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--red)">${fail}</td>
+        <td style="padding:7px 8px;text-align:center"><span style="font-size:12px;font-weight:700;color:${pc}">${pct}%</span></td>
+        <td style="padding:7px 14px;min-width:65px"><div style="height:5px;background:var(--bg4);border-radius:3px"><div style="height:5px;width:${Math.round(total/maxDe*100)}%;background:${col};border-radius:3px;opacity:0.75"></div></div></td>
+      </tr>`;
+    }).join('');
+
+    const mkTHead = cols => `<thead><tr>${cols.map(c=>typeof c==='string'?`<th>${c}</th>`:`<th style="text-align:center">${c.t}</th>`).join('')}</tr></thead>`;
+    const typeTable = typeRows ? `<div class="table-wrap"><table>${mkTHead(['Tipo de pase',{t:'Total'},{t:'✅'},{t:'❌'},{t:'%'},''])}<tbody>${typeRows}</tbody></table></div>` : '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">Sin datos</div>';
+    const destTable = destRows ? `<div class="table-wrap"><table>${mkTHead(['Zona destino',{t:'Total'},{t:'✅'},{t:'❌'},{t:'%'},''])}<tbody>${destRows}</tbody></table></div>` : '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">Sin datos</div>';
+
+    const analysis = selTot ? `${selHeader}${mapSVG}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-bottom:10px">Por tipo de pase</div>
+          ${typeTable}
+        </div>
+        <div>
+          <div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-bottom:10px">Zona de destino</div>
+          ${destTable}
+        </div>
+      </div>` : '';
+
+    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + jugSubBar + zoneBar + playerGrid + analysis;
   }
 
   // ── Pass tooltip — HTML flotante que sigue al cursor ─────────────────────
