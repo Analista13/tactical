@@ -407,6 +407,43 @@
     2069357:[[746539,'Germán Novoa','LCB','00:00:00',null,-7.0,11.3],[23777,'Fede San Emeterio','RM','00:00:00','01:14:55',-3.2,-3.7],[24345,'Vicente Esquerdo','LM','00:00:00',null,4.5,-3.0],[62134,'Eneko Undabarrena','RCB','00:00:00',null,-16.3,-5.8],[69915,'Borislav Ivanov Stankov','CF','00:00:00','01:14:55',18.7,6.4],[928181,'A. Keita','CF','00:00:00','01:04:15',13.1,-11.5],[826951,'Borja Vázquez','LW','00:00:00','01:26:43',11.1,17.7],[25640,'Andoni López','LB','00:00:00',null,5.0,23.2],[819170,'Koke','RB','00:00:00',null,-6.1,-23.9],[531656,'Carlos Calderón','RW','00:00:00','01:26:43',3.8,-15.6],[24021,'Andrés Prieto','GK','00:00:00',null,-41.6,-0.3],[736606,'E. Frimpong','LM','01:14:55',null,9.6,21.6],[70531,'P. Ferrer','RM','01:14:55',null,-9.8,-7.5],[25796,'Borja Valle','CF','01:04:15',null,4.6,15.3],[258595,'Mario Jorrín','LW','01:26:43',null,-33.3,-0.5],[69380,'Xemi Fernández','RW','01:26:43',null,21.2,4.7]],
   };
 
+  // ─── Estado del marcador por partido (periodo) — derivado de SofaScore ────────
+  // p1 = estado al final del primer tiempo, p2 = estado final del partido
+  // 'ganando' | 'empatando' | 'perdiendo' (desde perspectiva de Ponferradina)
+  const MATCH_GOALS_STATE = {
+    2038965: {p1:'ganando',   p2:'ganando',   m:'ganando'},
+    2040148: {p1:'empatando', p2:'empatando', m:'empatando'},
+    2040246: {p1:'empatando', p2:'ganando',   m:'ganando'},
+    2040391: {p1:'empatando', p2:'perdiendo', m:'perdiendo'},
+    2040430: {p1:'perdiendo', p2:'perdiendo', m:'perdiendo'},
+    2040906: {p1:'empatando', p2:'perdiendo', m:'perdiendo'},
+    2040921: {p1:'empatando', p2:'perdiendo', m:'perdiendo'},
+    2041110: {p1:'ganando',   p2:'ganando',   m:'ganando'},
+    2043900: {p1:'empatando', p2:'empatando', m:'empatando'},
+    2044962: {p1:'empatando', p2:'perdiendo', m:'perdiendo'},
+    2046155: {p1:'empatando', p2:'perdiendo', m:'perdiendo'},
+    2047298: {p1:'ganando',   p2:'empatando', m:'empatando'},
+    2047799: {p1:'empatando', p2:'perdiendo', m:'perdiendo'},
+    2048312: {p1:'empatando', p2:'perdiendo', m:'perdiendo'},
+    2049811: {p1:'empatando', p2:'ganando',   m:'ganando'},
+    2050287: {p1:'ganando',   p2:'ganando',   m:'ganando'},
+    2051795: {p1:'empatando', p2:'ganando',   m:'ganando'},
+    2052263: {p1:'ganando',   p2:'ganando',   m:'ganando'},
+    2053348: {p1:'empatando', p2:'empatando', m:'empatando'},
+    2054294: {p1:'empatando', p2:'ganando',   m:'ganando'},
+    2054952: {p1:'ganando',   p2:'ganando',   m:'ganando'},
+    2056593: {p1:'empatando', p2:'ganando',   m:'ganando'},
+    2057466: {p1:'perdiendo', p2:'perdiendo', m:'perdiendo'},
+    2058792: {p1:'empatando', p2:'empatando', m:'empatando'},
+    2061313: {p1:'ganando',   p2:'ganando',   m:'ganando'},
+    2062716: {p1:'perdiendo', p2:'perdiendo', m:'perdiendo'},
+    2063736: {p1:'ganando',   p2:'ganando',   m:'ganando'},
+    2064907: {p1:'ganando',   p2:'empatando', m:'empatando'},
+    2066099: {p1:'empatando', p2:'perdiendo', m:'perdiendo'},
+    2067181: {p1:'ganando',   p2:'ganando',   m:'ganando'},
+    2069357: {p1:'ganando',   p2:'ganando',   m:'ganando'},
+  };
+
   // ─── Cache de datos por partido (JSON estático) ──────────────────────────────
   // Primera carga → fetch; resto → instantáneo desde memoria.
   const _matchDataCache = new Map();
@@ -3480,6 +3517,7 @@
     document.getElementById('bst-'+tab)?.classList.add('active');
     const cont=document.getElementById('bloqueCont');
     if(cont) cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando...</span></div>`;
+    if(tab==='estado'){renderBloqueEstado();return;}
     if(bloqueMatchId||(tab==='general'&&(bloqueNMatches>1||bloqueNMatches===0))) renderBloque();
   }
 
@@ -3510,13 +3548,244 @@
           <button id="bst-1parte"      class="subtab ${bloqueSubTab==='1parte'?'active':''}"      onclick="setBloqueSubTab('1parte')">1ª Parte</button>
           <button id="bst-2parte"      class="subtab ${bloqueSubTab==='2parte'?'active':''}"      onclick="setBloqueSubTab('2parte')">2ª Parte</button>
           <button id="bst-comparativa" class="subtab ${bloqueSubTab==='comparativa'?'active':''}" onclick="setBloqueSubTab('comparativa')">⚡ Comparativa</button>
+          <button id="bst-estado"      class="subtab ${bloqueSubTab==='estado'?'active':''}"      onclick="setBloqueSubTab('estado')">📊 Por Estado</button>
         </div>
       </div>
       <div id="bloqueCont">
         <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>
       </div>
     </div>`;
+    if(bloqueSubTab==='estado'){renderBloqueEstado();return;}
     if(bloqueMatchId||(bloqueSubTab==='general'&&(bloqueNMatches>1||bloqueNMatches===0))) renderBloque();
+  }
+
+  // ─── BLOQUE POR ESTADO ───────────────────────────────────────────────────────
+
+  // Compute team shape from a pool of events aggregated across multiple matches.
+  // No lineup filter needed — players identified from PONF_LINEUPS position lookup.
+  function computeShapeFromEvents(events, phase) {
+    const filtered = events.filter(e =>
+      e.x_start != null && e.y_start != null && e.player_name &&
+      (phase === 'ataque' ? e.third_start === 'attacking_third' : e.third_start === 'defensive_third')
+    );
+    if (filtered.length < 30) return null;
+
+    // Position lookup from all lineups
+    const posLookup = {};
+    Object.values(PONF_LINEUPS).forEach(lineup =>
+      lineup.forEach(r => { if (r[1] && r[2] && !posLookup[r[1]]) posLookup[r[1]] = r[2]; })
+    );
+
+    // Accumulate per player
+    const acc = {};
+    for (const e of filtered) {
+      if (!acc[e.player_name]) acc[e.player_name] = {xs:[], ys:[]};
+      acc[e.player_name].xs.push(e.x_start);
+      acc[e.player_name].ys.push(e.y_start);
+    }
+
+    const MIN_P = 15;
+    const GKS = ['GK','PT','POR','PORTERO','P','GOALKEEPER','G'];
+    const isGK = pos => GKS.includes((pos||'').toUpperCase().trim());
+
+    const allPlayers = Object.entries(acc)
+      .filter(([, v]) => v.xs.length >= MIN_P)
+      .map(([name, v]) => ({
+        name,
+        n: v.xs.length,
+        position: resolvePlayerPosition({id:0, position: posLookup[name] || 'CM'}),
+        x: v.xs.reduce((a,b)=>a+b,0) / v.xs.length,
+        y: v.ys.reduce((a,b)=>a+b,0) / v.ys.length,
+        fromLineup: false,
+      }));
+
+    if (allPlayers.length < 4) return null;
+
+    const gk = allPlayers.filter(p => isGK(p.position));
+    const outfield = allPlayers.filter(p => !isGK(p.position));
+    if (outfield.length < 3) return null;
+
+    const sorted = outfield.slice().sort((a,b) => a.x - b.x);
+    const n = sorted.length;
+    const nDef = Math.min(4, n);
+    const nFwd = n > nDef ? Math.min(3, n - nDef) : 0;
+    const defs = sorted.slice(0, nDef);
+    const fwds = sorted.slice(n - nFwd);
+    const mids = sorted.slice(nDef, n - nFwd);
+
+    const avgX = arr => arr.length ? arr.reduce((s,p)=>s+p.x,0)/arr.length : null;
+    const defLine   = avgX(defs);
+    const midLine   = avgX(mids);
+    const fwdLine   = avgX(fwds);
+    const centroidX = avgX(outfield);
+    const centroidY = outfield.length ? outfield.reduce((s,p)=>s+p.y,0)/outfield.length : null;
+    const hull      = convexHull(outfield.map(p=>({x:p.x,y:p.y})));
+    const area      = hullArea(hull);
+    const teamWidth = outfield.length>=2 ? Math.max(...outfield.map(p=>p.y))-Math.min(...outfield.map(p=>p.y)) : null;
+    const teamDepth = outfield.length>=2 ? Math.max(...outfield.map(p=>p.x))-Math.min(...outfield.map(p=>p.x)) : null;
+    const defFwdGap = (fwdLine!=null&&defLine!=null) ? fwdLine-defLine : null;
+
+    let blockType = null;
+    if (defLine != null) {
+      if (defLine > 0) blockType = 'high';
+      else if (defLine > -17.5) blockType = 'mid';
+      else blockType = 'low';
+    }
+
+    return {players:outfield, gk, hull, defLine, midLine, fwdLine, centroidX, centroidY,
+            teamWidth, teamDepth, area, defFwdGap, blockType, n:filtered.length};
+  }
+
+  async function renderBloqueEstado() {
+    const cont = document.getElementById('bloqueCont');
+    if (!cont) return;
+    cont.innerHTML = `<div class="loading"><div class="spinner"></div><span>Cargando ${PARTIDOS.filter(p=>MATCH_GOALS_STATE[p.id]).length} partidos...</span></div>`;
+
+    try {
+      const partidos = PARTIDOS.filter(p => MATCH_GOALS_STATE[p.id]);
+      const allData  = await Promise.all(partidos.map(p => getMatchData(p.id).catch(()=>null)));
+
+      // Buckets: events per state per period
+      const buckets = {
+        ganando:   {p1:[], p2:[], nP1:0, nP2:0},
+        empatando: {p1:[], p2:[], nP1:0, nP2:0},
+        perdiendo: {p1:[], p2:[], nP1:0, nP2:0},
+      };
+
+      for (let i = 0; i < partidos.length; i++) {
+        const md = allData[i]; if (!md) continue;
+        const st = MATCH_GOALS_STATE[partidos[i].id]; if (!st) continue;
+        const ev1 = md.filter(e => e.period === 1);
+        const ev2 = md.filter(e => e.period === 2);
+        if (buckets[st.p1]) { buckets[st.p1].p1.push(...ev1); buckets[st.p1].nP1++; }
+        if (buckets[st.p2]) { buckets[st.p2].p2.push(...ev2); buckets[st.p2].nP2++; }
+      }
+
+      // Merge p1+p2 for each state
+      const states = [
+        {key:'ganando',   label:'Ganando',   emoji:'🟢', col:'#3fb950'},
+        {key:'empatando', label:'Empatando', emoji:'🟡', col:'#e3b341'},
+        {key:'perdiendo', label:'Perdiendo', emoji:'🔴', col:'#f85149'},
+      ];
+
+      const shapes = {};
+      for (const s of states) {
+        const combined = [...buckets[s.key].p1, ...buckets[s.key].p2];
+        shapes[s.key] = computeShapeFromEvents(combined, bloquePhase);
+      }
+
+      const isAtq = bloquePhase === 'ataque';
+      const phCol = isAtq ? '#f0883e' : '#58a6ff';
+
+      // ── Render ──────────────────────────────────────────────────────────────
+      const fmt = v => v!=null ? v.toFixed(1) : '—';
+
+      const cols = states.map(s => {
+        const sh = shapes[s.key];
+        const b  = buckets[s.key];
+        const nm = b.nP1 + b.nP2;
+        if (!sh) return `
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:32px;text-align:center;color:var(--text3)">
+            <div style="font-size:32px;margin-bottom:10px">${s.emoji}</div>
+            <div style="font-size:14px;font-weight:700;color:${s.col};margin-bottom:6px">${s.label}</div>
+            <div style="font-size:11px">Sin datos suficientes</div>
+          </div>`;
+
+        const bt = sh.blockType;
+        const btMap = {high:['🔴 HIGH BLOCK','#f85149'], mid:['🟡 MID BLOCK','#e3b341'], low:['🔵 LOW BLOCK','#58a6ff']};
+        const [btLabel, btCol] = btMap[bt] || ['—','var(--text3)'];
+
+        return `
+          <div style="background:var(--bg2);border:1px solid ${s.col}44;border-radius:12px;overflow:hidden">
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+              <span style="font-size:20px">${s.emoji}</span>
+              <span style="font-size:14px;font-weight:700;color:${s.col}">${s.label}</span>
+              <span style="font-size:10px;color:var(--text3);margin-left:auto">${nm} mitades · ${sh.n} pos.</span>
+            </div>
+            ${buildBloqueSVG(sh, bloquePhase, s.col)}
+            <div style="padding:10px 14px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+              <div style="text-align:center">
+                <div style="font-size:9px;color:var(--text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px">Línea def</div>
+                <div style="font-size:17px;font-weight:700;color:#58a6ff">${fmt(sh.defLine)}m</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:9px;color:var(--text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px">Centroide</div>
+                <div style="font-size:17px;font-weight:700;color:${s.col}">${fmt(sh.centroidX)}m</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:9px;color:var(--text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px">Línea atq</div>
+                <div style="font-size:17px;font-weight:700;color:#f85149">${fmt(sh.fwdLine)}m</div>
+              </div>
+            </div>
+            <div style="padding:8px 14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:11px;font-weight:700;color:${btCol}">${btLabel}</span>
+              <span style="font-size:10px;color:var(--text3)">Prof. ${fmt(sh.teamDepth)}m · Ancho ${fmt(sh.teamWidth)}m</span>
+            </div>
+          </div>`;
+      }).join('');
+
+      // Comparison bar (centroid X mapped from -52.5..+52.5 → 0..100%)
+      const barRows = states.map(s => {
+        const sh = shapes[s.key];
+        const cx = sh?.centroidX ?? null;
+        const pct = cx != null ? ((cx + 52.5) / 105 * 100).toFixed(1) : null;
+        return `
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;color:${s.col};font-weight:600">${s.emoji} ${s.label}</span>
+              <span style="font-size:12px;color:var(--text2);font-weight:600">${cx!=null?cx.toFixed(1)+'m':'—'}</span>
+            </div>
+            <div style="height:10px;background:rgba(255,255,255,0.06);border-radius:5px;overflow:hidden;position:relative">
+              ${pct!=null?`<div style="width:${pct}%;height:100%;background:${s.col};border-radius:5px;opacity:0.85"></div>`:''}
+            </div>
+          </div>`;
+      }).join('');
+
+      const defBarRows = states.map(s => {
+        const sh = shapes[s.key];
+        const dl = sh?.defLine ?? null;
+        const pct = dl != null ? ((dl + 52.5) / 105 * 100).toFixed(1) : null;
+        return `
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;color:${s.col};font-weight:600">${s.emoji} ${s.label}</span>
+              <span style="font-size:12px;color:#58a6ff;font-weight:600">${dl!=null?dl.toFixed(1)+'m':'—'}</span>
+            </div>
+            <div style="height:10px;background:rgba(255,255,255,0.06);border-radius:5px;overflow:hidden">
+              ${pct!=null?`<div style="width:${pct}%;height:100%;background:#58a6ff;border-radius:5px;opacity:0.8"></div>`:''}
+            </div>
+          </div>`;
+      }).join('');
+
+      cont.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px">
+          ${cols}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px">
+            <div style="font-size:10px;color:var(--text3);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;font-weight:700">Centroide X · ${isAtq?'en ataque':'en defensa'}</div>
+            ${barRows}
+            <div style="display:flex;justify-content:space-between;margin-top:4px">
+              <span style="font-size:9px;color:var(--text3)">← Portería propia</span>
+              <span style="font-size:9px;color:var(--text3)">Portería rival →</span>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px">
+            <div style="font-size:10px;color:var(--text3);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;font-weight:700">Línea defensiva X · ${isAtq?'en ataque':'en defensa'}</div>
+            ${defBarRows}
+            <div style="display:flex;justify-content:space-between;margin-top:4px">
+              <span style="font-size:9px;color:var(--text3)">← más profunda</span>
+              <span style="font-size:9px;color:var(--text3)">más alta →</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:10px;color:var(--text3);text-align:center">
+          Estado del marcador al final de cada periodo · Datos de tracking SkillCorner · Posiciones medias de jugadores
+        </div>`;
+
+    } catch(e) {
+      cont.innerHTML = `<div style="text-align:center;padding:40px;color:var(--red)">Error: ${e.message}</div>`;
+    }
   }
 
   // ─── POSESIÓN ────────────────────────────────────────────────────────────────
