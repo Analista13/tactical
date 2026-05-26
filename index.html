@@ -5245,6 +5245,22 @@
       ${perBtn('t','Todo')}${perBtn('1','1ª Parte')}${perBtn('2','2ª Parte')}
     </div>`;
 
+    // ── Zone filter bar ───────────────────────────────────────────────────────
+    const zoneFilters = [
+      [null, 'Todas',  '#c9d1d9'],
+      [1,    'Z1',     '#58a6ff'],
+      [2,    'Z2',     '#e3b341'],
+      [3,    'Z3',     '#f85149'],
+    ];
+    const zonePills = zoneFilters.map(([id, lbl, col]) => {
+      const act = pasesZoneFilter === id;
+      return `<button onclick="pasesZoneFilter=${JSON.stringify(id)};renderPasesMap()" style="background:${act?col+'22':'var(--bg3)'};border:1px solid ${act?col:'var(--border)'};color:${act?col:'var(--text2)'};padding:6px 16px;border-radius:20px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:${act?'700':'500'};cursor:pointer;transition:all 0.15s;white-space:nowrap">${lbl}</button>`;
+    }).join('');
+    const zoneBar = `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;align-items:center">
+      <span style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-right:2px">Zona</span>
+      ${zonePills}
+    </div>`;
+
     // ── Type filter pills ──────────────────────────────────────────────────────
     const typeFilters = [
       ['all',  'Todos',       '#c9d1d9'],
@@ -5264,12 +5280,12 @@
     </div>`;
 
     // ── Load data ─────────────────────────────────────────────────────────────
-    cont.innerHTML = matchSel + periodBar + typeBar +
+    cont.innerHTML = matchSel + periodBar + zoneBar + typeBar +
       `<div class="loading"><div class="spinner"></div><span>Cargando datos...</span></div>`;
 
     const raw = await getPasesData(pasesMatchId);
     if (!raw.length) {
-      cont.innerHTML = matchSel + periodBar + typeBar +
+      cont.innerHTML = matchSel + periodBar + zoneBar + typeBar +
         `<div style="padding:60px;text-align:center;color:var(--text3);font-size:13px">Sin datos de pases para este partido</div>`;
       return;
     }
@@ -5280,10 +5296,14 @@
     // Period filter
     if (pasesPeriod !== 't') passes = passes.filter(p => p.p == pasesPeriod);
 
-    // Zone filter (origin x position)
-    if (pasesZoneFilter === 1) passes = passes.filter(p => p.x < -17.5);
-    else if (pasesZoneFilter === 2) passes = passes.filter(p => p.x >= -17.5 && p.x <= 17.5);
-    else if (pasesZoneFilter === 3) passes = passes.filter(p => p.x > 17.5);
+    // Zone filter — usa coordenadas normalizadas (corrige el flip de dirección de ataque)
+    if (pasesZoneFilter !== null) {
+      passes = passes.filter(p => {
+        if (p.x == null) return false;
+        const {x: nx} = normPassCoords(p);
+        return xToZone(nx) === pasesZoneFilter;
+      });
+    }
 
     // Type filter
     if (pasesTypeFilter === 'fail') {
@@ -5430,7 +5450,7 @@
         </div>
       </div>` : '';
 
-    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + typeBar +
+    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + zoneBar + typeBar +
       `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
         <span style="font-size:14px;font-weight:700;color:var(--text)">${headerTitle}</span>
         <span style="font-size:11px;color:var(--text3);margin-left:auto">${total} pases mostrados</span>
