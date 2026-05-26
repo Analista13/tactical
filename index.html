@@ -3156,10 +3156,15 @@
     let dots = '';
     shape.gk.forEach(p=>{
       const{sx,sy}=sv(p.x,p.y);
-      const op=p.fromLineup?0.5:1;
-      dots+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="15" fill="#1a1a2e" stroke="${TIER_COL[0]}" stroke-width="2" opacity="${op}"/>
-        <text x="${sx.toFixed(1)}" y="${(sy+5).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="${TIER_COL[0]}" opacity="${op}">GK</text>
-        <text x="${sx.toFixed(1)}" y="${(sy+28).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#c9d1d9" opacity="${op}">${dispN(p.name)}</text>`;
+      const op = colorOverride ? (p.fromLineup ? 0.82 : 1) : (p.fromLineup ? 0.5 : 1);
+      const gkR = colorOverride ? 17 : 15;
+      const gkSW = colorOverride ? 2.5 : 2;
+      const nameCol = colorOverride ? '#ffffff' : '#c9d1d9';
+      const glowOp = colorOverride ? 0.22 : 0;
+      dots += glowOp ? `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${gkR+8}" fill="${TIER_COL[0]}" fill-opacity="${glowOp}"/>` : '';
+      dots+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${gkR}" fill="#1a1a2e" stroke="${TIER_COL[0]}" stroke-width="${gkSW}" opacity="${op}"/>
+        <text x="${sx.toFixed(1)}" y="${(sy+5).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="${colorOverride?11:9}" font-weight="700" fill="${TIER_COL[0]}" opacity="${op}">GK</text>
+        <text x="${sx.toFixed(1)}" y="${(sy+gkR+16).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="${colorOverride?10:9}" font-weight="${colorOverride?'600':'400'}" fill="${nameCol}" opacity="${op}">${dispN(p.name)}</text>`;
     });
 
     // Outfield dots (size proportional to possession count; semi-transparent if using lineup fallback)
@@ -3167,16 +3172,24 @@
       const{sx,sy}=sv(p.x,p.y);
       const{tier}=getPosTier(p.position);
       const col=TIER_COL[tier]||'#c8a96e';
-      const R=14+Math.min(p.n,40)/7;
-      const op=p.fromLineup?0.45:1;
-      const posLabel=p.fromLineup?`${p.position}*`:p.position;
-      const nLabel=p.fromLineup?'(global)':`${p.n} pos.`;
-      dots+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${(R+5).toFixed(0)}" fill="${col}" fill-opacity="${(op*0.07).toFixed(2)}"/>
-        <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${R.toFixed(0)}" fill="#111c11" stroke="${col}" stroke-width="2" opacity="${op}"/>
-        <text x="${sx.toFixed(1)}" y="${(sy-1).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="700" fill="${col}" opacity="${op}">${posLabel}</text>
-        <text x="${sx.toFixed(1)}" y="${(sy+9).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#8b949e" opacity="${op}">${p.name.split(' ').pop().substring(0,9)}</text>
-        <text x="${sx.toFixed(1)}" y="${(sy+R+14).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#c9d1d9" opacity="${op}">${dispN(p.name)}</text>
-        <text x="${sx.toFixed(1)}" y="${(sy+R+25).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#484f58" opacity="${op}">${nLabel}</text>`;
+      const R = colorOverride ? 17 + Math.min(p.n,40)/8 : 14 + Math.min(p.n,40)/7;
+      const op = colorOverride ? (p.fromLineup ? 0.85 : 1) : (p.fromLineup ? 0.45 : 1);
+      const glowOp = colorOverride ? (op * 0.22).toFixed(2) : (op * 0.07).toFixed(2);
+      const sw = colorOverride ? 2.5 : 2;
+      const posLabel = p.fromLineup ? `${p.position}*` : p.position;
+      const nLabel = p.fromLineup ? '(global)' : `${p.n} pos.`;
+      const posFS = colorOverride ? 10 : 8;
+      const nameFS = colorOverride ? 10 : 8.5;
+      const nameCol = colorOverride ? '#ffffff' : '#c9d1d9';
+      const shortNameCol = colorOverride ? '#e6edf3' : '#8b949e';
+      const shortNameFS = colorOverride ? 9 : 7.5;
+      const nLabelCol = colorOverride ? '#a0a8b0' : '#484f58';
+      dots+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${(R+7).toFixed(0)}" fill="${col}" fill-opacity="${glowOp}"/>
+        <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${R.toFixed(0)}" fill="${colorOverride?'#152015':'#111c11'}" stroke="${col}" stroke-width="${sw}" opacity="${op}"/>
+        <text x="${sx.toFixed(1)}" y="${(sy+posFS*0.35).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="${posFS}" font-weight="700" fill="${col}" opacity="${op}">${posLabel}</text>
+        <text x="${sx.toFixed(1)}" y="${(sy+posFS*0.35+shortNameFS+2).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="${shortNameFS}" font-weight="${colorOverride?'600':'400'}" fill="${shortNameCol}" opacity="${op}">${p.name.split(' ').pop().substring(0,9)}</text>
+        <text x="${sx.toFixed(1)}" y="${(sy+R+nameFS+8).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="${nameFS}" font-weight="${colorOverride?'600':'400'}" fill="${nameCol}" opacity="${op}">${dispN(p.name)}</text>
+        <text x="${sx.toFixed(1)}" y="${(sy+R+nameFS+20).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="${nLabelCol}" opacity="${op}">${nLabel}</text>`;
     });
 
     return `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${pitch}${lines}${hull}${centroid}${widthAnnot}${dots}</svg>`;
