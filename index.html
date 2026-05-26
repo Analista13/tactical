@@ -207,7 +207,6 @@
   let bloqueSubTab  = 'general';  // 'general' | '1parte' | '2parte' | 'comparativa'
   let bloqueNMatches = 1;         // 1 | 3 | 5 | 10 | 0(custom) — filmstrip en General
   let bloqueCustomIds = [];       // IDs seleccionados en modo custom
-  let bloqueEstadoState = 'ganando'; // 'ganando'|'empatando'|'perdiendo'
   let locVis = 'todos';            // 'todos' | 'local' | 'visitante'
 
   // Filtro Casa/Fuera — devuelve PARTIDOS filtrado por locVis
@@ -443,6 +442,44 @@
     2066099: {p1:'empatando', p2:'perdiendo', m:'perdiendo'},
     2067181: {p1:'ganando',   p2:'ganando',   m:'ganando'},
     2069357: {p1:'ganando',   p2:'ganando',   m:'ganando'},
+  };
+
+
+  // ─── Goles por partido (minuto y marcador acumulado) — derivado de SofaScore ─
+  // Cada entrada = [{m: minuto, p: goles_Ponf_hasta_ahora, r: goles_rival}, ...]
+  // Ordenado de menor a mayor minuto. Clave = SkillCorner match ID.
+  const MATCH_GOALS = {
+    2038965: [{m:37,p:1,r:0},{m:88,p:2,r:0}],
+    2040148: [],
+    2040246: [{m:72,p:1,r:0},{m:89,p:2,r:0}],
+    2040391: [{m:15,p:0,r:1},{m:27,p:1,r:1},{m:52,p:1,r:2},{m:67,p:2,r:2},{m:85,p:2,r:3}],
+    2040430: [{m:35,p:0,r:1},{m:59,p:1,r:1},{m:83,p:1,r:2},{m:96,p:1,r:3}],
+    2040906: [{m:64,p:0,r:1}],
+    2040921: [{m:48,p:1,r:0},{m:59,p:1,r:1},{m:81,p:1,r:2}],
+    2041110: [{m:3,p:1,r:0},{m:31,p:2,r:0},{m:43,p:3,r:0}],
+    2043900: [{m:26,p:1,r:0},{m:36,p:1,r:1}],
+    2044962: [{m:76,p:0,r:1},{m:89,p:0,r:2}],
+    2046155: [{m:13,p:0,r:1},{m:18,p:1,r:1},{m:87,p:1,r:2}],
+    2047298: [{m:16,p:1,r:0},{m:28,p:2,r:0},{m:58,p:2,r:1},{m:78,p:2,r:2}],
+    2047799: [{m:53,p:0,r:1},{m:63,p:0,r:2},{m:69,p:0,r:3},{m:87,p:1,r:3}],
+    2048312: [{m:64,p:0,r:1},{m:96,p:0,r:2}],
+    2049811: [{m:55,p:1,r:0},{m:71,p:2,r:0}],
+    2050287: [{m:22,p:1,r:0},{m:39,p:2,r:0},{m:98,p:3,r:0}],
+    2051795: [{m:56,p:1,r:0}],
+    2052263: [{m:4,p:1,r:0},{m:74,p:2,r:0}],
+    2053348: [],
+    2054294: [{m:93,p:1,r:0}],
+    2054952: [{m:7,p:1,r:0}],
+    2056593: [{m:90,p:1,r:0}],
+    2057466: [{m:16,p:0,r:1}],
+    2058792: [],
+    2061313: [{m:36,p:1,r:0},{m:49,p:2,r:0},{m:68,p:2,r:1},{m:84,p:3,r:1},{m:91,p:4,r:1}],
+    2062716: [{m:15,p:0,r:1},{m:27,p:0,r:2},{m:61,p:1,r:2},{m:71,p:1,r:3}],
+    2063736: [{m:16,p:1,r:0}],
+    2064907: [{m:25,p:1,r:0},{m:84,p:1,r:1}],
+    2066099: [{m:57,p:0,r:1},{m:96,p:0,r:2},{m:100,p:0,r:3}],
+    2067181: [{m:19,p:1,r:0},{m:26,p:2,r:0},{m:54,p:2,r:1},{m:86,p:3,r:1}],
+    2069357: [{m:35,p:1,r:0}],
   };
 
   // ─── Cache de datos por partido (JSON estático) ──────────────────────────────
@@ -2943,16 +2980,6 @@
     const squadNames = new Set(squad11.map(r => r[1]));
     let data = matchData.filter(e => e.player_name && squadNames.has(e.player_name));
     if (period) data = data.filter(e => e.period === period);
-    // Estado del marcador: filtrar periodos que coinciden con el estado seleccionado
-    if (bloqueSubTab === 'estado' && bloqueEstadoState !== 'todos') {
-      const st = MATCH_GOALS_STATE[matchId];
-      if (st && !period) { // solo en vista General (period=0), la 1ª/2ª parte ya tiene su propio filtro
-        const vp = [];
-        if (st.p1 === bloqueEstadoState) vp.push(1);
-        if (st.p2 === bloqueEstadoState) vp.push(2);
-        if (vp.length) data = data.filter(e => vp.includes(e.period));
-      }
-    }
     if (phase === 'ataque') data = data.filter(e => e.third_start === 'attacking_third');
     else                    data = data.filter(e => e.third_start === 'defensive_third');
 
@@ -3650,124 +3677,167 @@
             teamWidth, teamDepth, area, defFwdGap, blockType, n:filtered.length};
   }
 
-  function setBloqueEstadoState(v) {
-    bloqueEstadoState = v;
-    renderBloqueEstado();
+  // ─── helper: slicear eventos SkillCorner proporcionalmente por tramo de minutos ──
+  function computeShapeForSegment(matchData, phase, matchId, segStart, segEnd) {
+    const P1_DUR = 45;  // minutos de primer tiempo (aprox)
+    const P2_DUR = 50;  // minutos de segundo tiempo (45-95', incluye prórroga)
+
+    const p1Evs = matchData.filter(e => e.period === 1);
+    const p2Evs = matchData.filter(e => e.period === 2);
+    const seg   = [];
+
+    // Fracción del primer tiempo que cubre el tramo
+    const p1s = Math.max(segStart, 0);
+    const p1e = Math.min(segEnd, P1_DUR);
+    if (p1e > p1s && p1Evs.length > 0) {
+      const fi = Math.round((p1s / P1_DUR) * p1Evs.length);
+      const ti = Math.round((p1e / P1_DUR) * p1Evs.length);
+      seg.push(...p1Evs.slice(fi, ti));
+    }
+
+    // Fracción del segundo tiempo que cubre el tramo
+    const p2s = Math.max(segStart - 45, 0);
+    const p2e = Math.max(Math.min(segEnd - 45, P2_DUR), 0);
+    if (p2e > p2s && p2Evs.length > 0) {
+      const fi = Math.round((p2s / P2_DUR) * p2Evs.length);
+      const ti = Math.round((p2e / P2_DUR) * p2Evs.length);
+      seg.push(...p2Evs.slice(fi, ti));
+    }
+
+    // computeTeamShape con period=0 (usa titulares) sobre los eventos del tramo
+    return computeTeamShape(seg, phase, 0, matchId);
+  }
+
+  // ─── Barra de filtro N partidos para "Por Estado" (solo 1J + Elegir) ─────────
+  function buildBloqueEstadoNFilterBar() {
+    const act1 = bloqueNMatches === 1;
+    const btn1 = `<button onclick="setBloqueNMatches(1)"
+      style="background:${act1?'rgba(200,169,110,0.12)':'var(--bg2)'};border:1px solid ${act1?'rgba(200,169,110,0.3)':'var(--border)'};color:${act1?'var(--accent)':'var(--text2)'};padding:5px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap">Último partido</button>`;
+    const customAct   = bloqueNMatches === 0;
+    const customLabel = customAct && bloqueCustomIds.length > 0 ? `✎ Elegir (${bloqueCustomIds.length})` : '✎ Elegir';
+    const btnC = `<button onclick="setBloqueNMatches(0)"
+      style="background:${customAct?'rgba(88,166,255,0.12)':'var(--bg2)'};border:1px solid ${customAct?'rgba(88,166,255,0.45)':'var(--border)'};color:${customAct?'var(--blue)':'var(--text2)'};padding:5px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap">${customLabel}</button>`;
+    return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+      <span style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-right:2px">Partidos</span>
+      ${btn1}
+      ${btnC}
+    </div>`;
   }
 
   async function renderBloqueEstado() {
     const cont = document.getElementById('bloqueCont');
     if (!cont) return;
 
-    const STATES = [
-      {key:'ganando',   label:'Ganando',   emoji:'🟢', col:'#3fb950'},
-      {key:'empatando', label:'Empatando', emoji:'🟡', col:'#e3b341'},
-      {key:'perdiendo', label:'Perdiendo', emoji:'🔴', col:'#f85149'},
-    ];
-    const sc = STATES.find(s => s.key === bloqueEstadoState) || STATES[0];
+    // En Por Estado solo tiene sentido 1J o modo custom
+    if (bloqueNMatches !== 1 && bloqueNMatches !== 0) bloqueNMatches = 1;
 
-    // ── State selector ────────────────────────────────────────────────────────
-    const stateBtns = STATES.map(s => {
-      const act = s.key === bloqueEstadoState;
-      return `<button onclick="setBloqueEstadoState('${s.key}')"
-        style="background:${act ? s.col+'33' : 'transparent'};color:${act ? s.col : 'var(--text2)'};
-        font-weight:${act?'700':'500'};border:1px solid ${act?s.col+'77':'var(--border)'};
-        border-radius:20px;padding:5px 18px;font-family:'DM Sans',sans-serif;font-size:13px;
-        cursor:pointer;transition:all 0.15s">${s.emoji} ${s.label}</button>`;
-    }).join('');
-    const stateBar = `<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
-      <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Estado:</span>
-      ${stateBtns}
-    </div>`;
-
-    const filterBar   = buildBloqueNFilterBar();
+    const filterBar   = buildBloqueEstadoNFilterBar();
     const customPanel = buildBloqueCustomPanel();
 
     if (bloqueNMatches === 0 && bloqueCustomIds.length === 0) {
-      cont.innerHTML = stateBar + filterBar + customPanel +
-        `<div style="text-align:center;padding:50px;color:var(--text3)">
+      cont.innerHTML = filterBar + customPanel +
+        `<div style="text-align:center;padding:50px;color:var(--text3);font-size:13px">
           <div style="font-size:24px;margin-bottom:10px">☝️</div>
-          Selecciona los partidos
+          Selecciona los partidos a comparar
         </div>`;
       return;
     }
 
-    cont.innerHTML = stateBar + filterBar +
-      `<div class="loading"><div class="spinner"></div><span>Cargando...</span></div>`;
+    cont.innerHTML = filterBar + customPanel +
+      `<div class="loading"><div class="spinner"></div><span>Cargando partidos...</span></div>`;
+
+    // Paleta de estados
+    const STATE_COL = {ganando:'#3fb950', empatando:'#e3b341', perdiendo:'#f85149'};
+    const STATE_EMO = {ganando:'🟢', empatando:'🟡', perdiendo:'🔴'};
+    const STATE_LBL = {ganando:'Ganando', empatando:'Empatando', perdiendo:'Perdiendo'};
 
     try {
-      // ── SIEMPRE los mismos últimos N partidos — el estado solo cambia qué eventos se usan ──
       const lastN = bloqueNMatches === 0
         ? getPartidos().filter(p => bloqueCustomIds.includes(p.id))
-        : getPartidos().slice(-bloqueNMatches);
+        : getPartidos().slice(-1);
 
-      const allData = await Promise.all(lastN.map(p => getMatchData(p.id).catch(()=>null)));
+      const allData = await Promise.all(lastN.map(p => getMatchData(p.id).catch(() => null)));
 
-      // ── Número de columnas según cuántos partidos ─────────────────────────
-      const cols = lastN.length === 1 ? 1 : 2;
-
-      const cards = lastN.map((p, i) => {
+      const sections = lastN.map((p, i) => {
         const md     = allData[i];
         const rival  = p.local === currentTeam.name ? p.vis : p.local;
         const isHome = p.local === currentTeam.name;
-        const [gl, gv] = (p.s || '').split('-').map(Number);
+        const [gl, gv] = (p.s || '0-0').split('-').map(Number);
         const resColor = isHome
-          ? (gl>gv?'var(--green)':gl<gv?'var(--red)':'var(--accent)')
-          : (gv>gl?'var(--green)':gv<gl?'var(--red)':'var(--accent)');
+          ? (gl > gv ? 'var(--green)' : gl < gv ? 'var(--red)' : 'var(--accent)')
+          : (gv > gl ? 'var(--green)' : gv < gl ? 'var(--red)' : 'var(--accent)');
 
-        // Qué mitades tienen este estado
-        const st = MATCH_GOALS_STATE[p.id];
-        const validPeriods = st
-          ? [st.p1===bloqueEstadoState?1:null, st.p2===bloqueEstadoState?2:null].filter(Boolean)
-          : [];
-        const halvesLabel = validPeriods.map(n => n===1?'1ªp':'2ªp').join(' + ');
+        // ── Construir tramos según los goles ──────────────────────────────────
+        const goals = (typeof MATCH_GOALS !== 'undefined' && MATCH_GOALS[p.id]) || [];
+        const segs  = [];
+        let prevMin = 0, ponf = 0, rivG = 0;
+        for (const g of goals) {
+          const m = Math.min(g.m, 95);
+          if (m > prevMin) segs.push({start: prevMin, end: m, ponf, rival: rivG});
+          ponf = g.p; rivG = g.r; prevMin = m;
+        }
+        segs.push({start: prevMin, end: 95, ponf, rival: rivG});
 
-        // Header de la tarjeta
-        const header = `<div style="padding:10px 14px;border-bottom:1px solid var(--border)">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:19px;color:var(--accent)">${p.j}</span>
-            <div style="display:flex;gap:4px;align-items:center">
-              ${halvesLabel ? `<span style="font-size:10px;font-weight:700;color:${sc.col};background:${sc.col}22;padding:2px 9px;border-radius:20px">${sc.emoji} ${halvesLabel}</span>` : `<span style="font-size:10px;color:var(--text3);padding:2px 9px">sin este estado</span>`}
-            </div>
-          </div>
-          <div style="font-size:13px;font-weight:600;color:var(--text)">${isHome?'🏠':'✈️'} ${rival}</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${resColor};margin-top:2px">${p.s||''} <span style="font-size:11px;font-family:'DM Sans',sans-serif;color:var(--text3);font-weight:400">${p.f||''}</span></div>
+        // ── Cabecera del partido ──────────────────────────────────────────────
+        const header = `<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent)">${p.j}</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text)">${isHome ? '🏠' : '✈️'} ${rival}</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${resColor}">${p.s || ''}</span>
+          <span style="font-size:11px;color:var(--text3)">${p.f || ''}</span>
+          <span style="font-size:11px;color:var(--text3);margin-left:auto">${segs.length} tramo${segs.length !== 1 ? 's' : ''} · ${bloquePhase === 'ataque' ? 'Ataque' : 'Defensa'}</span>
         </div>`;
 
-        // No hay datos para este estado en este partido
-        if (!md || validPeriods.length === 0) {
-          return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        if (!md) {
+          return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px">
             ${header}
-            <div style="padding:60px 20px;text-align:center;color:var(--text3);font-size:13px">
-              No hubo periodos en estado <strong style="color:${sc.col}">${sc.label}</strong>
-            </div>
+            <div style="padding:40px;text-align:center;color:var(--text3)">Sin datos SkillCorner</div>
           </div>`;
         }
 
-        const shape = computeTeamShape(md, bloquePhase, 0, p.id);
-        const bt    = shape.blockType;
-        const btMap = {high:['🔴 HIGH BLOCK','#f85149'],mid:['🟡 MID BLOCK','#e3b341'],low:['🔵 LOW BLOCK','#58a6ff']};
-        const [btLabel, btCol] = btMap[bt] || ['','var(--text3)'];
+        // ── Mini-campo por tramo ──────────────────────────────────────────────
+        const segCards = segs.map(seg => {
+          const state = seg.ponf > seg.rival ? 'ganando' : seg.ponf < seg.rival ? 'perdiendo' : 'empatando';
+          const col   = STATE_COL[state];
+          const emo   = STATE_EMO[state];
+          const lbl   = STATE_LBL[state];
+          const shape = computeShapeForSegment(md, bloquePhase, p.id, seg.start, seg.end);
+          const bt    = shape.blockType;
+          const btMap = {high: ['HIGH', '#f85149'], mid: ['MID', '#e3b341'], low: ['LOW', '#58a6ff']};
+          const [btLabel, btCol] = btMap[bt] || ['', 'var(--text3)'];
 
-        return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+          // Marcador desde perspectiva del partido (local-visitante)
+          const scoreLocal = isHome ? seg.ponf : seg.rival;
+          const scoreVis   = isHome ? seg.rival : seg.ponf;
+          const endLabel   = seg.end >= 95 ? "90+'" : `${seg.end}'`;
+
+          return `<div style="flex:1;min-width:150px;max-width:300px;background:var(--bg3);border:2px solid ${col}55;border-radius:8px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="background:${col}1a;padding:8px 10px;border-bottom:1px solid ${col}33;flex-shrink:0">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
+                <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${col};letter-spacing:1px;line-height:1">${scoreLocal}-${scoreVis}</span>
+                <span style="font-size:10px;font-weight:700;color:${col};background:${col}25;padding:2px 7px;border-radius:10px;white-space:nowrap">${emo} ${lbl}</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:3px">
+                <span style="font-size:11px;color:var(--text3)">${seg.start}' → ${endLabel}</span>
+                ${bt ? `<span style="font-size:9px;font-weight:700;color:${btCol};background:${btCol}22;padding:1px 6px;border-radius:10px">${btLabel}</span>` : ''}
+              </div>
+            </div>
+            <div style="flex:1">${buildBloqueSVG(shape, bloquePhase, col)}</div>
+          </div>`;
+        }).join('');
+
+        return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px">
           ${header}
-          <div style="padding:6px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center">
-            ${bt ? `<span style="font-size:10px;font-weight:700;color:${btCol};background:${btCol}22;padding:2px 9px;border-radius:20px">${btLabel}</span>` : ''}
-            <span style="font-size:11px;color:var(--text3);margin-left:auto">${shape.players.length+shape.gk.length} jugadores · ${bloquePhase==='ataque'?'attacking_third':'defensive_third'}</span>
-          </div>
-          ${buildBloqueSVG(shape, bloquePhase, sc.col)}
+          <div style="padding:12px;display:flex;gap:10px;flex-wrap:wrap;overflow-x:auto">${segCards}</div>
         </div>`;
       }).join('');
 
-      cont.innerHTML = stateBar + filterBar + customPanel +
-        `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:14px">${cards}</div>`;
+      cont.innerHTML = filterBar + customPanel + sections;
 
     } catch(e) {
-      cont.innerHTML = stateBar + filterBar +
+      cont.innerHTML = filterBar + customPanel +
         `<div style="padding:40px;text-align:center;color:var(--red)">Error: ${e.message}</div>`;
     }
   }
-
 
 
     // ─── POSESIÓN ────────────────────────────────────────────────────────────────
