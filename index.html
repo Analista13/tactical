@@ -2943,6 +2943,16 @@
     const squadNames = new Set(squad11.map(r => r[1]));
     let data = matchData.filter(e => e.player_name && squadNames.has(e.player_name));
     if (period) data = data.filter(e => e.period === period);
+    // Estado del marcador: filtrar periodos que coinciden con el estado seleccionado
+    if (bloqueSubTab === 'estado' && bloqueEstadoState !== 'todos') {
+      const st = MATCH_GOALS_STATE[matchId];
+      if (st && !period) { // solo en vista General (period=0), la 1ª/2ª parte ya tiene su propio filtro
+        const vp = [];
+        if (st.p1 === bloqueEstadoState) vp.push(1);
+        if (st.p2 === bloqueEstadoState) vp.push(2);
+        if (vp.length) data = data.filter(e => vp.includes(e.period));
+      }
+    }
     if (phase === 'ataque') data = data.filter(e => e.third_start === 'attacking_third');
     else                    data = data.filter(e => e.third_start === 'defensive_third');
 
@@ -3656,21 +3666,19 @@
     ];
     const sc = STATES.find(s => s.key === bloqueEstadoState) || STATES[0];
 
-    // ── State selector bar ──────────────────────────────────────────────────
     const stateBtns = STATES.map(s => {
       const act = s.key === bloqueEstadoState;
       return `<button onclick="setBloqueEstadoState('${s.key}')"
         style="background:${act ? s.col+'33' : 'transparent'};color:${act ? s.col : 'var(--text2)'};
-        font-weight:${act ? '700':'500'};border:1px solid ${act ? s.col+'66':'var(--border)'};
-        border-radius:20px;padding:5px 14px;font-family:'DM Sans',sans-serif;font-size:12px;
+        font-weight:${act?'700':'500'};border:1px solid ${act ? s.col+'77':'var(--border)'};
+        border-radius:20px;padding:5px 16px;font-family:'DM Sans',sans-serif;font-size:12px;
         cursor:pointer;transition:all 0.15s">${s.emoji} ${s.label}</button>`;
     }).join('');
     const stateBar = `<div style="display:flex;gap:6px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
-      <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-right:4px">Estado:</span>
+      <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-right:2px">Estado del marcador:</span>
       ${stateBtns}
     </div>`;
 
-    // ── N filter bar (reuse existing) ────────────────────────────────────────
     const filterBar   = buildBloqueNFilterBar();
     const customPanel = buildBloqueCustomPanel();
 
@@ -3687,100 +3695,70 @@
       `<div class="loading"><div class="spinner"></div><span>Cargando partidos...</span></div>`;
 
     try {
-      // Partidos elegibles: tienen datos y al menos un periodo con el estado seleccionado
-      const eligible = PARTIDOS.filter(p => {
+      const eligible = getPartidos().filter(p => {
         const st = MATCH_GOALS_STATE[p.id];
         return st && (st.p1 === bloqueEstadoState || st.p2 === bloqueEstadoState);
       });
 
-      // Selección N
-      let selected;
-      if (bloqueNMatches === 0) {
-        selected = eligible.filter(p => bloqueCustomIds.includes(p.id));
-      } else {
-        selected = eligible.slice(-bloqueNMatches);
-      }
+      const lastN = bloqueNMatches === 0
+        ? getPartidos().filter(p => bloqueCustomIds.includes(p.id))
+        : eligible.slice(-bloqueNMatches);
 
-      if (selected.length === 0) {
+      if (lastN.length === 0) {
         cont.innerHTML = stateBar + filterBar + customPanel +
           `<div style="text-align:center;padding:50px;color:var(--text3)">
-            No hay partidos con estado "${sc.label}" en la selección actual
+            No hay partidos con estado "${sc.label}" en la selección
           </div>`;
         return;
       }
 
-      // Fetch data
-      const allData = await Promise.all(selected.map(p => getMatchData(p.id).catch(()=>null)));
+      const allData = await Promise.all(lastN.map(p => getMatchData(p.id)));
 
-      // Agregar eventos de periodos con el estado correcto
-      const events = [];
-      const contributing = [];
-      for (let i = 0; i < selected.length; i++) {
-        const md = allData[i]; if (!md) continue;
-        const matchId = selected[i].id;
-        const st = MATCH_GOALS_STATE[matchId]; if (!st) continue;
-        const validPeriods = [];
-        if (st.p1 === bloqueEstadoState) validPeriods.push(1);
-        if (st.p2 === bloqueEstadoState) validPeriods.push(2);
-        const mEv = md.filter(e => validPeriods.includes(e.period));
-        events.push(...mEv);
-        contributing.push({p: selected[i], periods: validPeriods, n: mEv.length});
-      }
-
-      // Compute shape
-      const shape = computeShapeFromEvents(events, bloquePhase);
-
-      if (!shape || (!shape.players.length && !shape.gk.length)) {
-        cont.innerHTML = stateBar + filterBar + customPanel +
-          `<div style="text-align:center;padding:50px;color:var(--text3)">Sin posesiones suficientes para este estado</div>`;
-        return;
-      }
-
-      // Contributing matches chips
-      const chips = contributing.map(({p, periods}) => {
+      const cards = lastN.map((p, i) => {
+        const shape  = computeTeamShape(allData[i], bloquePhase, 0, p.id);
         const rival  = p.local === currentTeam.name ? p.vis : p.local;
         const isHome = p.local === currentTeam.name;
-        const halves = periods.map(n => n===1?'1ª':'2ª').join('+');
-        return `<span style="display:inline-flex;align-items:center;gap:4px;background:${sc.col}18;
-          border:1px solid ${sc.col}44;border-radius:20px;padding:3px 10px;font-size:11px;color:var(--text2)">
-          <span style="font-weight:700;color:${sc.col}">${p.j}</span>
-          ${isHome?'🏠':'✈️'} ${rival}
-          <span style="color:var(--text3)">${p.s} · ${halves}p</span>
-        </span>`;
+        const st     = MATCH_GOALS_STATE[p.id] || {};
+        const halves = [st.p1 === bloqueEstadoState ? '1ª' : null,
+                        st.p2 === bloqueEstadoState ? '2ª' : null].filter(Boolean).join('+');
+        const bt = shape.blockType;
+        const btEmoji = {high:'🔴', mid:'🟡', low:'🔵'}[bt] || '';
+        const btLabel = {high:'HIGH', mid:'MID', low:'LOW'}[bt] || '—';
+        const btColor = {high:'#f85149', mid:'#e3b341', low:'#58a6ff'}[bt] || '#888';
+        const [gl, gv] = (p.s || '').split('-').map(Number);
+        const resColor = isHome
+          ? (gl>gv ? 'var(--green)' : gl<gv ? 'var(--red)' : 'var(--accent)')
+          : (gv>gl ? 'var(--green)' : gv<gl ? 'var(--red)' : 'var(--accent)');
+        return `<div>
+          <div style="background:var(--bg2);border:1px solid ${bt?btColor+'44':'var(--border)'};border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column">
+            <div style="padding:8px 12px;border-bottom:1px solid var(--border)">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+                <span style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--accent)">${p.j}</span>
+                <div style="display:flex;gap:4px">
+                  <span style="font-size:10px;font-weight:700;color:${sc.col};background:${sc.col}22;padding:2px 7px;border-radius:20px">${sc.emoji} ${halves}p</span>
+                  ${bt ? `<span style="font-size:10px;font-weight:700;color:${btColor};background:${btColor}22;padding:2px 7px;border-radius:20px">${btEmoji} ${btLabel}</span>` : ''}
+                </div>
+              </div>
+              <div style="font-size:12px;color:var(--text);font-weight:500">${isHome?'🏠':'✈️'} ${rival}</div>
+              <div style="display:flex;gap:6px;margin-top:2px">
+                <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${resColor}">${p.s||''}</span>
+                <span style="font-size:11px;color:var(--text3)">${p.f||''}</span>
+              </div>
+            </div>
+            <div>${buildBloqueSVG(shape, bloquePhase, sc.col)}</div>
+          </div>
+        </div>`;
       }).join('');
 
-      const isAtq = bloquePhase === 'ataque';
-      const phBg  = isAtq ? 'rgba(240,136,62,0.08)' : 'rgba(88,166,255,0.08)';
-      const {cards, table, legend} = buildBloqueMetrics(shape, bloquePhase);
-
-      const bt = shape.blockType;
-      const btMap = {high:['🔴 HIGH BLOCK','#f85149'], mid:['🟡 MID BLOCK','#e3b341'], low:['🔵 LOW BLOCK','#58a6ff']};
-      const [btLabel, btCol] = btMap[bt] || ['—','var(--text3)'];
-
-      cont.innerHTML = stateBar + filterBar + customPanel + `<div style="display:grid;gap:20px">
-        <div style="background:var(--bg2);border:1px solid ${sc.col}55;border-radius:var(--radius);overflow:hidden">
-          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <span style="font-size:11px;font-weight:700;color:${sc.col};background:${sc.col}22;padding:3px 12px;border-radius:20px;letter-spacing:1px">${sc.emoji} ${sc.label.toUpperCase()}</span>
-            ${bt ? `<span style="font-size:11px;font-weight:700;color:${btCol};background:${btCol}22;padding:3px 10px;border-radius:20px">${btLabel}</span>` : ''}
-            <span style="font-size:12px;color:var(--text2)">${contributing.length} partido${contributing.length!==1?'s':''} · ${shape.n} posesiones SkillCorner</span>
-            <span style="font-size:11px;color:var(--text3);margin-left:auto">${isAtq?'attacking_third':'defensive_third'}</span>
-          </div>
-          ${buildBloqueSVG(shape, bloquePhase, sc.col)}
-          <div style="padding:10px 14px;border-top:1px solid var(--border)">
-            <div style="font-size:10px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Partidos incluidos</div>
-            <div style="display:flex;flex-wrap:wrap;gap:5px">${chips}</div>
-          </div>
-        </div>
-        ${cards}
-        ${table}
-        ${legend}
-      </div>`;
+      cont.innerHTML = stateBar + filterBar + customPanel +
+        `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${cards}</div>`;
 
     } catch(e) {
       cont.innerHTML = stateBar + filterBar + customPanel +
-        `<div style="text-align:center;padding:40px;color:var(--red)">Error: ${e.message}</div>`;
+        `<div style="padding:40px;text-align:center;color:var(--red)">Error: ${e.message}</div>`;
     }
   }
+
 
 
     // ─── POSESIÓN ────────────────────────────────────────────────────────────────
