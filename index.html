@@ -5354,6 +5354,82 @@
     const isHome = partido.local === currentTeam.name;
     const headerTitle = `🗺️ ${partido.j} · ${isHome?'🏠':'✈️'} ${rival} · ${partido.s||''}`;
 
+    // ── Tabla de pases por jugador ─────────────────────────────────────────
+    const TYPE_ORDER = ['prog','long','back','lat','other'];
+    const playerPassMap = {};
+    passes.forEach(p => {
+      if (!playerPassMap[p.n]) playerPassMap[p.n] = {
+        pos: p.pos||'', total:0, succ:0,
+        types: {prog:{s:0,f:0}, long:{s:0,f:0}, back:{s:0,f:0}, lat:{s:0,f:0}, other:{s:0,f:0}}
+      };
+      const d = playerPassMap[p.n];
+      d.total++;
+      const t = getPassType(p);
+      if (p.out === 's') { d.succ++; d.types[t].s++; }
+      else               {           d.types[t].f++; }
+    });
+
+    const playerRows = Object.entries(playerPassMap)
+      .map(([name, d]) => ({name, ...d, fail: d.total-d.succ, pct: d.total?Math.round(d.succ/d.total*100):0}))
+      .sort((a,b) => b.total - a.total);
+
+    const typeCell = (s, f) => {
+      if (!s && !f) return `<td style="padding:6px 8px;text-align:center;color:var(--text3);font-size:11px">—</td>`;
+      return `<td style="padding:6px 8px;text-align:center">
+        ${s?`<span style="font-size:12px;font-weight:600;color:var(--green)">${s}</span>`:''}${s&&f?`<span style="font-size:10px;color:var(--border)"> / </span>`:''}${f?`<span style="font-size:12px;color:var(--red);opacity:0.85">${f}</span>`:''}
+      </td>`;
+    };
+
+    const playerTableRows = playerRows.map(pl => {
+      const pctCol = pl.pct>=75?'var(--green)':pl.pct>=55?'var(--accent)':'var(--red)';
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:7px 12px;white-space:nowrap">
+          <div style="display:flex;align-items:center;gap:7px">
+            ${pl.pos?`<span style="font-size:9px;font-weight:700;color:var(--accent);background:var(--accent)18;padding:1px 5px;border-radius:3px;min-width:24px;text-align:center">${pl.pos}</span>`:''}
+            <span style="font-size:12px;font-weight:500;color:var(--text)">${dispN(pl.name)}</span>
+          </div>
+        </td>
+        <td style="padding:6px 8px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:19px;color:var(--text)">${pl.total}</td>
+        <td style="padding:6px 8px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:19px;color:var(--green)">${pl.succ}</td>
+        <td style="padding:6px 8px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:19px;color:var(--red)">${pl.fail}</td>
+        <td style="padding:6px 8px;text-align:center">
+          <span style="font-size:12px;font-weight:700;color:${pctCol}">${pl.pct}%</span>
+        </td>
+        ${TYPE_ORDER.map(t => typeCell(pl.types[t].s, pl.types[t].f)).join('')}
+      </tr>`;
+    }).join('');
+
+    const typeHeaderCells = TYPE_ORDER.map(t => {
+      const m = PASS_TYPE_META[t];
+      return `<th style="text-align:center;padding:8px 6px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+          <span style="font-size:12px">${m.emoji}</span>
+          <span style="font-size:9px;color:${m.color};font-weight:600;white-space:nowrap">${m.label}</span>
+          <span style="font-size:8px;color:var(--text3)">✅ / ❌</span>
+        </div>
+      </th>`;
+    }).join('');
+
+    const playerTable = playerRows.length ? `
+      <div style="margin-top:18px">
+        <div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-bottom:10px">
+          Pases por jugador · ${pasesPeriod==='t'?'todo el partido':pasesPeriod==='1'?'1ª parte':'2ª parte'}${pasesTypeFilter!=='all'?' · '+pasesTypeFilter:''}
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Jugador</th>
+              <th style="text-align:center">Total</th>
+              <th style="text-align:center">✅</th>
+              <th style="text-align:center">❌</th>
+              <th style="text-align:center">%</th>
+              ${typeHeaderCells}
+            </tr></thead>
+            <tbody>${playerTableRows}</tbody>
+          </table>
+        </div>
+      </div>` : '';
+
     cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + typeBar +
       `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
         <span style="font-size:14px;font-weight:700;color:var(--text)">${headerTitle}</span>
@@ -5362,7 +5438,7 @@
       `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">` +
       svg +
       `</div>` +
-      statBar + legend;
+      statBar + legend + playerTable;
   }
 
   // ─── MAPA DE PASES — SUB-TAB JUGADORES ───────────────────────────────────────
