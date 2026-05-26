@@ -2961,7 +2961,9 @@
   }
 
   // Compute avg positions per player for a given phase & period from match data
-  function computeTeamShape(matchData, phase, period, matchId, thirdFilter = null) {
+  // thirdFilter: filter by third_start (ataque zones)
+  // blockFilter: filter by team_out_of_possession_phase_type (defensa zones: 'high_block'|'medium_block'|'low_block')
+  function computeTeamShape(matchData, phase, period, matchId, thirdFilter = null, blockFilter = null) {
     // ── Selección de los 11 jugadores según el momento del partido ──
     // period=2 (2ª parte) → los 11 que ACABARON (end_time=null)
     // period=0/1 (general / 1ª parte) → los 11 TITULARES (start_time="00:00:00")
@@ -2976,13 +2978,13 @@
     squad11.forEach(r => { posMap[r[1]] = resolvePlayerPosition({id:r[0], position:r[2]}); });
 
     // Filtrar tracking solo a esos 11 jugadores + periodo + fase
-    // Fase usando el campo third_start de SkillCorner (más preciso que x > 0)
-    // Ataque  = attacking_third  (tercio rival, calculado por SkillCorner con tracking real)
-    // Defensa = defensive_third  (tercio propio)
     const squadNames = new Set(squad11.map(r => r[1]));
     let data = matchData.filter(e => e.player_name && squadNames.has(e.player_name));
     if (period) data = data.filter(e => e.period === period);
-    if (thirdFilter) {
+    if (blockFilter) {
+      // Zonas defensa: filtramos por tipo de bloque del rival (cómo nos organiza la posesión)
+      data = data.filter(e => e.team_out_of_possession_phase_type === blockFilter);
+    } else if (thirdFilter) {
       data = data.filter(e => e.third_start === thirdFilter);
     } else if (phase === 'ataque') {
       data = data.filter(e => e.third_start === 'attacking_third');
@@ -3569,25 +3571,25 @@
     cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando posición...</span></div>`;
     try {
       const matchData=await getMatchData(bloqueMatchId);
-      // Ataque: Zona1=tercio propio (salida), Zona2=centro, Zona3=tercio rival (llegada)
-      // Defensa: Zona1=HIGH BLOCK (rival en su tercio defensivo), Zona2=MID BLOCK, Zona3=LOW BLOCK
+      // Ataque: filtra por third_start (dónde tenemos el balón)
+      // Defensa: filtra por team_out_of_possession_phase_type (bloque del rival)
       const isAtqPhase = bloquePhase==='ataque';
-      const ZONA_MAP = isAtqPhase
-        ? {zona1:'defensive_third', zona2:'middle_third', zona3:'attacking_third'}
-        : {zona1:'attacking_third',  zona2:'middle_third', zona3:'defensive_third'};
+      const ZONA_MAP_ATQ = {zona1:'defensive_third', zona2:'middle_third', zona3:'attacking_third'};
+      const ZONA_BLOCK_DEF = {zona1:'high_block', zona2:'medium_block', zona3:'low_block'};
       const ZONA_META = isAtqPhase
         ? {
-            zona1:{col:'#58a6ff',lbl:'Zona 1 — Tercio propio',  sub:'Posesiones iniciadas en el tercio defensivo (salida de balón)'},
-            zona2:{col:'#e3b341',lbl:'Zona 2 — Tercio central',  sub:'Posesiones iniciadas en el centro del campo'},
-            zona3:{col:'#f85149',lbl:'Zona 3 — Tercio rival',    sub:'Posesiones iniciadas en el tercio de ataque (llegada al área)'},
+            zona1:{col:'#58a6ff',lbl:'Zona 1 — Tercio propio',           sub:'Cómo nos organizamos en posesión desde nuestro tercio defensivo'},
+            zona2:{col:'#e3b341',lbl:'Zona 2 — Tercio central',           sub:'Cómo nos organizamos en posesión en el centro del campo'},
+            zona3:{col:'#f85149',lbl:'Zona 3 — Tercio rival',             sub:'Cómo nos organizamos en posesión en el tercio de ataque'},
           }
         : {
-            zona1:{col:'#f85149',lbl:'Zona 1 — Bloque alto',    sub:'Rival con balón en su tercio defensivo — presión alta (HIGH BLOCK)'},
-            zona2:{col:'#e3b341',lbl:'Zona 2 — Bloque medio',   sub:'Rival con balón en el tercio central (MID BLOCK)'},
-            zona3:{col:'#58a6ff',lbl:'Zona 3 — Bloque bajo',    sub:'Rival con balón en su tercio de ataque — bloque bajo (LOW BLOCK)'},
+            zona1:{col:'#f85149',lbl:'Zona 1 — Rival en HIGH BLOCK',      sub:'Posicionamiento en posesión cuando el rival nos presiona alto'},
+            zona2:{col:'#e3b341',lbl:'Zona 2 — Rival en MEDIUM BLOCK',    sub:'Posicionamiento en posesión cuando el rival usa bloque medio'},
+            zona3:{col:'#58a6ff',lbl:'Zona 3 — Rival en LOW BLOCK',       sub:'Posicionamiento en posesión cuando el rival se cierra en su área'},
           };
-      const thirdFilter=ZONA_MAP[bloqueSubTab];
-      const shape=computeTeamShape(matchData,bloquePhase,0,bloqueMatchId,thirdFilter);
+      const thirdFilter  = isAtqPhase ? ZONA_MAP_ATQ[bloqueSubTab]  : null;
+      const blockFilter  = isAtqPhase ? null : ZONA_BLOCK_DEF[bloqueSubTab];
+      const shape=computeTeamShape(matchData,bloquePhase,0,bloqueMatchId,thirdFilter,blockFilter);
       if(!shape.players.length&&!shape.gk.length){
         cont.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3)">Sin posesiones suficientes en esta fase del partido</div>`;
         return;
