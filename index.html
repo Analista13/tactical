@@ -220,6 +220,7 @@
   let pasesTypeFilter   = 'all';      // 'all'|'prog'|'back'|'lat'|'long'|'fail'
   let pasesZoneFilter   = null;       // null | 1 | 2 | 3
   let pasesDropdownOpen = false;      // dropdown selector de partido
+  let pasesSubTab       = 'equipo';   // 'equipo' | 'jugadores'
   const _pasesCache     = new Map();  // caché passes data por partido
   let locVis = 'todos';            // 'todos' | 'local' | 'visitante'
 
@@ -5142,38 +5143,44 @@
   async function loadPases() {
     const cont = document.getElementById('content');
     if (!pasesMatchId) {
-      // Pre-seleccionar último partido con datos
       const ps = getPartidos();
       pasesMatchId = ps[ps.length - 1]?.id || null;
     }
-    cont.innerHTML = `<div class="anim" id="pasesCont"><div class="loading"><div class="spinner"></div><span>Cargando pases...</span></div></div>`;
-    await renderPasesMap();
+    cont.innerHTML = `<div class="anim" id="pasesCont"><div class="loading"><div class="spinner"></div><span>Cargando...</span></div></div>`;
+    if (pasesSubTab === 'jugadores') await renderPasesJugadores();
+    else await renderPasesMap();
   }
 
-  async function renderPasesMap() {
-    const cont = document.getElementById('pasesCont');
-    if (!cont) return;
+  // ── Barra de sub-tabs compartida (Equipo | Jugadores) ─────────────────────
+  function buildPasesSubTabs() {
+    return `<div style="display:flex;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;width:fit-content;margin-bottom:16px">
+      ${[['equipo','👥 Equipo'],['jugadores','🔎 Jugadores']].map(([id,lbl]) => {
+        const act = pasesSubTab === id;
+        return `<button onclick="pasesSubTab='${id}';pasesDropdownOpen=false;loadPases()"
+          style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:7px 20px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s;white-space:nowrap">${lbl}</button>`;
+      }).join('')}
+    </div>`;
+  }
 
-    const ps = getPartidos();
-    const partido = ps.find(p => p.id === pasesMatchId) || ps[ps.length-1];
-    if (!partido) { cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Sin partidos disponibles</div>'; return; }
-    pasesMatchId = partido.id;
-
-    // ── Match selector — botón Elegir + grid de partidos ─────────────────────
-    const rival0  = partido.local === currentTeam.name ? partido.vis : partido.local;
+  // ── Cabecera de partido compartida ────────────────────────────────────────
+  function buildPasesHeader(partido, ps) {
+    const rival0  = partido.local === currentTeam.name ? partido.vis  : partido.local;
     const isHome0 = partido.local === currentTeam.name;
     const [gl0,gv0] = (partido.s||'0-0').split('-').map(Number);
     const resCol0 = isHome0 ? (gl0>gv0?'var(--green)':gl0<gv0?'var(--red)':'var(--text3)') : (gv0>gl0?'var(--green)':gv0<gl0?'var(--red)':'var(--text3)');
+    const onElegir = `pasesDropdownOpen=!pasesDropdownOpen;${pasesSubTab==='jugadores'?'renderPasesJugadores':'renderPasesMap'}()`;
 
-    const elegirBtn = `<button onclick="pasesDropdownOpen=!pasesDropdownOpen;renderPasesMap()"
+    const elegirBtn = `<button onclick="${onElegir}"
       style="background:${pasesDropdownOpen?'rgba(88,166,255,0.12)':'var(--bg2)'};border:1px solid ${pasesDropdownOpen?'rgba(88,166,255,0.45)':'var(--border)'};color:${pasesDropdownOpen?'var(--blue)':'var(--text2)'};padding:5px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap">✎ Elegir</button>`;
 
+    const onPick = `pasesMatchId=MATCHID;pasesDropdownOpen=false;pasesPeriod='t';pasesTypeFilter='all';pasesZoneFilter=null;${pasesSubTab==='jugadores'?'renderPasesJugadores':'renderPasesMap'}()`;
     const matchChips = pasesDropdownOpen ? (() => {
       const chips = ps.map(p => {
         const rv  = p.local === currentTeam.name ? p.vis : p.local;
         const ih  = p.local === currentTeam.name;
         const sel = p.id === pasesMatchId;
-        return `<button onclick="pasesMatchId=${p.id};pasesDropdownOpen=false;pasesPeriod='t';pasesTypeFilter='all';pasesZoneFilter=null;renderPasesMap()"
+        const fn  = onPick.replace('MATCHID', p.id);
+        return `<button onclick="${fn}"
           style="background:${sel?'rgba(88,166,255,0.1)':'var(--bg3)'};border:1px solid ${sel?'rgba(88,166,255,0.5)':'var(--border)'};color:${sel?'var(--blue)':'var(--text2)'};padding:6px 10px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all 0.15s;text-align:left;display:flex;flex-direction:column;gap:1px;min-width:90px">
           <span style="font-weight:700;font-size:10px;color:${sel?'var(--blue)':'var(--accent)'}">${p.j}</span>
           <span>${ih?'🏠':'✈️'} ${rv.length>13?rv.substring(0,11)+'…':rv}</span>
@@ -5188,8 +5195,8 @@
       </div>`;
     })() : '';
 
-    const matchSel = `<div style="margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:${pasesDropdownOpen?'0':'0'}">
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px">
         <span style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--accent)">${partido.j}</span>
         <span style="font-size:13px;color:var(--text);font-weight:500">${isHome0?'🏠':'✈️'} ${rival0}</span>
         <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${resCol0}">${partido.s||''}</span>
@@ -5198,6 +5205,18 @@
       </div>
       ${matchChips}
     </div>`;
+  }
+
+  async function renderPasesMap() {
+    const cont = document.getElementById('pasesCont');
+    if (!cont) return;
+
+    const ps = getPartidos();
+    const partido = ps.find(p => p.id === pasesMatchId) || ps[ps.length-1];
+    if (!partido) { cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Sin partidos disponibles</div>'; return; }
+    pasesMatchId = partido.id;
+
+    const matchSel = buildPasesHeader(partido, ps);
 
     // ── Period tabs ────────────────────────────────────────────────────────────
     const perBtn = (id,lbl) => {
@@ -5317,7 +5336,7 @@
     const isHome = partido.local === currentTeam.name;
     const headerTitle = `🗺️ ${partido.j} · ${isHome?'🏠':'✈️'} ${rival} · ${partido.s||''}`;
 
-    cont.innerHTML = matchSel + periodBar + typeBar +
+    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + typeBar +
       `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
         <span style="font-size:14px;font-weight:700;color:var(--text)">${headerTitle}</span>
         <span style="font-size:11px;color:var(--text3);margin-left:auto">${total} pases mostrados</span>
@@ -5326,6 +5345,204 @@
       svg +
       `</div>` +
       statBar + legend;
+  }
+
+  // ─── MAPA DE PASES — SUB-TAB JUGADORES ───────────────────────────────────────
+
+  async function renderPasesJugadores() {
+    const cont = document.getElementById('pasesCont');
+    if (!cont) return;
+
+    const ps = getPartidos();
+    const partido = ps.find(p => p.id === pasesMatchId) || ps[ps.length-1];
+    if (!partido) { cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Sin partidos</div>'; return; }
+    pasesMatchId = partido.id;
+
+    const matchSel = buildPasesHeader(partido, ps);
+
+    // ── Period bar ─────────────────────────────────────────────────────────────
+    const perBtn = (id,lbl) => {
+      const act = pasesPeriod === id;
+      return `<button onclick="pasesPeriod='${id}';renderPasesJugadores()" style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:7px 20px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s">${lbl}</button>`;
+    };
+    const periodBar = `<div style="display:flex;gap:2px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;width:fit-content;margin-bottom:16px">
+      ${perBtn('t','Todo')}${perBtn('1','1ª Parte')}${perBtn('2','2ª Parte')}
+    </div>`;
+
+    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar +
+      `<div class="loading"><div class="spinner"></div><span>Calculando...</span></div>`;
+
+    // ── Load & filter ──────────────────────────────────────────────────────────
+    const raw = await getPasesData(pasesMatchId);
+    if (!raw.length) {
+      cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar +
+        `<div style="padding:40px;text-align:center;color:var(--text3)">Sin datos para este partido</div>`;
+      return;
+    }
+
+    let passes = raw;
+    if (pasesPeriod !== 't') passes = passes.filter(p => p.p == pasesPeriod);
+
+    // Z1 → Z2: origin en tercio defensivo, destino en tercio medio
+    const z1to2 = passes.filter(p =>
+      p.x != null && p.xe != null &&
+      p.x < -17.5 &&
+      p.xe >= -17.5 && p.xe <= 17.5
+    );
+
+    // ── Stats ──────────────────────────────────────────────────────────────────
+    const total  = z1to2.length;
+    const succ   = z1to2.filter(p => p.out === 's').length;
+    const fail   = total - succ;
+    const pct    = total ? Math.round(succ/total*100) : 0;
+
+    const mkSt = (lbl, val, sub, col) =>
+      `<div class="card" style="border-left:3px solid ${col}">
+        <div class="card-label">${lbl}</div>
+        <div class="card-value" style="font-size:28px">${val}</div>
+        ${sub?`<div class="card-sub">${sub}</div>`:''}
+      </div>`;
+
+    const statsRow = `<div class="cards" style="margin-bottom:20px">
+      ${mkSt('Pases Z1→Z2', total, 'Construcción desde tercio defensivo', '#58a6ff')}
+      ${mkSt('Completados', succ, pct+'% precisión', '#3fb950')}
+      ${mkSt('Fallidos', fail, '', '#f85149')}
+    </div>`;
+
+    // ── Mini pitch SVG (Z1→Z2 passes only) ────────────────────────────────────
+    const AW=920, AH=590, AMX=55, AMY=40, APW=AW-AMX*2, APH=AH-AMY*2;
+    const sv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW, sy:AMY+((34-y)/68)*APH});
+
+    const pitchBg = `
+      <rect x="0" y="0" width="${AW}" height="${AH}" fill="#0b150b"/>
+      <rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="#0d1f0d" stroke="#1c3a1c" stroke-width="1.5"/>
+      <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="#1c3a1c" stroke-width="1"/>
+      <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="#1c3a1c" stroke-width="1"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>`;
+
+    // Zone shading: Z1 (blue) y Z2 (yellow) destacadas
+    const {sx:zAx}=sv(-52.5,34), {sx:zBx}=sv(-17.5,34), {sx:zCx}=sv(17.5,34);
+    const zoneHL = `
+      <rect x="${zAx.toFixed(1)}" y="${AMY}" width="${(zBx-zAx).toFixed(1)}" height="${APH}" fill="#58a6ff" fill-opacity="0.07" stroke="#58a6ff" stroke-width="1" stroke-opacity="0.3"/>
+      <rect x="${zBx.toFixed(1)}" y="${AMY}" width="${(zCx-zBx).toFixed(1)}" height="${APH}" fill="#e3b341" fill-opacity="0.07" stroke="#e3b341" stroke-width="1" stroke-opacity="0.3"/>
+      <text x="${((zAx+zBx)/2).toFixed(1)}" y="${(AMY+18).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="600" fill="#58a6ff" fill-opacity="0.7">Zona 1 (origen)</text>
+      <text x="${((zBx+zCx)/2).toFixed(1)}" y="${(AMY+18).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="600" fill="#e3b341" fill-opacity="0.7">Zona 2 (destino)</text>`;
+
+    // Pass lines
+    let passLines = '';
+    const sorted = [...z1to2].sort((a,b) => (a.out==='s'?0:1)-(b.out==='s'?0:1));
+    sorted.forEach(p => {
+      const {sx:x1,sy:y1}=sv(p.x, p.y||0);
+      const {sx:x2,sy:y2}=sv(p.xe, p.ye||0);
+      const succ = p.out === 's';
+      const typeCol = (PASS_TYPE_META[getPassType(p)]||PASS_TYPE_META.other).color;
+      const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+      if (len < 2) return;
+      if (succ) {
+        passLines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#3fb950" stroke-width="5" stroke-opacity="0.10" stroke-linecap="round"/>`;
+        passLines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${typeCol}" stroke-width="2" stroke-opacity="0.82" stroke-linecap="round"/>`;
+        const nx=dx/len, ny=dy/len, ax=x2-nx*9, ay=y2-ny*9, px=-ny*4.5, py=nx*4.5;
+        passLines += `<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(ax+px).toFixed(1)},${(ay+py).toFixed(1)} ${(ax-px).toFixed(1)},${(ay-py).toFixed(1)}" fill="#3fb950" fill-opacity="0.90"/>`;
+        passLines += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="${typeCol}" fill-opacity="0.85" stroke="#0d1f0d" stroke-width="0.8"/>`;
+      } else {
+        passLines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#f85149" stroke-width="5" stroke-opacity="0.12" stroke-linecap="round" stroke-dasharray="8,5"/>`;
+        passLines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#f85149" stroke-width="1.6" stroke-opacity="0.72" stroke-linecap="round" stroke-dasharray="8,5"/>`;
+        passLines += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="none" stroke="#f85149" stroke-width="1.5" stroke-opacity="0.80"/>`;
+      }
+    });
+
+    const mapSVG = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px">
+      <svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${pitchBg}${zoneHL}${passLines}</svg>
+    </div>`;
+
+    // ── Player rankings ────────────────────────────────────────────────────────
+    // Pasadores
+    const passerMap = {};
+    z1to2.forEach(p => {
+      if (!passerMap[p.n]) passerMap[p.n] = { total:0, succ:0, pos:p.pos||'?' };
+      passerMap[p.n].total++;
+      if (p.out==='s') passerMap[p.n].succ++;
+    });
+    const passers = Object.entries(passerMap)
+      .map(([name,d]) => ({name, ...d, pct: d.total?Math.round(d.succ/d.total*100):0}))
+      .sort((a,b) => b.total - a.total);
+
+    // Receptores (solo pases completados que tienen 'to')
+    const recvMap = {};
+    z1to2.filter(p => p.out==='s' && p.to).forEach(p => {
+      if (!recvMap[p.to]) recvMap[p.to] = { total:0 };
+      recvMap[p.to].total++;
+    });
+    const receivers = Object.entries(recvMap)
+      .map(([name,d]) => ({name, ...d}))
+      .sort((a,b) => b.total - a.total);
+
+    const maxPasser = Math.max(1, ...passers.map(p=>p.total));
+    const maxRecv   = Math.max(1, ...receivers.map(r=>r.total));
+
+    const mkRankRow = (item, maxVal, showPct) => {
+      const barW = Math.round((item.total/maxVal)*100);
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 12px">
+          <div style="display:flex;align-items:center;gap:8px">
+            ${item.pos?`<span style="font-size:9px;font-weight:700;color:var(--accent);background:var(--bg3);padding:2px 5px;border-radius:3px;min-width:28px;text-align:center">${item.pos}</span>`:''}
+            <span style="font-size:12px;font-weight:500;color:var(--text)">${dispN(item.name)}</span>
+          </div>
+        </td>
+        <td style="padding:8px 10px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:18px;color:#58a6ff">${item.total}</td>
+        ${showPct?`<td style="padding:8px 10px;text-align:right;font-size:11px;color:${item.pct>=70?'var(--green)':item.pct>=50?'var(--accent)':'var(--red)'}">${item.pct}%</td>`:''}
+        <td style="padding:8px 14px;min-width:80px">
+          <div style="height:5px;background:var(--bg4);border-radius:3px">
+            <div style="height:5px;width:${barW}%;background:#58a6ff;border-radius:3px;opacity:0.8"></div>
+          </div>
+        </td>
+      </tr>`;
+    };
+
+    const passerTable = passers.length ? `
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Pasador (Z1)</th>
+            <th style="text-align:right">Pases</th>
+            <th style="text-align:right">%Comp.</th>
+            <th></th>
+          </tr></thead>
+          <tbody>${passers.map(p=>mkRankRow(p,maxPasser,true)).join('')}</tbody>
+        </table>
+      </div>` : `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Sin datos</div>`;
+
+    const recvTable = receivers.length ? `
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Receptor (Z2)</th>
+            <th style="text-align:right">Recepciones</th>
+            <th></th>
+          </tr></thead>
+          <tbody>${receivers.map(r=>mkRankRow(r,maxRecv,false)).join('')}</tbody>
+        </table>
+      </div>` : `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Sin pases completados</div>`;
+
+    const rankingCols = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px">
+      <div>
+        <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#58a6ff;font-weight:600;margin-bottom:10px;padding:8px 12px;background:rgba(88,166,255,0.07);border:1px solid rgba(88,166,255,0.2);border-radius:6px">
+          🔵 Pasadores — desde Zona 1
+        </div>
+        ${passerTable}
+      </div>
+      <div>
+        <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#e3b341;font-weight:600;margin-bottom:10px;padding:8px 12px;background:rgba(227,179,65,0.07);border:1px solid rgba(227,179,65,0.2);border-radius:6px">
+          🟡 Receptores — en Zona 2
+        </div>
+        ${recvTable}
+      </div>
+    </div>`;
+
+    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + statsRow + mapSVG + rankingCols;
   }
 
   function buildPasesMapSVG(passes) {
