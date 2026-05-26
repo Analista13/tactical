@@ -218,6 +218,7 @@
   let perdidasRecMatchId = null;        // partido seleccionado en Pérdidas & Rec.
   let perdidasRecSub    = 'perdidas';  // 'perdidas' | 'recuperaciones'
   let perdidasRecDropOpen = false;     // dropdown selector de partido
+  let perdidasPlayer    = null;        // jugador seleccionado para ver sus pérdidas en campo
   let pasesMatchId      = null;       // partido seleccionado en mapa de pases
   let pasesPeriod       = 't';        // 't' | '1' | '2'
   let pasesTypeFilter   = 'all';      // 'all'|'prog'|'back'|'lat'|'long'|'fail'
@@ -1217,26 +1218,41 @@
       const total=allLoss.length;
       const maxZ=Math.max(1,...zones.flat());
 
-      // Campo SVG de pérdidas (mismo sistema que Tendencia)
+      // Campo SVG de pérdidas
       const W=820,H=540,MX=50,MY=40,PW=W-MX*2,PH=H-MY*2;
       const sv=(x,y)=>({sx:MX+((x+52.5)/105)*PW,sy:MY+((34-y)/68)*PH});
       const xR=[[-52.5,-17.5],[-17.5,17.5],[17.5,52.5]];
       const yR=[[34,20.4],[20.4,6.8],[6.8,-6.8],[-6.8,-20.4],[-20.4,-34]];
+
       let zoneSVG='';
-      for(let c=0;c<3;c++) for(let vr=0;vr<5;vr++){
-        const cnt=zones[c][4-vr];
-        const cntD=zonesD[c][4-vr], cntP=zonesP[c][4-vr];
-        const {sx:sx1,sy:sy1}=sv(xR[c][0],yR[vr][0]);
-        const {sx:sx2,sy:sy2}=sv(xR[c][1],yR[vr][1]);
-        const zw=sx2-sx1,zh=sy2-sy1,cx=sx1+zw/2,cy=sy1+zh/2;
-        const pct=((cnt/total)*100).toFixed(1);
-        const op=cnt>0?Math.max(0.04,(cnt/maxZ)*0.75):0;
-        // texto siempre blanco/claro sobre fondo oscuro
-        const txtCol=cnt>0?'#ffffff':'#3a1e1e';
-        const subCol=cnt>0?'rgba(255,255,255,0.65)':'#3a1e1e';
-        zoneSVG+=`<rect x="${sx1.toFixed(1)}" y="${sy1.toFixed(1)}" width="${zw.toFixed(1)}" height="${zh.toFixed(1)}" fill="#f85149" fill-opacity="${op.toFixed(3)}" stroke="#3a1e1e" stroke-width="0.8"/>
-          <text x="${cx.toFixed(1)}" y="${(cy-2).toFixed(1)}" text-anchor="middle" font-family="'Bebas Neue',sans-serif" font-size="16" font-weight="700" fill="${txtCol}">${pct}%</text>
-          <text x="${cx.toFixed(1)}" y="${(cy+13).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="${subCol}">${cnt}</text>`;
+      if (perdidasPlayer) {
+        // ── Modo jugador: dots individuales ────────────────────────────────
+        const playerLosses = allLoss.filter(e => e.player_name === perdidasPlayer);
+        playerLosses.forEach(e => {
+          const {sx,sy}=sv(e.x_end,e.y_end);
+          const isDirect = e.end_type==='possession_loss';
+          const col = isDirect ? '#f85149' : '#e3b341';
+          const glow = isDirect ? '#ff000044' : '#ffaa0044';
+          const min  = e.minute ?? e.min ?? '?';
+          zoneSVG+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="10" fill="${glow}"/>
+            <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="6" fill="${col}" fill-opacity="0.9" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>
+            <text x="${sx.toFixed(1)}" y="${(sy+16).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="${col}" fill-opacity="0.8">${min}'</text>`;
+        });
+      } else {
+        // ── Modo equipo: heatmap por zonas ──────────────────────────────────
+        for(let c=0;c<3;c++) for(let vr=0;vr<5;vr++){
+          const cnt=zones[c][4-vr];
+          const {sx:sx1,sy:sy1}=sv(xR[c][0],yR[vr][0]);
+          const {sx:sx2,sy:sy2}=sv(xR[c][1],yR[vr][1]);
+          const zw=sx2-sx1,zh=sy2-sy1,cx=sx1+zw/2,cy=sy1+zh/2;
+          const pct=((cnt/total)*100).toFixed(1);
+          const op=cnt>0?Math.max(0.04,(cnt/maxZ)*0.75):0;
+          const txtCol=cnt>0?'#ffffff':'#3a1e1e';
+          const subCol=cnt>0?'rgba(255,255,255,0.65)':'#3a1e1e';
+          zoneSVG+=`<rect x="${sx1.toFixed(1)}" y="${sy1.toFixed(1)}" width="${zw.toFixed(1)}" height="${zh.toFixed(1)}" fill="#f85149" fill-opacity="${op.toFixed(3)}" stroke="#3a1e1e" stroke-width="0.8"/>
+            <text x="${cx.toFixed(1)}" y="${(cy-2).toFixed(1)}" text-anchor="middle" font-family="'Bebas Neue',sans-serif" font-size="16" font-weight="700" fill="${txtCol}">${pct}%</text>
+            <text x="${cx.toFixed(1)}" y="${(cy+13).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="${subCol}">${cnt}</text>`;
+        }
       }
       const xMids=[MX+PW*0.167,MX+PW*0.5,MX+PW*0.833];
       const axisLabels=['Z1','Z2','Z3'].map((l,i)=>`<text x="${xMids[i].toFixed(1)}" y="${(MY-10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#484f58" font-family="'DM Mono',monospace">${l}</text>`).join('')
@@ -1255,14 +1271,18 @@
 
       const maxN=Math.max(1,...playerRank.map(p=>p.n));
       const rankRows=playerRank.map((p,i)=>{
-        const dorsal='';
         const barW=Math.round((p.n/maxN)*100);
         const isTop=i===0;
-        return `<tr style="border-bottom:1px solid var(--border);${isTop?'background:rgba(248,81,73,0.07)':''}">
+        const isSel=perdidasPlayer===p.name;
+        const rowBg=isSel?'rgba(248,81,73,0.18)':isTop&&!perdidasPlayer?'rgba(248,81,73,0.07)':'';
+        const rowBorder=isSel?'2px solid rgba(248,81,73,0.5)':'1px solid var(--border)';
+        return `<tr onclick="perdidasPlayer=${isSel?'null':`'${p.name.replace(/'/g,"\\'")}'`};renderPerdidas()"
+          style="border-bottom:${rowBorder};${rowBg?`background:${rowBg};`:''}cursor:pointer;transition:background .15s"
+          onmouseover="this.style.background='rgba(248,81,73,0.12)'" onmouseout="this.style.background='${rowBg}'">
           <td style="padding:8px 12px;white-space:nowrap">
             <div style="display:flex;align-items:center;gap:8px">
-              ${dorsal?`<span style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#f85149;opacity:0.6;min-width:16px">${dorsal}</span>`:''}
-              <span style="font-size:12px;font-weight:${isTop?700:500};color:${isTop?'var(--text)':'var(--text2)'}">${dispN(p.name)}</span>
+              ${isSel?`<span style="font-size:10px;color:#f85149">▶</span>`:''}
+              <span style="font-size:12px;font-weight:${isSel||isTop?700:500};color:${isSel?'#f85149':isTop?'var(--text)':'var(--text2)'}">${dispN(p.name)}</span>
             </div>
           </td>
           <td style="padding:8px 10px;text-align:right">
@@ -1275,7 +1295,7 @@
           </td>
           <td style="padding:8px 14px;min-width:100px">
             <div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden">
-              <div style="height:5px;width:${barW}%;background:#f85149;border-radius:3px;opacity:0.75"></div>
+              <div style="height:5px;width:${barW}%;background:${isSel?'#f85149':'#f85149'};border-radius:3px;opacity:${isSel?1:0.75}"></div>
             </div>
           </td>
         </tr>`;
@@ -1304,6 +1324,15 @@
         </div>
         <div style="display:grid;grid-template-columns:1fr 400px;gap:16px;align-items:start">
           <div>
+            ${perdidasPlayer?`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <button onclick="perdidasPlayer=null;renderPerdidas()" style="background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:5px 13px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px">← Ver equipo</button>
+              <span style="font-size:14px;font-weight:700;color:#f85149">${dispN(perdidasPlayer)}</span>
+              <span style="font-size:11px;color:var(--text3)">— pérdidas individuales</span>
+              <span style="display:flex;gap:10px;margin-left:auto;font-size:11px">
+                <span><span style="color:#f85149">●</span> Pérdida directa</span>
+                <span><span style="color:#e3b341">●</span> Pase fallado</span>
+              </span>
+            </div>`:''}
             <div style="background:var(--bg2);border:1px solid rgba(248,81,73,0.2);border-radius:var(--radius);overflow:hidden">
               <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
                 <rect x="0" y="0" width="${W}" height="${H}" fill="#0d1117"/>
@@ -1320,7 +1349,7 @@
             </div>
           </div>
           <div>
-            <div style="font-size:10px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Pérdidas por jugador</div>
+            <div style="font-size:10px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Pérdidas por jugador ${perdidasPlayer?'':'<span style="font-size:9px;color:var(--text3);text-transform:none;letter-spacing:0">· haz clic para ver en el campo</span>'}</div>
             <div style="background:var(--bg2);border:1px solid rgba(248,81,73,0.2);border-radius:var(--radius);overflow:hidden">
               <table style="width:100%;border-collapse:collapse">
                 <thead><tr style="border-bottom:2px solid rgba(248,81,73,0.2);background:var(--bg)">
