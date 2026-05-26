@@ -5593,7 +5593,73 @@
       </div>
     </div>`;
 
-    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + zonePairBar + statsRow + mapSVG + rankingCols;
+    // ── Tabla resumen por todos los pares de zona ───────────────────────────
+    const allPairStats = Object.entries(ZONE_PAIR_META).map(([id, m]) => {
+      const pp   = passes.filter(p => {
+        if (p.x == null || p.xe == null) return false;
+        const {x:nx, xe:nxe} = normPassCoords(p);
+        return xToZone(nx) === m.fromZ && xToZone(nxe) === m.toZ;
+      });
+      const tot  = pp.length;
+      const succ = pp.filter(p => p.out === 's').length;
+      const fail = tot - succ;
+      const pct  = tot ? Math.round(succ / tot * 100) : null;
+      return { id, m, tot, succ, fail, pct };
+    });
+    const maxTot = Math.max(1, ...allPairStats.map(s => s.tot));
+
+    const summaryRows = allPairStats.map(({id, m, tot, succ, fail, pct}) => {
+      const act  = pasesZonePair === id;
+      const barW = Math.round((tot / maxTot) * 100);
+      const pctCol = pct === null ? 'var(--text3)' : pct >= 70 ? 'var(--green)' : pct >= 50 ? 'var(--accent)' : 'var(--red)';
+      return `<tr onclick="pasesZonePair='${id}';renderPasesJugadores()"
+        style="border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.12s;${act?`background:${m.fromCol}0d`:''}"
+        onmouseenter="this.style.background='${m.fromCol}0d'" onmouseleave="this.style.background='${act?m.fromCol+'0d':'transparent'}'">
+        <td style="padding:8px 12px;white-space:nowrap">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:14px">${m.emoji}</span>
+            <div>
+              <div style="font-size:12px;font-weight:${act?700:500};color:${act?m.fromCol:'var(--text)'}">${m.label}</div>
+              <div style="font-size:10px;color:var(--text3)">${m.desc}</div>
+            </div>
+            ${act?`<span style="font-size:9px;font-weight:700;color:${m.fromCol};background:${m.fromCol}22;padding:1px 6px;border-radius:3px;margin-left:2px">activo</span>`:''}
+          </div>
+        </td>
+        <td style="padding:8px 14px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text)">${tot || '—'}</td>
+        <td style="padding:8px 14px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green)">${tot ? succ : '—'}</td>
+        <td style="padding:8px 14px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--red)">${tot ? fail : '—'}</td>
+        <td style="padding:8px 14px;text-align:center">
+          ${pct !== null ? `<span style="font-size:14px;font-weight:700;color:${pctCol}">${pct}%</span>` : '<span style="color:var(--text3);font-size:12px">—</span>'}
+        </td>
+        <td style="padding:8px 16px;min-width:90px">
+          <div style="height:5px;background:var(--bg4);border-radius:3px">
+            <div style="height:5px;width:${barW}%;background:${m.fromCol};border-radius:3px;opacity:0.75;transition:width 0.3s"></div>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    const summaryTable = `
+      <div style="margin-top:24px">
+        <div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-bottom:10px">
+          Resumen de pases por zonas · ${pasesPeriod==='t'?'todo el partido':pasesPeriod==='1'?'1ª parte':'2ª parte'}
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Par de zona</th>
+              <th style="text-align:center">Total</th>
+              <th style="text-align:center">Acertados</th>
+              <th style="text-align:center">Fallidos</th>
+              <th style="text-align:center">% Precisión</th>
+              <th></th>
+            </tr></thead>
+            <tbody>${summaryRows}</tbody>
+          </table>
+        </div>
+      </div>`;
+
+    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + zonePairBar + statsRow + mapSVG + rankingCols + summaryTable;
   }
 
   // ── Pass tooltip — HTML flotante que sigue al cursor ─────────────────────
