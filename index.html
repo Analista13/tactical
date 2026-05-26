@@ -5357,13 +5357,29 @@
   const ZONE_PAIR_META = {
     '1-2': { label:'Z1 → Z2', desc:'Construcción',    emoji:'🔵→🟡', fromZ:1, toZ:2, fromCol:'#58a6ff', toCol:'#e3b341', tactic:'Salida de balón desde el bloque defensivo al mediocampo' },
     '1-3': { label:'Z1 → Z3', desc:'Balón largo',     emoji:'🔵→🔴', fromZ:1, toZ:3, fromCol:'#58a6ff', toCol:'#f85149', tactic:'Pase directo sorteando el mediocampo rival' },
-    '2-1': { label:'Z2 → Z1', desc:'Repliegue',       emoji:'🟡→🔵', fromZ:2, toZ:1, fromCol:'#e3b341', toCol:'#58a6ff', tactic:'Recirculación hacia la defensa para reorganizar' },
+    '2-1': { label:'Z2 → Z1', desc:'Descarga',         emoji:'🟡→🔵', fromZ:2, toZ:1, fromCol:'#e3b341', toCol:'#58a6ff', tactic:'Descarga al bloque defensivo para reorganizar o cambiar el punto de ataque' },
     '2-3': { label:'Z2 → Z3', desc:'Progresión',      emoji:'🟡→🔴', fromZ:2, toZ:3, fromCol:'#e3b341', toCol:'#f85149', tactic:'Progresión del mediocampo al tercio ofensivo' },
     '3-2': { label:'Z3 → Z2', desc:'Recirculación',   emoji:'🔴→🟡', fromZ:3, toZ:2, fromCol:'#f85149', toCol:'#e3b341', tactic:'Descarga al mediocampo desde el ataque' },
   };
 
-  // Devuelve número de zona (1|2|3) dado un valor x
+  // Devuelve número de zona (1|2|3) dado un valor x bruto (no normalizado)
   function xToZone(x) { return x < -17.5 ? 1 : x <= 17.5 ? 2 : 3; }
+
+  // Devuelve zona (1|2|3) a partir del campo third/tthird de SkillCorner
+  // (ya normalizado según dirección de ataque real del equipo)
+  function passThirdToZone(t) { return t === 'd' ? 1 : t === 'm' ? 2 : t === 'a' ? 3 : 0; }
+
+  // Normaliza coordenadas del pase para que siempre ataquemos de izquierda a derecha.
+  // Cuando third='d' pero x>17.5 el equipo atacaba hacia la izquierda → invertir x e y.
+  function normPassCoords(p) {
+    const tz = passThirdToZone(p.third);
+    const rz = xToZone(p.x);
+    if (tz && tz !== rz) {
+      // Coordenadas invertidas: el equipo atacaba en dirección x negativa
+      return { x: -p.x, y: -(p.y||0), xe: -(p.xe||0), ye: -(p.ye||0) };
+    }
+    return { x: p.x, y: p.y||0, xe: p.xe||0, ye: p.ye||0 };
+  }
 
   async function renderPasesJugadores() {
     const cont = document.getElementById('pasesCont');
@@ -5417,11 +5433,13 @@
     let passes = raw;
     if (pasesPeriod !== 't') passes = passes.filter(p => p.p == pasesPeriod);
 
-    // Filter by selected zone pair
+    // Filter by selected zone pair usando third/tthird normalizados (SkillCorner)
+    // — evita que el portero aparezca en Z3 cuando el equipo ataca al otro lado
     const filtered = passes.filter(p =>
       p.x != null && p.xe != null &&
-      xToZone(p.x)  === pair.fromZ &&
-      xToZone(p.xe) === pair.toZ
+      p.third && p.tthird &&
+      passThirdToZone(p.third)  === pair.fromZ &&
+      passThirdToZone(p.tthird) === pair.toZ
     );
 
     // ── Stats ──────────────────────────────────────────────────────────────────
@@ -5491,12 +5509,13 @@
       zoneHL += `<text x="${cx}" y="${(AMY+18).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="${fw}" fill="${col}" fill-opacity="${fop}">${lbl}</text>`;
     }
 
-    // Pass lines
+    // Pass lines — usar coordenadas normalizadas para que siempre ataquemos →
     let passLines = '';
     const sortedP = [...filtered].sort((a,b) => (a.out==='s'?0:1)-(b.out==='s'?0:1));
     sortedP.forEach(p => {
-      const {sx:x1,sy:y1}=sv(p.x, p.y||0);
-      const {sx:x2,sy:y2}=sv(p.xe, p.ye||0);
+      const {x:nx, y:ny, xe:nxe, ye:nye} = normPassCoords(p);
+      const {sx:x1,sy:y1} = sv(nx, ny);
+      const {sx:x2,sy:y2} = sv(nxe, nye);
       passLines += buildPassLineGroup(p, x1, y1, x2, y2);
     });
 
@@ -5703,12 +5722,14 @@
     });
 
     // ── Pass lines — successful first (below failed), each wrapped with tooltip ─
+    // Coordenadas normalizadas: equipo siempre ataca →
     let lines = '';
     const sorted = [...passes].sort((a,b) => (a.out==='s'?0:1) - (b.out==='s'?0:1));
     sorted.forEach(p => {
       if (p.x == null || p.xe == null) return;
-      const {sx:x1,sy:y1} = sv(p.x,  p.y  || 0);
-      const {sx:x2,sy:y2} = sv(p.xe, p.ye || 0);
+      const {x:nx, y:ny, xe:nxe, ye:nye} = normPassCoords(p);
+      const {sx:x1,sy:y1} = sv(nx,  ny);
+      const {sx:x2,sy:y2} = sv(nxe, nye);
       lines += buildPassLineGroup(p, x1, y1, x2, y2);
     });
 
