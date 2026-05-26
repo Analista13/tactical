@@ -3514,7 +3514,7 @@
       });
     });
 
-    // Aggregate positions per player
+    // Aggregate positions per player (include ALL players, even 1 event)
     const acc = {};
     for (const e of data) {
       if (!acc[e.n]) acc[e.n] = {xs: [], ys: []};
@@ -3522,21 +3522,33 @@
       acc[e.n].ys.push(e.y);
     }
 
-    const MIN_E = 3;
-    const allPlayers = Object.entries(acc)
-      .filter(([name, d]) => d.xs.length >= MIN_E)
-      .map(([name, d]) => ({
-        name, n: d.xs.length,
-        position: posMap[name] || 'CM',
-        x: d.xs.reduce((a, b) => a + b, 0) / d.xs.length,
-        y: d.ys.reduce((a, b) => a + b, 0) / d.ys.length,
-        fromLineup: false,
-      }));
-
-    if (allPlayers.length < 3) return null;
-
     const GKS = ['GK', 'PT', 'POR', 'PORTERO', 'P', 'GOALKEEPER'];
     const isGK = p => GKS.includes((p.position || '').toUpperCase().trim());
+
+    const fromOOP = Object.entries(acc).map(([name, d]) => ({
+      name, n: d.xs.length,
+      position: posMap[name] || 'CM',
+      x: d.xs.reduce((a, b) => a + b, 0) / d.xs.length,
+      y: d.ys.reduce((a, b) => a + b, 0) / d.ys.length,
+      fromLineup: false,
+    }));
+
+    // Add GK from lineup if not in OOP events (GKs rarely engage in defensive positioning events)
+    const namesInOOP = new Set(fromOOP.map(p => p.name));
+    const lineupEntries = matchId ? (PONF_LINEUPS[matchId] || []) : [];
+    const gkFallback = [];
+    for (const r of lineupEntries) {
+      const name = r[1];
+      if (namesInOOP.has(name)) continue;
+      const pos = posMap[name] || resolvePlayerPosition({id: r[0], position: r[2]});
+      if (isGK({position: pos})) {
+        // Place GK near their own goal in defensive shape
+        gkFallback.push({name, n: 0, position: pos, x: -46, y: 0, fromLineup: true});
+      }
+    }
+
+    const allPlayers = [...fromOOP, ...gkFallback];
+    if (allPlayers.length < 3) return null;
     const gk       = allPlayers.filter(p => isGK(p));
     const outfield = allPlayers.filter(p => !isGK(p));
 
