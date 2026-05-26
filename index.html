@@ -5547,8 +5547,11 @@
     const maxP = Math.max(1, ...passers.map(p=>p.total));
     const maxR = Math.max(1, ...receivers.map(r=>r.total));
 
-    const mkRow = (item, maxV, showPct, col) => {
-      const barW = Math.round((item.total/maxV)*100);
+    // Fila para tabla de PASADORES: Total | Acertados | Fallidos | % | barra
+    const mkRowPasser = (item, col) => {
+      const fail = item.total - item.succ;
+      const barW = Math.round((item.total / maxP) * 100);
+      const pctCol = item.pct >= 70 ? 'var(--green)' : item.pct >= 50 ? 'var(--accent)' : 'var(--red)';
       return `<tr style="border-bottom:1px solid var(--border)">
         <td style="padding:7px 12px">
           <div style="display:flex;align-items:center;gap:8px">
@@ -5556,9 +5559,13 @@
             <span style="font-size:12px;font-weight:500;color:var(--text)">${dispN(item.name)}</span>
           </div>
         </td>
-        <td style="padding:7px 10px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:18px;color:${col}">${item.total}</td>
-        ${showPct?`<td style="padding:7px 8px;text-align:right;font-size:11px;color:${item.pct>=70?'var(--green)':item.pct>=50?'var(--accent)':'var(--red)'}">${item.pct}%</td>`:''}
-        <td style="padding:7px 14px;min-width:80px">
+        <td style="padding:7px 10px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:19px;color:${col}">${item.total}</td>
+        <td style="padding:7px 10px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:19px;color:var(--green)">${item.succ}</td>
+        <td style="padding:7px 10px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:19px;color:var(--red)">${fail}</td>
+        <td style="padding:7px 8px;text-align:center">
+          <span style="font-size:12px;font-weight:700;color:${pctCol}">${item.pct}%</span>
+        </td>
+        <td style="padding:7px 14px;min-width:70px">
           <div style="height:5px;background:var(--bg4);border-radius:3px">
             <div style="height:5px;width:${barW}%;background:${col};border-radius:3px;opacity:0.75"></div>
           </div>
@@ -5566,30 +5573,59 @@
       </tr>`;
     };
 
-    const mkTable = (rows, col, header1, header2, showPct, emptyMsg) =>
+    // Fila para tabla de RECEPTORES: Recepciones | barra
+    const mkRowReceiver = (item, col) => {
+      const barW = Math.round((item.total / maxR) * 100);
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:7px 12px">
+          <span style="font-size:12px;font-weight:500;color:var(--text)">${dispN(item.name)}</span>
+        </td>
+        <td style="padding:7px 10px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:19px;color:${col}">${item.total}</td>
+        <td style="padding:7px 14px;min-width:70px">
+          <div style="height:5px;background:var(--bg4);border-radius:3px">
+            <div style="height:5px;width:${barW}%;background:${col};border-radius:3px;opacity:0.75"></div>
+          </div>
+        </td>
+      </tr>`;
+    };
+
+    const mkTablePasser = (rows, col) =>
       rows.length ? `<div class="table-wrap"><table>
         <thead><tr>
-          <th>${header1}</th>
-          <th style="text-align:right">${header2}</th>
-          ${showPct?`<th style="text-align:right">%Comp.</th>`:''}
+          <th>Jugador</th>
+          <th style="text-align:center">Total</th>
+          <th style="text-align:center">✅</th>
+          <th style="text-align:center">❌</th>
+          <th style="text-align:center">%</th>
           <th></th>
         </tr></thead>
-        <tbody>${rows.map(r=>mkRow(r, showPct?maxP:maxR, showPct, col)).join('')}</tbody>
+        <tbody>${rows.map(r => mkRowPasser(r, col)).join('')}</tbody>
       </table></div>` :
-      `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">${emptyMsg}</div>`;
+      `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Sin datos</div>`;
+
+    const mkTableReceiver = (rows, col) =>
+      rows.length ? `<div class="table-wrap"><table>
+        <thead><tr>
+          <th>Jugador</th>
+          <th style="text-align:center">Recepciones</th>
+          <th></th>
+        </tr></thead>
+        <tbody>${rows.map(r => mkRowReceiver(r, col)).join('')}</tbody>
+      </table></div>` :
+      `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Sin pases completados</div>`;
 
     const rankingCols = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
       <div>
         <div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:${pair.fromCol};font-weight:600;margin-bottom:10px;padding:8px 12px;background:${pair.fromCol}12;border:1px solid ${pair.fromCol}30;border-radius:6px">
           Pasadores — desde ${zoneNames[pair.fromZ-1]}
         </div>
-        ${mkTable(passers, pair.fromCol, 'Jugador', 'Pases', true, 'Sin datos')}
+        ${mkTablePasser(passers, pair.fromCol)}
       </div>
       <div>
         <div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:${pair.toCol};font-weight:600;margin-bottom:10px;padding:8px 12px;background:${pair.toCol}12;border:1px solid ${pair.toCol}30;border-radius:6px">
           Receptores — en ${zoneNames[pair.toZ-1]}
         </div>
-        ${mkTable(receivers, pair.toCol, 'Jugador', 'Recepciones', false, 'Sin pases completados')}
+        ${mkTableReceiver(receivers, pair.toCol)}
       </div>
     </div>`;
 
