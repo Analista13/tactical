@@ -3666,16 +3666,17 @@
     ];
     const sc = STATES.find(s => s.key === bloqueEstadoState) || STATES[0];
 
+    // ── State selector ────────────────────────────────────────────────────────
     const stateBtns = STATES.map(s => {
       const act = s.key === bloqueEstadoState;
       return `<button onclick="setBloqueEstadoState('${s.key}')"
         style="background:${act ? s.col+'33' : 'transparent'};color:${act ? s.col : 'var(--text2)'};
-        font-weight:${act?'700':'500'};border:1px solid ${act ? s.col+'77':'var(--border)'};
-        border-radius:20px;padding:5px 16px;font-family:'DM Sans',sans-serif;font-size:12px;
+        font-weight:${act?'700':'500'};border:1px solid ${act?s.col+'77':'var(--border)'};
+        border-radius:20px;padding:5px 18px;font-family:'DM Sans',sans-serif;font-size:13px;
         cursor:pointer;transition:all 0.15s">${s.emoji} ${s.label}</button>`;
     }).join('');
-    const stateBar = `<div style="display:flex;gap:6px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
-      <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-right:2px">Estado del marcador:</span>
+    const stateBar = `<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Estado:</span>
       ${stateBtns}
     </div>`;
 
@@ -3684,77 +3685,85 @@
 
     if (bloqueNMatches === 0 && bloqueCustomIds.length === 0) {
       cont.innerHTML = stateBar + filterBar + customPanel +
-        `<div style="text-align:center;padding:50px;color:var(--text3);font-size:13px">
-          <div style="font-size:22px;margin-bottom:10px">☝️</div>
-          Selecciona los partidos a comparar
+        `<div style="text-align:center;padding:50px;color:var(--text3)">
+          <div style="font-size:24px;margin-bottom:10px">☝️</div>
+          Selecciona los partidos
         </div>`;
       return;
     }
 
-    cont.innerHTML = stateBar + filterBar + customPanel +
-      `<div class="loading"><div class="spinner"></div><span>Cargando partidos...</span></div>`;
+    cont.innerHTML = stateBar + filterBar +
+      `<div class="loading"><div class="spinner"></div><span>Cargando...</span></div>`;
 
     try {
-      const eligible = getPartidos().filter(p => {
-        const st = MATCH_GOALS_STATE[p.id];
-        return st && (st.p1 === bloqueEstadoState || st.p2 === bloqueEstadoState);
-      });
-
+      // ── SIEMPRE los mismos últimos N partidos — el estado solo cambia qué eventos se usan ──
       const lastN = bloqueNMatches === 0
         ? getPartidos().filter(p => bloqueCustomIds.includes(p.id))
-        : eligible.slice(-bloqueNMatches);
+        : getPartidos().slice(-bloqueNMatches);
 
-      if (lastN.length === 0) {
-        cont.innerHTML = stateBar + filterBar + customPanel +
-          `<div style="text-align:center;padding:50px;color:var(--text3)">
-            No hay partidos con estado "${sc.label}" en la selección
-          </div>`;
-        return;
-      }
+      const allData = await Promise.all(lastN.map(p => getMatchData(p.id).catch(()=>null)));
 
-      const allData = await Promise.all(lastN.map(p => getMatchData(p.id)));
+      // ── Número de columnas según cuántos partidos ─────────────────────────
+      const cols = lastN.length === 1 ? 1 : 2;
 
       const cards = lastN.map((p, i) => {
-        const shape  = computeTeamShape(allData[i], bloquePhase, 0, p.id);
+        const md     = allData[i];
         const rival  = p.local === currentTeam.name ? p.vis : p.local;
         const isHome = p.local === currentTeam.name;
-        const st     = MATCH_GOALS_STATE[p.id] || {};
-        const halves = [st.p1 === bloqueEstadoState ? '1ª' : null,
-                        st.p2 === bloqueEstadoState ? '2ª' : null].filter(Boolean).join('+');
-        const bt = shape.blockType;
-        const btEmoji = {high:'🔴', mid:'🟡', low:'🔵'}[bt] || '';
-        const btLabel = {high:'HIGH', mid:'MID', low:'LOW'}[bt] || '—';
-        const btColor = {high:'#f85149', mid:'#e3b341', low:'#58a6ff'}[bt] || '#888';
         const [gl, gv] = (p.s || '').split('-').map(Number);
         const resColor = isHome
-          ? (gl>gv ? 'var(--green)' : gl<gv ? 'var(--red)' : 'var(--accent)')
-          : (gv>gl ? 'var(--green)' : gv<gl ? 'var(--red)' : 'var(--accent)');
-        return `<div>
-          <div style="background:var(--bg2);border:1px solid ${bt?btColor+'44':'var(--border)'};border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column">
-            <div style="padding:8px 12px;border-bottom:1px solid var(--border)">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
-                <span style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--accent)">${p.j}</span>
-                <div style="display:flex;gap:4px">
-                  <span style="font-size:10px;font-weight:700;color:${sc.col};background:${sc.col}22;padding:2px 7px;border-radius:20px">${sc.emoji} ${halves}p</span>
-                  ${bt ? `<span style="font-size:10px;font-weight:700;color:${btColor};background:${btColor}22;padding:2px 7px;border-radius:20px">${btEmoji} ${btLabel}</span>` : ''}
-                </div>
-              </div>
-              <div style="font-size:12px;color:var(--text);font-weight:500">${isHome?'🏠':'✈️'} ${rival}</div>
-              <div style="display:flex;gap:6px;margin-top:2px">
-                <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${resColor}">${p.s||''}</span>
-                <span style="font-size:11px;color:var(--text3)">${p.f||''}</span>
-              </div>
+          ? (gl>gv?'var(--green)':gl<gv?'var(--red)':'var(--accent)')
+          : (gv>gl?'var(--green)':gv<gl?'var(--red)':'var(--accent)');
+
+        // Qué mitades tienen este estado
+        const st = MATCH_GOALS_STATE[p.id];
+        const validPeriods = st
+          ? [st.p1===bloqueEstadoState?1:null, st.p2===bloqueEstadoState?2:null].filter(Boolean)
+          : [];
+        const halvesLabel = validPeriods.map(n => n===1?'1ªp':'2ªp').join(' + ');
+
+        // Header de la tarjeta
+        const header = `<div style="padding:10px 14px;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:19px;color:var(--accent)">${p.j}</span>
+            <div style="display:flex;gap:4px;align-items:center">
+              ${halvesLabel ? `<span style="font-size:10px;font-weight:700;color:${sc.col};background:${sc.col}22;padding:2px 9px;border-radius:20px">${sc.emoji} ${halvesLabel}</span>` : `<span style="font-size:10px;color:var(--text3);padding:2px 9px">sin este estado</span>`}
             </div>
-            <div>${buildBloqueSVG(shape, bloquePhase, sc.col)}</div>
           </div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">${isHome?'🏠':'✈️'} ${rival}</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${resColor};margin-top:2px">${p.s||''} <span style="font-size:11px;font-family:'DM Sans',sans-serif;color:var(--text3);font-weight:400">${p.f||''}</span></div>
+        </div>`;
+
+        // No hay datos para este estado en este partido
+        if (!md || validPeriods.length === 0) {
+          return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+            ${header}
+            <div style="padding:60px 20px;text-align:center;color:var(--text3);font-size:13px">
+              No hubo periodos en estado <strong style="color:${sc.col}">${sc.label}</strong>
+            </div>
+          </div>`;
+        }
+
+        const shape = computeTeamShape(md, bloquePhase, 0, p.id);
+        const bt    = shape.blockType;
+        const btMap = {high:['🔴 HIGH BLOCK','#f85149'],mid:['🟡 MID BLOCK','#e3b341'],low:['🔵 LOW BLOCK','#58a6ff']};
+        const [btLabel, btCol] = btMap[bt] || ['','var(--text3)'];
+
+        return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+          ${header}
+          <div style="padding:6px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center">
+            ${bt ? `<span style="font-size:10px;font-weight:700;color:${btCol};background:${btCol}22;padding:2px 9px;border-radius:20px">${btLabel}</span>` : ''}
+            <span style="font-size:11px;color:var(--text3);margin-left:auto">${shape.players.length+shape.gk.length} jugadores · ${bloquePhase==='ataque'?'attacking_third':'defensive_third'}</span>
+          </div>
+          ${buildBloqueSVG(shape, bloquePhase, sc.col)}
         </div>`;
       }).join('');
 
       cont.innerHTML = stateBar + filterBar + customPanel +
-        `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${cards}</div>`;
+        `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:14px">${cards}</div>`;
 
     } catch(e) {
-      cont.innerHTML = stateBar + filterBar + customPanel +
+      cont.innerHTML = stateBar + filterBar +
         `<div style="padding:40px;text-align:center;color:var(--red)">Error: ${e.message}</div>`;
     }
   }
