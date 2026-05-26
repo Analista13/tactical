@@ -5431,31 +5431,17 @@
       <text x="${((zAx+zBx)/2).toFixed(1)}" y="${(AMY+18).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="600" fill="#58a6ff" fill-opacity="0.7">Zona 1 (origen)</text>
       <text x="${((zBx+zCx)/2).toFixed(1)}" y="${(AMY+18).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="600" fill="#e3b341" fill-opacity="0.7">Zona 2 (destino)</text>`;
 
-    // Pass lines
+    // Pass lines — each wrapped with hover tooltip via buildPassLineGroup
     let passLines = '';
     const sorted = [...z1to2].sort((a,b) => (a.out==='s'?0:1)-(b.out==='s'?0:1));
     sorted.forEach(p => {
       const {sx:x1,sy:y1}=sv(p.x, p.y||0);
       const {sx:x2,sy:y2}=sv(p.xe, p.ye||0);
-      const succ = p.out === 's';
-      const typeCol = (PASS_TYPE_META[getPassType(p)]||PASS_TYPE_META.other).color;
-      const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
-      if (len < 2) return;
-      if (succ) {
-        passLines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#3fb950" stroke-width="5" stroke-opacity="0.10" stroke-linecap="round"/>`;
-        passLines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${typeCol}" stroke-width="2" stroke-opacity="0.82" stroke-linecap="round"/>`;
-        const nx=dx/len, ny=dy/len, ax=x2-nx*9, ay=y2-ny*9, px=-ny*4.5, py=nx*4.5;
-        passLines += `<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(ax+px).toFixed(1)},${(ay+py).toFixed(1)} ${(ax-px).toFixed(1)},${(ay-py).toFixed(1)}" fill="#3fb950" fill-opacity="0.90"/>`;
-        passLines += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="${typeCol}" fill-opacity="0.85" stroke="#0d1f0d" stroke-width="0.8"/>`;
-      } else {
-        passLines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#f85149" stroke-width="5" stroke-opacity="0.12" stroke-linecap="round" stroke-dasharray="8,5"/>`;
-        passLines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#f85149" stroke-width="1.6" stroke-opacity="0.72" stroke-linecap="round" stroke-dasharray="8,5"/>`;
-        passLines += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="none" stroke="#f85149" stroke-width="1.5" stroke-opacity="0.80"/>`;
-      }
+      passLines += buildPassLineGroup(p, x1, y1, x2, y2);
     });
 
     const mapSVG = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px">
-      <svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${pitchBg}${zoneHL}${passLines}</svg>
+      <svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block;overflow:visible">${PASS_TIP_CSS}${pitchBg}${zoneHL}${passLines}</svg>
     </div>`;
 
     // ── Player rankings ────────────────────────────────────────────────────────
@@ -5545,6 +5531,73 @@
     cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + statsRow + mapSVG + rankingCols;
   }
 
+  // ── Helper: escape SVG text ───────────────────────────────────────────────
+  function escSVG(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Helper: build a single pass line with hover tooltip ───────────────────
+  // Returns SVG string: <g class="pl">...lines + hitbox + tooltip...</g>
+  function buildPassLineGroup(p, x1, y1, x2, y2) {
+    const succ    = p.out === 's';
+    const type    = getPassType(p);
+    const typeMeta= PASS_TYPE_META[type] || PASS_TYPE_META.other;
+    const typeCol = typeMeta.color;
+    const typeLbl = typeMeta.label;
+    const dx = x2-x1, dy = y2-y1, len = Math.sqrt(dx*dx+dy*dy);
+    if (len < 2) return '';
+
+    const borderCol = succ ? typeCol : '#f85149';
+
+    // ── Lines + arrow + dot ───────────────────────────────────────────────────
+    let vis = '';
+    if (succ) {
+      vis += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#3fb950" stroke-width="6" stroke-opacity="0.10" stroke-linecap="round"/>`;
+      vis += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${typeCol}" stroke-width="2" stroke-opacity="0.82" stroke-linecap="round"/>`;
+      const nx=dx/len, ny=dy/len, ax=x2-nx*9, ay=y2-ny*9, px=-ny*4.5, py=nx*4.5;
+      vis += `<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(ax+px).toFixed(1)},${(ay+py).toFixed(1)} ${(ax-px).toFixed(1)},${(ay-py).toFixed(1)}" fill="#3fb950" fill-opacity="0.90"/>`;
+      vis += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="${typeCol}" fill-opacity="0.85" stroke="#0d1f0d" stroke-width="0.8"/>`;
+    } else {
+      vis += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#f85149" stroke-width="5" stroke-opacity="0.12" stroke-linecap="round" stroke-dasharray="8,5"/>`;
+      vis += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#f85149" stroke-width="1.6" stroke-opacity="0.72" stroke-linecap="round" stroke-dasharray="8,5"/>`;
+      vis += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="none" stroke="#f85149" stroke-width="1.5" stroke-opacity="0.80"/>`;
+    }
+
+    // ── Wide invisible hitbox (easy hover target) ─────────────────────────────
+    const hit = `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="transparent" stroke-width="18" stroke-linecap="round"/>`;
+
+    // ── Tooltip ───────────────────────────────────────────────────────────────
+    const passer   = dispN(p.n);
+    const receiver = succ && p.to ? dispN(p.to) : null;
+    const nameTxt  = receiver ? `${escSVG(passer)} → ${escSVG(receiver)}` : escSVG(passer);
+    const phase    = {bu:'Build-up',cr:'Creación',fi:'Finalización',di:'Directo',tr:'Transición',sp:'Pelota parada',ch:'Cambio',qb:'Quick break',ds:'Desde portero'}[p.phase||''] || '';
+    const detail   = [
+      `min.${p.min??'?'}`,
+      typeLbl,
+      p.dist ? Math.round(p.dist)+'m' : null,
+      phase,
+      succ ? '✅ Completado' : '❌ Fallido'
+    ].filter(Boolean).join(' · ');
+
+    // Box sizing — clamp to SVG bounds (AW=920, margins=55)
+    const TW=270, TH=52;
+    const mx=(x1+x2)/2, my=(y1+y2)/2;
+    const tx = Math.max(57, Math.min(920-TW-4, mx-TW/2));
+    const ty = my > 335 ? my-TH-14 : my+14;  // above if lower half, below if upper
+
+    const tip = `<g class="pl-tip">
+      <rect x="${tx.toFixed(0)}" y="${ty.toFixed(0)}" width="${TW}" height="${TH}" rx="6" fill="#0d1117" stroke="${borderCol}" stroke-width="1.5" opacity="0.97"/>
+      <rect x="${tx.toFixed(0)}" y="${ty.toFixed(0)}" width="4" height="${TH}" rx="2" fill="${borderCol}"/>
+      <text x="${(+tx+14).toFixed(0)}" y="${(+ty+19).toFixed(0)}" font-family="DM Sans,sans-serif" font-size="12.5" font-weight="700" fill="#e6edf3">${nameTxt}</text>
+      <text x="${(+tx+14).toFixed(0)}" y="${(+ty+38).toFixed(0)}" font-family="DM Sans,sans-serif" font-size="10" fill="#8b949e">${escSVG(detail)}</text>
+    </g>`;
+
+    return `<g class="pl" style="cursor:crosshair">${vis}${hit}${tip}</g>`;
+  }
+
+  // CSS para tooltips de pase — se inyecta en los <defs> de cada SVG
+  const PASS_TIP_CSS = `<defs><style>.pl-tip{display:none;pointer-events:none}.pl:hover .pl-tip{display:block}</style></defs>`;
+
   function buildPasesMapSVG(passes) {
     const AW=920, AH=590, AMX=55, AMY=40, APW=AW-AMX*2, APH=AH-AMY*2;
     const sv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW, sy:AMY+((34-y)/68)*APH});
@@ -5585,61 +5638,21 @@
       </g>`;
     });
 
-    // ── Pass lines ─────────────────────────────────────────────────────────────
-    // Render order: successful below failed so red lines always visible on top
+    // ── Pass lines — successful first (below failed), each wrapped with tooltip ─
     let lines = '';
     const sorted = [...passes].sort((a,b) => (a.out==='s'?0:1) - (b.out==='s'?0:1));
-
     sorted.forEach(p => {
       if (p.x == null || p.xe == null) return;
       const {sx:x1,sy:y1} = sv(p.x,  p.y  || 0);
       const {sx:x2,sy:y2} = sv(p.xe, p.ye || 0);
-      const succ    = p.out === 's';
-      const typeCol = (PASS_TYPE_META[getPassType(p)] || PASS_TYPE_META.other).color;
-      const dx = x2-x1, dy = y2-y1;
-      if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
-
-      if (succ) {
-        // ── ÉXITO: type-colored line + green glow + green arrowhead ──────────
-        // 1. Glow verde muy sutil bajo la línea de tipo
-        lines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
-          stroke="#3fb950" stroke-width="6" stroke-opacity="0.10" stroke-linecap="round"/>`;
-        // 2. Línea del tipo (color semántico), sólida
-        lines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
-          stroke="${typeCol}" stroke-width="2" stroke-opacity="0.82" stroke-linecap="round"/>`;
-        // 3. Punta de flecha VERDE (éxito)
-        const len = Math.sqrt(dx*dx+dy*dy);
-        if (len > 0) {
-          const nx=dx/len, ny=dy/len;
-          const ax=x2-nx*9, ay=y2-ny*9;
-          const px=-ny*4.5, py=nx*4.5;
-          lines += `<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(ax+px).toFixed(1)},${(ay+py).toFixed(1)} ${(ax-px).toFixed(1)},${(ay-py).toFixed(1)}"
-            fill="#3fb950" fill-opacity="0.90"/>`;
-        }
-        // 4. Punto origen del color del tipo
-        lines += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5"
-          fill="${typeCol}" fill-opacity="0.85" stroke="#0d1f0d" stroke-width="0.8"/>`;
-      } else {
-        // ── FALLIDO: siempre rojo, discontinuo ───────────────────────────────
-        // 1. Glow rojo sutil
-        lines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
-          stroke="#f85149" stroke-width="5" stroke-opacity="0.12" stroke-linecap="round"
-          stroke-dasharray="8,5"/>`;
-        // 2. Línea roja discontinua
-        lines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
-          stroke="#f85149" stroke-width="1.6" stroke-opacity="0.72" stroke-linecap="round"
-          stroke-dasharray="8,5"/>`;
-        // 3. Punto origen rojo (con ring para diferenciarlo del éxito)
-        lines += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5"
-          fill="none" stroke="#f85149" stroke-width="1.5" stroke-opacity="0.80"/>`;
-      }
+      lines += buildPassLineGroup(p, x1, y1, x2, y2);
     });
 
     // ── Zone click hint ────────────────────────────────────────────────────────
     const hint = `<text x="${(AW/2).toFixed(0)}" y="${(AH-8).toFixed(0)}" text-anchor="middle"
       font-family="DM Sans,sans-serif" font-size="9" fill="#6e7681">Haz clic en una zona para filtrar</text>`;
 
-    return `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block;overflow:visible">${pitch}${zones}${lines}${hint}</svg>`;
+    return `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block;overflow:visible">${PASS_TIP_CSS}${pitch}${zones}${lines}${hint}</svg>`;
   }
 
   // INIT
