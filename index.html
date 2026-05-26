@@ -1241,8 +1241,9 @@
             else if (rng==='l') { col='#a371f7'; glow='#8855ff44'; tipLabel='Pase largo fallado'; }
             else                { col='#e3b341'; glow='#ffaa0044'; tipLabel='Pase medio fallado'; }
           }
-          const min  = e.minute ?? e.min ?? '?';
-          const tipText = `min. ${min}&#39; — ${tipLabel}${tipDist}`;
+          const per  = e.period===2 ? '2ª parte' : '1ª parte';
+          const perShort = e.period===2 ? 'P2' : 'P1';
+          const tipText = `${per} — ${tipLabel}${tipDist}`;
           zoneSVG+=`<g data-tip="${tipText}"
             onmouseenter="const t=document.getElementById('_pdTip');if(t){t.textContent=this.dataset.tip;t.style.display='block'}"
             onmousemove="const t=document.getElementById('_pdTip');if(t){t.style.left=(event.clientX+14)+'px';t.style.top=(event.clientY-36)+'px'}"
@@ -1251,7 +1252,7 @@
             <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="14" fill="transparent"/>
             <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="9" fill="${glow}"/>
             <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="6" fill="${col}" fill-opacity="0.92" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
-            <text x="${sx.toFixed(1)}" y="${(sy+19).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="${col}" fill-opacity="0.85">${min}'</text>
+            <text x="${sx.toFixed(1)}" y="${(sy+19).toFixed(1)}" text-anchor="middle" font-family="'DM Mono',monospace" font-size="7" fill="${col}" fill-opacity="0.85">${perShort}</text>
           </g>`;
         });
       } else {
