@@ -117,6 +117,9 @@
   </div>
 </aside>
 
+<!-- Tooltip flotante de pases — fuera del SVG, sigue al cursor -->
+<div id="passTip" style="display:none;position:fixed;z-index:9999;pointer-events:none;transition:opacity 0.1s"></div>
+
 <main>
   <div class="tabs-bar" id="tabsBar">
     <div class="tab active" data-tab="redpases" onclick="switchTab('redpases')">🕸️ Red de Pases</div>
@@ -5531,25 +5534,71 @@
     cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + statsRow + mapSVG + rankingCols;
   }
 
-  // ── Helper: escape SVG text ───────────────────────────────────────────────
-  function escSVG(s) {
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // ── Pass tooltip — HTML flotante que sigue al cursor ─────────────────────
+  const _passReg = {};
+  let   _passRegIdx = 0;
+  const PHASE_LABELS = {bu:'Build-up',cr:'Creación',fi:'Finalización',di:'Directo',tr:'Transición',sp:'Pelota parada',ch:'Cambio',qb:'Quick break',ds:'Desde portero'};
+
+  function showPassTip(evt, id) {
+    const p = _passReg[id]; if (!p) return;
+    const succ    = p.out === 's';
+    const type    = getPassType(p);
+    const meta    = PASS_TYPE_META[type] || PASS_TYPE_META.other;
+    const col     = succ ? meta.color : '#f85149';
+    const phase   = PHASE_LABELS[p.phase||''] || '';
+    const receiver= succ && p.to ? p.to : null;
+    const pos     = p.pos || '';
+
+    const tip = document.getElementById('passTip');
+    tip.innerHTML = `
+      <div style="background:#0d1117;border:1px solid ${col};border-left:4px solid ${col};border-radius:8px;
+                  padding:10px 14px;box-shadow:0 8px 32px rgba(0,0,0,0.8);min-width:190px;max-width:280px">
+        <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:5px">
+          <span style="font-size:13px;font-weight:700;color:#e6edf3;white-space:nowrap">${p.n}</span>
+          ${pos?`<span style="font-size:9px;font-weight:700;color:${col};background:${col}22;padding:1px 5px;border-radius:3px">${pos}</span>`:''}
+        </div>
+        ${receiver?`<div style="font-size:12px;color:${col};margin-bottom:6px">→ <span style="color:#c9d1d9;font-weight:500">${receiver}</span></div>`:''}
+        <div style="height:1px;background:rgba(255,255,255,0.07);margin-bottom:6px"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 8px;font-size:10.5px;color:#8b949e">
+          <span><b style="color:${col}">${meta.emoji}</b> ${meta.label}</span>
+          ${p.dist?`<span>· ${Math.round(p.dist)} m</span>`:''}
+          ${p.min!=null?`<span>· min. ${p.min}</span>`:''}
+          ${phase?`<span>· ${phase}</span>`:''}
+          <span style="color:${succ?'#3fb950':'#f85149'};font-weight:600">· ${succ?'✅ Éxito':'❌ Fallido'}</span>
+        </div>
+      </div>`;
+    tip.style.display = 'block';
+    movePassTip(evt);
   }
 
-  // ── Helper: build a single pass line with hover tooltip ───────────────────
-  // Returns SVG string: <g class="pl">...lines + hitbox + tooltip...</g>
+  function movePassTip(evt) {
+    const tip = document.getElementById('passTip');
+    if (!tip || tip.style.display === 'none') return;
+    const inner = tip.firstElementChild;
+    const w = inner ? inner.offsetWidth  : 220;
+    const h = inner ? inner.offsetHeight : 80;
+    const x = evt.clientX + 18;
+    const y = evt.clientY - 10;
+    tip.style.left = Math.min(x, window.innerWidth  - w - 16) + 'px';
+    tip.style.top  = Math.max(10, Math.min(y, window.innerHeight - h - 16)) + 'px';
+  }
+
+  function hidePassTip() {
+    const tip = document.getElementById('passTip');
+    if (tip) tip.style.display = 'none';
+  }
+
+  // ── Helper: build a single pass line (no SVG tooltip — uses HTML tooltip) ──
   function buildPassLineGroup(p, x1, y1, x2, y2) {
     const succ    = p.out === 's';
     const type    = getPassType(p);
-    const typeMeta= PASS_TYPE_META[type] || PASS_TYPE_META.other;
-    const typeCol = typeMeta.color;
-    const typeLbl = typeMeta.label;
+    const typeCol = (PASS_TYPE_META[type] || PASS_TYPE_META.other).color;
     const dx = x2-x1, dy = y2-y1, len = Math.sqrt(dx*dx+dy*dy);
     if (len < 2) return '';
 
-    const borderCol = succ ? typeCol : '#f85149';
+    const id = 'pt' + (_passRegIdx++);
+    _passReg[id] = p;
 
-    // ── Lines + arrow + dot ───────────────────────────────────────────────────
     let vis = '';
     if (succ) {
       vis += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#3fb950" stroke-width="6" stroke-opacity="0.10" stroke-linecap="round"/>`;
@@ -5562,41 +5611,14 @@
       vis += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#f85149" stroke-width="1.6" stroke-opacity="0.72" stroke-linecap="round" stroke-dasharray="8,5"/>`;
       vis += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="none" stroke="#f85149" stroke-width="1.5" stroke-opacity="0.80"/>`;
     }
-
-    // ── Wide invisible hitbox (easy hover target) ─────────────────────────────
+    // Wide transparent hitbox — easy hover target even on thin lines
     const hit = `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="transparent" stroke-width="18" stroke-linecap="round"/>`;
 
-    // ── Tooltip ───────────────────────────────────────────────────────────────
-    const passer   = dispN(p.n);
-    const receiver = succ && p.to ? dispN(p.to) : null;
-    const nameTxt  = receiver ? `${escSVG(passer)} → ${escSVG(receiver)}` : escSVG(passer);
-    const phase    = {bu:'Build-up',cr:'Creación',fi:'Finalización',di:'Directo',tr:'Transición',sp:'Pelota parada',ch:'Cambio',qb:'Quick break',ds:'Desde portero'}[p.phase||''] || '';
-    const detail   = [
-      `min.${p.min??'?'}`,
-      typeLbl,
-      p.dist ? Math.round(p.dist)+'m' : null,
-      phase,
-      succ ? '✅ Completado' : '❌ Fallido'
-    ].filter(Boolean).join(' · ');
-
-    // Box sizing — clamp to SVG bounds (AW=920, margins=55)
-    const TW=270, TH=52;
-    const mx=(x1+x2)/2, my=(y1+y2)/2;
-    const tx = Math.max(57, Math.min(920-TW-4, mx-TW/2));
-    const ty = my > 335 ? my-TH-14 : my+14;  // above if lower half, below if upper
-
-    const tip = `<g class="pl-tip">
-      <rect x="${tx.toFixed(0)}" y="${ty.toFixed(0)}" width="${TW}" height="${TH}" rx="6" fill="#0d1117" stroke="${borderCol}" stroke-width="1.5" opacity="0.97"/>
-      <rect x="${tx.toFixed(0)}" y="${ty.toFixed(0)}" width="4" height="${TH}" rx="2" fill="${borderCol}"/>
-      <text x="${(+tx+14).toFixed(0)}" y="${(+ty+19).toFixed(0)}" font-family="DM Sans,sans-serif" font-size="12.5" font-weight="700" fill="#e6edf3">${nameTxt}</text>
-      <text x="${(+tx+14).toFixed(0)}" y="${(+ty+38).toFixed(0)}" font-family="DM Sans,sans-serif" font-size="10" fill="#8b949e">${escSVG(detail)}</text>
-    </g>`;
-
-    return `<g class="pl" style="cursor:crosshair">${vis}${hit}${tip}</g>`;
+    return `<g onmouseenter="showPassTip(event,'${id}')" onmousemove="movePassTip(event)" onmouseleave="hidePassTip()" style="cursor:crosshair">${vis}${hit}</g>`;
   }
 
-  // CSS para tooltips de pase — se inyecta en los <defs> de cada SVG
-  const PASS_TIP_CSS = `<defs><style>.pl-tip{display:none;pointer-events:none}.pl:hover .pl-tip{display:block}</style></defs>`;
+  // No CSS needed in SVG anymore — tooltip is HTML
+  const PASS_TIP_CSS = '';
 
   function buildPasesMapSVG(passes) {
     const AW=920, AH=590, AMX=55, AMY=40, APW=AW-AMX*2, APH=AH-AMY*2;
