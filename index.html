@@ -1483,7 +1483,7 @@
           const col=zone===1?'#58a6ff':zone===2?'#e3b341':'#3fb950';
           const glow=zone===1?'#0088ff44':zone===2?'#ffaa0044':'#00ff4444';
           const per=e.period===2?'2ª parte':'1ª parte';
-          const zLabel=zone===1?'Z1 · Bloque bajo':zone===2?'Z2 · Mediocampo':'Z3 · Pressing alto';
+          const zLabel=`Z${zone}`;
           const tipText=`${per} — Recuperación ${zLabel}`;
           zoneSVG+=`<g data-tip="${tipText}"
             onmouseenter="const t=document.getElementById('_recTip');if(t){t.textContent=this.dataset.tip;t.style.display='block'}"
@@ -1578,9 +1578,9 @@
           </div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
           <div style="margin-left:auto;display:flex;gap:20px;font-size:12px">
-            <span style="color:#3fb950">● <b>${allRecov.filter(e=>xToZone(normRecovCoords(e).x)===3).length}</b> pressing alto (Z3)</span>
-            <span style="color:#e3b341">● <b>${allRecov.filter(e=>xToZone(normRecovCoords(e).x)===2).length}</b> mediocampo (Z2)</span>
-            <span style="color:#58a6ff">● <b>${allRecov.filter(e=>xToZone(normRecovCoords(e).x)===1).length}</b> bloque bajo (Z1)</span>
+            <span style="color:#3fb950">● <b>${allRecov.filter(e=>xToZone(normRecovCoords(e).x)===3).length}</b> Z3</span>
+            <span style="color:#e3b341">● <b>${allRecov.filter(e=>xToZone(normRecovCoords(e).x)===2).length}</b> Z2</span>
+            <span style="color:#58a6ff">● <b>${allRecov.filter(e=>xToZone(normRecovCoords(e).x)===1).length}</b> Z1</span>
             <span style="color:var(--text3)">Total <b>${total}</b></span>
           </div>
         </div>
@@ -1591,9 +1591,9 @@
               <span style="font-size:14px;font-weight:700;color:#3fb950">${dispN(recuperacionesPlayer)}</span>
               <span style="font-size:11px;color:var(--text3)">— recuperaciones individuales</span>
               <span style="display:flex;gap:10px;margin-left:auto;font-size:11px;align-items:center">
-                <span><span style="color:#58a6ff">●</span> Z1 bloque bajo</span>
-                <span><span style="color:#e3b341">●</span> Z2 mediocampo</span>
-                <span><span style="color:#3fb950">●</span> Z3 pressing</span>
+                <span><span style="color:#58a6ff">●</span> Z1</span>
+                <span><span style="color:#e3b341">●</span> Z2</span>
+                <span><span style="color:#3fb950">●</span> Z3</span>
                 <span style="color:var(--text3);font-size:10px">· pasa el ratón para detalles</span>
               </span>
             </div>`:''}
@@ -1631,9 +1631,9 @@
               </table>
             </div>
             <div style="margin-top:12px;font-size:10px;color:var(--text3);line-height:1.8">
-              <div><b style="color:#58a6ff">Z1</b> — Recuperación en campo propio (bloque bajo)</div>
+              <div><b style="color:#58a6ff">Z1</b> — Recuperación en campo propio</div>
               <div><b style="color:#e3b341">Z2</b> — Recuperación en mediocampo</div>
-              <div><b style="color:#3fb950">Z3</b> — Recuperación en campo rival (pressing)</div>
+              <div><b style="color:#3fb950">Z3</b> — Recuperación en campo rival</div>
               <div><b style="color:var(--text2)">/100T</b> — Recuperaciones por cada 100 toques</div>
             </div>
           </div>
