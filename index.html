@@ -1525,7 +1525,6 @@
           z2: recupZonePlayer[name]?.z2||0,
           z3: recupZonePlayer[name]?.z3||0,
           tq: tqPlayer[name]||1,
-          rate: +((n/(tqPlayer[name]||1))*100).toFixed(1),
         }))
         .sort((a,b)=>b.n-a.n);
 
@@ -1551,9 +1550,6 @@
           <td style="padding:8px 8px;text-align:right;font-size:11px;color:#58a6ff">${p.z1}</td>
           <td style="padding:8px 8px;text-align:right;font-size:11px;color:#e3b341">${p.z2}</td>
           <td style="padding:8px 8px;text-align:right;font-size:11px;color:#3fb950">${p.z3}</td>
-          <td style="padding:8px 14px;text-align:right">
-            <span style="font-size:11px;color:var(--text3)">${p.rate}</span>
-          </td>
           <td style="padding:8px 14px;min-width:100px">
             <div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden">
               <div style="height:5px;width:${barW}%;background:#3fb950;border-radius:3px;opacity:${isSel?1:0.75}"></div>
@@ -1624,7 +1620,6 @@
                   <th style="padding:8px 8px;text-align:right;font-size:9px;color:#58a6ff;font-family:'DM Mono',monospace">Z1</th>
                   <th style="padding:8px 8px;text-align:right;font-size:9px;color:#e3b341;font-family:'DM Mono',monospace">Z2</th>
                   <th style="padding:8px 8px;text-align:right;font-size:9px;color:#3fb950;font-family:'DM Mono',monospace">Z3</th>
-                  <th style="padding:8px 14px;text-align:right;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">/100T</th>
                   <th style="padding:8px 14px;min-width:80px"></th>
                 </tr></thead>
                 <tbody>${rankRows}</tbody>
@@ -1634,7 +1629,6 @@
               <div><b style="color:#58a6ff">Z1</b> — Recuperación en campo propio</div>
               <div><b style="color:#e3b341">Z2</b> — Recuperación en mediocampo</div>
               <div><b style="color:#3fb950">Z3</b> — Recuperación en campo rival</div>
-              <div><b style="color:var(--text2)">/100T</b> — Recuperaciones por cada 100 toques</div>
             </div>
           </div>
         </div>`;
