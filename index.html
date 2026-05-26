@@ -3613,6 +3613,11 @@
     const cont=document.getElementById('bloqueCont');
     if(cont) cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando...</span></div>`;
     if(tab==='estado'){renderBloqueEstado();return;}
+    // Para zonas sin partido seleccionado → auto-seleccionar el último
+    if(['zona1','zona2','zona3'].includes(tab) && !bloqueMatchId){
+      const ps = getPartidos();
+      if(ps.length){ bloqueMatchId = ps[ps.length-1].id; const s=document.getElementById('bloqueSel'); if(s) s.value=bloqueMatchId; }
+    }
     if(bloqueMatchId||(tab==='general'&&(bloqueNMatches>1||bloqueNMatches===0))) renderBloque();
   }
 
