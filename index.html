@@ -224,6 +224,7 @@
   let pasesZoneFilter   = null;       // null | 1 | 2 | 3
   let pasesDropdownOpen = false;      // dropdown selector de partido
   let pasesSubTab       = 'equipo';   // 'equipo' | 'jugadores'
+  let pasesZonePair     = '1-2';      // '1-2'|'1-3'|'2-1'|'2-3'|'3-2'
   const _pasesCache     = new Map();  // caché passes data por partido
   let locVis = 'todos';            // 'todos' | 'local' | 'visitante'
 
@@ -5352,6 +5353,18 @@
 
   // ─── MAPA DE PASES — SUB-TAB JUGADORES ───────────────────────────────────────
 
+  // ── Metadatos de todos los pares de zonas ────────────────────────────────────
+  const ZONE_PAIR_META = {
+    '1-2': { label:'Z1 → Z2', desc:'Construcción',    emoji:'🔵→🟡', fromZ:1, toZ:2, fromCol:'#58a6ff', toCol:'#e3b341', tactic:'Salida de balón desde el bloque defensivo al mediocampo' },
+    '1-3': { label:'Z1 → Z3', desc:'Balón largo',     emoji:'🔵→🔴', fromZ:1, toZ:3, fromCol:'#58a6ff', toCol:'#f85149', tactic:'Pase directo sorteando el mediocampo rival' },
+    '2-1': { label:'Z2 → Z1', desc:'Repliegue',       emoji:'🟡→🔵', fromZ:2, toZ:1, fromCol:'#e3b341', toCol:'#58a6ff', tactic:'Recirculación hacia la defensa para reorganizar' },
+    '2-3': { label:'Z2 → Z3', desc:'Progresión',      emoji:'🟡→🔴', fromZ:2, toZ:3, fromCol:'#e3b341', toCol:'#f85149', tactic:'Progresión del mediocampo al tercio ofensivo' },
+    '3-2': { label:'Z3 → Z2', desc:'Recirculación',   emoji:'🔴→🟡', fromZ:3, toZ:2, fromCol:'#f85149', toCol:'#e3b341', tactic:'Descarga al mediocampo desde el ataque' },
+  };
+
+  // Devuelve número de zona (1|2|3) dado un valor x
+  function xToZone(x) { return x < -17.5 ? 1 : x <= 17.5 ? 2 : 3; }
+
   async function renderPasesJugadores() {
     const cont = document.getElementById('pasesCont');
     if (!cont) return;
@@ -5361,6 +5374,7 @@
     if (!partido) { cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Sin partidos</div>'; return; }
     pasesMatchId = partido.id;
 
+    const pair = ZONE_PAIR_META[pasesZonePair] || ZONE_PAIR_META['1-2'];
     const matchSel = buildPasesHeader(partido, ps);
 
     // ── Period bar ─────────────────────────────────────────────────────────────
@@ -5372,13 +5386,30 @@
       ${perBtn('t','Todo')}${perBtn('1','1ª Parte')}${perBtn('2','2ª Parte')}
     </div>`;
 
-    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar +
+    // ── Zone pair tabs ─────────────────────────────────────────────────────────
+    const zoneTabs = Object.entries(ZONE_PAIR_META).map(([id, m]) => {
+      const act = pasesZonePair === id;
+      return `<button onclick="pasesZonePair='${id}';renderPasesJugadores()"
+        style="display:flex;flex-direction:column;align-items:center;gap:2px;
+               background:${act?m.fromCol+'18':'var(--bg3)'};
+               border:1px solid ${act?m.fromCol:'var(--border)'};
+               color:${act?m.fromCol:'var(--text2)'};
+               padding:7px 14px;border-radius:8px;font-family:'DM Sans',sans-serif;
+               font-size:11px;font-weight:${act?700:500};cursor:pointer;transition:all 0.15s;white-space:nowrap">
+        <span style="font-size:14px">${m.emoji}</span>
+        <span style="font-size:11px;font-weight:700">${m.label}</span>
+        <span style="font-size:9px;color:${act?m.fromCol:'var(--text3)'};font-weight:400">${m.desc}</span>
+      </button>`;
+    }).join('');
+    const zonePairBar = `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px">${zoneTabs}</div>`;
+
+    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + zonePairBar +
       `<div class="loading"><div class="spinner"></div><span>Calculando...</span></div>`;
 
     // ── Load & filter ──────────────────────────────────────────────────────────
     const raw = await getPasesData(pasesMatchId);
     if (!raw.length) {
-      cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar +
+      cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + zonePairBar +
         `<div style="padding:40px;text-align:center;color:var(--text3)">Sin datos para este partido</div>`;
       return;
     }
@@ -5386,18 +5417,18 @@
     let passes = raw;
     if (pasesPeriod !== 't') passes = passes.filter(p => p.p == pasesPeriod);
 
-    // Z1 → Z2: origin en tercio defensivo, destino en tercio medio
-    const z1to2 = passes.filter(p =>
+    // Filter by selected zone pair
+    const filtered = passes.filter(p =>
       p.x != null && p.xe != null &&
-      p.x < -17.5 &&
-      p.xe >= -17.5 && p.xe <= 17.5
+      xToZone(p.x)  === pair.fromZ &&
+      xToZone(p.xe) === pair.toZ
     );
 
     // ── Stats ──────────────────────────────────────────────────────────────────
-    const total  = z1to2.length;
-    const succ   = z1to2.filter(p => p.out === 's').length;
-    const fail   = total - succ;
-    const pct    = total ? Math.round(succ/total*100) : 0;
+    const total = filtered.length;
+    const succ  = filtered.filter(p => p.out === 's').length;
+    const fail  = total - succ;
+    const pct   = total ? Math.round(succ/total*100) : 0;
 
     const mkSt = (lbl, val, sub, col) =>
       `<div class="card" style="border-left:3px solid ${col}">
@@ -5406,13 +5437,26 @@
         ${sub?`<div class="card-sub">${sub}</div>`:''}
       </div>`;
 
-    const statsRow = `<div class="cards" style="margin-bottom:20px">
-      ${mkSt('Pases Z1→Z2', total, 'Construcción desde tercio defensivo', '#58a6ff')}
-      ${mkSt('Completados', succ, pct+'% precisión', '#3fb950')}
-      ${mkSt('Fallidos', fail, '', '#f85149')}
-    </div>`;
+    const statsRow = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:16px">${pair.emoji}</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">${pair.label} — ${pair.desc}</div>
+          <div style="font-size:11px;color:var(--text3)">${pair.tactic}</div>
+        </div>
+      </div>
+      <div class="cards" style="margin-bottom:20px">
+        ${mkSt(pair.label, total, 'pases en este partido', pair.fromCol)}
+        ${mkSt('Completados', succ, pct+'% precisión', '#3fb950')}
+        ${mkSt('Fallidos', fail, '', '#f85149')}
+      </div>`;
 
-    // ── Mini pitch SVG (Z1→Z2 passes only) ────────────────────────────────────
+    if (!total) {
+      cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + zonePairBar + statsRow +
+        `<div style="padding:40px;text-align:center;color:var(--text3);font-size:13px">Sin pases ${pair.label} en este período</div>`;
+      return;
+    }
+
+    // ── SVG pitch ──────────────────────────────────────────────────────────────
     const AW=920, AH=590, AMX=55, AMY=40, APW=AW-AMX*2, APH=AH-AMY*2;
     const sv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW, sy:AMY+((34-y)/68)*APH});
 
@@ -5426,32 +5470,44 @@
       <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
       <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>`;
 
-    // Zone shading: Z1 (blue) y Z2 (yellow) destacadas
-    const {sx:zAx}=sv(-52.5,34), {sx:zBx}=sv(-17.5,34), {sx:zCx}=sv(17.5,34);
-    const zoneHL = `
-      <rect x="${zAx.toFixed(1)}" y="${AMY}" width="${(zBx-zAx).toFixed(1)}" height="${APH}" fill="#58a6ff" fill-opacity="0.07" stroke="#58a6ff" stroke-width="1" stroke-opacity="0.3"/>
-      <rect x="${zBx.toFixed(1)}" y="${AMY}" width="${(zCx-zBx).toFixed(1)}" height="${APH}" fill="#e3b341" fill-opacity="0.07" stroke="#e3b341" stroke-width="1" stroke-opacity="0.3"/>
-      <text x="${((zAx+zBx)/2).toFixed(1)}" y="${(AMY+18).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="600" fill="#58a6ff" fill-opacity="0.7">Zona 1 (origen)</text>
-      <text x="${((zBx+zCx)/2).toFixed(1)}" y="${(AMY+18).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="600" fill="#e3b341" fill-opacity="0.7">Zona 2 (destino)</text>`;
+    // Zone highlights — only from/to zones are bright; third zone dimmed
+    const {sx:zAx}=sv(-52.5,34), {sx:zBx}=sv(-17.5,34), {sx:zCx}=sv(17.5,34), {sx:zDx}=sv(52.5,34);
+    const zoneXs    = [zAx, zBx, zCx, zDx];
+    const zoneCols  = ['#58a6ff','#e3b341','#f85149'];
+    const zoneNames = ['Zona 1','Zona 2','Zona 3'];
+    let zoneHL = '';
+    for (let zi=0; zi<3; zi++) {
+      const isFrom = zi+1 === pair.fromZ;
+      const isTo   = zi+1 === pair.toZ;
+      const col    = zoneCols[zi];
+      const op     = (isFrom||isTo) ? '0.13' : '0.02';
+      const sop    = (isFrom||isTo) ? '0.5'  : '0.1';
+      const sw     = (isFrom||isTo) ? 1.5 : 0.5;
+      const fw     = (isFrom||isTo) ? '700' : '400';
+      const fop    = (isFrom||isTo) ? '0.8' : '0.2';
+      const lbl    = isFrom ? `${zoneNames[zi]} (origen)` : isTo ? `${zoneNames[zi]} (destino)` : zoneNames[zi];
+      const cx     = ((zoneXs[zi]+zoneXs[zi+1])/2).toFixed(1);
+      zoneHL += `<rect x="${zoneXs[zi].toFixed(1)}" y="${AMY}" width="${(zoneXs[zi+1]-zoneXs[zi]).toFixed(1)}" height="${APH}" fill="${col}" fill-opacity="${op}" stroke="${col}" stroke-width="${sw}" stroke-opacity="${sop}"/>`;
+      zoneHL += `<text x="${cx}" y="${(AMY+18).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="${fw}" fill="${col}" fill-opacity="${fop}">${lbl}</text>`;
+    }
 
-    // Pass lines — each wrapped with hover tooltip via buildPassLineGroup
+    // Pass lines
     let passLines = '';
-    const sorted = [...z1to2].sort((a,b) => (a.out==='s'?0:1)-(b.out==='s'?0:1));
-    sorted.forEach(p => {
+    const sortedP = [...filtered].sort((a,b) => (a.out==='s'?0:1)-(b.out==='s'?0:1));
+    sortedP.forEach(p => {
       const {sx:x1,sy:y1}=sv(p.x, p.y||0);
       const {sx:x2,sy:y2}=sv(p.xe, p.ye||0);
       passLines += buildPassLineGroup(p, x1, y1, x2, y2);
     });
 
     const mapSVG = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px">
-      <svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block;overflow:visible">${PASS_TIP_CSS}${pitchBg}${zoneHL}${passLines}</svg>
+      <svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block;overflow:visible">${pitchBg}${zoneHL}${passLines}</svg>
     </div>`;
 
-    // ── Player rankings ────────────────────────────────────────────────────────
-    // Pasadores
+    // ── Rankings ───────────────────────────────────────────────────────────────
     const passerMap = {};
-    z1to2.forEach(p => {
-      if (!passerMap[p.n]) passerMap[p.n] = { total:0, succ:0, pos:p.pos||'?' };
+    filtered.forEach(p => {
+      if (!passerMap[p.n]) passerMap[p.n] = { total:0, succ:0, pos:p.pos||'' };
       passerMap[p.n].total++;
       if (p.out==='s') passerMap[p.n].succ++;
     });
@@ -5459,9 +5515,8 @@
       .map(([name,d]) => ({name, ...d, pct: d.total?Math.round(d.succ/d.total*100):0}))
       .sort((a,b) => b.total - a.total);
 
-    // Receptores (solo pases completados que tienen 'to')
     const recvMap = {};
-    z1to2.filter(p => p.out==='s' && p.to).forEach(p => {
+    filtered.filter(p => p.out==='s' && p.to).forEach(p => {
       if (!recvMap[p.to]) recvMap[p.to] = { total:0 };
       recvMap[p.to].total++;
     });
@@ -5469,69 +5524,56 @@
       .map(([name,d]) => ({name, ...d}))
       .sort((a,b) => b.total - a.total);
 
-    const maxPasser = Math.max(1, ...passers.map(p=>p.total));
-    const maxRecv   = Math.max(1, ...receivers.map(r=>r.total));
+    const maxP = Math.max(1, ...passers.map(p=>p.total));
+    const maxR = Math.max(1, ...receivers.map(r=>r.total));
 
-    const mkRankRow = (item, maxVal, showPct) => {
-      const barW = Math.round((item.total/maxVal)*100);
+    const mkRow = (item, maxV, showPct, col) => {
+      const barW = Math.round((item.total/maxV)*100);
       return `<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:8px 12px">
+        <td style="padding:7px 12px">
           <div style="display:flex;align-items:center;gap:8px">
-            ${item.pos?`<span style="font-size:9px;font-weight:700;color:var(--accent);background:var(--bg3);padding:2px 5px;border-radius:3px;min-width:28px;text-align:center">${item.pos}</span>`:''}
+            ${item.pos?`<span style="font-size:9px;font-weight:700;color:${col};background:${col}18;padding:2px 5px;border-radius:3px;min-width:28px;text-align:center">${item.pos}</span>`:''}
             <span style="font-size:12px;font-weight:500;color:var(--text)">${dispN(item.name)}</span>
           </div>
         </td>
-        <td style="padding:8px 10px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:18px;color:#58a6ff">${item.total}</td>
-        ${showPct?`<td style="padding:8px 10px;text-align:right;font-size:11px;color:${item.pct>=70?'var(--green)':item.pct>=50?'var(--accent)':'var(--red)'}">${item.pct}%</td>`:''}
-        <td style="padding:8px 14px;min-width:80px">
+        <td style="padding:7px 10px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:18px;color:${col}">${item.total}</td>
+        ${showPct?`<td style="padding:7px 8px;text-align:right;font-size:11px;color:${item.pct>=70?'var(--green)':item.pct>=50?'var(--accent)':'var(--red)'}">${item.pct}%</td>`:''}
+        <td style="padding:7px 14px;min-width:80px">
           <div style="height:5px;background:var(--bg4);border-radius:3px">
-            <div style="height:5px;width:${barW}%;background:#58a6ff;border-radius:3px;opacity:0.8"></div>
+            <div style="height:5px;width:${barW}%;background:${col};border-radius:3px;opacity:0.75"></div>
           </div>
         </td>
       </tr>`;
     };
 
-    const passerTable = passers.length ? `
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Pasador (Z1)</th>
-            <th style="text-align:right">Pases</th>
-            <th style="text-align:right">%Comp.</th>
-            <th></th>
-          </tr></thead>
-          <tbody>${passers.map(p=>mkRankRow(p,maxPasser,true)).join('')}</tbody>
-        </table>
-      </div>` : `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Sin datos</div>`;
+    const mkTable = (rows, col, header1, header2, showPct, emptyMsg) =>
+      rows.length ? `<div class="table-wrap"><table>
+        <thead><tr>
+          <th>${header1}</th>
+          <th style="text-align:right">${header2}</th>
+          ${showPct?`<th style="text-align:right">%Comp.</th>`:''}
+          <th></th>
+        </tr></thead>
+        <tbody>${rows.map(r=>mkRow(r, showPct?maxP:maxR, showPct, col)).join('')}</tbody>
+      </table></div>` :
+      `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">${emptyMsg}</div>`;
 
-    const recvTable = receivers.length ? `
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Receptor (Z2)</th>
-            <th style="text-align:right">Recepciones</th>
-            <th></th>
-          </tr></thead>
-          <tbody>${receivers.map(r=>mkRankRow(r,maxRecv,false)).join('')}</tbody>
-        </table>
-      </div>` : `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Sin pases completados</div>`;
-
-    const rankingCols = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px">
+    const rankingCols = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
       <div>
-        <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#58a6ff;font-weight:600;margin-bottom:10px;padding:8px 12px;background:rgba(88,166,255,0.07);border:1px solid rgba(88,166,255,0.2);border-radius:6px">
-          🔵 Pasadores — desde Zona 1
+        <div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:${pair.fromCol};font-weight:600;margin-bottom:10px;padding:8px 12px;background:${pair.fromCol}12;border:1px solid ${pair.fromCol}30;border-radius:6px">
+          Pasadores — desde ${zoneNames[pair.fromZ-1]}
         </div>
-        ${passerTable}
+        ${mkTable(passers, pair.fromCol, 'Jugador', 'Pases', true, 'Sin datos')}
       </div>
       <div>
-        <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#e3b341;font-weight:600;margin-bottom:10px;padding:8px 12px;background:rgba(227,179,65,0.07);border:1px solid rgba(227,179,65,0.2);border-radius:6px">
-          🟡 Receptores — en Zona 2
+        <div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:${pair.toCol};font-weight:600;margin-bottom:10px;padding:8px 12px;background:${pair.toCol}12;border:1px solid ${pair.toCol}30;border-radius:6px">
+          Receptores — en ${zoneNames[pair.toZ-1]}
         </div>
-        ${recvTable}
+        ${mkTable(receivers, pair.toCol, 'Jugador', 'Recepciones', false, 'Sin pases completados')}
       </div>
     </div>`;
 
-    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + statsRow + mapSVG + rankingCols;
+    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + zonePairBar + statsRow + mapSVG + rankingCols;
   }
 
   // ── Pass tooltip — HTML flotante que sigue al cursor ─────────────────────
