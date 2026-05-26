@@ -1429,7 +1429,8 @@
       for(let i=1;i<filteredData.length;i++){
         const prev=filteredData[i-1], curr=filteredData[i];
         if(!prev||!curr) continue;
-        if(prev.end_type==='possession_loss' && curr.x_start!=null){
+        // Recuperación = evento tras possession_loss que NO es él mismo otra pérdida
+        if(prev.end_type==='possession_loss' && curr.x_start!=null && curr.end_type!=='possession_loss'){
           allRecov.push(curr);
         }
       }
