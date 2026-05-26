@@ -121,6 +121,7 @@
   <div class="tabs-bar" id="tabsBar">
     <div class="tab active" data-tab="redpases" onclick="switchTab('redpases')">🕸️ Red de Pases</div>
     <div class="tab" data-tab="bloque" onclick="switchTab('bloque')">📐 Bloque</div>
+    <div class="tab" data-tab="pases" onclick="switchTab('pases')">🗺️ Mapa de Pases</div>
     <!-- TAB ALINEACIONES: temporalmente oculto, código preservado -->
     <div class="tab" data-tab="posesion" onclick="switchTab('posesion')">⚡ Posesión</div>
     <div style="margin-left:auto;display:flex;gap:3px;align-items:center;padding-right:4px">
@@ -210,6 +211,11 @@
   let bloqueNMatches = 1;            // 1 | 3 | 5 | 10 | 0(custom)
   let bloqueCustomIds = [];          // IDs seleccionados en modo custom
   const _oopCache = new Map();       // caché OOP data por partido
+  let pasesMatchId   = null;         // partido seleccionado en mapa de pases
+  let pasesPeriod    = 't';          // 't' | '1' | '2'
+  let pasesTypeFilter = 'all';       // 'all'|'prog'|'back'|'lat'|'long'|'fail'
+  let pasesZoneFilter = null;        // null | 1 | 2 | 3
+  const _pasesCache  = new Map();    // caché passes data por partido
   let locVis = 'todos';            // 'todos' | 'local' | 'visitante'
 
   // Filtro Casa/Fuera — devuelve PARTIDOS filtrado por locVis
@@ -2155,6 +2161,7 @@
     document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
     if(tab === 'redpases')          loadRedPases();
     else if(tab === 'bloque')       loadBloque();
+    else if(tab === 'pases')        loadPases();
     else if(tab === 'alineaciones') loadAlineaciones();
     else if(tab === 'posesion')    loadPosesion();
   }
@@ -5018,6 +5025,288 @@
 
     cont.innerHTML = controls + kpi + chart +
       `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">${cards}</div>`;
+  }
+
+  // ─── MAPA DE PASES ───────────────────────────────────────────────────────────
+
+  async function getPasesData(matchId) {
+    if (_pasesCache.has(matchId)) return _pasesCache.get(matchId);
+    try {
+      const r = await fetch(`data/${matchId}_passes.json`);
+      if (!r.ok) { _pasesCache.set(matchId, []); return []; }
+      const d = await r.json();
+      _pasesCache.set(matchId, d);
+      return d;
+    } catch(e) { _pasesCache.set(matchId, []); return []; }
+  }
+
+  // Clasifica el tipo de pase: 'prog'|'back'|'lat'|'long'|'other'
+  function getPassType(p) {
+    const d = p.out === 's' ? (p.dir || '') : (p.tdir || '');
+    if (p.rng === 'l' || (p.out !== 's' && p.dist && p.dist > 28)) return 'long';
+    if (d === 'f')  return 'prog';
+    if (d === 'b')  return 'back';
+    if (d === 'sl' || d === 'sr') return 'lat';
+    return 'other';
+  }
+
+  const PASS_TYPE_META = {
+    prog: { label:'Progresivos', color:'#ff7eb6', emoji:'🌸' },
+    back: { label:'Hacia atrás', color:'#c78842', emoji:'🟤' },
+    lat:  { label:'Horizontales', color:'#e3b341', emoji:'🟡' },
+    long: { label:'Largos',       color:'#a371f7', emoji:'🟣' },
+    other:{ label:'Sin dirección',color:'#8b949e', emoji:'⚪' },
+  };
+
+  async function loadPases() {
+    const cont = document.getElementById('content');
+    if (!pasesMatchId) {
+      // Pre-seleccionar último partido con datos
+      const ps = getPartidos();
+      pasesMatchId = ps[ps.length - 1]?.id || null;
+    }
+    cont.innerHTML = `<div class="anim" id="pasesCont"><div class="loading"><div class="spinner"></div><span>Cargando pases...</span></div></div>`;
+    await renderPasesMap();
+  }
+
+  async function renderPasesMap() {
+    const cont = document.getElementById('pasesCont');
+    if (!cont) return;
+
+    const ps = getPartidos();
+    const partido = ps.find(p => p.id === pasesMatchId) || ps[ps.length-1];
+    if (!partido) { cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Sin partidos disponibles</div>'; return; }
+    pasesMatchId = partido.id;
+
+    // ── Match selector pills ──────────────────────────────────────────────────
+    const matchPills = ps.map(p => {
+      const rival  = p.local === currentTeam.name ? p.vis : p.local;
+      const isHome = p.local === currentTeam.name;
+      const sel    = p.id === pasesMatchId;
+      const [gl,gv] = (p.s||'0-0').split('-').map(Number);
+      const resCol  = isHome ? (gl>gv?'var(--green)':gl<gv?'var(--red)':'var(--text3)') : (gv>gl?'var(--green)':gv<gl?'var(--red)':'var(--text3)');
+      return `<button onclick="pasesMatchId=${p.id};pasesPeriod='t';pasesTypeFilter='all';pasesZoneFilter=null;renderPasesMap()"
+        style="background:${sel?'rgba(200,169,110,0.1)':'var(--bg3)'};border:1px solid ${sel?'rgba(200,169,110,0.4)':'var(--border)'};color:${sel?'var(--accent)':'var(--text2)'};padding:6px 10px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all 0.15s;text-align:left;white-space:nowrap;min-width:80px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:${sel?'var(--accent)':'#6e7681'}">${p.j}</div>
+        <div>${isHome?'🏠':'✈️'} ${rival.length>12?rival.substring(0,10)+'…':rival}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:${resCol}">${p.s||''}</div>
+      </button>`;
+    }).join('');
+    const matchSel = `<div style="overflow-x:auto;margin-bottom:14px;padding-bottom:4px">
+      <div style="display:flex;gap:6px;width:max-content">${matchPills}</div>
+    </div>`;
+
+    // ── Period tabs ────────────────────────────────────────────────────────────
+    const perBtn = (id,lbl) => {
+      const act = pasesPeriod === id;
+      return `<button onclick="pasesPeriod='${id}';renderPasesMap()" style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:7px 20px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s">${lbl}</button>`;
+    };
+    const periodBar = `<div style="display:flex;gap:2px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;width:fit-content;margin-bottom:14px">
+      ${perBtn('t','Todo')}${perBtn('1','1ª Parte')}${perBtn('2','2ª Parte')}
+    </div>`;
+
+    // ── Type filter pills ──────────────────────────────────────────────────────
+    const typeFilters = [
+      ['all',  'Todos',       '#c9d1d9'],
+      ['prog', 'Progresivos', '#ff7eb6'],
+      ['back', 'Hacia atrás', '#c78842'],
+      ['lat',  'Horizontales','#e3b341'],
+      ['long', 'Largos',      '#a371f7'],
+      ['fail', 'Fallidos',    '#f85149'],
+    ];
+    const typePills = typeFilters.map(([id,lbl,col]) => {
+      const act = pasesTypeFilter === id;
+      return `<button onclick="pasesTypeFilter='${id}';renderPasesMap()" style="background:${act?col+'22':'var(--bg3)'};border:1px solid ${act?col:'var(--border)'};color:${act?col:'var(--text2)'};padding:6px 16px;border-radius:20px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:${act?'700':'500'};cursor:pointer;transition:all 0.15s;white-space:nowrap">${lbl}</button>`;
+    }).join('');
+    const typeBar = `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;align-items:center">
+      <span style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-right:2px">Tipo</span>
+      ${typePills}
+    </div>`;
+
+    // ── Load data ─────────────────────────────────────────────────────────────
+    cont.innerHTML = matchSel + periodBar + typeBar +
+      `<div class="loading"><div class="spinner"></div><span>Cargando datos...</span></div>`;
+
+    const raw = await getPasesData(pasesMatchId);
+    if (!raw.length) {
+      cont.innerHTML = matchSel + periodBar + typeBar +
+        `<div style="padding:60px;text-align:center;color:var(--text3);font-size:13px">Sin datos de pases para este partido</div>`;
+      return;
+    }
+
+    // ── Filter passes ─────────────────────────────────────────────────────────
+    let passes = raw;
+
+    // Period filter
+    if (pasesPeriod !== 't') passes = passes.filter(p => p.p == pasesPeriod);
+
+    // Zone filter (origin x position)
+    if (pasesZoneFilter === 1) passes = passes.filter(p => p.x < -17.5);
+    else if (pasesZoneFilter === 2) passes = passes.filter(p => p.x >= -17.5 && p.x <= 17.5);
+    else if (pasesZoneFilter === 3) passes = passes.filter(p => p.x > 17.5);
+
+    // Type filter
+    if (pasesTypeFilter === 'fail') {
+      passes = passes.filter(p => p.out !== 's');
+    } else if (pasesTypeFilter !== 'all') {
+      passes = passes.filter(p => getPassType(p) === pasesTypeFilter);
+    }
+
+    // ── Build SVG ─────────────────────────────────────────────────────────────
+    const svg = buildPasesMapSVG(passes);
+
+    // ── Stats ──────────────────────────────────────────────────────────────────
+    const total   = passes.length;
+    const succ    = passes.filter(p => p.out === 's').length;
+    const fail    = passes.filter(p => p.out !== 's').length;
+    const pct     = total ? Math.round(succ/total*100) : 0;
+
+    // Count by type
+    const byType  = {};
+    passes.forEach(p => {
+      const t = getPassType(p);
+      byType[t] = (byType[t]||0) + 1;
+    });
+
+    const mkStat = (label, val, sub, col) =>
+      `<div class="card" style="border-left:3px solid ${col||'var(--border)'}">
+        <div class="card-label">${label}</div>
+        <div class="card-value" style="font-size:28px">${val}</div>
+        ${sub ? `<div class="card-sub">${sub}</div>` : ''}
+      </div>`;
+
+    const statBar = `<div class="cards" style="margin-top:16px">
+      ${mkStat('Total pases',''+total,'filtro actual','var(--accent)')}
+      ${mkStat('Exitosos',''+succ,pct+'% precisión','#3fb950')}
+      ${mkStat('Fallidos',''+fail,'','#f85149')}
+      ${mkStat('Progresivos',''+(byType.prog||0),'(dir. adelante)','#ff7eb6')}
+      ${mkStat('Largos',''+(byType.long||0),'','#a371f7')}
+    </div>`;
+
+    // ── Legend ─────────────────────────────────────────────────────────────────
+    const legendItems = [
+      ['🟢','Línea verde = exitoso (sólida)','#3fb950'],
+      ['🔴','Línea roja = fallido (discontinua)','#f85149'],
+      ['🌸','Rosa = progresivo','#ff7eb6'],
+      ['🟤','Marrón = hacia atrás','#c78842'],
+      ['🟡','Amarillo = horizontal/lateral','#e3b341'],
+      ['🟣','Morado = largo','#a371f7'],
+    ];
+    const legend = `<div style="display:flex;flex-wrap:wrap;gap:10px 20px;margin-top:14px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius)">
+      ${legendItems.map(([ic,lb,col])=>`<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)">
+        <div style="width:22px;height:2px;background:${col};border-radius:1px"></div>
+        <span>${lb}</span>
+      </div>`).join('')}
+    </div>`;
+
+    // ── Rival info ─────────────────────────────────────────────────────────────
+    const rival  = partido.local === currentTeam.name ? partido.vis : partido.local;
+    const isHome = partido.local === currentTeam.name;
+    const headerTitle = `🗺️ ${partido.j} · ${isHome?'🏠':'✈️'} ${rival} · ${partido.s||''}`;
+
+    cont.innerHTML = matchSel + periodBar + typeBar +
+      `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:14px;font-weight:700;color:var(--text)">${headerTitle}</span>
+        <span style="font-size:11px;color:var(--text3);margin-left:auto">${total} pases mostrados</span>
+      </div>` +
+      `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">` +
+      svg +
+      `</div>` +
+      statBar + legend;
+  }
+
+  function buildPasesMapSVG(passes) {
+    const AW=920, AH=590, AMX=55, AMY=40, APW=AW-AMX*2, APH=AH-AMY*2;
+    const sv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW, sy:AMY+((34-y)/68)*APH});
+
+    // ── Pitch background ───────────────────────────────────────────────────────
+    const pitch = `
+      <rect x="0" y="0" width="${AW}" height="${AH}" fill="#0b150b"/>
+      <rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="#0d1f0d" stroke="#1c3a1c" stroke-width="1.5"/>
+      <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="#1c3a1c" stroke-width="1"/>
+      <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="#1c3a1c" stroke-width="1"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>`;
+
+    // ── Zone overlays ──────────────────────────────────────────────────────────
+    // Zone 1: x ∈ [-52.5, -17.5], Zone 2: [-17.5, 17.5], Zone 3: [17.5, 52.5]
+    const {sx:z1x1}=sv(-52.5,34); const {sx:z1x2}=sv(-17.5,34);
+    const {sx:z2x2}=sv(17.5,34);  const {sx:z3x2}=sv(52.5,34);
+    const zoneW1=z1x2-z1x1, zoneW2=z2x2-z1x2, zoneW3=z3x2-z2x2;
+
+    const ZONE_COLORS = ['#58a6ff','#e3b341','#f85149'];
+    const ZONE_LABELS = ['Zona 1','Zona 2','Zona 3'];
+    let zones = '';
+    [[z1x1,zoneW1,0],[z1x2,zoneW2,1],[z2x2,zoneW3,2]].forEach(([zx,zw,zi])=>{
+      const active = pasesZoneFilter === zi+1;
+      const col = ZONE_COLORS[zi];
+      const lx = (zx + zw/2).toFixed(1);
+      const toggleFn = `pasesZoneFilter=${active?'null':zi+1};renderPasesMap()`;
+      zones += `<g onclick="${toggleFn}" style="cursor:pointer">
+        <rect x="${zx.toFixed(1)}" y="${AMY}" width="${zw.toFixed(1)}" height="${APH}"
+          fill="${col}" fill-opacity="${active?'0.15':'0.04'}"
+          stroke="${col}" stroke-width="${active?2:1}" stroke-opacity="${active?0.7:0.25}"
+          rx="0"/>
+        <text x="${lx}" y="${(AMY+16).toFixed(1)}" text-anchor="middle"
+          font-family="DM Sans,sans-serif" font-size="11" font-weight="${active?'700':'500'}"
+          fill="${col}" fill-opacity="${active?0.95:0.5}">${ZONE_LABELS[zi]}</text>
+      </g>`;
+    });
+
+    // ── Pass lines ─────────────────────────────────────────────────────────────
+    let lines = '';
+    // Draw successful first (below failed so failed are visible on top)
+    const sorted = [...passes].sort((a,b) => {
+      const as = a.out==='s'?0:1, bs = b.out==='s'?0:1;
+      return as - bs;
+    });
+
+    sorted.forEach(p => {
+      if (p.x == null || p.xe == null) return;
+      const {sx:x1,sy:y1} = sv(p.x, p.y||0);
+      const {sx:x2,sy:y2} = sv(p.xe, p.ye||0);
+      const succ = p.out === 's';
+      const type = getPassType(p);
+      const typeMeta = PASS_TYPE_META[type] || PASS_TYPE_META.other;
+      const typeCol  = typeMeta.color;
+
+      // Skip trivial zero-length passes
+      const dx = x2-x1, dy = y2-y1;
+      if (Math.abs(dx)<2 && Math.abs(dy)<2) return;
+
+      // Layer 1: thick success/fail glow
+      const glowCol = succ ? '#3fb950' : '#f85149';
+      const dashArr = succ ? '' : 'stroke-dasharray="7,4"';
+      lines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
+        stroke="${glowCol}" stroke-width="5" stroke-opacity="0.18" stroke-linecap="round" ${dashArr}/>`;
+
+      // Layer 2: type-colored line
+      lines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
+        stroke="${typeCol}" stroke-width="1.8" stroke-opacity="${succ?0.75:0.85}" stroke-linecap="round" ${dashArr}/>`;
+
+      // Arrowhead at destination (successful only)
+      if (succ) {
+        const len = Math.sqrt(dx*dx+dy*dy);
+        if (len > 0) {
+          const nx=dx/len, ny=dy/len;
+          const ax=x2-nx*8, ay=y2-ny*8;
+          const px=-ny*4, py=nx*4;
+          lines += `<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(ax+px).toFixed(1)},${(ay+py).toFixed(1)} ${(ax-px).toFixed(1)},${(ay-py).toFixed(1)}"
+            fill="${typeCol}" fill-opacity="0.75"/>`;
+        }
+      }
+
+      // Origin dot
+      lines += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3" fill="${glowCol}" fill-opacity="0.6"/>`;
+    });
+
+    // ── Zone click hint ────────────────────────────────────────────────────────
+    const hint = `<text x="${(AW/2).toFixed(0)}" y="${(AH-8).toFixed(0)}" text-anchor="middle"
+      font-family="DM Sans,sans-serif" font-size="9" fill="#6e7681">Haz clic en una zona para filtrar</text>`;
+
+    return `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block;overflow:visible">${pitch}${zones}${lines}${hint}</svg>`;
   }
 
   // INIT
