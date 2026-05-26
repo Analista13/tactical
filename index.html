@@ -2297,13 +2297,14 @@
     // Campo
     const fieldSVG=`
       <rect x="0" y="0" width="${AW}" height="${AH}" fill="#0b150b"/>
-      <rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="#0d1f0d" stroke="#1c3a1c" stroke-width="1.5"/>
-      <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="#1c3a1c" stroke-width="1"/>
-      <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="#1c3a1c" stroke-width="1"/>
-      <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
-      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
-      <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
-      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>`;
+      <rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="${colorOverride ? '#0f200f' : '#0d1f0d'}" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="1.5"/>
+      ${colorOverride ? `<rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="${phCol}" fill-opacity="0.04"/>` : ''}
+      <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="1"/>
+      <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="1"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="0.8"/>
+      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="0.8"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="0.5"/>
+      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="0.5"/>`;
 
     // Nodos
     let nodes='';
@@ -3109,7 +3110,10 @@
     let hull = '';
     if(shape.hull.length>=3){
       const pts=shape.hull.map(p=>{const{sx,sy}=sv(p.x,p.y);return sx.toFixed(1)+','+sy.toFixed(1);}).join(' ');
-      hull=`<polygon points="${pts}" fill="${phCol}" fill-opacity="0.09" stroke="${phCol}" stroke-width="1.5" stroke-opacity="0.55" stroke-dasharray="8,4"/>`;
+      const hFill = colorOverride ? '0.28' : '0.09';
+      const hStroke = colorOverride ? '0.95' : '0.55';
+      const hW = colorOverride ? '2.5' : '1.5';
+      hull=`<polygon points="${pts}" fill="${phCol}" fill-opacity="${hFill}" stroke="${phCol}" stroke-width="${hW}" stroke-opacity="${hStroke}" stroke-dasharray="6,3"/>`;
     }
 
     // Vertical line per tier (avg x)
@@ -3117,16 +3121,20 @@
     [[shape.defLine,'#58a6ff'],[shape.midLine,'#3fb950'],[shape.fwdLine,'#f85149']].forEach(([lx,col])=>{
       if(lx==null) return;
       const{sx}=sv(lx,0);
-      lines+=`<line x1="${sx.toFixed(1)}" y1="${AMY}" x2="${sx.toFixed(1)}" y2="${AH-AMY}" stroke="${col}" stroke-width="1.2" stroke-opacity="0.45" stroke-dasharray="5,5"/>`;
+      const lOp = colorOverride ? '0.80' : '0.45';
+      const lW  = colorOverride ? '1.8' : '1.2';
+      lines+=`<line x1="${sx.toFixed(1)}" y1="${AMY}" x2="${sx.toFixed(1)}" y2="${AH-AMY}" stroke="${col}" stroke-width="${lW}" stroke-opacity="${lOp}" stroke-dasharray="5,5"/>`;
     });
 
     // Centroid crosshair
     let centroid = '';
     if(shape.centroidX!=null){
       const{sx:cx,sy:cy}=sv(shape.centroidX,shape.centroidY);
-      centroid=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="8" fill="none" stroke="${phCol}" stroke-width="1.8"/>
-        <line x1="${(cx-7).toFixed(1)}" y1="${cy.toFixed(1)}" x2="${(cx+7).toFixed(1)}" y2="${cy.toFixed(1)}" stroke="${phCol}" stroke-width="1.5"/>
-        <line x1="${cx.toFixed(1)}" y1="${(cy-7).toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(cy+7).toFixed(1)}" stroke="${phCol}" stroke-width="1.5"/>`;
+      const cR  = colorOverride ? '10' : '8';
+      const cW  = colorOverride ? '2.5' : '1.8';
+      centroid=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${cR}" fill="${colorOverride ? phCol+'33' : 'none'}" stroke="${phCol}" stroke-width="${cW}"/>
+        <line x1="${(cx-8).toFixed(1)}" y1="${cy.toFixed(1)}" x2="${(cx+8).toFixed(1)}" y2="${cy.toFixed(1)}" stroke="${phCol}" stroke-width="${cW}"/>
+        <line x1="${cx.toFixed(1)}" y1="${(cy-8).toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(cy+8).toFixed(1)}" stroke="${phCol}" stroke-width="${cW}"/>`;
     }
 
     // Width annotation arrow
@@ -3810,15 +3818,15 @@
           const scoreVis   = isHome ? seg.rival : seg.ponf;
           const endLabel   = seg.end >= 95 ? "90+'" : `${seg.end}'`;
 
-          return `<div style="flex:1;min-width:150px;max-width:300px;background:var(--bg3);border:2px solid ${col}55;border-radius:8px;overflow:hidden;display:flex;flex-direction:column">
-            <div style="background:${col}1a;padding:8px 10px;border-bottom:1px solid ${col}33;flex-shrink:0">
+          return `<div style="flex:1;min-width:150px;max-width:300px;background:var(--bg3);border:2px solid ${col};border-top:4px solid ${col};border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 12px ${col}44">
+            <div style="background:${col}33;padding:8px 10px;border-bottom:2px solid ${col}66;flex-shrink:0">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
-                <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${col};letter-spacing:1px;line-height:1">${scoreLocal}-${scoreVis}</span>
-                <span style="font-size:10px;font-weight:700;color:${col};background:${col}25;padding:2px 7px;border-radius:10px;white-space:nowrap">${emo} ${lbl}</span>
+                <span style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${col};letter-spacing:1px;line-height:1;text-shadow:0 0 10px ${col}88">${scoreLocal}-${scoreVis}</span>
+                <span style="font-size:10px;font-weight:700;color:#fff;background:${col};padding:2px 8px;border-radius:10px;white-space:nowrap">${emo} ${lbl}</span>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;margin-top:3px">
-                <span style="font-size:11px;color:var(--text3)">${seg.start}' → ${endLabel}</span>
-                ${bt ? `<span style="font-size:9px;font-weight:700;color:${btCol};background:${btCol}22;padding:1px 6px;border-radius:10px">${btLabel}</span>` : ''}
+                <span style="font-size:11px;color:var(--text2);font-weight:600">${seg.start}' → ${endLabel}</span>
+                ${bt ? `<span style="font-size:9px;font-weight:700;color:${btCol};background:${btCol}33;padding:1px 6px;border-radius:10px;border:1px solid ${btCol}66">${btLabel}</span>` : ''}
               </div>
             </div>
             <div style="flex:1">${buildBloqueSVG(shape, bloquePhase, col)}</div>
