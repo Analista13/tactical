@@ -204,7 +204,8 @@
   let posesionPeriodo = 't'; // 't' | '1' | '2'
   let bloqueMatchId = null;
   let bloquePhase   = 'ataque';   // 'ataque' | 'defensa'
-  let bloqueSubTab  = 'zona1';  // 'zona1' | 'zona2' | 'zona3'
+  let bloqueSubTab      = 'general';  // 'general' | 'zona1' | 'zona2' | 'zona3' | 'estado'
+  let bloqueGeneralSubTab = 'all';    // 'all' | '1parte' | '2parte' | 'comparativa' (sub-tabs inside General)
   let bloqueNMatches = 1;         // 1 | 3 | 5 | 10 | 0(custom) — filmstrip en General
   let bloqueCustomIds = [];       // IDs seleccionados en modo custom
   let locVis = 'todos';            // 'todos' | 'local' | 'visitante'
@@ -3541,42 +3542,125 @@
     const cont=document.getElementById('bloqueCont');
     if(!cont) return;
 
+    // ── Estado: dispatch to renderBloqueEstado ──
+    if(bloqueSubTab==='estado'){ await renderBloqueEstado(); return; }
+
+    // ── General tab: secondary sub-tabs (Todo / 1ª Parte / 2ª Parte / Comparativa) ──
+    if(bloqueSubTab==='general'){
+      const secTabs=[
+        {id:'all',label:'Todo'},
+        {id:'1parte',label:'1ª Parte'},
+        {id:'2parte',label:'2ª Parte'},
+        {id:'comparativa',label:'⚡ Comparativa'},
+      ];
+      const secBar=`<div id="bloqueGenSubTabs" style="overflow-x:auto;margin-bottom:16px">
+        <div style="display:flex;gap:4px;background:var(--bg3,var(--bg2));border:1px solid var(--border);border-radius:6px;padding:3px;width:fit-content">
+          ${secTabs.map(t=>`<button id="bgst-${t.id}" class="subtab ${bloqueGeneralSubTab===t.id?'active':''}" onclick="setBloqueGeneralSubTab('${t.id}')" style="font-size:12px;padding:5px 14px">${t.label}</button>`).join('')}
+        </div>
+      </div>
+      <div id="bloqueGenContent"><div class="loading"><div class="spinner"></div><span>Calculando...</span></div></div>`;
+      cont.innerHTML=secBar;
+      await renderBloqueGeneralContent();
+      return;
+    }
+
+    // ── Zona tabs (zona1 / zona2 / zona3) ──
     if(!bloqueMatchId) return;
-    cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando zona...</span></div>`;
+    cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando posición...</span></div>`;
     try {
       const matchData=await getMatchData(bloqueMatchId);
-      // Zonas: estructura del equipo por tercio del campo donde tiene la posesión
-      const ZONA_MAP = {zona1:'defensive_third', zona2:'middle_third', zona3:'attacking_third'};
-      const ZONA_META = {
-        zona1: {col:'#58a6ff', lbl:'ZONA 1 — Tercio propio', sub:'Posesiones en el tercio defensivo (salida de balón)'},
-        zona2: {col:'#e3b341', lbl:'ZONA 2 — Tercio central', sub:'Posesiones en el centro del campo'},
-        zona3: {col:'#f85149', lbl:'ZONA 3 — Tercio rival', sub:'Posesiones en el tercio de ataque (llegada al área)'},
+      const ZONA_MAP={zona1:'defensive_third',zona2:'middle_third',zona3:'attacking_third'};
+      const ZONA_META={
+        zona1:{col:'#58a6ff',lbl:'ZONA 1 — Tercio propio',sub:'Posesiones en el tercio defensivo (salida de balón)'},
+        zona2:{col:'#e3b341',lbl:'ZONA 2 — Tercio central',sub:'Posesiones en el centro del campo'},
+        zona3:{col:'#f85149',lbl:'ZONA 3 — Tercio rival',sub:'Posesiones en el tercio de ataque (llegada al área)'},
       };
-      const thirdFilter = ZONA_MAP[bloqueSubTab];
-      const shape = computeTeamShape(matchData, bloquePhase, 0, bloqueMatchId, thirdFilter);
+      const thirdFilter=ZONA_MAP[bloqueSubTab];
+      const shape=computeTeamShape(matchData,bloquePhase,0,bloqueMatchId,thirdFilter);
       if(!shape.players.length&&!shape.gk.length){
-        cont.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3)">Sin posesiones suficientes en esta zona del partido</div>`;
+        cont.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3)">Sin posesiones suficientes en esta fase del partido</div>`;
         return;
       }
-      const meta = ZONA_META[bloqueSubTab];
+      const meta=ZONA_META[bloqueSubTab];
+      const phCol=meta.col; const phBg=phCol+'14'; const phLbl=meta.lbl; const phSub=meta.sub;
       const {cards,table,legend}=buildBloqueMetrics(shape,bloquePhase);
       cont.innerHTML=`<div style="display:grid;gap:20px">
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
           <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <span style="font-size:11px;font-weight:700;color:${meta.col};background:${meta.col}14;padding:3px 12px;border-radius:20px;letter-spacing:1px">${meta.lbl}</span>
+            <span style="font-size:11px;font-weight:700;color:${phCol};background:${phBg};padding:3px 12px;border-radius:20px;letter-spacing:1px">${phLbl}</span>
             ${(()=>{const bt=shape.blockType;if(!bt)return '';const[bl,bc]={high:['🔴 HIGH BLOCK','#f85149'],mid:['🟡 MID BLOCK','#e3b341'],low:['🔵 LOW BLOCK','#58a6ff']}[bt]||['',''];return `<span style="font-size:11px;font-weight:700;color:${bc};background:${bc}22;padding:3px 10px;border-radius:20px">${bl}</span>`;})()}
             <span style="font-size:12px;color:var(--text2)">${shape.players.length+shape.gk.length} jugadores · once inicial</span>
-            <span style="font-size:11px;color:var(--text3);margin-left:auto">${meta.sub}</span>
+            <span style="font-size:11px;color:var(--text3);margin-left:auto">${phSub}</span>
           </div>
-          ${buildBloqueSVG(shape, bloquePhase, meta.col)}
+          ${buildBloqueSVG(shape,bloquePhase,phCol)}
         </div>
-        ${cards}
-        ${table}
-        ${legend}
+        ${cards}${table}${legend}
       </div>`;
     } catch(e){
       cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">Error: ${e.message}</div>`;
     }
+  }
+
+  async function renderBloqueGeneralContent(){
+    const genCont=document.getElementById('bloqueGenContent');
+    if(!genCont) return;
+
+    // Filmstrip for multi-match in 'all' sub-tab
+    if(bloqueGeneralSubTab==='all' && (bloqueNMatches>1||bloqueNMatches===0)){
+      await renderBloqueFilmstrip(genCont);
+      return;
+    }
+
+    if(!bloqueMatchId){
+      genCont.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>`;
+      return;
+    }
+    genCont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando posición...</span></div>`;
+    try {
+      const matchData=await getMatchData(bloqueMatchId);
+      if(bloqueGeneralSubTab==='comparativa'){
+        const s1=computeTeamShape(matchData,bloquePhase,1,bloqueMatchId);
+        const s2=computeTeamShape(matchData,bloquePhase,2,bloqueMatchId);
+        renderBloqueComp(genCont,s1,s2,bloquePhase);
+      } else {
+        const period=bloqueGeneralSubTab==='1parte'?1:bloqueGeneralSubTab==='2parte'?2:0;
+        const shape=computeTeamShape(matchData,bloquePhase,period,bloqueMatchId);
+        if(!shape.players.length&&!shape.gk.length){
+          genCont.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3)">Sin posesiones suficientes</div>`;
+          return;
+        }
+        const isAtq=bloquePhase==='ataque';
+        const phCol=isAtq?'#f0883e':'#58a6ff';
+        const phBg=isAtq?'rgba(240,136,62,0.08)':'rgba(88,166,255,0.08)';
+        const phLbl=isAtq?'ATAQUE':'DEFENSA';
+        const phSub=(isAtq?'attacking_third':'defensive_third')+' (SkillCorner) · mín. 5 pos. · resto = global';
+        const {cards,table,legend}=buildBloqueMetrics(shape,bloquePhase);
+        const filterBarSingle=bloqueGeneralSubTab==='all'?buildBloqueNFilterBar():'';
+        genCont.innerHTML=filterBarSingle+`<div style="display:grid;gap:20px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-size:11px;font-weight:700;color:${phCol};background:${phBg};padding:3px 12px;border-radius:20px;letter-spacing:1px">${phLbl}</span>
+              ${(()=>{const bt=shape.blockType;if(!bt)return '';const[bl,bc]={high:['🔴 HIGH BLOCK','#f85149'],mid:['🟡 MID BLOCK','#e3b341'],low:['🔵 LOW BLOCK','#58a6ff']}[bt]||['',''];return `<span style="font-size:11px;font-weight:700;color:${bc};background:${bc}22;padding:3px 10px;border-radius:20px">${bl}</span>`;})()}
+              <span style="font-size:12px;color:var(--text2)">${shape.players.length+shape.gk.length} jugadores · ${bloqueGeneralSubTab==='2parte'?'once final':'once inicial'}</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:auto">${phSub}</span>
+            </div>
+            ${buildBloqueSVG(shape,bloquePhase,null)}
+          </div>
+          ${cards}${table}${legend}
+        </div>`;
+      }
+    } catch(e){
+      genCont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">Error: ${e.message}</div>`;
+    }
+  }
+
+  function setBloqueGeneralSubTab(tab){
+    bloqueGeneralSubTab=tab;
+    document.querySelectorAll('#bloqueGenSubTabs .subtab').forEach(b=>b.classList.remove('active'));
+    document.getElementById('bgst-'+tab)?.classList.add('active');
+    const genCont=document.getElementById('bloqueGenContent');
+    if(genCont) genCont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando...</span></div>`;
+    renderBloqueGeneralContent();
   }
 
   function setBloquePhase(phase){
@@ -3589,13 +3673,15 @@
     document.querySelectorAll('#bloqueSubTabs .subtab').forEach(b=>b.classList.remove('active'));
     document.getElementById('bst-'+tab)?.classList.add('active');
     const cont=document.getElementById('bloqueCont');
-    if(cont) cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando zona...</span></div>`;
-    // Sin partido seleccionado → auto-seleccionar el último
-    if(!bloqueMatchId){
+    if(cont) cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando...</span></div>`;
+    if(tab==='estado'){renderBloqueEstado();return;}
+    // Para zonas sin partido seleccionado → auto-seleccionar el último
+    if(['zona1','zona2','zona3'].includes(tab) && !bloqueMatchId){
       const ps = getPartidos();
       if(ps.length){ bloqueMatchId = ps[ps.length-1].id; const s=document.getElementById('bloqueSel'); if(s) s.value=bloqueMatchId; }
     }
-    if(bloqueMatchId) renderBloque();
+    // General siempre renderiza (muestra la barra de sub-tabs)
+    if(tab==='general'||bloqueMatchId) renderBloque();
   }
 
   function loadBloque(){
@@ -3620,17 +3706,21 @@
         ${phBtn('defensa','🛡️ Defensa')}
       </div>
       <div id="bloqueSubTabs" style="overflow-x:auto;margin-bottom:20px;padding-bottom:2px">
-        <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content">
-          <button id="bst-zona1" class="subtab ${bloqueSubTab==='zona1'?'active':''}" onclick="setBloqueSubTab('zona1')">🔵 Zona 1</button>
-          <button id="bst-zona2" class="subtab ${bloqueSubTab==='zona2'?'active':''}" onclick="setBloqueSubTab('zona2')">🟡 Zona 2</button>
-          <button id="bst-zona3" class="subtab ${bloqueSubTab==='zona3'?'active':''}" onclick="setBloqueSubTab('zona3')">🔴 Zona 3</button>
+        <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content;min-width:100%">
+          <button id="bst-general"     class="subtab ${bloqueSubTab==='general'?'active':''}"     onclick="setBloqueSubTab('general')">General</button>
+          <button id="bst-zona1"       class="subtab ${bloqueSubTab==='zona1'?'active':''}"       onclick="setBloqueSubTab('zona1')">Zona 1</button>
+          <button id="bst-zona2"       class="subtab ${bloqueSubTab==='zona2'?'active':''}"       onclick="setBloqueSubTab('zona2')">Zona 2</button>
+          <button id="bst-zona3"       class="subtab ${bloqueSubTab==='zona3'?'active':''}"       onclick="setBloqueSubTab('zona3')">Zona 3</button>
+          <button id="bst-estado"      class="subtab ${bloqueSubTab==='estado'?'active':''}"      onclick="setBloqueSubTab('estado')">📊 Por Estado</button>
         </div>
       </div>
       <div id="bloqueCont">
         <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>
       </div>
     </div>`;
-    if(bloqueMatchId) renderBloque();
+    if(bloqueSubTab==='estado'){renderBloqueEstado();return;}
+    // General siempre renderiza (muestra la barra de sub-tabs internos)
+    if(bloqueSubTab==='general'||bloqueMatchId) renderBloque();
   }
 
   // ─── BLOQUE POR ESTADO ───────────────────────────────────────────────────────
