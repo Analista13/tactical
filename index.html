@@ -1231,21 +1231,28 @@
         playerLosses.forEach(e => {
           const {sx,sy}=sv(e.x_end,e.y_end);
           const isDirect = e.end_type==='possession_loss';
-          let col,glow,distLabel='';
+          let col,glow,tipLabel,tipDist='';
           if (isDirect) {
-            col='#f85149'; glow='#ff000044';
+            col='#f85149'; glow='#ff000044'; tipLabel='Pérdida directa';
           } else {
-            // Clasificar pase fallado por distancia: rng o pass_distance
             const rng = e.rng || (e.pass_distance==null?'m':e.pass_distance<12?'s':e.pass_distance<28?'m':'l');
-            if (rng==='s')      { col='#58a6ff'; glow='#0088ff44'; distLabel='C'; }
-            else if (rng==='l') { col='#a371f7'; glow='#8855ff44'; distLabel='L'; }
-            else                { col='#e3b341'; glow='#ffaa0044'; distLabel='M'; }
+            if (e.pass_distance!=null) tipDist=` · ${Math.round(e.pass_distance)}m`;
+            if (rng==='s')      { col='#58a6ff'; glow='#0088ff44'; tipLabel='Pase corto fallado'; }
+            else if (rng==='l') { col='#a371f7'; glow='#8855ff44'; tipLabel='Pase largo fallado'; }
+            else                { col='#e3b341'; glow='#ffaa0044'; tipLabel='Pase medio fallado'; }
           }
           const min  = e.minute ?? e.min ?? '?';
-          zoneSVG+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="11" fill="${glow}"/>
-            <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="6.5" fill="${col}" fill-opacity="0.9" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>
-            ${distLabel?`<text x="${sx.toFixed(1)}" y="${(sy+2.5).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-family="'DM Mono',monospace" font-size="6" font-weight="700" fill="white" fill-opacity="0.95">${distLabel}</text>`:''}
-            <text x="${sx.toFixed(1)}" y="${(sy+18).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="${col}" fill-opacity="0.8">${min}'</text>`;
+          const tipText = `min. ${min}&#39; — ${tipLabel}${tipDist}`;
+          zoneSVG+=`<g data-tip="${tipText}"
+            onmouseenter="const t=document.getElementById('_pdTip');if(t){t.textContent=this.dataset.tip;t.style.display='block'}"
+            onmousemove="const t=document.getElementById('_pdTip');if(t){t.style.left=(event.clientX+14)+'px';t.style.top=(event.clientY-36)+'px'}"
+            onmouseleave="const t=document.getElementById('_pdTip');if(t)t.style.display='none'"
+            style="cursor:default">
+            <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="14" fill="transparent"/>
+            <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="9" fill="${glow}"/>
+            <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="6" fill="${col}" fill-opacity="0.92" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+            <text x="${sx.toFixed(1)}" y="${(sy+19).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="${col}" fill-opacity="0.85">${min}'</text>
+          </g>`;
         });
       } else {
         // ── Modo equipo: heatmap por zonas ──────────────────────────────────
@@ -1337,15 +1344,18 @@
               <button onclick="perdidasPlayer=null;renderPerdidas()" style="background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:5px 13px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px">← Ver equipo</button>
               <span style="font-size:14px;font-weight:700;color:#f85149">${dispN(perdidasPlayer)}</span>
               <span style="font-size:11px;color:var(--text3)">— pérdidas individuales</span>
-              <span style="display:flex;gap:10px;margin-left:auto;font-size:11px;flex-wrap:wrap">
+              <span style="display:flex;gap:10px;margin-left:auto;font-size:11px;flex-wrap:wrap;align-items:center">
                 <span><span style="color:#f85149">●</span> Pérdida directa</span>
-                <span><span style="color:#58a6ff">● C</span> Pase corto</span>
-                <span><span style="color:#e3b341">● M</span> Pase medio</span>
-                <span><span style="color:#a371f7">● L</span> Pase largo</span>
+                <span><span style="color:#58a6ff">●</span> Pase corto</span>
+                <span><span style="color:#e3b341">●</span> Pase medio</span>
+                <span><span style="color:#a371f7">●</span> Pase largo</span>
+                <span style="color:var(--text3);font-size:10px">· pasa el ratón para ver detalles</span>
               </span>
             </div>`:''}
+            <div id="_pdTip" style="display:none;position:fixed;z-index:9999;background:#1c2128;border:1px solid #30363d;border-radius:7px;padding:6px 12px;font-family:'DM Sans',sans-serif;font-size:12px;color:#c9d1d9;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,0.5);white-space:nowrap"></div>
             <div style="background:var(--bg2);border:1px solid rgba(248,81,73,0.2);border-radius:var(--radius);overflow:hidden">
-              <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+              <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block"
+                onmouseleave="const t=document.getElementById('_pdTip');if(t)t.style.display='none'">
                 <rect x="0" y="0" width="${W}" height="${H}" fill="#0d1117"/>
                 <rect x="${MX}" y="${MY}" width="${PW}" height="${PH}" fill="#150808" stroke="#3a1e1e" stroke-width="1.5"/>
                 ${zoneSVG}
