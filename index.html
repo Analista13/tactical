@@ -3161,10 +3161,18 @@
       const gkSW = colorOverride ? 2.5 : 2;
       const nameCol = colorOverride ? '#ffffff' : '#c9d1d9';
       const glowOp = colorOverride ? 0.22 : 0;
+      const tipY = sy - gkR - 28;
+      const tipW = Math.max(p.name.length * 6.5 + 20, 80);
+      dots += `<g class="pg" style="cursor:pointer">`;
       dots += glowOp ? `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${gkR+8}" fill="${TIER_COL[0]}" fill-opacity="${glowOp}"/>` : '';
       dots+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${gkR}" fill="#1a1a2e" stroke="${TIER_COL[0]}" stroke-width="${gkSW}" opacity="${op}"/>
         <text x="${sx.toFixed(1)}" y="${(sy+5).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="${colorOverride?11:9}" font-weight="700" fill="${TIER_COL[0]}" opacity="${op}">GK</text>
-        <text x="${sx.toFixed(1)}" y="${(sy+gkR+16).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="${colorOverride?10:9}" font-weight="${colorOverride?'600':'400'}" fill="${nameCol}" opacity="${op}">${dispN(p.name)}</text>`;
+        <text x="${sx.toFixed(1)}" y="${(sy+gkR+16).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="${colorOverride?10:9}" font-weight="${colorOverride?'600':'400'}" fill="${nameCol}" opacity="${op}">${dispN(p.name)}</text>
+        <g class="pg-tip">
+          <rect x="${(sx-tipW/2).toFixed(0)}" y="${(tipY-14).toFixed(0)}" width="${tipW.toFixed(0)}" height="20" rx="5" fill="#111827" stroke="${TIER_COL[0]}" stroke-width="1.2"/>
+          <text x="${sx.toFixed(1)}" y="${(tipY+1).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#ffffff">${p.name} · GK</text>
+        </g>
+      </g>`;
     });
 
     // Outfield dots (size proportional to possession count; semi-transparent if using lineup fallback)
@@ -3184,15 +3192,24 @@
       const shortNameCol = colorOverride ? '#e6edf3' : '#8b949e';
       const shortNameFS = colorOverride ? 9 : 7.5;
       const nLabelCol = colorOverride ? '#a0a8b0' : '#484f58';
-      dots+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${(R+7).toFixed(0)}" fill="${col}" fill-opacity="${glowOp}"/>
+      const tipY = sy - R - 28;
+      const tipW = Math.max(p.name.length * 6.5 + 20, 80);
+      dots+=`<g class="pg" style="cursor:pointer">
+        <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${(R+7).toFixed(0)}" fill="${col}" fill-opacity="${glowOp}"/>
         <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${R.toFixed(0)}" fill="${colorOverride?'#152015':'#111c11'}" stroke="${col}" stroke-width="${sw}" opacity="${op}"/>
         <text x="${sx.toFixed(1)}" y="${(sy+posFS*0.35).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="${posFS}" font-weight="700" fill="${col}" opacity="${op}">${posLabel}</text>
         <text x="${sx.toFixed(1)}" y="${(sy+posFS*0.35+shortNameFS+2).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="${shortNameFS}" font-weight="${colorOverride?'600':'400'}" fill="${shortNameCol}" opacity="${op}">${p.name.split(' ').pop().substring(0,9)}</text>
         <text x="${sx.toFixed(1)}" y="${(sy+R+nameFS+8).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="${nameFS}" font-weight="${colorOverride?'600':'400'}" fill="${nameCol}" opacity="${op}">${dispN(p.name)}</text>
-        <text x="${sx.toFixed(1)}" y="${(sy+R+nameFS+20).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="${nLabelCol}" opacity="${op}">${nLabel}</text>`;
+        <text x="${sx.toFixed(1)}" y="${(sy+R+nameFS+20).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="${nLabelCol}" opacity="${op}">${nLabel}</text>
+        <g class="pg-tip">
+          <rect x="${(sx-tipW/2).toFixed(0)}" y="${(tipY-14).toFixed(0)}" width="${tipW.toFixed(0)}" height="20" rx="5" fill="#111827" stroke="${col}" stroke-width="1.2"/>
+          <text x="${sx.toFixed(1)}" y="${(tipY+1).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="${col}">${p.name} · ${p.position}</text>
+        </g>
+      </g>`;
     });
 
-    return `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${pitch}${lines}${hull}${centroid}${widthAnnot}${dots}</svg>`;
+    const svgStyle = `<defs><style>.pg-tip{display:none;pointer-events:none}.pg:hover .pg-tip{display:block}</style></defs>`;
+    return `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block;overflow:visible">${svgStyle}${pitch}${lines}${hull}${centroid}${widthAnnot}${dots}</svg>`;
   }
 
   // Build metrics cards + table for a single shape
