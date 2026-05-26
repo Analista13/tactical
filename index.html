@@ -2960,7 +2960,7 @@
   }
 
   // Compute avg positions per player for a given phase & period from match data
-  function computeTeamShape(matchData, phase, period, matchId) {
+  function computeTeamShape(matchData, phase, period, matchId, thirdFilter = null) {
     // ── Selección de los 11 jugadores según el momento del partido ──
     // period=2 (2ª parte) → los 11 que ACABARON (end_time=null)
     // period=0/1 (general / 1ª parte) → los 11 TITULARES (start_time="00:00:00")
@@ -2981,8 +2981,13 @@
     const squadNames = new Set(squad11.map(r => r[1]));
     let data = matchData.filter(e => e.player_name && squadNames.has(e.player_name));
     if (period) data = data.filter(e => e.period === period);
-    if (phase === 'ataque') data = data.filter(e => e.third_start === 'attacking_third');
-    else                    data = data.filter(e => e.third_start === 'defensive_third');
+    if (thirdFilter) {
+      data = data.filter(e => e.third_start === thirdFilter);
+    } else if (phase === 'ataque') {
+      data = data.filter(e => e.third_start === 'attacking_third');
+    } else {
+      data = data.filter(e => e.third_start === 'defensive_third');
+    }
 
     // Acumular posiciones por jugador
     const acc = {};
@@ -3554,26 +3559,37 @@
         const s2=computeTeamShape(matchData,bloquePhase,2,bloqueMatchId);
         renderBloqueComp(cont,s1,s2,bloquePhase);
       } else {
-        const period=bloqueSubTab==='1parte'?1:bloqueSubTab==='2parte'?2:0;
-        const shape=computeTeamShape(matchData,bloquePhase,period,bloqueMatchId);
+        // Zonas: estructura del equipo por tercio del campo donde tiene la posesión
+        const ZONA_MAP = {zona1:'defensive_third', zona2:'middle_third', zona3:'attacking_third'};
+        const ZONA_META = {
+          zona1: {col:'#58a6ff', lbl:'ZONA 1 — Tercio propio', sub:'Posesiones en el tercio defensivo (salida de balón)'},
+          zona2: {col:'#e3b341', lbl:'ZONA 2 — Tercio central', sub:'Posesiones en el centro del campo'},
+          zona3: {col:'#f85149', lbl:'ZONA 3 — Tercio rival', sub:'Posesiones en el tercio de ataque (llegada al área)'},
+        };
+        const isZona = bloqueSubTab in ZONA_MAP;
+        const thirdFilter = isZona ? ZONA_MAP[bloqueSubTab] : null;
+        const period = bloqueSubTab==='1parte'?1:bloqueSubTab==='2parte'?2:0;
+        const shape = computeTeamShape(matchData, bloquePhase, period, bloqueMatchId, thirdFilter);
         if(!shape.players.length&&!shape.gk.length){
           cont.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3)">Sin posesiones suficientes en esta fase del partido</div>`;
           return;
         }
         const isAtq=bloquePhase==='ataque';
-        const phCol=isAtq?'#f0883e':'#58a6ff';
-        const phBg =isAtq?'rgba(240,136,62,0.08)':'rgba(88,166,255,0.08)';
+        const phCol = isZona ? ZONA_META[bloqueSubTab].col : (isAtq?'#f0883e':'#58a6ff');
+        const phBg  = isZona ? phCol+'14' : (isAtq?'rgba(240,136,62,0.08)':'rgba(88,166,255,0.08)');
+        const phLbl = isZona ? ZONA_META[bloqueSubTab].lbl : (isAtq?'ATAQUE':'DEFENSA');
+        const phSub = isZona ? ZONA_META[bloqueSubTab].sub : (isAtq?'attacking_third':'defensive_third')+' (SkillCorner) · mín. 5 pos. · resto = global';
         const {cards,table,legend}=buildBloqueMetrics(shape,bloquePhase);
         const filterBarSingle = bloqueSubTab==='general' ? buildBloqueNFilterBar() : '';
         cont.innerHTML=filterBarSingle+`<div style="display:grid;gap:20px">
           <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
             <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-              <span style="font-size:11px;font-weight:700;color:${phCol};background:${phBg};padding:3px 12px;border-radius:20px;letter-spacing:1px">${isAtq?'ATAQUE':'DEFENSA'}</span>
+              <span style="font-size:11px;font-weight:700;color:${phCol};background:${phBg};padding:3px 12px;border-radius:20px;letter-spacing:1px">${phLbl}</span>
               ${(()=>{const bt=shape.blockType;if(!bt)return '';const[bl,bc]={high:['🔴 HIGH BLOCK','#f85149'],mid:['🟡 MID BLOCK','#e3b341'],low:['🔵 LOW BLOCK','#58a6ff']}[bt]||['',''];return `<span style="font-size:11px;font-weight:700;color:${bc};background:${bc}22;padding:3px 10px;border-radius:20px">${bl}</span>`;})()}
               <span style="font-size:12px;color:var(--text2)">${shape.players.length+shape.gk.length} jugadores · ${bloqueSubTab==='2parte'?'once final':'once inicial'}</span>
-              <span style="font-size:11px;color:var(--text3);margin-left:auto">${isAtq?'attacking_third':'defensive_third'} (SkillCorner) · mín. 5 pos. · resto = global</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:auto">${phSub}</span>
             </div>
-            ${buildBloqueSVG(shape,bloquePhase)}
+            ${buildBloqueSVG(shape, bloquePhase, isZona ? phCol : null)}
           </div>
           ${cards}
           ${table}
@@ -3627,6 +3643,9 @@
           <button id="bst-1parte"      class="subtab ${bloqueSubTab==='1parte'?'active':''}"      onclick="setBloqueSubTab('1parte')">1ª Parte</button>
           <button id="bst-2parte"      class="subtab ${bloqueSubTab==='2parte'?'active':''}"      onclick="setBloqueSubTab('2parte')">2ª Parte</button>
           <button id="bst-comparativa" class="subtab ${bloqueSubTab==='comparativa'?'active':''}" onclick="setBloqueSubTab('comparativa')">⚡ Comparativa</button>
+          <button id="bst-zona1"       class="subtab ${bloqueSubTab==='zona1'?'active':''}"       onclick="setBloqueSubTab('zona1')">🔵 Zona 1</button>
+          <button id="bst-zona2"       class="subtab ${bloqueSubTab==='zona2'?'active':''}"       onclick="setBloqueSubTab('zona2')">🟡 Zona 2</button>
+          <button id="bst-zona3"       class="subtab ${bloqueSubTab==='zona3'?'active':''}"       onclick="setBloqueSubTab('zona3')">🔴 Zona 3</button>
           <button id="bst-estado"      class="subtab ${bloqueSubTab==='estado'?'active':''}"      onclick="setBloqueSubTab('estado')">📊 Por Estado</button>
         </div>
       </div>
