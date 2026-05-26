@@ -3762,6 +3762,21 @@
     </div>`;
   }
 
+  // Selector de tramo en "Por Estado" — muestra/oculta el campo correcto
+  function bseSelect(mid, idx) {
+    document.querySelectorAll('.bse-f-'+mid).forEach((el,i) => {
+      el.style.display = i===idx ? 'block' : 'none';
+    });
+    document.querySelectorAll('.bse-b-'+mid).forEach((el,i) => {
+      const c = el.dataset.col;
+      const a = i===idx;
+      el.style.background  = a ? c+'33' : 'transparent';
+      el.style.color       = a ? c : 'var(--text2)';
+      el.style.borderColor = a ? c : 'var(--border)';
+      el.style.fontWeight  = a ? '700' : '500';
+    });
+  }
+
   async function renderBloqueEstado() {
     const cont = document.getElementById('bloqueCont');
     if (!cont) return;
@@ -3832,40 +3847,62 @@
           </div>`;
         }
 
-        // ── Mini-campo por tramo ──────────────────────────────────────────────
-        const segCards = segs.map(seg => {
+        // ── Un campo grande + tabs de tramo ──────────────────────────────────
+        const mid = p.id;
+
+        // Tabs de selección (uno por tramo)
+        const segTabs = segs.map((seg, si) => {
+          const state = seg.ponf > seg.rival ? 'ganando' : seg.ponf < seg.rival ? 'perdiendo' : 'empatando';
+          const col   = STATE_COL[state];
+          const emo   = STATE_EMO[state];
+          const scoreLocal = isHome ? seg.ponf : seg.rival;
+          const scoreVis   = isHome ? seg.rival : seg.ponf;
+          const endLabel   = seg.end >= 95 ? "90+'" : `${seg.end}'`;
+          const first = si === 0;
+          return `<button class="bse-b-${mid}" data-col="${col}"
+            onclick="bseSelect(${mid},${si})"
+            style="background:${first ? col+'33' : 'transparent'};color:${first ? col : 'var(--text2)'};
+            border:1.5px solid ${first ? col : 'var(--border)'};font-weight:${first ? '700' : '500'};
+            border-radius:20px;padding:7px 16px;font-family:'DM Sans',sans-serif;font-size:13px;
+            cursor:pointer;transition:all 0.15s;white-space:nowrap">
+            ${emo} <b style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:1px">${scoreLocal}-${scoreVis}</b>
+            <span style="font-size:11px;opacity:0.8"> ${seg.start}'→${endLabel}</span>
+          </button>`;
+        }).join('');
+
+        // Campo grande por tramo (pre-renderizado, visible solo el seleccionado)
+        const segFields = segs.map((seg, si) => {
           const state = seg.ponf > seg.rival ? 'ganando' : seg.ponf < seg.rival ? 'perdiendo' : 'empatando';
           const col   = STATE_COL[state];
           const emo   = STATE_EMO[state];
           const lbl   = STATE_LBL[state];
-          const shape = computeShapeForSegment(md, bloquePhase, p.id, seg.start, seg.end);
-          const bt    = shape.blockType;
-          const btMap = {high: ['HIGH', '#f85149'], mid: ['MID', '#e3b341'], low: ['LOW', '#58a6ff']};
-          const [btLabel, btCol] = btMap[bt] || ['', 'var(--text3)'];
-
-          // Marcador desde perspectiva del partido (local-visitante)
           const scoreLocal = isHome ? seg.ponf : seg.rival;
           const scoreVis   = isHome ? seg.rival : seg.ponf;
           const endLabel   = seg.end >= 95 ? "90+'" : `${seg.end}'`;
-
-          return `<div style="flex:0 0 auto;width:clamp(240px,calc(100%/${Math.min(segs.length,3)} - 12px),420px);background:var(--bg3);border:2px solid ${col};border-top:4px solid ${col};border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 14px ${col}44">
-            <div style="background:${col}33;padding:8px 10px;border-bottom:2px solid ${col}66;flex-shrink:0">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
-                <span style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${col};letter-spacing:1px;line-height:1;text-shadow:0 0 10px ${col}88">${scoreLocal}-${scoreVis}</span>
-                <span style="font-size:10px;font-weight:700;color:#fff;background:${col};padding:2px 8px;border-radius:10px;white-space:nowrap">${emo} ${lbl}</span>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:3px">
-                <span style="font-size:11px;color:var(--text2);font-weight:600">${seg.start}' → ${endLabel}</span>
-                ${bt ? `<span style="font-size:9px;font-weight:700;color:${btCol};background:${btCol}33;padding:1px 6px;border-radius:10px;border:1px solid ${btCol}66">${btLabel}</span>` : ''}
+          const shape = computeShapeForSegment(md, bloquePhase, p.id, seg.start, seg.end);
+          const bt    = shape.blockType;
+          const btMap = {high: ['⬆️ HIGH', '#f85149'], mid: ['➡️ MID', '#e3b341'], low: ['⬇️ LOW', '#58a6ff']};
+          const [btLabel, btCol] = btMap[bt] || ['', ''];
+          return `<div class="bse-f-${mid}" style="display:${si===0?'block':'none'};position:relative;border-top:3px solid ${col}">
+            <div style="position:absolute;top:12px;left:16px;z-index:2;pointer-events:none;display:flex;align-items:flex-end;gap:10px">
+              <span style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:1;color:${col};text-shadow:0 2px 12px #000c,0 0 20px ${col}66">${scoreLocal}-${scoreVis}</span>
+              <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:6px">
+                <span style="font-size:11px;font-weight:700;color:#fff;background:${col};padding:2px 10px;border-radius:10px">${emo} ${lbl}</span>
+                <span style="font-size:11px;color:#e6edf3;font-weight:600">${seg.start}' → ${endLabel}</span>
+                ${bt ? `<span style="font-size:10px;font-weight:700;color:${btCol};background:${btCol}22;padding:1px 8px;border-radius:10px;border:1px solid ${btCol}55">${btLabel}</span>` : ''}
               </div>
             </div>
-            <div style="flex:1">${buildBloqueSVG(shape, bloquePhase, col)}</div>
+            ${buildBloqueSVG(shape, bloquePhase, col)}
           </div>`;
         }).join('');
 
-        return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px">
+        return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px">
           ${header}
-          <div style="padding:12px;display:flex;gap:12px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:16px">${segCards}</div>
+          <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-right:4px">Tramo</span>
+            ${segTabs}
+          </div>
+          ${segFields}
         </div>`;
       }).join('');
 
