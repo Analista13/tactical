@@ -5207,19 +5207,29 @@
     </div>`;
 
     // ── Legend ─────────────────────────────────────────────────────────────────
-    const legendItems = [
-      ['🟢','Línea verde = exitoso (sólida)','#3fb950'],
-      ['🔴','Línea roja = fallido (discontinua)','#f85149'],
-      ['🌸','Rosa = progresivo','#ff7eb6'],
-      ['🟤','Marrón = hacia atrás','#c78842'],
-      ['🟡','Amarillo = horizontal/lateral','#e3b341'],
-      ['🟣','Morado = largo','#a371f7'],
+    const mkLine = (col, dashed=false) =>
+      `<svg width="28" height="10" style="flex-shrink:0"><line x1="0" y1="5" x2="22" y2="5" stroke="${col}" stroke-width="2"${dashed?' stroke-dasharray="6,3"':''}/>${dashed?'':`<polygon points="22,5 16,2 16,8" fill="#3fb950"/>`}</svg>`;
+    const mkDot = (col, ring=false) =>
+      ring ? `<svg width="10" height="10" style="flex-shrink:0"><circle cx="5" cy="5" r="4" fill="none" stroke="${col}" stroke-width="1.5"/></svg>`
+           : `<svg width="10" height="10" style="flex-shrink:0"><circle cx="5" cy="5" r="4" fill="${col}"/></svg>`;
+
+    const legendRows = [
+      [mkLine('#ff7eb6'),        'Exitoso — Progresivo (hacia adelante)',  '#ff7eb6'],
+      [mkLine('#c78842'),        'Exitoso — Hacia atrás',                  '#c78842'],
+      [mkLine('#e3b341'),        'Exitoso — Horizontal/Lateral',           '#e3b341'],
+      [mkLine('#a371f7'),        'Exitoso — Largo',                        '#a371f7'],
+      [mkLine('#f85149',true),   'Fallido (siempre rojo, discontinuo)',     '#f85149'],
     ];
-    const legend = `<div style="display:flex;flex-wrap:wrap;gap:10px 20px;margin-top:14px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius)">
-      ${legendItems.map(([ic,lb,col])=>`<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)">
-        <div style="width:22px;height:2px;background:${col};border-radius:1px"></div>
-        <span>${lb}</span>
+    const legend = `<div style="display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:14px;padding:10px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);align-items:center">
+      <span style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-right:4px">Leyenda</span>
+      ${legendRows.map(([icon,lb,col])=>`<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)">
+        ${icon}<span>${lb}</span>
       </div>`).join('')}
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);margin-left:auto">
+        <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#ff7eb6"/></svg><span>origen (éxito)</span>
+        <svg width="10" height="10" style="margin-left:6px"><circle cx="5" cy="5" r="4" fill="none" stroke="#f85149" stroke-width="1.5"/></svg><span>origen (fallido)</span>
+        <svg width="14" height="10" style="margin-left:6px"><polygon points="14,5 8,2 8,8" fill="#3fb950"/></svg><span>destino (éxito)</span>
+      </div>
     </div>`;
 
     // ── Rival info ─────────────────────────────────────────────────────────────
@@ -5279,50 +5289,53 @@
     });
 
     // ── Pass lines ─────────────────────────────────────────────────────────────
+    // Render order: successful below failed so red lines always visible on top
     let lines = '';
-    // Draw successful first (below failed so failed are visible on top)
-    const sorted = [...passes].sort((a,b) => {
-      const as = a.out==='s'?0:1, bs = b.out==='s'?0:1;
-      return as - bs;
-    });
+    const sorted = [...passes].sort((a,b) => (a.out==='s'?0:1) - (b.out==='s'?0:1));
 
     sorted.forEach(p => {
       if (p.x == null || p.xe == null) return;
-      const {sx:x1,sy:y1} = sv(p.x, p.y||0);
-      const {sx:x2,sy:y2} = sv(p.xe, p.ye||0);
-      const succ = p.out === 's';
-      const type = getPassType(p);
-      const typeMeta = PASS_TYPE_META[type] || PASS_TYPE_META.other;
-      const typeCol  = typeMeta.color;
-
-      // Skip trivial zero-length passes
+      const {sx:x1,sy:y1} = sv(p.x,  p.y  || 0);
+      const {sx:x2,sy:y2} = sv(p.xe, p.ye || 0);
+      const succ    = p.out === 's';
+      const typeCol = (PASS_TYPE_META[getPassType(p)] || PASS_TYPE_META.other).color;
       const dx = x2-x1, dy = y2-y1;
-      if (Math.abs(dx)<2 && Math.abs(dy)<2) return;
+      if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
 
-      // Layer 1: thick success/fail glow
-      const glowCol = succ ? '#3fb950' : '#f85149';
-      const dashArr = succ ? '' : 'stroke-dasharray="7,4"';
-      lines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
-        stroke="${glowCol}" stroke-width="5" stroke-opacity="0.18" stroke-linecap="round" ${dashArr}/>`;
-
-      // Layer 2: type-colored line
-      lines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
-        stroke="${typeCol}" stroke-width="1.8" stroke-opacity="${succ?0.75:0.85}" stroke-linecap="round" ${dashArr}/>`;
-
-      // Arrowhead at destination (successful only)
       if (succ) {
+        // ── ÉXITO: type-colored line + green glow + green arrowhead ──────────
+        // 1. Glow verde muy sutil bajo la línea de tipo
+        lines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
+          stroke="#3fb950" stroke-width="6" stroke-opacity="0.10" stroke-linecap="round"/>`;
+        // 2. Línea del tipo (color semántico), sólida
+        lines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
+          stroke="${typeCol}" stroke-width="2" stroke-opacity="0.82" stroke-linecap="round"/>`;
+        // 3. Punta de flecha VERDE (éxito)
         const len = Math.sqrt(dx*dx+dy*dy);
         if (len > 0) {
           const nx=dx/len, ny=dy/len;
-          const ax=x2-nx*8, ay=y2-ny*8;
-          const px=-ny*4, py=nx*4;
+          const ax=x2-nx*9, ay=y2-ny*9;
+          const px=-ny*4.5, py=nx*4.5;
           lines += `<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(ax+px).toFixed(1)},${(ay+py).toFixed(1)} ${(ax-px).toFixed(1)},${(ay-py).toFixed(1)}"
-            fill="${typeCol}" fill-opacity="0.75"/>`;
+            fill="#3fb950" fill-opacity="0.90"/>`;
         }
+        // 4. Punto origen del color del tipo
+        lines += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5"
+          fill="${typeCol}" fill-opacity="0.85" stroke="#0d1f0d" stroke-width="0.8"/>`;
+      } else {
+        // ── FALLIDO: siempre rojo, discontinuo ───────────────────────────────
+        // 1. Glow rojo sutil
+        lines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
+          stroke="#f85149" stroke-width="5" stroke-opacity="0.12" stroke-linecap="round"
+          stroke-dasharray="8,5"/>`;
+        // 2. Línea roja discontinua
+        lines += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
+          stroke="#f85149" stroke-width="1.6" stroke-opacity="0.72" stroke-linecap="round"
+          stroke-dasharray="8,5"/>`;
+        // 3. Punto origen rojo (con ring para diferenciarlo del éxito)
+        lines += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5"
+          fill="none" stroke="#f85149" stroke-width="1.5" stroke-opacity="0.80"/>`;
       }
-
-      // Origin dot
-      lines += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3" fill="${glowCol}" fill-opacity="0.6"/>`;
     });
 
     // ── Zone click hint ────────────────────────────────────────────────────────
