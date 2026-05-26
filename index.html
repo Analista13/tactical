@@ -3477,11 +3477,21 @@
     if (_oopCache.has(matchId)) return _oopCache.get(matchId);
     try {
       const resp = await fetch(`data/${matchId}_oop.json`);
-      if (!resp.ok) return [];
+      if (!resp.ok) { _oopCache.set(matchId, []); return []; }
       const data = await resp.json();
       _oopCache.set(matchId, data);
       return data;
-    } catch(e) { return []; }
+    } catch(e) { _oopCache.set(matchId, []); return []; }
+  }
+
+  // Devuelve datos OOP de todos los partidos disponibles (para fallback de temporada)
+  async function getAllOopData() {
+    if (_oopCache.has('__all__')) return _oopCache.get('__all__');
+    const ids = getPartidos().map(p => p.id);
+    const allArrays = await Promise.all(ids.map(id => getOopData(id)));
+    const combined = [].concat(...allArrays);
+    _oopCache.set('__all__', combined);
+    return combined;
   }
 
   // Computes a team shape (similar to computeTeamShape) but from OOP engagement events.
@@ -3493,10 +3503,15 @@
     if (period) data = data.filter(e => e.p === period);
     if (data.length < 5) return null;
 
-    const rawLineup = PONF_LINEUPS[matchId] || [];
+    // Build position map: from specific match, or aggregate all lineups if matchId is null
     const posMap = {};
-    rawLineup.forEach(r => {
-      posMap[r[1]] = resolvePlayerPosition({id: r[0], position: r[2]});
+    const lineupsToUse = matchId
+      ? [PONF_LINEUPS[matchId] || []]
+      : Object.values(PONF_LINEUPS);
+    lineupsToUse.forEach(lineup => {
+      (lineup || []).forEach(r => {
+        if (!posMap[r[1]]) posMap[r[1]] = resolvePlayerPosition({id: r[0], position: r[2]});
+      });
     });
 
     // Aggregate positions per player
@@ -3686,15 +3701,31 @@
         </div>`;
       } else {
         // Defensa: usar datos OOP reales (on_ball_engagement events)
-        const oopData = await getOopData(bloqueMatchId);
-        shape = computeDefensiveShape(oopData, ZONA_BLOCK_DEF[bloqueSubTab], 0, bloqueMatchId);
+        let oopData = await getOopData(bloqueMatchId);
+        let isFallback = false;
+        shape = oopData.length >= 5
+          ? computeDefensiveShape(oopData, ZONA_BLOCK_DEF[bloqueSubTab], 0, bloqueMatchId)
+          : null;
+
+        // Fallback: si el partido no tiene datos OOP, usar toda la temporada
+        if (!shape) {
+          oopData = await getAllOopData();
+          shape = computeDefensiveShape(oopData, ZONA_BLOCK_DEF[bloqueSubTab], 0, null);
+          isFallback = true;
+        }
+
         if (!shape || (!shape.players.length && !shape.gk.length)) {
-          cont.innerHTML = `<div style="text-align:center;padding:60px;color:var(--text3)">Sin datos defensivos suficientes para esta zona<br><small style="color:var(--text3);font-size:11px">Se necesitan al menos 3 jugadores con 3+ intervenciones</small></div>`;
+          cont.innerHTML = `<div style="text-align:center;padding:60px;color:var(--text3)">Sin datos defensivos suficientes para esta zona</div>`;
           return;
         }
         const meta = ZONA_META_DEF[bloqueSubTab];
         const {cards, table, legend} = buildBloqueMetrics(shape, bloquePhase);
-        cont.innerHTML = `<div style="display:grid;gap:20px">
+        const fallbackBanner = isFallback
+          ? `<div style="background:rgba(227,179,65,0.1);border:1px solid rgba(227,179,65,0.3);border-radius:6px;padding:8px 14px;font-size:12px;color:#e3b341;margin-bottom:12px">
+               ⚠️ Este partido no tiene datos OOP individuales — mostrando posicionamiento medio de la temporada
+             </div>`
+          : '';
+        cont.innerHTML = fallbackBanner + `<div style="display:grid;gap:20px">
           <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
             ${buildBloqueSVG(shape, bloquePhase, meta.col)}
           </div>
