@@ -218,7 +218,8 @@
   let perdidasRecMatchId = null;        // partido seleccionado en Pérdidas & Rec.
   let perdidasRecSub    = 'perdidas';  // 'perdidas' | 'recuperaciones'
   let perdidasRecDropOpen = false;     // dropdown selector de partido
-  let perdidasPlayer    = null;        // jugador seleccionado para ver sus pérdidas en campo
+  let perdidasPlayer       = null;     // jugador seleccionado para ver sus pérdidas en campo
+  let recuperacionesPlayer = null;     // jugador seleccionado para ver sus recuperaciones en campo
   let pasesMatchId      = null;       // partido seleccionado en mapa de pases
   let pasesPeriod       = 't';        // 't' | '1' | '2'
   let pasesTypeFilter   = 'all';      // 'all'|'prog'|'back'|'lat'|'long'|'fail'
@@ -655,9 +656,17 @@
 
   function setPerdidasPart(p) {
     perdidasPart=p;
-    const cont=document.getElementById('perdidasTabCont');
-    if(cont) cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Cargando...</span></div>`;
-    renderPerdidas();
+    perdidasPlayer=null;
+    recuperacionesPlayer=null;
+    if(perdidasRecSub==='recuperaciones'){
+      const cont=document.getElementById('recupTabCont');
+      if(cont) cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Cargando...</span></div>`;
+      renderRecuperaciones();
+    } else {
+      const cont=document.getElementById('perdidasTabCont');
+      if(cont) cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Cargando...</span></div>`;
+      renderPerdidas();
+    }
   }
 
   function setJugCalorPlayer(name) {
@@ -1389,6 +1398,243 @@
               <div><b style="color:var(--text2)">DIR</b> — Pérdida directa (presión, robo)</div>
               <div><b style="color:var(--text2)">PAS</b> — Pase fallado / impreciso</div>
               <div><b style="color:var(--text2)">/100T</b> — Pérdidas por cada 100 toques</div>
+            </div>
+          </div>
+        </div>`;
+    } catch(e){
+      if(_redRenderSeq===seq) cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
+    }
+  }
+
+  async function renderRecuperaciones() {
+    const seq=++_redRenderSeq;
+    const mid=perdidasRecMatchId;
+    const cont=document.getElementById('recupTabCont');
+    if(!cont) return;
+    cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando recuperaciones...</span></div>`;
+    const partido=PARTIDOS.find(p=>p.id==mid);
+    try {
+      const matchData = await getMatchData(mid);
+
+      // Filtrar por parte
+      const pf=perdidasPart;
+      const filteredData = pf==='total'?matchData:matchData.filter(e=>String(e.period)===pf);
+
+      // Recuperaciones = evento que sigue a possession_loss
+      // Usar third_start para normalizar zona (igual que third en pases)
+      function thirdStartToZone(t){return t==='defensive_third'?1:t==='middle_third'?2:t==='attacking_third'?3:0;}
+      function normRecovCoords(e){
+        const tz=thirdStartToZone(e.third_start);
+        const rz=xToZone(e.x_start);
+        if(tz && tz!==rz) return {x:-e.x_start,y:-(e.y_start||0)};
+        return {x:e.x_start,y:e.y_start||0};
+      }
+
+      const allRecov=[];
+      for(let i=1;i<filteredData.length;i++){
+        const prev=filteredData[i-1], curr=filteredData[i];
+        if(!prev||!curr) continue;
+        if(prev.end_type==='possession_loss' && curr.x_start!=null){
+          allRecov.push(curr);
+        }
+      }
+
+      if(!allRecov.length){
+        if(_redRenderSeq===seq) cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos de recuperaciones</div>`;
+        return;
+      }
+
+      // Toques por jugador (para normalizar)
+      const tqPlayer={};
+      filteredData.forEach(e=>{ tqPlayer[e.player_name]=(tqPlayer[e.player_name]||0)+1; });
+
+      // Heatmap 15 zonas (3 cols × 5 filas) usando coordenadas normalizadas
+      const W=820,H=540,MX=50,MY=40,PW=W-MX*2,PH=H-MY*2;
+      const svPos=(x,y)=>({sx:MX+((x+52.5)/105)*PW,sy:MY+((34-y)/68)*PH});
+      const xR=[[-52.5,-17.5],[-17.5,17.5],[17.5,52.5]];
+      const yR=[[34,20.4],[20.4,6.8],[6.8,-6.8],[-6.8,-20.4],[-20.4,-34]];
+
+      const zones=Array.from({length:3},()=>Array(5).fill(0));
+      const recupPlayer={}, recupZonePlayer={};
+
+      allRecov.forEach(e=>{
+        const {x:nx,y:ny}=normRecovCoords(e);
+        const c=nx<-17.5?0:nx<=17.5?1:2;
+        const l=ny<-20.4?4:ny<-6.8?3:ny<6.8?2:ny<20.4?1:0;
+        if(c>=0&&c<3&&l>=0&&l<5) zones[c][l]++;
+        recupPlayer[e.player_name]=(recupPlayer[e.player_name]||0)+1;
+        const zone=c+1; // 1=defensiva, 2=mediocampo, 3=ataque
+        if(!recupZonePlayer[e.player_name]) recupZonePlayer[e.player_name]={z1:0,z2:0,z3:0};
+        recupZonePlayer[e.player_name]['z'+zone]++;
+      });
+
+      const total=allRecov.length;
+      const maxZ=Math.max(1,...zones.flat());
+
+      // SVG campo
+      let zoneSVG='';
+      if(recuperacionesPlayer){
+        // Modo jugador: dots individuales
+        const playerRecov=allRecov.filter(e=>e.player_name===recuperacionesPlayer);
+        playerRecov.forEach(e=>{
+          const {x:nx,y:ny}=normRecovCoords(e);
+          const {sx,sy}=svPos(nx,ny);
+          const zone=nx<-17.5?1:nx<=17.5?2:3;
+          const col=zone===1?'#58a6ff':zone===2?'#e3b341':'#3fb950';
+          const glow=zone===1?'#0088ff44':zone===2?'#ffaa0044':'#00ff4444';
+          const per=e.period===2?'2ª parte':'1ª parte';
+          const zLabel=zone===1?'Z1 · Bloque bajo':zone===2?'Z2 · Mediocampo':'Z3 · Pressing alto';
+          const tipText=`${per} — Recuperación ${zLabel}`;
+          zoneSVG+=`<g data-tip="${tipText}"
+            onmouseenter="const t=document.getElementById('_recTip');if(t){t.textContent=this.dataset.tip;t.style.display='block'}"
+            onmousemove="const t=document.getElementById('_recTip');if(t){t.style.left=(event.clientX+14)+'px';t.style.top=(event.clientY-36)+'px'}"
+            onmouseleave="const t=document.getElementById('_recTip');if(t)t.style.display='none'"
+            style="cursor:default">
+            <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="14" fill="transparent"/>
+            <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="9" fill="${glow}"/>
+            <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="6" fill="${col}" fill-opacity="0.92" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+            <text x="${sx.toFixed(1)}" y="${(sy+19).toFixed(1)}" text-anchor="middle" font-family="'DM Mono',monospace" font-size="7" fill="${col}" fill-opacity="0.85">P${e.period||1}</text>
+          </g>`;
+        });
+      } else {
+        // Modo equipo: heatmap
+        for(let c=0;c<3;c++) for(let vr=0;vr<5;vr++){
+          const cnt=zones[c][vr];
+          const {sx:sx1,sy:sy1}=svPos(xR[c][0],yR[vr][0]);
+          const {sx:sx2,sy:sy2}=svPos(xR[c][1],yR[vr][1]);
+          const zw=sx2-sx1,zh=sy2-sy1,cx=sx1+zw/2,cy=sy1+zh/2;
+          const pct=((cnt/total)*100).toFixed(1);
+          const op=cnt>0?Math.max(0.04,(cnt/maxZ)*0.75):0;
+          const txtCol=cnt>0?'#ffffff':'#0d2a1a';
+          const subCol=cnt>0?'rgba(255,255,255,0.65)':'#0d2a1a';
+          zoneSVG+=`<rect x="${sx1.toFixed(1)}" y="${sy1.toFixed(1)}" width="${zw.toFixed(1)}" height="${zh.toFixed(1)}" fill="#3fb950" fill-opacity="${op.toFixed(3)}" stroke="#0d2a1a" stroke-width="0.8"/>
+            <text x="${cx.toFixed(1)}" y="${(cy-2).toFixed(1)}" text-anchor="middle" font-family="'Bebas Neue',sans-serif" font-size="16" font-weight="700" fill="${txtCol}">${pct}%</text>
+            <text x="${cx.toFixed(1)}" y="${(cy+13).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="${subCol}">${cnt}</text>`;
+        }
+      }
+
+      const xMids=[MX+PW*0.167,MX+PW*0.5,MX+PW*0.833];
+      const axisLabels=['Z1','Z2','Z3'].map((l,i)=>`<text x="${xMids[i].toFixed(1)}" y="${(MY-10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="#484f58" font-family="'DM Mono',monospace">${l}</text>`).join('')
+        +['C1','C2','C3','C4','C5'].map((l,i)=>`<text x="${(MX-10).toFixed(1)}" y="${(MY+PH*0.1+PH*0.2*i).toFixed(1)}" text-anchor="end" dominant-baseline="middle" font-size="11" font-weight="600" fill="#484f58" font-family="'DM Mono',monospace">${l}</text>`).join('');
+
+      // Ranking jugadores
+      const playerRank=Object.entries(recupPlayer)
+        .map(([name,n])=>({
+          name, n,
+          z1: recupZonePlayer[name]?.z1||0,
+          z2: recupZonePlayer[name]?.z2||0,
+          z3: recupZonePlayer[name]?.z3||0,
+          tq: tqPlayer[name]||1,
+          rate: +((n/(tqPlayer[name]||1))*100).toFixed(1),
+        }))
+        .sort((a,b)=>b.n-a.n);
+
+      const maxN=Math.max(1,...playerRank.map(p=>p.n));
+      const rankRows=playerRank.map((p,i)=>{
+        const barW=Math.round((p.n/maxN)*100);
+        const isTop=i===0;
+        const isSel=recuperacionesPlayer===p.name;
+        const rowBg=isSel?'rgba(63,185,80,0.18)':isTop&&!recuperacionesPlayer?'rgba(63,185,80,0.07)':'';
+        const rowBorder=isSel?'2px solid rgba(63,185,80,0.5)':'1px solid var(--border)';
+        return `<tr onclick="recuperacionesPlayer=${isSel?'null':`'${p.name.replace(/'/g,"\\'")}'`};renderRecuperaciones()"
+          style="border-bottom:${rowBorder};${rowBg?`background:${rowBg};`:''}cursor:pointer;transition:background .15s"
+          onmouseover="this.style.background='rgba(63,185,80,0.12)'" onmouseout="this.style.background='${rowBg}'">
+          <td style="padding:8px 12px;white-space:nowrap">
+            <div style="display:flex;align-items:center;gap:8px">
+              ${isSel?`<span style="font-size:10px;color:#3fb950">▶</span>`:''}
+              <span style="font-size:12px;font-weight:${isSel||isTop?700:500};color:${isSel?'#3fb950':isTop?'var(--text)':'var(--text2)'}">${dispN(p.name)}</span>
+            </div>
+          </td>
+          <td style="padding:8px 10px;text-align:right">
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#3fb950">${p.n}</span>
+          </td>
+          <td style="padding:8px 8px;text-align:right;font-size:11px;color:#58a6ff">${p.z1}</td>
+          <td style="padding:8px 8px;text-align:right;font-size:11px;color:#e3b341">${p.z2}</td>
+          <td style="padding:8px 8px;text-align:right;font-size:11px;color:#3fb950">${p.z3}</td>
+          <td style="padding:8px 14px;text-align:right">
+            <span style="font-size:11px;color:var(--text3)">${p.rate}</span>
+          </td>
+          <td style="padding:8px 14px;min-width:100px">
+            <div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden">
+              <div style="height:5px;width:${barW}%;background:#3fb950;border-radius:3px;opacity:${isSel?1:0.75}"></div>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+
+      const rival=partido.local===currentTeam.name?partido.vis:partido.local;
+      const lugar=partido.local===currentTeam.name?'🏠':'✈️';
+      const pLabel=pf==='total'?'Total':pf==='1'?'1ª Parte':'2ª Parte';
+
+      if(_redRenderSeq!==seq) return;
+      cont.innerHTML=`
+        <div style="display:flex;gap:6px;margin-bottom:14px">
+          ${['total','1','2'].map(p=>`<button onclick="setPerdidasPart('${p}')" style="padding:6px 16px;border-radius:20px;border:1px solid ${pf===p?'#3fb950':'var(--border)'};background:${pf===p?'rgba(63,185,80,0.15)':'var(--bg2)'};color:${pf===p?'#3fb950':'var(--text2)'};font-size:12px;font-weight:${pf===p?700:400};cursor:pointer;letter-spacing:0.5px;transition:all .15s">${p==='total'?'Total':p==='1'?'1ª Parte':'2ª Parte'}</button>`).join('')}
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:18px">
+          <div>
+            <div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${partido.j} · ${partido.f} · ${lugar} · Recuperaciones · ${pLabel}</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">${currentTeam.name} vs ${rival}</div>
+          </div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
+          <div style="margin-left:auto;display:flex;gap:20px;font-size:12px">
+            <span style="color:#3fb950">● <b>${allRecov.filter(e=>xToZone(normRecovCoords(e).x)===3).length}</b> pressing alto (Z3)</span>
+            <span style="color:#e3b341">● <b>${allRecov.filter(e=>xToZone(normRecovCoords(e).x)===2).length}</b> mediocampo (Z2)</span>
+            <span style="color:#58a6ff">● <b>${allRecov.filter(e=>xToZone(normRecovCoords(e).x)===1).length}</b> bloque bajo (Z1)</span>
+            <span style="color:var(--text3)">Total <b>${total}</b></span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 420px;gap:16px;align-items:start">
+          <div>
+            ${recuperacionesPlayer?`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <button onclick="recuperacionesPlayer=null;renderRecuperaciones()" style="background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:5px 13px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">← Ver equipo</button>
+              <span style="font-size:14px;font-weight:700;color:#3fb950">${dispN(recuperacionesPlayer)}</span>
+              <span style="font-size:11px;color:var(--text3)">— recuperaciones individuales</span>
+              <span style="display:flex;gap:10px;margin-left:auto;font-size:11px;align-items:center">
+                <span><span style="color:#58a6ff">●</span> Z1 bloque bajo</span>
+                <span><span style="color:#e3b341">●</span> Z2 mediocampo</span>
+                <span><span style="color:#3fb950">●</span> Z3 pressing</span>
+                <span style="color:var(--text3);font-size:10px">· pasa el ratón para detalles</span>
+              </span>
+            </div>`:''}
+            <div id="_recTip" style="display:none;position:fixed;z-index:9999;background:#1c2128;border:1px solid #30363d;border-radius:7px;padding:6px 12px;font-family:'DM Sans',sans-serif;font-size:12px;color:#c9d1d9;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,0.5);white-space:nowrap"></div>
+            <div style="background:var(--bg2);border:1px solid rgba(63,185,80,0.2);border-radius:var(--radius);overflow:hidden">
+              <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block"
+                onmouseleave="const t=document.getElementById('_recTip');if(t)t.style.display='none'">
+                <rect x="0" y="0" width="${W}" height="${H}" fill="#0d1117"/>
+                <rect x="${MX}" y="${MY}" width="${PW}" height="${PH}" fill="#080f0a" stroke="#0d2a1a" stroke-width="1.5"/>
+                ${zoneSVG}
+                <line x1="${W/2}" y1="${MY}" x2="${W/2}" y2="${H-MY}" stroke="#0d2a1a" stroke-width="1" stroke-dasharray="4,4"/>
+                <circle cx="${W/2}" cy="${H/2}" r="${(PH*9.15/68).toFixed(0)}" fill="none" stroke="#0d2a1a" stroke-width="1"/>
+                <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#0d2a1a" stroke-width="0.8"/>
+                <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#0d2a1a" stroke-width="0.8"/>
+                ${axisLabels}
+                <text x="${MX+8}" y="${H-MY+22}" font-size="10" fill="#0d2a1a">← Portería propia</text>
+                <text x="${W-MX-8}" y="${H-MY+22}" text-anchor="end" font-size="10" fill="#0d2a1a">Portería rival →</text>
+              </svg>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Recuperaciones por jugador ${recuperacionesPlayer?'':'<span style="font-size:9px;color:var(--text3);text-transform:none;letter-spacing:0">· haz clic para ver en el campo</span>'}</div>
+            <div style="background:var(--bg2);border:1px solid rgba(63,185,80,0.2);border-radius:var(--radius);overflow:hidden">
+              <table style="width:100%;border-collapse:collapse">
+                <thead><tr style="border-bottom:2px solid rgba(63,185,80,0.2);background:var(--bg)">
+                  <th style="padding:8px 12px;text-align:left;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-family:'DM Mono',monospace">JUGADOR</th>
+                  <th style="padding:8px 10px;text-align:right;font-size:9px;letter-spacing:1px;color:#3fb950;font-family:'DM Mono',monospace">TOTAL</th>
+                  <th style="padding:8px 8px;text-align:right;font-size:9px;color:#58a6ff;font-family:'DM Mono',monospace">Z1</th>
+                  <th style="padding:8px 8px;text-align:right;font-size:9px;color:#e3b341;font-family:'DM Mono',monospace">Z2</th>
+                  <th style="padding:8px 8px;text-align:right;font-size:9px;color:#3fb950;font-family:'DM Mono',monospace">Z3</th>
+                  <th style="padding:8px 14px;text-align:right;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace">/100T</th>
+                  <th style="padding:8px 14px;min-width:80px"></th>
+                </tr></thead>
+                <tbody>${rankRows}</tbody>
+              </table>
+            </div>
+            <div style="margin-top:12px;font-size:10px;color:var(--text3);line-height:1.8">
+              <div><b style="color:#58a6ff">Z1</b> — Recuperación en campo propio (bloque bajo)</div>
+              <div><b style="color:#e3b341">Z2</b> — Recuperación en mediocampo</div>
+              <div><b style="color:#3fb950">Z3</b> — Recuperación en campo rival (pressing)</div>
+              <div><b style="color:var(--text2)">/100T</b> — Recuperaciones por cada 100 toques</div>
             </div>
           </div>
         </div>`;
@@ -5153,11 +5399,7 @@
 
     let sectionHtml = '';
     if (perdidasRecSub === 'recuperaciones') {
-      sectionHtml = `<div style="padding:60px;text-align:center;color:var(--text3)">
-        <div style="font-size:28px;margin-bottom:12px">🚧</div>
-        <div style="font-size:14px;font-weight:600;color:var(--text2);margin-bottom:6px">Recuperaciones — Próximamente</div>
-        <div style="font-size:12px">Los datos de recuperaciones y presión se están preparando</div>
-      </div>`;
+      sectionHtml = `<div id="recupTabCont"><div class="loading"><div class="spinner"></div><span>Calculando recuperaciones...</span></div></div>`;
     } else {
       sectionHtml = `<div id="perdidasTabCont"><div class="loading"><div class="spinner"></div><span>Calculando pérdidas...</span></div></div>`;
     }
@@ -5165,6 +5407,7 @@
     cont.innerHTML = `<div class="anim">${headerRow}${subBar}${sectionHtml}</div>`;
 
     if (perdidasRecSub === 'perdidas') renderPerdidas();
+    if (perdidasRecSub === 'recuperaciones') renderRecuperaciones();
   }
 
   // ─── MAPA DE PASES ───────────────────────────────────────────────────────────
