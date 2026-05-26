@@ -3569,12 +3569,23 @@
     cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando posición...</span></div>`;
     try {
       const matchData=await getMatchData(bloqueMatchId);
-      const ZONA_MAP={zona1:'defensive_third',zona2:'middle_third',zona3:'attacking_third'};
-      const ZONA_META={
-        zona1:{col:'#58a6ff',lbl:'ZONA 1 — Tercio propio',sub:'Posesiones en el tercio defensivo (salida de balón)'},
-        zona2:{col:'#e3b341',lbl:'ZONA 2 — Tercio central',sub:'Posesiones en el centro del campo'},
-        zona3:{col:'#f85149',lbl:'ZONA 3 — Tercio rival',sub:'Posesiones en el tercio de ataque (llegada al área)'},
-      };
+      // Ataque: Zona1=tercio propio (salida), Zona2=centro, Zona3=tercio rival (llegada)
+      // Defensa: Zona1=HIGH BLOCK (rival en su tercio defensivo), Zona2=MID BLOCK, Zona3=LOW BLOCK
+      const isAtqPhase = bloquePhase==='ataque';
+      const ZONA_MAP = isAtqPhase
+        ? {zona1:'defensive_third', zona2:'middle_third', zona3:'attacking_third'}
+        : {zona1:'attacking_third',  zona2:'middle_third', zona3:'defensive_third'};
+      const ZONA_META = isAtqPhase
+        ? {
+            zona1:{col:'#58a6ff',lbl:'Zona 1 — Tercio propio',  sub:'Posesiones iniciadas en el tercio defensivo (salida de balón)'},
+            zona2:{col:'#e3b341',lbl:'Zona 2 — Tercio central',  sub:'Posesiones iniciadas en el centro del campo'},
+            zona3:{col:'#f85149',lbl:'Zona 3 — Tercio rival',    sub:'Posesiones iniciadas en el tercio de ataque (llegada al área)'},
+          }
+        : {
+            zona1:{col:'#f85149',lbl:'Zona 1 — Bloque alto',    sub:'Rival con balón en su tercio defensivo — presión alta (HIGH BLOCK)'},
+            zona2:{col:'#e3b341',lbl:'Zona 2 — Bloque medio',   sub:'Rival con balón en el tercio central (MID BLOCK)'},
+            zona3:{col:'#58a6ff',lbl:'Zona 3 — Bloque bajo',    sub:'Rival con balón en su tercio de ataque — bloque bajo (LOW BLOCK)'},
+          };
       const thirdFilter=ZONA_MAP[bloqueSubTab];
       const shape=computeTeamShape(matchData,bloquePhase,0,bloqueMatchId,thirdFilter);
       if(!shape.players.length&&!shape.gk.length){
@@ -3582,17 +3593,10 @@
         return;
       }
       const meta=ZONA_META[bloqueSubTab];
-      const phCol=meta.col; const phBg=phCol+'14'; const phLbl=meta.lbl; const phSub=meta.sub;
       const {cards,table,legend}=buildBloqueMetrics(shape,bloquePhase);
       cont.innerHTML=`<div style="display:grid;gap:20px">
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <span style="font-size:11px;font-weight:700;color:${phCol};background:${phBg};padding:3px 12px;border-radius:20px;letter-spacing:1px">${phLbl}</span>
-            ${(()=>{const bt=shape.blockType;if(!bt)return '';const[bl,bc]={high:['🔴 HIGH BLOCK','#f85149'],mid:['🟡 MID BLOCK','#e3b341'],low:['🔵 LOW BLOCK','#58a6ff']}[bt]||['',''];return `<span style="font-size:11px;font-weight:700;color:${bc};background:${bc}22;padding:3px 10px;border-radius:20px">${bl}</span>`;})()}
-            <span style="font-size:12px;color:var(--text2)">${shape.players.length+shape.gk.length} jugadores · once inicial</span>
-            <span style="font-size:11px;color:var(--text3);margin-left:auto">${phSub}</span>
-          </div>
-          ${buildBloqueSVG(shape,bloquePhase,phCol)}
+          ${buildBloqueSVG(shape,bloquePhase,meta.col)}
         </div>
         ${cards}${table}${legend}
       </div>`;
