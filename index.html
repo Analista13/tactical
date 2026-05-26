@@ -3860,9 +3860,9 @@
       <div id="bloqueSubTabs" style="overflow-x:auto;margin-bottom:20px;padding-bottom:2px">
         <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content;min-width:100%">
           <button id="bst-general" class="subtab ${bloqueSubTab==='general'?'active':''}" onclick="setBloqueSubTab('general')">General</button>
-          <button id="bst-zona1"   class="subtab ${bloqueSubTab==='zona1'?'active':''}"   onclick="setBloqueSubTab('zona1')">Bloque Alto</button>
-          <button id="bst-zona2"   class="subtab ${bloqueSubTab==='zona2'?'active':''}"   onclick="setBloqueSubTab('zona2')">Bloque Medio</button>
-          <button id="bst-zona3"   class="subtab ${bloqueSubTab==='zona3'?'active':''}"   onclick="setBloqueSubTab('zona3')">Bloque Bajo</button>
+          <button id="bst-zona1"   class="subtab ${bloqueSubTab==='zona1'?'active':''}"   onclick="setBloqueSubTab('zona1')">${bloquePhase==='defensa'?'Bloque Alto':'Zona 1'}</button>
+          <button id="bst-zona2"   class="subtab ${bloqueSubTab==='zona2'?'active':''}"   onclick="setBloqueSubTab('zona2')">${bloquePhase==='defensa'?'Bloque Medio':'Zona 2'}</button>
+          <button id="bst-zona3"   class="subtab ${bloqueSubTab==='zona3'?'active':''}"   onclick="setBloqueSubTab('zona3')">${bloquePhase==='defensa'?'Bloque Bajo':'Zona 3'}</button>
         </div>
       </div>`}
       <div id="bloqueCont">
