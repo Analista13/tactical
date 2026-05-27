@@ -6522,31 +6522,41 @@
     // ── Match grid selector ─────────────────────────────────────────────────
     const rival   = partido ? (partido.local === currentTeam.name ? partido.vis : partido.local) : null;
     const esLocal = partido ? partido.local === currentTeam.name : false;
-    const selLabel = partido ? `${rival?.toUpperCase()} (${partido.j})` : 'UN PARTIDO';
 
-    const matchGrid = `
-      <div style="margin-bottom:16px">
-        <div style="font-size:10px;font-weight:700;letter-spacing:0.8px;color:var(--text3);margin-bottom:10px">
-          SELECCIONA UN PARTIDO · ${selLabel}
+    const gridCards = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:5px;margin-top:10px">
+      ${partidos.map(p => {
+        const sel  = p.id === transMatchId;
+        const rv   = p.local === currentTeam.name ? p.vis : p.local;
+        const home = p.local === currentTeam.name;
+        const rvShort = rv.length > 13 ? rv.substring(0,12)+'…' : rv;
+        return `<button onclick="transMatchId=${p.id};transDropOpen=false;renderTransiciones()"
+          style="background:${sel?'rgba(88,166,255,0.08)':'var(--bg2)'};border:1px solid ${sel?'rgba(88,166,255,0.5)':'var(--border)'};border-radius:8px;padding:8px 10px;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px;transition:all 0.12s">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:11px;font-weight:800;color:${sel?'var(--blue)':'var(--text1)'}">${p.j}</span>
+            <span style="font-size:10px">${home?'🏠':'✈️'}</span>
+          </div>
+          <span style="font-size:11px;color:${sel?'var(--blue)':'var(--text2)'};font-weight:${sel?700:400};line-height:1.2">${rvShort}</span>
+          <span style="font-size:11px;font-weight:700;color:${sel?'var(--accent)':'var(--text3)'}">${p.s}</span>
+        </button>`;
+      }).join('')}
+    </div>`;
+
+    const matchGrid = `<div style="background:var(--bg2);border:1px solid ${transDropOpen?'rgba(88,166,255,0.35)':'var(--border)'};border-radius:10px;padding:12px 14px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          ${partido ? `
+            <span style="font-size:13px;font-weight:700;color:var(--text1)">${esLocal?'🏠':'✈️'} ${partido.j} · ${rival}</span>
+            <span style="font-size:15px;font-weight:800;color:var(--accent)">${partido.s}</span>
+            <span style="font-size:11px;color:var(--text3)">${partido.f}</span>
+          ` : `<span style="font-size:13px;color:var(--text3)">Selecciona un partido</span>`}
         </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:5px">
-          ${partidos.map(p => {
-            const sel  = p.id === transMatchId;
-            const rv   = p.local === currentTeam.name ? p.vis : p.local;
-            const home = p.local === currentTeam.name;
-            const rvShort = rv.length > 13 ? rv.substring(0,12)+'…' : rv;
-            return `<button onclick="transMatchId=${p.id};renderTransiciones()"
-              style="background:${sel?'rgba(88,166,255,0.08)':'var(--bg2)'};border:1px solid ${sel?'rgba(88,166,255,0.5)':'var(--border)'};border-radius:8px;padding:8px 10px;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px;transition:all 0.12s">
-              <div style="display:flex;align-items:center;justify-content:space-between">
-                <span style="font-size:11px;font-weight:800;color:${sel?'var(--blue)':'var(--text1)'}">${p.j}</span>
-                <span style="font-size:10px">${home?'🏠':'✈️'}</span>
-              </div>
-              <span style="font-size:11px;color:${sel?'var(--blue)':'var(--text2)'};font-weight:${sel?700:400};line-height:1.2">${rvShort}</span>
-              <span style="font-size:11px;font-weight:700;color:${sel?'var(--accent)':'var(--text3)'}">${p.s}</span>
-            </button>`;
-          }).join('')}
-        </div>
-      </div>`;
+        <button onclick="transDropOpen=!transDropOpen;renderTransiciones()"
+          style="background:${transDropOpen?'rgba(88,166,255,0.12)':'var(--bg3)'};border:1px solid ${transDropOpen?'rgba(88,166,255,0.4)':'var(--border)'};color:${transDropOpen?'var(--blue)':'var(--text2)'};padding:5px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">
+          ${transDropOpen ? '▲ Cerrar' : '▼ Elegir'}
+        </button>
+      </div>
+      ${transDropOpen ? gridCards : ''}
+    </div>`;
 
     // ── Sub-tabs ────────────────────────────────────────────────────────────
     const subTabBtn = (id, lbl) => {
