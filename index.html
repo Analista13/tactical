@@ -7054,7 +7054,8 @@
   // isOff=false → attack direction is negative x (rival area at x≤-36, Ponfe's at x≤-36)
   function _crossZone(xe, ye, flank, isOff) {
     if (xe == null || ye == null) return 'fuera';
-    const inArea = isOff ? xe >= 36 : xe <= -36;
+    // Must be inside the penalty area in BOTH dimensions (18-yard box: x≥36, |y|≤20.16)
+    const inArea = isOff ? (xe >= 36 && Math.abs(ye) <= 20.16) : (xe <= -36 && Math.abs(ye) <= 20.16);
     if (!inArea) return 'fuera';
     // Near post = same side as crosser; far post = opposite side
     const nearSide = flank === 'wide_left' ? ye > 3 : ye < -3;
@@ -7247,17 +7248,20 @@
       <span>| ○ blanco = tiro · ○ oro = gol</span>
     </div>`;
 
-    // Crossers table
-    function tblRow(name,d,accent,maxV) {
-      const pct=d.tot?Math.round(d.ok/d.tot*100):0;
+    // Crossers table — isRem=true for rematadores (no OK/% field, show shot%)
+    function tblRow(name,d,accent,maxV,isRem=false) {
+      const pct = isRem
+        ? (d.tot ? Math.round((d.shot||0)/d.tot*100)+'%' : '—')
+        : (d.tot ? Math.round((d.ok||0)/d.tot*100)+'%' : '—');
+      const okVal = isRem ? '—' : (d.ok != null ? d.ok : '—');
       const bw=Math.round(d.tot/maxV*100);
       const sn=name.split(' ').pop().substring(0,12);
       return `<tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
         <td style="padding:5px 7px;font-size:12px;font-weight:600;color:var(--text)">${sn}</td>
         <td style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">${d.pos||'—'}</td>
         <td style="padding:5px 5px;font-size:13px;font-weight:800;color:var(--text);text-align:center">${d.tot}</td>
-        <td style="padding:5px 5px;font-size:11px;color:#3fb950;text-align:center">${d.ok||'—'}</td>
-        <td style="padding:5px 5px;font-size:10px;color:var(--text3);text-align:center">${pct}%</td>
+        <td style="padding:5px 5px;font-size:11px;color:#3fb950;text-align:center">${okVal}</td>
+        <td style="padding:5px 5px;font-size:10px;color:var(--text3);text-align:center">${pct}</td>
         <td style="padding:5px 5px;font-size:11px;color:#f85149;text-align:center">${d.shot||'—'}</td>
         <td style="padding:5px 5px;font-size:11px;color:#ffd700;text-align:center">${d.goal||'—'}</td>
         <td style="padding:5px 6px;width:44px"><div style="height:3px;background:var(--bg4);border-radius:2px"><div style="width:${bw}%;height:3px;background:${accent};border-radius:2px"></div></div></td>
@@ -7273,9 +7277,19 @@
       <th style="padding:5px 5px;font-size:9px;color:#ffd700;text-align:center">GOL</th>
       <th></th>
     </tr></thead>`;
-    const centRows=centradores.slice(0,10).map(([n,d])=>tblRow(n,d,'#58a6ff',maxC)).join('');
-    const remRows=rematadores.slice(0,10).map(([n,d])=>tblRow(n,d,'#3fb950',maxR)).join('');
+    const centRows=centradores.slice(0,10).map(([n,d])=>tblRow(n,d,'#58a6ff',maxC,false)).join('');
+    const remRows=rematadores.slice(0,10).map(([n,d])=>tblRow(n,d,'#3fb950',maxR,true)).join('');
     const empty=(cols,msg)=>`<tr><td colspan="${cols}" style="padding:14px;text-align:center;color:var(--text3);font-size:11px">${msg}</td></tr>`;
+    const tblHeadRem=()=>`<thead><tr style="border-bottom:1px solid var(--border)">
+      <th style="padding:5px 7px;font-size:9px;color:var(--text3);text-align:left;font-weight:700">JUGADOR</th>
+      <th style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">POS</th>
+      <th style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">TOT</th>
+      <th style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">OK</th>
+      <th style="padding:5px 5px;font-size:9px;color:#f85149;text-align:center">%TIR</th>
+      <th style="padding:5px 5px;font-size:9px;color:#f85149;text-align:center">TIR</th>
+      <th style="padding:5px 5px;font-size:9px;color:#ffd700;text-align:center">GOL</th>
+      <th></th>
+    </tr></thead>`;
     const tables=`<div style="display:flex;flex-direction:column;gap:8px">
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
         <div style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase">⚽ Centradores</div>
@@ -7285,7 +7299,7 @@
       </div>
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
         <div style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase">🎯 Rematadores</div>
-        <table style="width:100%;border-collapse:collapse">${tblHead()}
+        <table style="width:100%;border-collapse:collapse">${tblHeadRem()}
           <tbody>${remRows||empty(8,'Sin datos de rematador')}</tbody>
         </table>
       </div>
@@ -7406,16 +7420,19 @@
       <span>| ○ blanco = tiro · ○ oro = gol</span>
     </div>`;
 
-    function tblRow(name,d,accent,maxV) {
-      const pct=d.tot?Math.round(d.ok/d.tot*100):0;
+    function tblRow(name,d,accent,maxV,isRem=false) {
+      const pct = isRem
+        ? (d.tot ? Math.round((d.shot||0)/d.tot*100)+'%' : '—')
+        : (d.tot ? Math.round((d.ok||0)/d.tot*100)+'%' : '—');
+      const okVal = isRem ? '—' : (d.ok != null ? d.ok : '—');
       const bw=Math.round(d.tot/maxV*100);
       const sn=name.split(' ').pop().substring(0,12);
       return `<tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
         <td style="padding:5px 7px;font-size:12px;font-weight:600;color:var(--text)">${sn}</td>
         <td style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">${d.pos||'—'}</td>
         <td style="padding:5px 5px;font-size:13px;font-weight:800;color:var(--text);text-align:center">${d.tot}</td>
-        <td style="padding:5px 5px;font-size:11px;color:#f85149;text-align:center">${d.ok||'—'}</td>
-        <td style="padding:5px 5px;font-size:10px;color:var(--text3);text-align:center">${pct}%</td>
+        <td style="padding:5px 5px;font-size:11px;color:#f85149;text-align:center">${okVal}</td>
+        <td style="padding:5px 5px;font-size:10px;color:var(--text3);text-align:center">${pct}</td>
         <td style="padding:5px 5px;font-size:11px;color:#f0883e;text-align:center">${d.shot||'—'}</td>
         <td style="padding:5px 5px;font-size:11px;color:#ffd700;text-align:center">${d.goal||'—'}</td>
         <td style="padding:5px 6px;width:44px"><div style="height:3px;background:var(--bg4);border-radius:2px"><div style="width:${bw}%;height:3px;background:${accent};border-radius:2px"></div></div></td>
@@ -7431,8 +7448,18 @@
       <th style="padding:5px 5px;font-size:9px;color:#ffd700;text-align:center">GOL</th>
       <th></th>
     </tr></thead>`;
-    const centRows=centradores.slice(0,10).map(([n,d])=>tblRow(n,d,'#f85149',maxC)).join('');
-    const remRows=rematadores.slice(0,10).map(([n,d])=>tblRow(n,d,'#3fb950',maxR)).join('');
+    const tblHeadRem=`<thead><tr style="border-bottom:1px solid var(--border)">
+      <th style="padding:5px 7px;font-size:9px;color:var(--text3);text-align:left;font-weight:700">JUGADOR</th>
+      <th style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">POS</th>
+      <th style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">TOT</th>
+      <th style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">OK</th>
+      <th style="padding:5px 5px;font-size:9px;color:#f0883e;text-align:center">%TIR</th>
+      <th style="padding:5px 5px;font-size:9px;color:#f0883e;text-align:center">TIR</th>
+      <th style="padding:5px 5px;font-size:9px;color:#ffd700;text-align:center">GOL</th>
+      <th></th>
+    </tr></thead>`;
+    const centRows=centradores.slice(0,10).map(([n,d])=>tblRow(n,d,'#f85149',maxC,false)).join('');
+    const remRows=rematadores.slice(0,10).map(([n,d])=>tblRow(n,d,'#3fb950',maxR,true)).join('');
     const empty=(msg)=>`<tr><td colspan="8" style="padding:14px;text-align:center;color:var(--text3);font-size:11px">${msg}</td></tr>`;
     const noDataNote=noData?`<div style="margin-bottom:14px;padding:10px 14px;background:rgba(240,136,62,0.08);border:1px solid rgba(240,136,62,0.2);border-radius:8px;font-size:12px;color:var(--text3)">⚠️ Sin datos CSV para este partido.</div>`:'';
 
@@ -7445,7 +7472,7 @@
       </div>
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
         <div style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase">🛡️ Rematadores (en área Ponfe)</div>
-        <table style="width:100%;border-collapse:collapse">${tblHead}
+        <table style="width:100%;border-collapse:collapse">${tblHeadRem}
           <tbody>${remRows||empty('Sin datos de rematador')}</tbody>
         </table>
       </div>
