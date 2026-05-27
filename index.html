@@ -6530,6 +6530,12 @@
         const r3 = await fetch(`data/${transMatchId}_carrerasSB.json`);
         runEvents = await r3.json();
       } catch { runEvents = []; }
+      try {
+        if(!window._runSeasonCache) {
+          const r4 = await fetch('data/carrerasSB_season.json');
+          window._runSeasonCache = await r4.json();
+        }
+      } catch { window._runSeasonCache = {}; }
     }
 
     // ── Match grid selector ─────────────────────────────────────────────────
@@ -6613,7 +6619,7 @@
                 <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Periodo</div>
                 <div style="display:flex;gap:4px">${partBtn('total','Total')}${partBtn('1','1ª Parte')}${partBtn('2','2ª Parte')}</div>
               </div>
-              ${_runScatter(runEvents)}
+              ${_runGrid(window._runSeasonCache||{})}
             </div>`
           : `<div style="display:flex;gap:4px;margin-bottom:16px">
               ${partBtn('total','Total')}${partBtn('1','1ª Parte')}${partBtn('2','2ª Parte')}
@@ -6965,82 +6971,127 @@
     if (b) b.style.display = 'none';
   }
 
-  // ─── SCATTER CARRERAS (cuadrante cantidad × eficacia) ─────────────────────
-  function _runScatter(runs) {
-    const SW=340,SH=230,ML=42,MR=18,MT=18,MB=28;
-    const PW=SW-ML-MR, PH=SH-MT-MB;
+  // ─── HEATMAP GRID CARRERAS (estilo informe Tottenham) ────────────────────
+  function _runGrid(season) {
+    if(!season||Object.keys(season).length===0) return '';
 
-    // Per-player stats (only players with ≥2 runs)
-    const pm={};
-    runs.forEach(e=>{
-      if(!e.player) return;
-      if(!pm[e.player]) pm[e.player]={tot:0,rec:0,pos:e.position||'',subtypes:{}};
-      pm[e.player].tot++;
-      if(e.received) pm[e.player].rec++;
-      pm[e.player].subtypes[e.subtype]=(pm[e.player].subtypes[e.subtype]||0)+1;
+    // Offensive positions filter
+    const OFF_POS=['CF','LW','RW','LM','RM','AM','CAM','SS','FW','EXT','LF','RF'];
+    function isOff(pos){ return OFF_POS.some(p=>pos&&pos.toUpperCase().includes(p)); }
+    function posLabel(pos){
+      const p=(pos||'').toUpperCase();
+      if(p.includes('CF')||p.includes('SS')||p.includes('FW')||p.includes('LF')||p.includes('RF')) return 'DEL';
+      if(p.includes('LW')||p.includes('RW')||p.includes('LM')||p.includes('RM')||p.includes('EXT')) return 'EXT';
+      if(p.includes('AM')||p.includes('CAM')) return 'MC';
+      return pos||'—';
+    }
+
+    // Filter players: ≥5 matches, offensive/midfield positions (or top runners)
+    let players = Object.entries(season)
+      .filter(([,d]) => d.matches >= 5)
+      .sort((a,b) => {
+        const pa=isOff(a[1].pos)?0:1, pb=isOff(b[1].pos)?0:1;
+        if(pa!==pb) return pa-pb;
+        return b[1].tot - a[1].tot;
+      })
+      .slice(0,9); // max 9 players
+
+    if(players.length < 2) return '';
+    const N = players.length;
+
+    // Metric definitions: [key, label, group, extractor]
+    const METRICS = [
+      // Group 1: Perfil (per match)
+      ['g1',  null, 'group', 'Perfil de carreras (por partido)'],
+      ['esp', 'A la espalda',        'metric', d => d.matches ? d.espalda/d.matches : 0],
+      ['adel','Adelanto',            'metric', d => d.matches ? d.adelanto/d.matches : 0],
+      ['rec', 'Receptor de centro',  'metric', d => d.matches ? d.receptor_centro/d.matches : 0],
+      ['enl', 'Para enlazar el juego','metric', d => d.matches ? d.enlace/d.matches : 0],
+      // Group 2: Características
+      ['g2',  null, 'group', 'Características de las carreras'],
+      ['prc', '% Carreras recibidas','metric', d => d.tot ? d.rec/d.tot*100 : 0],
+      ['dst', 'Distancia media (m)', 'metric', d => d.dist_mean||0],
+      ['xth', 'Amenaza media (xT)',  'metric', d => d.xthreat_mean!=null ? d.xthreat_mean*1000 : 0],
+    ];
+
+    // For each real metric, compute values and rank
+    function rankColor(pct) {
+      if(pct>=0.75) return '#2ea043';
+      if(pct>=0.50) return '#7ed99a';
+      if(pct>=0.25) return '#ffb3b3';
+      return '#f85149';
+    }
+    function ordinal(n){
+      const sfx=['º','º','º']; return n+(sfx[n-1]||'º');
+    }
+
+    const metricRows = METRICS.map(([key,lbl,type,fn]) => {
+      if(type==='group') return {type:'group', label:fn};
+      // Compute value per player
+      const vals = players.map(([,d]) => fn(d));
+      const sorted=[...vals].sort((a,b)=>a-b);
+      const maxVal = sorted[sorted.length-1]||1;
+      // Rank: 1 = best (highest value)
+      const cells = players.map(([,d],i) => {
+        const v = fn(d);
+        const rank = N - sorted.indexOf(v); // 1=best
+        const pct = 1-(rank-1)/(N-1);       // 1=best, 0=worst
+        const barW = Math.max(6, Math.round(pct*100));
+        const col = rankColor(pct);
+        const show = v>=0.01 ? (lbl.includes('%')?v.toFixed(0)+'%':v.toFixed(1)) : '—';
+        return {rank,pct,barW,col,show,v};
+      });
+      return {type:'metric', label:lbl, cells};
     });
-    const pts=Object.entries(pm).filter(([,d])=>d.tot>=2);
-    if(pts.length<2) return '';
 
-    const tots=pts.map(([,d])=>d.tot);
-    const xMax=Math.max(...tots)*1.15;
-    const xMin=0;
-    // Median for quadrant line
-    const sorted=[...tots].sort((a,b)=>a-b);
-    const medX=sorted[Math.floor(sorted.length/2)];
-    const medY=0.35; // 35% reception as midline
+    // Build column headers
+    const CW = 88; // cell width px
+    const LW = 148; // label column width
+    const headerCols = players.map(([name,d]) => {
+      const sn = name.includes(' ') ? name.split(' ').pop() : name;
+      const pl = posLabel(d.pos);
+      return `<th style="padding:6px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--text1);width:${CW}px;min-width:${CW}px;white-space:nowrap;vertical-align:bottom">
+        <div>${sn}</div>
+        <div style="font-size:9px;font-weight:400;color:var(--text3);margin-top:1px">${pl}</div>
+      </th>`;
+    }).join('');
 
-    const scX=v=>ML+(v-xMin)/(xMax-xMin)*PW;
-    const scY=v=>MT+PH-(v*PH);
+    const rows = metricRows.map((row,ri) => {
+      if(row.type==='group') return `
+        <tr>
+          <td colspan="${N+1}" style="padding:10px 8px 4px;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.5px;background:var(--bg3);border-top:1px solid var(--border)">${row.label}</td>
+        </tr>`;
+      const rowBg = ri%2===0 ? 'rgba(255,255,255,0.01)' : 'transparent';
+      const cells = row.cells.map(c => `
+        <td style="padding:5px 4px;text-align:center">
+          <div style="position:relative;background:rgba(255,255,255,0.06);border-radius:3px;height:30px;overflow:hidden">
+            <div style="position:absolute;left:0;top:0;width:${c.barW}%;height:100%;background:${c.col};opacity:0.85;border-radius:3px"></div>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.6)">${ordinal(c.rank)}</div>
+          </div>
+        </td>`).join('');
+      return `<tr style="background:${rowBg}">
+        <td style="padding:5px 8px;font-size:11px;color:var(--text2);white-space:normal;line-height:1.3;max-width:${LW}px">${row.label}</td>
+        ${cells}
+      </tr>`;
+    }).join('');
 
-    const qx=scX(medX), qy=scY(medY);
-
-    // Axis ticks
-    const xTicks=[0,Math.round(xMax*0.33),Math.round(xMax*0.66),Math.round(xMax)];
-    const yTicks=[0,25,50,75,100];
-
-    let circles='', labels='';
-    pts.forEach(([name,d])=>{
-      const pct=d.tot?d.rec/d.tot:0;
-      const cx=scX(d.tot), cy=scY(pct);
-      const topST=Object.entries(d.subtypes).sort((a,b)=>b[1]-a[1])[0];
-      const col=topST?(_RC[topST[0]]||'#58a6ff'):'#58a6ff';
-      const sn=name.split(' ').pop().substring(0,9);
-      circles+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="5" fill="${col}" fill-opacity="0.9" stroke="rgba(0,0,0,0.4)" stroke-width="1"/>`;
-      const anchor=cx>SW/2?'end':'start';
-      const ldx=cx>SW/2?-8:8;
-      labels+=`<text x="${(cx+ldx).toFixed(1)}" y="${(cy+3.5).toFixed(1)}" font-family="DM Sans,sans-serif" font-size="9" fill="#c9d1d9" text-anchor="${anchor}">${sn}</text>`;
-    });
-
-    const axisX=xTicks.map(v=>`<text x="${scX(v).toFixed(1)}" y="${(SH-MB+10).toFixed(1)}" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.35)" font-family="DM Sans,sans-serif">${v}</text>`).join('');
-    const axisY=yTicks.map(v=>`<text x="${(ML-5).toFixed(1)}" y="${(scY(v/100)+3).toFixed(1)}" text-anchor="end" font-size="8" fill="rgba(255,255,255,0.35)" font-family="DM Sans,sans-serif">${v}%</text>`).join('');
-
-    return `<div style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
-      <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Cantidad × Eficacia</div>
-      <svg viewBox="0 0 ${SW} ${SH}" style="width:100%;display:block">
-        <rect width="${SW}" height="${SH}" fill="transparent"/>
-        <!-- quadrant backgrounds -->
-        <rect x="${ML}" y="${MT}" width="${(qx-ML).toFixed(1)}" height="${(qy-MT).toFixed(1)}" fill="rgba(88,166,255,0.03)"/>
-        <rect x="${qx.toFixed(1)}" y="${MT}" width="${(ML+PW-qx).toFixed(1)}" height="${(qy-MT).toFixed(1)}" fill="rgba(63,185,80,0.04)"/>
-        <rect x="${ML}" y="${qy.toFixed(1)}" width="${(qx-ML).toFixed(1)}" height="${(MT+PH-qy).toFixed(1)}" fill="rgba(255,255,255,0.01)"/>
-        <rect x="${qx.toFixed(1)}" y="${qy.toFixed(1)}" width="${(ML+PW-qx).toFixed(1)}" height="${(MT+PH-qy).toFixed(1)}" fill="rgba(248,81,73,0.03)"/>
-        <!-- axes -->
-        <line x1="${ML}" y1="${MT+PH}" x2="${ML+PW}" y2="${MT+PH}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-        <line x1="${ML}" y1="${MT}" x2="${ML}" y2="${MT+PH}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-        <!-- quadrant dividers -->
-        <line x1="${qx.toFixed(1)}" y1="${MT}" x2="${qx.toFixed(1)}" y2="${(MT+PH).toFixed(1)}" stroke="rgba(255,255,255,0.15)" stroke-dasharray="4,3" stroke-width="1"/>
-        <line x1="${ML}" y1="${qy.toFixed(1)}" x2="${(ML+PW).toFixed(1)}" y2="${qy.toFixed(1)}" stroke="rgba(255,255,255,0.15)" stroke-dasharray="4,3" stroke-width="1"/>
-        <!-- quadrant corner labels -->
-        <text x="${(ML+4)}" y="${(MT+11)}" font-size="7.5" fill="rgba(88,166,255,0.5)" font-family="DM Sans,sans-serif">Selectivos y efectivos</text>
-        <text x="${(ML+PW-4)}" y="${(MT+11)}" text-anchor="end" font-size="7.5" fill="rgba(63,185,80,0.6)" font-family="DM Sans,sans-serif">Muchas + efectivos ✓</text>
-        <text x="${(ML+4)}" y="${(MT+PH-5)}" font-size="7.5" fill="rgba(255,255,255,0.2)" font-family="DM Sans,sans-serif">Poco activos</text>
-        <text x="${(ML+PW-4)}" y="${(MT+PH-5)}" text-anchor="end" font-size="7.5" fill="rgba(248,81,73,0.5)" font-family="DM Sans,sans-serif">Muchas, poca recepción</text>
-        <!-- axis labels -->
-        <text x="${(ML+PW/2)}" y="${SH}" text-anchor="middle" font-size="8.5" fill="rgba(255,255,255,0.4)" font-family="DM Sans,sans-serif">Total carreras</text>
-        <text x="8" y="${(MT+PH/2)}" text-anchor="middle" transform="rotate(-90,8,${(MT+PH/2).toFixed(0)})" font-size="8.5" fill="rgba(255,255,255,0.4)" font-family="DM Sans,sans-serif">% Recibidas</text>
-        ${axisX}${axisY}
-        ${circles}${labels}
-      </svg>
+    return `<div style="flex:1;overflow:hidden;background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow-x:auto">
+      <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;padding:10px 12px 0">Perfil de carreras sin balón — temporada completa · ranking dentro del equipo</div>
+      <table style="border-collapse:collapse;width:100%;min-width:${LW+CW*N}px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="padding:6px 8px;text-align:left;width:${LW}px;min-width:${LW}px;font-size:9px;color:var(--text3)">MÉTRICA</th>
+            ${headerCols}
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="padding:6px 12px;font-size:9px;color:var(--text3)">
+        <span style="display:inline-block;width:10px;height:8px;background:#2ea043;border-radius:2px;margin-right:3px;vertical-align:middle"></span>1º rank
+        <span style="display:inline-block;width:10px;height:8px;background:#7ed99a;border-radius:2px;margin-right:3px;margin-left:8px;vertical-align:middle"></span>Top 50%
+        <span style="display:inline-block;width:10px;height:8px;background:#ffb3b3;border-radius:2px;margin-right:3px;margin-left:8px;vertical-align:middle"></span>Bot 50%
+        <span style="display:inline-block;width:10px;height:8px;background:#f85149;border-radius:2px;margin-right:3px;margin-left:8px;vertical-align:middle"></span>Último rank
+      </div>
     </div>`;
   }
 
