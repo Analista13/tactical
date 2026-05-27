@@ -128,6 +128,7 @@
     <div class="tab" data-tab="perdidasrec" onclick="switchTab('perdidasrec')">📉 Pérdidas & Rec.</div>
     <!-- TAB ALINEACIONES: temporalmente oculto, código preservado -->
     <div class="tab" data-tab="posesion" onclick="switchTab('posesion')">⚡ Posesión</div>
+    <div class="tab" data-tab="transiciones" onclick="switchTab('transiciones')">🔄 Transiciones</div>
     <div style="margin-left:auto;display:flex;gap:3px;align-items:center;padding-right:4px">
       <button id="lv-todos"      onclick="setLocVis('todos')"     style="background:var(--accent);color:#0d1117;font-weight:700;border:none;border-radius:14px;padding:4px 13px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all 0.15s">Todos</button>
       <button id="lv-local"      onclick="setLocVis('local')"     style="background:transparent;color:var(--text2);font-weight:500;border:none;border-radius:14px;padding:4px 13px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all 0.15s">🏠 Local</button>
@@ -233,6 +234,11 @@
   let pasesIndivPlayer  = null;       // nombre del jugador seleccionado
   const _pasesCache     = new Map();  // caché passes data por partido
   let locVis = 'todos';            // 'todos' | 'local' | 'visitante'
+  let transMatchId    = null;
+  let transSubTab     = 'ofensivas';   // 'ofensivas' | 'defensivas'
+  let transDropOpen   = false;
+  let transPart       = 'total';       // 'total' | '1' | '2'
+  let transTypeFilter = 'all';         // 'all' | 'transition' | 'quick_break'
 
   // Filtro Casa/Fuera — devuelve PARTIDOS filtrado por locVis
   function getPartidos() {
@@ -2474,6 +2480,7 @@
     else if(tab === 'perdidasrec')  loadPerdidasRec();
     else if(tab === 'alineaciones') loadAlineaciones();
     else if(tab === 'posesion')    loadPosesion();
+    else if(tab === 'transiciones') loadTransiciones();
   }
 
   // ─── ALINEACIONES ────────────────────────────────────────────────────────────
@@ -6484,6 +6491,339 @@
       font-family="DM Sans,sans-serif" font-size="9" fill="#6e7681">Haz clic en una zona para filtrar</text>`;
 
     return `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block;overflow:visible">${PASS_TIP_CSS}${pitch}${zones}${lines}${hint}</svg>`;
+  }
+
+  // ─── TRANSICIONES ──────────────────────────────────────────────────────────
+
+  function loadTransiciones() {
+    document.getElementById('content').innerHTML = `<div class="loading"><div class="spinner"></div><span>Cargando...</span></div>`;
+    renderTransiciones();
+  }
+
+  async function renderTransiciones() {
+    const cont = document.getElementById('content');
+    const partidos = getPartidos();
+    if (!transMatchId) transMatchId = partidos[partidos.length - 1]?.id ?? null;
+    const partido = partidos.find(p => p.id === transMatchId);
+
+    let events = [];
+    if (transMatchId) {
+      try {
+        const r = await fetch(`data/${transMatchId}.json`);
+        const raw = await r.json();
+        events = raw.e || [];
+      } catch { events = []; }
+    }
+
+    // ── Match selector ──────────────────────────────────────────────────────
+    const dropBtn = `<button onclick="transDropOpen=!transDropOpen;renderTransiciones()"
+      style="background:${transDropOpen?'rgba(88,166,255,0.12)':'var(--bg2)'};border:1px solid ${transDropOpen?'rgba(88,166,255,0.45)':'var(--border)'};color:${transDropOpen?'var(--blue)':'var(--text2)'};padding:5px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap">✎ Elegir</button>`;
+    const dropMenu = transDropOpen ? `<div style="position:absolute;top:36px;right:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:6px;z-index:100;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;width:520px">
+      ${partidos.map(p => {
+        const sel = p.id === transMatchId;
+        const rival = p.local === currentTeam.name ? p.vis : p.local;
+        return `<button onclick="transMatchId=${p.id};transDropOpen=false;renderTransiciones()"
+          style="background:${sel?'rgba(88,166,255,0.1)':'var(--bg3)'};border:1px solid ${sel?'rgba(88,166,255,0.5)':'var(--border)'};color:${sel?'var(--blue)':'var(--text2)'};padding:6px 10px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:1px;min-width:90px">
+          <span style="font-weight:700">J${p.jornada}</span>
+          <span style="font-size:10px;opacity:0.7">${rival.split(' ')[0]}</span>
+        </button>`;
+      }).join('')}
+    </div>` : '';
+
+    // ── Match header ────────────────────────────────────────────────────────
+    let matchHeader = `<span style="color:var(--text3);font-size:13px">Selecciona un partido</span>`;
+    if (partido) {
+      const rival  = partido.local === currentTeam.name ? partido.vis : partido.local;
+      const esLocal = partido.local === currentTeam.name;
+      matchHeader = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:600;color:var(--text1)">${esLocal?'🏠':'✈️'} J${partido.jornada} · ${rival}</span>
+        <span style="font-size:15px;font-weight:800;color:var(--accent)">${partido.gLocal}-${partido.gVis}</span>
+        <span style="font-size:11px;color:var(--text3)">${partido.fecha}</span>
+      </div>`;
+    }
+
+    // ── Sub-tabs ────────────────────────────────────────────────────────────
+    const subTabBtn = (id, lbl) => {
+      const act = transSubTab === id;
+      const col  = id === 'ofensivas' ? '#3fb950' : '#58a6ff';
+      return `<button onclick="transSubTab='${id}';transTypeFilter='all';renderTransiciones()"
+        style="background:transparent;border:none;border-bottom:2px solid ${act?col:'transparent'};color:${act?col:'var(--text2)'};padding:10px 22px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${lbl}</button>`;
+    };
+
+    // ── Part filter ─────────────────────────────────────────────────────────
+    const partBtn = (id, lbl) => {
+      const act = transPart === id;
+      return `<button onclick="transPart='${id}';renderTransiciones()"
+        style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:5px 15px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s">${lbl}</button>`;
+    };
+
+    const body = transSubTab === 'ofensivas'
+      ? buildTransOfensivas(events)
+      : buildTransDefensivas(events);
+
+    cont.innerHTML = `
+      <div style="padding:20px 24px">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+          <img src="${currentTeam.escudo}" style="width:48px;height:48px;object-fit:contain"/>
+          <div>
+            <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--text1)">${currentTeam.name.toUpperCase()}</div>
+            <div style="font-size:12px;color:var(--text3)">Primera Federación · Temporada 2025–26</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+          ${matchHeader}
+          <div style="position:relative">${dropBtn}${dropMenu}</div>
+        </div>
+        <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">
+          ${subTabBtn('ofensivas','⚡ Ofensivas')}
+          ${subTabBtn('defensivas','🛡️ Defensivas')}
+        </div>
+        <div style="display:flex;gap:4px;margin-bottom:16px">
+          ${partBtn('total','Total')}${partBtn('1','1ª Parte')}${partBtn('2','2ª Parte')}
+        </div>
+        ${body}
+      </div>`;
+  }
+
+  // ── Pitch helper (transition views) ───────────────────────────────────────
+  function _transPitch() {
+    const AW=850,AH=530,AMX=50,AMY=38,APW=AW-AMX*2,APH=AH-AMY*2;
+    const sv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW, sy:AMY+((34-y)/68)*APH});
+    const zx1 = sv(-17.5,0).sx.toFixed(1);
+    const zx2 = sv( 17.5,0).sx.toFixed(1);
+    const base = `<rect x="0" y="0" width="${AW}" height="${AH}" fill="#0b150b"/>
+      <rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="#0d1f0d" stroke="#1c3a1c" stroke-width="1.5"/>
+      <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="#1c3a1c" stroke-width="1"/>
+      <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="#1c3a1c" stroke-width="1"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+      <line x1="${zx1}" y1="${AMY}" x2="${zx1}" y2="${AH-AMY}" stroke="rgba(200,169,110,0.18)" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="${zx2}" y1="${AMY}" x2="${zx2}" y2="${AH-AMY}" stroke="rgba(200,169,110,0.18)" stroke-width="1" stroke-dasharray="4,4"/>
+      <text x="${sv(-35,0).sx.toFixed(1)}" y="${(AMY-10)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" fill="rgba(200,169,110,0.35)">Campo propio</text>
+      <text x="${AW/2}" y="${(AMY-10)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" fill="rgba(200,169,110,0.35)">Mediocampo</text>
+      <text x="${sv(35,0).sx.toFixed(1)}" y="${(AMY-10)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" fill="rgba(200,169,110,0.35)">Campo rival</text>`;
+    return {AW,AH,AMX,AMY,APW,APH,sv,base};
+  }
+
+  // ── Ofensivas ─────────────────────────────────────────────────────────────
+  function buildTransOfensivas(events) {
+    let filtered = events.filter(e => {
+      const t = e.team_in_possession_phase_type;
+      return t === 'transition' || t === 'quick_break';
+    });
+    if (transPart === '1') filtered = filtered.filter(e => e.period === 1);
+    if (transPart === '2') filtered = filtered.filter(e => e.period === 2);
+    if (transTypeFilter === 'transition')  filtered = filtered.filter(e => e.team_in_possession_phase_type === 'transition');
+    if (transTypeFilter === 'quick_break') filtered = filtered.filter(e => e.team_in_possession_phase_type === 'quick_break');
+
+    const total  = filtered.length;
+    const shots  = filtered.filter(e => e.lead_to_shot).length;
+    const qbCnt  = filtered.filter(e => e.team_in_possession_phase_type === 'quick_break').length;
+    const losses = filtered.filter(e => e.end_type === 'possession_loss').length;
+    const trCnt  = filtered.filter(e => e.team_in_possession_phase_type === 'transition').length;
+
+    // ── Player stats ───────────────────────────────────────────────────────
+    const pm = {};
+    filtered.forEach(e => {
+      const n = e.player_name; if (!n) return;
+      if (!pm[n]) pm[n] = {total:0,shot:0,qb:0,loss:0};
+      pm[n].total++;
+      if (e.lead_to_shot) pm[n].shot++;
+      if (e.team_in_possession_phase_type === 'quick_break') pm[n].qb++;
+      if (e.end_type === 'possession_loss') pm[n].loss++;
+    });
+    const players = Object.entries(pm).sort((a,b)=>b[1].total-a[1].total);
+    const maxT = players[0]?.[1].total || 1;
+
+    // ── SVG ────────────────────────────────────────────────────────────────
+    const {AW,AH,sv,base} = _transPitch();
+    let arrows='', dots='';
+    filtered.forEach(e => {
+      if (e.x_start == null || e.y_start == null) return;
+      const isQB  = e.team_in_possession_phase_type === 'quick_break';
+      const col   = isQB ? '#f0883e' : '#3fb950';
+      const isSh  = e.lead_to_shot;
+      const {sx:x1,sy:y1} = sv(e.x_start, e.y_start);
+      if (e.x_end != null && e.y_end != null) {
+        const {sx:x2,sy:y2} = sv(e.x_end, e.y_end);
+        const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+        if (len > 4) {
+          const ang=Math.atan2(dy,dx), as=5;
+          const a1=`${(x2-as*Math.cos(ang-0.5)).toFixed(1)},${(y2-as*Math.sin(ang-0.5)).toFixed(1)}`;
+          const a2=`${(x2-as*Math.cos(ang+0.5)).toFixed(1)},${(y2-as*Math.sin(ang+0.5)).toFixed(1)}`;
+          arrows+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="1.2" stroke-opacity="0.3" stroke-linecap="round"/>
+            <polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${a1} ${a2}" fill="${col}" fill-opacity="0.45"/>`;
+        }
+      }
+      const r = isSh ? 7 : 5;
+      dots+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="${r}" fill="${col}" fill-opacity="0.82" stroke="${isSh?'#fff':'none'}" stroke-width="${isSh?'1.5':'0'}"/>`;
+    });
+    const svg = `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${base}${arrows}${dots}</svg>`;
+
+    // ── Type filter ────────────────────────────────────────────────────────
+    const typeBtns = [['all','Todas'],['transition','Transición'],['quick_break','Quick Break']].map(([id,lbl])=>{
+      const act = transTypeFilter===id;
+      const col = id==='quick_break'?'#f0883e':id==='transition'?'#3fb950':'var(--accent)';
+      return `<button onclick="transTypeFilter='${id}';renderTransiciones()"
+        style="padding:4px 12px;border-radius:20px;border:1px solid ${act?col:'var(--border)'};background:${act?col+'22':'var(--bg2)'};color:${act?col:'var(--text2)'};font-size:12px;font-weight:${act?700:400};cursor:pointer;transition:all .15s">${lbl}</button>`;
+    }).join('');
+
+    // ── Stats chips ────────────────────────────────────────────────────────
+    const chip=(lbl,val,col)=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;text-align:center;min-width:90px">
+      <div style="font-size:20px;font-weight:800;color:${col}">${val}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.2">${lbl}</div>
+    </div>`;
+    const stats = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      ${chip('Acciones', total,'var(--text1)')}
+      ${chip('Transición', trCnt,'#3fb950')}
+      ${chip('Quick Break', qbCnt,'#f0883e')}
+      ${chip('→ Tiro', shots,'#f85149')}
+      ${chip('% Lead to shot', total?Math.round(shots/total*100)+'%':'—','#f85149')}
+      ${chip('Pérdidas', losses,'var(--text3)')}
+    </div>`;
+
+    // ── Player table ───────────────────────────────────────────────────────
+    const rows = players.slice(0,14).map(([name,d])=>{
+      const bw = Math.round(d.total/maxT*100);
+      const sn = name.split(' ').slice(-1)[0].substring(0,11);
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:6px 8px;font-size:12px;font-weight:600;color:var(--text1)">${sn}</td>
+        <td style="padding:6px 8px;font-size:13px;font-weight:800;color:var(--text1);text-align:center">${d.total}</td>
+        <td style="padding:6px 8px;font-size:12px;color:#f0883e;text-align:center">${d.qb||'—'}</td>
+        <td style="padding:6px 8px;font-size:12px;color:#f85149;text-align:center">${d.shot||'—'}</td>
+        <td style="padding:6px 8px;width:60px">
+          <div style="height:4px;background:var(--bg4);border-radius:2px"><div style="width:${bw}%;height:4px;background:#3fb950;border-radius:2px"></div></div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    const table = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+      <div style="padding:9px 12px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.5px">PARTICIPACIÓN EN TRANSICIONES</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:6px 8px;font-size:10px;color:var(--text3);text-align:left;font-weight:600">JUGADOR</th>
+          <th style="padding:6px 8px;font-size:10px;color:var(--text3);text-align:center;font-weight:600">TOT</th>
+          <th style="padding:6px 8px;font-size:10px;color:#f0883e;text-align:center;font-weight:600">QB</th>
+          <th style="padding:6px 8px;font-size:10px;color:#f85149;text-align:center;font-weight:600">🎯</th>
+          <th></th>
+        </tr></thead>
+        <tbody>${rows||`<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Sin acciones en transición este partido</td></tr>`}</tbody>
+      </table>
+    </div>`;
+
+    const legend = `<div style="display:flex;gap:14px;align-items:center;font-size:11px;color:var(--text3);margin-top:8px;flex-wrap:wrap">
+      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#3fb950;margin-right:4px;vertical-align:middle"></span>Transición</span>
+      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#f0883e;margin-right:4px;vertical-align:middle"></span>Quick Break</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3fb950;border:1.5px solid #fff;margin-right:4px;vertical-align:middle"></span>Llevó a disparo</span>
+    </div>`;
+
+    return `<div style="display:flex;gap:6px;margin-bottom:12px">${typeBtns}</div>
+      ${stats}
+      <div style="display:grid;grid-template-columns:1fr 270px;gap:14px;align-items:start">
+        <div>
+          <div style="background:#0b150b;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">${svg}</div>
+          ${legend}
+        </div>
+        ${table}
+      </div>`;
+  }
+
+  // ── Defensivas ────────────────────────────────────────────────────────────
+  function buildTransDefensivas(events) {
+    let filtered = events.filter(e => e.end_type === 'possession_loss' && e.x_end != null && e.y_end != null);
+    if (transPart === '1') filtered = filtered.filter(e => e.period === 1);
+    if (transPart === '2') filtered = filtered.filter(e => e.period === 2);
+
+    const total = filtered.length;
+    const z1 = filtered.filter(e => e.x_end <  -17.5).length;
+    const z2 = filtered.filter(e => e.x_end >= -17.5 && e.x_end <= 17.5).length;
+    const z3 = filtered.filter(e => e.x_end >   17.5).length;
+
+    // ── Player stats ───────────────────────────────────────────────────────
+    const pm = {};
+    filtered.forEach(e => {
+      const n = e.player_name; if (!n) return;
+      if (!pm[n]) pm[n] = {total:0,z1:0,z2:0,z3:0};
+      pm[n].total++;
+      if (e.x_end < -17.5)                        pm[n].z1++;
+      else if (e.x_end >= -17.5 && e.x_end <= 17.5) pm[n].z2++;
+      else                                          pm[n].z3++;
+    });
+    const players = Object.entries(pm).sort((a,b)=>b[1].total-a[1].total);
+    const maxT = players[0]?.[1].total || 1;
+
+    // ── SVG ────────────────────────────────────────────────────────────────
+    const {AW,AH,sv,base} = _transPitch();
+    let dots = '';
+    filtered.forEach(e => {
+      const {sx,sy} = sv(e.x_end, e.y_end||0);
+      const col = e.x_end < -17.5 ? '#f85149' : e.x_end <= 17.5 ? '#f0883e' : '#3fb950';
+      dots += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="5.5" fill="${col}" fill-opacity="0.78"/>`;
+    });
+    const svg = `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${base}${dots}</svg>`;
+
+    // ── Stats chips ────────────────────────────────────────────────────────
+    const chip=(lbl,val,col)=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;text-align:center;min-width:90px">
+      <div style="font-size:20px;font-weight:800;color:${col}">${val}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.2">${lbl}</div>
+    </div>`;
+    const stats = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      ${chip('Pérdidas totales', total,'var(--text1)')}
+      ${chip('En campo propio', z1,'#f85149')}
+      ${chip('En mediocampo', z2,'#f0883e')}
+      ${chip('En campo rival', z3,'#3fb950')}
+    </div>`;
+
+    // ── Player table ───────────────────────────────────────────────────────
+    const rows = players.slice(0,14).map(([name,d])=>{
+      const bw = Math.round(d.total/maxT*100);
+      const sn = name.split(' ').slice(-1)[0].substring(0,11);
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:6px 8px;font-size:12px;font-weight:600;color:var(--text1)">${sn}</td>
+        <td style="padding:6px 8px;font-size:13px;font-weight:800;color:var(--text1);text-align:center">${d.total}</td>
+        <td style="padding:6px 8px;font-size:12px;color:#f85149;text-align:center">${d.z1||'—'}</td>
+        <td style="padding:6px 8px;font-size:12px;color:#f0883e;text-align:center">${d.z2||'—'}</td>
+        <td style="padding:6px 8px;font-size:12px;color:#3fb950;text-align:center">${d.z3||'—'}</td>
+        <td style="padding:6px 8px;width:60px">
+          <div style="height:4px;background:var(--bg4);border-radius:2px"><div style="width:${bw}%;height:4px;background:#f85149;border-radius:2px"></div></div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    const table = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+      <div style="padding:9px 12px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.5px">PÉRDIDAS POR JUGADOR</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:6px 8px;font-size:10px;color:var(--text3);text-align:left;font-weight:600">JUGADOR</th>
+          <th style="padding:6px 8px;font-size:10px;color:var(--text3);text-align:center;font-weight:600">TOT</th>
+          <th style="padding:6px 8px;font-size:10px;color:#f85149;text-align:center;font-weight:600">CP</th>
+          <th style="padding:6px 8px;font-size:10px;color:#f0883e;text-align:center;font-weight:600">MC</th>
+          <th style="padding:6px 8px;font-size:10px;color:#3fb950;text-align:center;font-weight:600">CR</th>
+          <th></th>
+        </tr></thead>
+        <tbody>${rows||`<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Sin datos</td></tr>`}</tbody>
+      </table>
+    </div>`;
+
+    const legend = `<div style="display:flex;gap:14px;align-items:center;font-size:11px;color:var(--text3);margin-top:8px;flex-wrap:wrap">
+      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#f85149;margin-right:4px;vertical-align:middle"></span>Campo propio — riesgo alto</span>
+      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#f0883e;margin-right:4px;vertical-align:middle"></span>Mediocampo</span>
+      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#3fb950;margin-right:4px;vertical-align:middle"></span>Campo rival — presión alta</span>
+    </div>
+    <div style="margin-top:8px;padding:8px 12px;background:rgba(88,166,255,0.06);border:1px solid rgba(88,166,255,0.12);border-radius:6px;font-size:11px;color:var(--text3)">
+      ℹ️ Muestra dónde pierde el balón Ponferradina — las pérdidas en campo propio son las que más exponen al equipo ante la transición rival
+    </div>`;
+
+    return `${stats}
+      <div style="display:grid;grid-template-columns:1fr 270px;gap:14px;align-items:start">
+        <div>
+          <div style="background:#0b150b;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">${svg}</div>
+          ${legend}
+        </div>
+        ${table}
+      </div>`;
   }
 
   // INIT
