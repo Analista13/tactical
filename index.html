@@ -6506,13 +6506,17 @@
     if (!transMatchId) transMatchId = partidos[partidos.length - 1]?.id ?? null;
     const partido = partidos.find(p => p.id === transMatchId);
 
-    let events = [];
+    let events = [], defEvents = [];
     if (transMatchId) {
       try {
         const r = await fetch(`data/${transMatchId}.json`);
         const raw = await r.json();
         events = raw.e || [];
       } catch { events = []; }
+      try {
+        const r2 = await fetch(`data/${transMatchId}_def_trans.json`);
+        defEvents = await r2.json();
+      } catch { defEvents = []; }
     }
 
     // ── Match selector ──────────────────────────────────────────────────────
@@ -6559,7 +6563,7 @@
 
     const body = transSubTab === 'ofensivas'
       ? buildTransOfensivas(events)
-      : buildTransDefensivas(events);
+      : buildTransDefensivas(defEvents);
 
     cont.innerHTML = `
       <div style="padding:20px 24px">
@@ -6731,38 +6735,75 @@
   }
 
   // ── Defensivas ────────────────────────────────────────────────────────────
-  function buildTransDefensivas(events) {
-    let filtered = events.filter(e => e.end_type === 'possession_loss' && e.x_end != null && e.y_end != null);
+  function buildTransDefensivas(defEvents) {
+    // defEvents: rival team transitions with flipped coords (from Ponferradina's defensive POV)
+    // x_start = where rival starts their transition (= where Ponf is exposed)
+    // positive x = Ponf's attacking half (rival deep in their territory → less danger)
+    // negative x = Ponf's defensive half (rival near Ponf's goal → danger!)
+    let filtered = defEvents.filter(e => e.x_start != null && e.y_start != null);
     if (transPart === '1') filtered = filtered.filter(e => e.period === 1);
     if (transPart === '2') filtered = filtered.filter(e => e.period === 2);
+    if (transTypeFilter === 'transition')  filtered = filtered.filter(e => e.phase_type === 'transition');
+    if (transTypeFilter === 'quick_break') filtered = filtered.filter(e => e.phase_type === 'quick_break');
 
-    const total = filtered.length;
-    const z1 = filtered.filter(e => e.x_end <  -17.5).length;
-    const z2 = filtered.filter(e => e.x_end >= -17.5 && e.x_end <= 17.5).length;
-    const z3 = filtered.filter(e => e.x_end >   17.5).length;
+    const noData = defEvents.length === 0;
+    const total  = filtered.length;
+    const shots  = filtered.filter(e => e.lead_to_shot).length;
+    const goals  = filtered.filter(e => e.lead_to_goal).length;
+    const qbCnt  = filtered.filter(e => e.phase_type === 'quick_break').length;
+    const trCnt  = filtered.filter(e => e.phase_type === 'transition').length;
+    // Zone where rival starts the transition (from Ponf's perspective, x<0 = near Ponf's goal)
+    const zCP = filtered.filter(e => e.x_start < -17.5).length;  // rival already in Ponf's half
+    const zMC = filtered.filter(e => e.x_start >= -17.5 && e.x_start <= 17.5).length;
+    const zCR = filtered.filter(e => e.x_start > 17.5).length;   // rival starts far from goal
 
-    // ── Player stats ───────────────────────────────────────────────────────
+    // ── Player stats (rival players who carry transitions) ─────────────────
     const pm = {};
     filtered.forEach(e => {
-      const n = e.player_name; if (!n) return;
-      if (!pm[n]) pm[n] = {total:0,z1:0,z2:0,z3:0};
+      const n = e.player; if (!n) return;
+      if (!pm[n]) pm[n] = {total:0,shot:0,goal:0,qb:0};
       pm[n].total++;
-      if (e.x_end < -17.5)                        pm[n].z1++;
-      else if (e.x_end >= -17.5 && e.x_end <= 17.5) pm[n].z2++;
-      else                                          pm[n].z3++;
+      if (e.lead_to_shot) pm[n].shot++;
+      if (e.lead_to_goal) pm[n].goal++;
+      if (e.phase_type === 'quick_break') pm[n].qb++;
     });
     const players = Object.entries(pm).sort((a,b)=>b[1].total-a[1].total);
     const maxT = players[0]?.[1].total || 1;
 
     // ── SVG ────────────────────────────────────────────────────────────────
     const {AW,AH,sv,base} = _transPitch();
-    let dots = '';
+    let arrows='', dots='';
     filtered.forEach(e => {
-      const {sx,sy} = sv(e.x_end, e.y_end||0);
-      const col = e.x_end < -17.5 ? '#f85149' : e.x_end <= 17.5 ? '#f0883e' : '#3fb950';
-      dots += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="5.5" fill="${col}" fill-opacity="0.78"/>`;
+      const isQB = e.phase_type === 'quick_break';
+      const col  = isQB ? '#f0883e' : '#58a6ff';
+      const isSh = e.lead_to_shot;
+      const isGl = e.lead_to_goal;
+      const {sx:x1,sy:y1} = sv(e.x_start, e.y_start);
+      if (e.x_end != null && e.y_end != null) {
+        const {sx:x2,sy:y2} = sv(e.x_end, e.y_end);
+        const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+        if (len > 4) {
+          const ang=Math.atan2(dy,dx), as=5;
+          const a1=`${(x2-as*Math.cos(ang-0.5)).toFixed(1)},${(y2-as*Math.sin(ang-0.5)).toFixed(1)}`;
+          const a2=`${(x2-as*Math.cos(ang+0.5)).toFixed(1)},${(y2-as*Math.sin(ang+0.5)).toFixed(1)}`;
+          arrows+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="1.2" stroke-opacity="0.28" stroke-linecap="round"/>
+            <polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${a1} ${a2}" fill="${col}" fill-opacity="0.4"/>`;
+        }
+      }
+      const r   = (isSh || isGl) ? 7 : 5;
+      const str = isGl ? '#ffd700' : isSh ? '#fff' : 'none';
+      const sw  = (isSh || isGl) ? '1.5' : '0';
+      dots+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="${r}" fill="${col}" fill-opacity="0.82" stroke="${str}" stroke-width="${sw}"/>`;
     });
-    const svg = `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${base}${dots}</svg>`;
+    const svg = `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${base}${arrows}${dots}</svg>`;
+
+    // ── Type filter ────────────────────────────────────────────────────────
+    const typeBtns = [['all','Todas'],['transition','Transición'],['quick_break','Quick Break']].map(([id,lbl])=>{
+      const act = transTypeFilter===id;
+      const col = id==='quick_break'?'#f0883e':id==='transition'?'#58a6ff':'var(--accent)';
+      return `<button onclick="transTypeFilter='${id}';renderTransiciones()"
+        style="padding:4px 12px;border-radius:20px;border:1px solid ${act?col:'var(--border)'};background:${act?col+'22':'var(--bg2)'};color:${act?col:'var(--text2)'};font-size:12px;font-weight:${act?700:400};cursor:pointer;transition:all .15s">${lbl}</button>`;
+    }).join('');
 
     // ── Stats chips ────────────────────────────────────────────────────────
     const chip=(lbl,val,col)=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;text-align:center;min-width:90px">
@@ -6770,53 +6811,67 @@
       <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.2">${lbl}</div>
     </div>`;
     const stats = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-      ${chip('Pérdidas totales', total,'var(--text1)')}
-      ${chip('En campo propio', z1,'#f85149')}
-      ${chip('En mediocampo', z2,'#f0883e')}
-      ${chip('En campo rival', z3,'#3fb950')}
+      ${chip('Trans. rivales', total,'var(--text1)')}
+      ${chip('Transición', trCnt,'#58a6ff')}
+      ${chip('Quick Break', qbCnt,'#f0883e')}
+      ${chip('→ Tiro rival', shots,'#f85149')}
+      ${chip('→ Gol rival', goals,'#ffd700')}
+      ${chip('% Lead to shot', total?Math.round(shots/total*100)+'%':'—','#f85149')}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      ${chip('Inicio en CP', zCP,'#f85149')}
+      ${chip('Inicio en MC', zMC,'#f0883e')}
+      ${chip('Inicio en CR', zCR,'#3fb950')}
     </div>`;
 
-    // ── Player table ───────────────────────────────────────────────────────
+    // ── Player table (rival players) ───────────────────────────────────────
     const rows = players.slice(0,14).map(([name,d])=>{
       const bw = Math.round(d.total/maxT*100);
       const sn = name.split(' ').slice(-1)[0].substring(0,11);
       return `<tr style="border-bottom:1px solid var(--border)">
         <td style="padding:6px 8px;font-size:12px;font-weight:600;color:var(--text1)">${sn}</td>
         <td style="padding:6px 8px;font-size:13px;font-weight:800;color:var(--text1);text-align:center">${d.total}</td>
-        <td style="padding:6px 8px;font-size:12px;color:#f85149;text-align:center">${d.z1||'—'}</td>
-        <td style="padding:6px 8px;font-size:12px;color:#f0883e;text-align:center">${d.z2||'—'}</td>
-        <td style="padding:6px 8px;font-size:12px;color:#3fb950;text-align:center">${d.z3||'—'}</td>
+        <td style="padding:6px 8px;font-size:12px;color:#f0883e;text-align:center">${d.qb||'—'}</td>
+        <td style="padding:6px 8px;font-size:12px;color:#f85149;text-align:center">${d.shot||'—'}</td>
+        <td style="padding:6px 8px;font-size:12px;color:#ffd700;text-align:center">${d.goal||'—'}</td>
         <td style="padding:6px 8px;width:60px">
-          <div style="height:4px;background:var(--bg4);border-radius:2px"><div style="width:${bw}%;height:4px;background:#f85149;border-radius:2px"></div></div>
+          <div style="height:4px;background:var(--bg4);border-radius:2px"><div style="width:${bw}%;height:4px;background:#58a6ff;border-radius:2px"></div></div>
         </td>
       </tr>`;
     }).join('');
 
     const table = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-      <div style="padding:9px 12px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.5px">PÉRDIDAS POR JUGADOR</div>
+      <div style="padding:9px 12px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.5px">JUGADORES RIVAL EN TRANSICIÓN</div>
       <table style="width:100%;border-collapse:collapse">
         <thead><tr style="border-bottom:1px solid var(--border)">
           <th style="padding:6px 8px;font-size:10px;color:var(--text3);text-align:left;font-weight:600">JUGADOR</th>
           <th style="padding:6px 8px;font-size:10px;color:var(--text3);text-align:center;font-weight:600">TOT</th>
-          <th style="padding:6px 8px;font-size:10px;color:#f85149;text-align:center;font-weight:600">CP</th>
-          <th style="padding:6px 8px;font-size:10px;color:#f0883e;text-align:center;font-weight:600">MC</th>
-          <th style="padding:6px 8px;font-size:10px;color:#3fb950;text-align:center;font-weight:600">CR</th>
+          <th style="padding:6px 8px;font-size:10px;color:#f0883e;text-align:center;font-weight:600">QB</th>
+          <th style="padding:6px 8px;font-size:10px;color:#f85149;text-align:center;font-weight:600">🎯</th>
+          <th style="padding:6px 8px;font-size:10px;color:#ffd700;text-align:center;font-weight:600">⚽</th>
           <th></th>
         </tr></thead>
-        <tbody>${rows||`<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Sin datos</td></tr>`}</tbody>
+        <tbody>${rows||`<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3);font-size:12px">${noData?'Sin datos CSV para este partido':'Sin transiciones'}</td></tr>`}</tbody>
       </table>
     </div>`;
 
     const legend = `<div style="display:flex;gap:14px;align-items:center;font-size:11px;color:var(--text3);margin-top:8px;flex-wrap:wrap">
-      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#f85149;margin-right:4px;vertical-align:middle"></span>Campo propio — riesgo alto</span>
-      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#f0883e;margin-right:4px;vertical-align:middle"></span>Mediocampo</span>
-      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#3fb950;margin-right:4px;vertical-align:middle"></span>Campo rival — presión alta</span>
+      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#58a6ff;margin-right:4px;vertical-align:middle"></span>Transición rival</span>
+      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#f0883e;margin-right:4px;vertical-align:middle"></span>Quick Break rival</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#58a6ff;border:1.5px solid #fff;margin-right:4px;vertical-align:middle"></span>Llevó a disparo</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f0883e;border:1.5px solid #ffd700;margin-right:4px;vertical-align:middle"></span>Llevó a gol</span>
     </div>
-    <div style="margin-top:8px;padding:8px 12px;background:rgba(88,166,255,0.06);border:1px solid rgba(88,166,255,0.12);border-radius:6px;font-size:11px;color:var(--text3)">
-      ℹ️ Muestra dónde pierde el balón Ponferradina — las pérdidas en campo propio son las que más exponen al equipo ante la transición rival
+    <div style="margin-top:8px;padding:8px 12px;background:rgba(248,81,73,0.06);border:1px solid rgba(248,81,73,0.15);border-radius:6px;font-size:11px;color:var(--text3)">
+      🛡️ Muestra dónde inician las transiciones los rivales — coordenadas invertidas para ver el peligro desde la perspectiva defensiva de Ponferradina. CP = Campo propio de Ponferradina.
     </div>`;
 
-    return `${stats}
+    const noDataNote = noData ? `<div style="margin-bottom:14px;padding:10px 14px;background:rgba(240,136,62,0.08);border:1px solid rgba(240,136,62,0.2);border-radius:8px;font-size:12px;color:var(--text3)">
+      ⚠️ No hay datos CSV disponibles para este partido. Selecciona otro para ver transiciones defensivas reales.
+    </div>` : '';
+
+    return `${noDataNote}
+      <div style="display:flex;gap:6px;margin-bottom:12px">${typeBtns}</div>
+      ${stats}
       <div style="display:grid;grid-template-columns:1fr 270px;gap:14px;align-items:start">
         <div>
           <div style="background:#0b150b;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">${svg}</div>
