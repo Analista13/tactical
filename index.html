@@ -236,10 +236,11 @@
   const _pasesCache     = new Map();  // caché passes data por partido
   let locVis = 'todos';            // 'todos' | 'local' | 'visitante'
   let transMatchId    = null;
-  let transSubTab     = 'ofensivas';   // 'ofensivas' | 'defensivas'
+  let transSubTab     = 'ofensivas';   // 'ofensivas' | 'defensivas' | 'carreras'
   let transDropOpen   = false;
   let transPart       = 'total';       // 'total' | '1' | '2'
   let transTypeFilter = 'all';         // 'all' | 'transition' | 'quick_break'
+  let transRunFilter  = 'all';         // subtype filter for carreras sin balón
 
   let centrosMatchId  = null;
   let centrosSubTab   = 'ofensivos';   // 'ofensivos' | 'defensivos'
@@ -6514,7 +6515,7 @@
     if (!transMatchId) transMatchId = partidos[partidos.length - 1]?.id ?? null;
     const partido = partidos.find(p => p.id === transMatchId);
 
-    let events = [], defEvents = [];
+    let events = [], defEvents = [], runEvents = [];
     if (transMatchId) {
       try {
         const r = await fetch(`data/${transMatchId}.json`);
@@ -6525,6 +6526,10 @@
         const r2 = await fetch(`data/${transMatchId}_def_trans.json`);
         defEvents = await r2.json();
       } catch { defEvents = []; }
+      try {
+        const r3 = await fetch(`data/${transMatchId}_carrerasSB.json`);
+        runEvents = await r3.json();
+      } catch { runEvents = []; }
     }
 
     // ── Match grid selector ─────────────────────────────────────────────────
@@ -6569,8 +6574,8 @@
     // ── Sub-tabs ────────────────────────────────────────────────────────────
     const subTabBtn = (id, lbl) => {
       const act = transSubTab === id;
-      const col  = id === 'ofensivas' ? '#3fb950' : '#58a6ff';
-      return `<button onclick="transSubTab='${id}';transTypeFilter='all';renderTransiciones()"
+      const col  = id === 'ofensivas' ? '#3fb950' : id === 'defensivas' ? '#58a6ff' : '#f0883e';
+      return `<button onclick="transSubTab='${id}';transTypeFilter='all';transRunFilter='all';renderTransiciones()"
         style="background:transparent;border:none;border-bottom:2px solid ${act?col:'transparent'};color:${act?col:'var(--text2)'};padding:10px 22px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${lbl}</button>`;
     };
 
@@ -6583,7 +6588,9 @@
 
     const body = transSubTab === 'ofensivas'
       ? buildTransOfensivas(events)
-      : buildTransDefensivas(defEvents);
+      : transSubTab === 'carreras'
+        ? buildCarrerasSinBalon(runEvents)
+        : buildTransDefensivas(defEvents);
 
     cont.innerHTML = `
       <div style="padding:20px 24px">
@@ -6598,6 +6605,7 @@
         <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">
           ${subTabBtn('ofensivas','⚡ Ofensivas')}
           ${subTabBtn('defensivas','🛡️ Defensivas')}
+          ${subTabBtn('carreras','🏃 Carreras sin balón')}
         </div>
         <div style="display:flex;gap:4px;margin-bottom:16px">
           ${partBtn('total','Total')}${partBtn('1','1ª Parte')}${partBtn('2','2ª Parte')}
@@ -6947,6 +6955,201 @@
   function transHideTip() {
     const b = document.getElementById('trans-tip');
     if (b) b.style.display = 'none';
+  }
+
+  // ─── CARRERAS SIN BALÓN ───────────────────────────────────────────────────
+  const _RC = {
+    espalda:'#f85149', receptor_centro:'#f0883e', adelanto:'#3fb950',
+    apoyo:'#58a6ff', viene_corto:'#a5d6ff', amplitud:'#d2a8ff',
+    medio_espacio:'#ffa657', desmarque_atras:'#8b949e', overlap:'#39d353', underlap:'#1f6feb'
+  };
+  const _RL = {
+    espalda:'🏃 A la espalda', receptor_centro:'↗ Receptor centro', adelanto:'→ Adelanto',
+    apoyo:'🤝 Apoyo', viene_corto:'← Viene corto', amplitud:'↔ Amplitud',
+    medio_espacio:'◇ Medio espacio', desmarque_atras:'↙ Desmarque atrás',
+    overlap:'↗ Overlap', underlap:'↗ Underlap'
+  };
+
+  function buildCarrerasSinBalon(runs) {
+    let base_runs = runs;
+    if (transPart === '1') base_runs = runs.filter(e => e.period === 1);
+    if (transPart === '2') base_runs = runs.filter(e => e.period === 2);
+    let filtered = base_runs;
+    if (transRunFilter && transRunFilter !== 'all') filtered = filtered.filter(e => e.subtype === transRunFilter);
+
+    const noData  = runs.length === 0;
+    const total   = filtered.length;
+    const recib   = filtered.filter(e => e.received).length;
+    const pelig   = filtered.filter(e => e.dangerous).length;
+    const shots   = filtered.filter(e => e.lead_to_shot).length;
+    const goals   = filtered.filter(e => e.lead_to_goal).length;
+
+    // ── Pitch SVG ─────────────────────────────────────────────────────────
+    const {AW,AH,sv,base:pitchBase} = _centrosPitch();
+    let arrows='', dests='';
+    filtered.forEach(e => {
+      if (e.x_start==null||e.x_end==null) return;
+      const {sx:x1,sy:y1}=sv(e.x_start,e.y_start);
+      const {sx:x2,sy:y2}=sv(e.x_end,e.y_end);
+      const col=_RC[e.subtype]||'#8b949e';
+      const isRec=e.received,isPelig=e.dangerous,isShot=e.lead_to_shot,isGoal=e.lead_to_goal;
+      const op=isRec?0.85:isPelig?0.6:0.3;
+      const sw=isRec?2.0:isPelig?1.5:1.2;
+      const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+      if(len>4){
+        const ang=Math.atan2(dy,dx),as=5;
+        const a1=`${(x2-as*Math.cos(ang-0.45)).toFixed(1)},${(y2-as*Math.sin(ang-0.45)).toFixed(1)}`;
+        const a2=`${(x2-as*Math.cos(ang+0.45)).toFixed(1)},${(y2-as*Math.sin(ang+0.45)).toFixed(1)}`;
+        arrows+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="${sw}" stroke-opacity="${(op*0.55).toFixed(2)}" stroke-linecap="round"/>
+          <polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${a1} ${a2}" fill="${col}" fill-opacity="${op.toFixed(2)}"/>`;
+      }
+      const dr=isGoal?9:isShot?8:isRec?7:5;
+      const dstr=isGoal?'#ffd700':isShot?'#fff':'none';
+      const dsw=isGoal||isShot?'2':'0';
+      const sn=e.player.split(' ').pop();
+      const lbl=_RL[e.subtype]||e.subtype;
+      const res=isGoal?'⚽ GOL':isShot?'→ Tiro':isRec?'✓ Recibida':isPelig?'⚡ Peligrosa':'';
+      const tip=`${sn} (${e.position||'?'}) · ${lbl}\n${e.minute!=null?e.minute+"' · ":''}${res}`;
+      dests+=`<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="${dr}" fill="${col}" fill-opacity="${op.toFixed(2)}"
+        stroke="${dstr}" stroke-width="${dsw}" data-tip="${tip}" style="cursor:pointer"/>`;
+    });
+    const pitchSvg=`<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${pitchBase}${arrows}${dests}</svg>`;
+
+    // ── Subtype filter buttons ─────────────────────────────────────────────
+    const stCounts={};
+    base_runs.forEach(e=>{ stCounts[e.subtype]=(stCounts[e.subtype]||0)+1; });
+    const allST=Object.keys(stCounts).sort((a,b)=>stCounts[b]-stCounts[a]);
+    const typeBtn=(id,lbl)=>{
+      const act=transRunFilter===id;
+      const col=_RC[id]||'var(--accent)';
+      return `<button onclick="transRunFilter='${id}';renderTransiciones()"
+        style="padding:4px 13px;border-radius:20px;border:1px solid ${act?col:'var(--border)'};background:${act?col+'22':'var(--bg2)'};color:${act?col:'var(--text2)'};font-size:12px;font-weight:${act?700:400};cursor:pointer;transition:all .15s">${lbl}</button>`;
+    };
+    const filterBtns=`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">
+      ${typeBtn('all','Todos')}
+      ${allST.map(st=>typeBtn(st,_RL[st]||st)).join('')}
+    </div>`;
+
+    // ── Stats chips ───────────────────────────────────────────────────────
+    const chip=(lbl,val,col)=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;text-align:center;min-width:72px">
+      <div style="font-size:19px;font-weight:800;color:${col}">${val}</div>
+      <div style="font-size:9px;color:var(--text3);margin-top:2px;letter-spacing:0.3px;text-transform:uppercase">${lbl}</div>
+    </div>`;
+    const stats=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+      ${chip('Carreras',total,'var(--text)')}
+      ${chip('Recibidas',recib,'#3fb950')}
+      ${chip('% Recib.',total?Math.round(recib/total*100)+'%':'—','#3fb950')}
+      ${chip('Peligrosas',pelig,'#f0883e')}
+      ${chip('→ Tiro',shots,'#f0883e')}
+      ${chip('⚽ Gol',goals,'#ffd700')}
+    </div>`;
+
+    // ── Subtype breakdown ─────────────────────────────────────────────────
+    const maxST=Math.max(1,...Object.values(stCounts));
+    const breakdown=Object.entries(stCounts).sort((a,b)=>b[1]-a[1]).map(([st,cnt])=>{
+      const col=_RC[st]||'#8b949e';
+      const lbl=_RL[st]||st;
+      const recCnt=base_runs.filter(e=>e.subtype===st&&e.received).length;
+      const recPct=cnt?Math.round(recCnt/cnt*100):0;
+      const pct=Math.round(cnt/maxST*100);
+      return `<div style="display:flex;align-items:center;gap:7px;font-size:11px">
+        <div style="width:9px;height:9px;border-radius:50%;background:${col};flex-shrink:0"></div>
+        <span style="color:var(--text2);width:132px;flex-shrink:0;font-size:10px">${lbl}</span>
+        <div style="flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${col};border-radius:2px"></div>
+        </div>
+        <span style="font-size:10px;color:var(--text2);min-width:22px;text-align:right">${cnt}</span>
+        <span style="font-size:10px;color:#3fb950;min-width:30px">${recCnt?recPct+'%':''}</span>
+      </div>`;
+    }).join('');
+    const breakdownPanel=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-top:10px">
+      <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px">Tipo de carrera · Recibidas %</div>
+      <div style="display:flex;flex-direction:column;gap:7px">${breakdown||'<span style="color:var(--text3);font-size:11px">Sin datos</span>'}</div>
+    </div>`;
+
+    // ── Player table ──────────────────────────────────────────────────────
+    const playerMap={};
+    filtered.forEach(e=>{
+      const n=e.player; if(!n) return;
+      if(!playerMap[n]) playerMap[n]={tot:0,rec:0,pelig:0,shot:0,goal:0,pos:e.position||'',subtypes:{}};
+      playerMap[n].tot++;
+      if(e.received)     playerMap[n].rec++;
+      if(e.dangerous)    playerMap[n].pelig++;
+      if(e.lead_to_shot) playerMap[n].shot++;
+      if(e.lead_to_goal) playerMap[n].goal++;
+      playerMap[n].subtypes[e.subtype]=(playerMap[n].subtypes[e.subtype]||0)+1;
+    });
+    const players=Object.entries(playerMap).sort((a,b)=>b[1].tot-a[1].tot);
+    const maxP=players[0]?.[1].tot||1;
+    const playerRows=players.slice(0,12).map(([name,d])=>{
+      const sn=name.split(' ').pop().substring(0,12);
+      const bw=Math.round(d.tot/maxP*100);
+      const topST=Object.entries(d.subtypes).sort((a,b)=>b[1]-a[1])[0];
+      const stCol=topST?(_RC[topST[0]]||'#8b949e'):'#8b949e';
+      const recPct=d.tot?Math.round(d.rec/d.tot*100):0;
+      return `<tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
+        <td style="padding:5px 7px;font-size:12px;font-weight:600;color:var(--text)">${sn}</td>
+        <td style="padding:5px 4px;font-size:9px;color:var(--text3);text-align:center">${d.pos}</td>
+        <td style="padding:5px 4px;font-size:13px;font-weight:800;color:var(--text);text-align:center">${d.tot}</td>
+        <td style="padding:5px 4px;font-size:11px;color:#3fb950;text-align:center">${d.rec}</td>
+        <td style="padding:5px 4px;font-size:10px;color:var(--text3);text-align:center">${recPct}%</td>
+        <td style="padding:5px 4px;font-size:11px;color:#f0883e;text-align:center">${d.pelig||'—'}</td>
+        <td style="padding:5px 4px;font-size:11px;color:#ffd700;text-align:center">${d.goal||'—'}</td>
+        <td style="padding:5px 5px;width:38px"><div style="height:3px;background:var(--bg4);border-radius:2px"><div style="width:${bw}%;height:3px;background:${stCol};border-radius:2px"></div></div></td>
+      </tr>`;
+    }).join('');
+    const table=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+      <div style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase">Jugadores</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:5px 7px;font-size:9px;color:var(--text3);text-align:left;font-weight:700">JUGADOR</th>
+          <th style="padding:5px 4px;font-size:9px;color:var(--text3);text-align:center">POS</th>
+          <th style="padding:5px 4px;font-size:9px;color:var(--text3);text-align:center">TOT</th>
+          <th style="padding:5px 4px;font-size:9px;color:#3fb950;text-align:center">REC</th>
+          <th style="padding:5px 4px;font-size:9px;color:#3fb950;text-align:center">%REC</th>
+          <th style="padding:5px 4px;font-size:9px;color:#f0883e;text-align:center">PELIG</th>
+          <th style="padding:5px 4px;font-size:9px;color:#ffd700;text-align:center">GOL</th>
+          <th></th>
+        </tr></thead>
+        <tbody>${playerRows||`<tr><td colspan="8" style="padding:14px;text-align:center;color:var(--text3);font-size:11px">${noData?'Sin datos para este partido':'Sin carreras'}</td></tr>`}</tbody>
+      </table>
+      ${breakdownPanel}
+    </div>`;
+
+    // ── Legend ─────────────────────────────────────────────────────────────
+    const legend=`<div style="display:flex;gap:10px;align-items:center;font-size:10px;color:var(--text3);margin-top:8px;flex-wrap:wrap">
+      <span>Opacidad: tenue = no recibida · alta = recibida</span>
+      <span>| ○ blanco = tiro · ○ oro = gol</span>
+    </div>`;
+
+    const svgWrap=`<div style="position:relative;background:#0b150b;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden" onmousemove="runShowTip(event)" onmouseleave="runHideTip()">
+      ${pitchSvg}
+      <div id="run-tip" style="display:none;position:absolute;background:rgba(13,17,23,0.97);border:1px solid rgba(255,255,255,0.13);color:#e6edf3;padding:7px 12px;border-radius:7px;font-size:11px;line-height:1.5;font-family:'DM Sans',sans-serif;pointer-events:none;z-index:10;max-width:220px;word-wrap:break-word;box-shadow:0 4px 16px rgba(0,0,0,0.6)"></div>
+    </div>`;
+
+    return `${filterBtns}${stats}
+      <div style="display:grid;grid-template-columns:1fr 295px;gap:14px;align-items:start">
+        <div>${svgWrap}${legend}</div>
+        ${table}
+      </div>`;
+  }
+
+  function runShowTip(e) {
+    const tip=e.target.getAttribute&&e.target.getAttribute('data-tip');
+    const box=document.getElementById('run-tip');
+    if(!box) return;
+    if(!tip){box.style.display='none';return;}
+    box.innerHTML=tip.replace(/\n/g,'<br>');
+    box.style.display='block';
+    const rect=e.currentTarget.getBoundingClientRect();
+    let lx=e.clientX-rect.left+14, ly=e.clientY-rect.top-54;
+    if(lx+230>rect.width) lx=e.clientX-rect.left-210;
+    if(ly<4) ly=4;
+    box.style.left=lx+'px'; box.style.top=ly+'px';
+  }
+  function runHideTip(){
+    const b=document.getElementById('run-tip');
+    if(b) b.style.display='none';
   }
 
   // ─── CENTROS ──────────────────────────────────────────────────────────────
