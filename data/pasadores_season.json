@@ -1,0 +1,193 @@
+{
+  "totals": {
+    "primera": 535,
+    "segunda": 735,
+    "ultima": 174
+  },
+  "primera": [
+    {
+      "passer": "Andrés Prieto",
+      "passer_pos": "GK",
+      "receiver": "A. Keita",
+      "receiver_pos": "CF",
+      "count": 17,
+      "pct_bar": 3.2,
+      "precision": 48,
+      "ratio": 68
+    },
+    {
+      "passer": "Andoni López",
+      "passer_pos": "LB",
+      "receiver": "Borja Valle",
+      "receiver_pos": "CF",
+      "count": 14,
+      "pct_bar": 2.6,
+      "precision": 65,
+      "ratio": 17
+    },
+    {
+      "passer": "Andrés Prieto",
+      "passer_pos": "GK",
+      "receiver": "Borja Valle",
+      "receiver_pos": "CF",
+      "count": 14,
+      "pct_bar": 2.6,
+      "precision": 64,
+      "ratio": 50
+    },
+    {
+      "passer": "Koke",
+      "passer_pos": "RB",
+      "receiver": "Borja Vázquez",
+      "receiver_pos": "LW",
+      "count": 13,
+      "pct_bar": 2.4,
+      "precision": 78,
+      "ratio": 27
+    },
+    {
+      "passer": "Andrés Prieto",
+      "passer_pos": "GK",
+      "receiver": "José Luis Cortés",
+      "receiver_pos": "LF",
+      "count": 12,
+      "pct_bar": 2.2,
+      "precision": 41,
+      "ratio": 41
+    },
+    {
+      "passer": "Eneko Undabarrena",
+      "passer_pos": "RCB",
+      "receiver": "Borja Valle",
+      "receiver_pos": "CF",
+      "count": 11,
+      "pct_bar": 2.1,
+      "precision": 81,
+      "ratio": 19
+    }
+  ],
+  "segunda": [
+    {
+      "passer": "Andrés Prieto",
+      "passer_pos": "GK",
+      "receiver": "A. Keita",
+      "receiver_pos": "CF",
+      "count": 24,
+      "pct_bar": 3.3,
+      "precision": 48,
+      "ratio": 96
+    },
+    {
+      "passer": "Andoni López",
+      "passer_pos": "LB",
+      "receiver": "Borja Vázquez",
+      "receiver_pos": "LW",
+      "count": 20,
+      "pct_bar": 2.7,
+      "precision": 65,
+      "ratio": 26
+    },
+    {
+      "passer": "Andoni López",
+      "passer_pos": "LB",
+      "receiver": "José Luis Cortés",
+      "receiver_pos": "LF",
+      "count": 19,
+      "pct_bar": 2.6,
+      "precision": 56,
+      "ratio": 24
+    },
+    {
+      "passer": "Andrés Prieto",
+      "passer_pos": "GK",
+      "receiver": "Borja Valle",
+      "receiver_pos": "CF",
+      "count": 19,
+      "pct_bar": 2.6,
+      "precision": 64,
+      "ratio": 68
+    },
+    {
+      "passer": "Andrés Prieto",
+      "passer_pos": "GK",
+      "receiver": "José Luis Cortés",
+      "receiver_pos": "LF",
+      "count": 18,
+      "pct_bar": 2.4,
+      "precision": 41,
+      "ratio": 62
+    },
+    {
+      "passer": "Koke",
+      "passer_pos": "RB",
+      "receiver": "Borja Vázquez",
+      "receiver_pos": "LW",
+      "count": 17,
+      "pct_bar": 2.3,
+      "precision": 78,
+      "ratio": 35
+    }
+  ],
+  "ultima": [
+    {
+      "passer": "Andoni López",
+      "passer_pos": "LB",
+      "receiver": "José Luis Cortés",
+      "receiver_pos": "LF",
+      "count": 6,
+      "pct_bar": 3.4,
+      "precision": 56,
+      "ratio": 8
+    },
+    {
+      "passer": "Andoni López",
+      "passer_pos": "LB",
+      "receiver": "Borja Vázquez",
+      "receiver_pos": "LW",
+      "count": 6,
+      "pct_bar": 3.4,
+      "precision": 65,
+      "ratio": 8
+    },
+    {
+      "passer": "Andrés Prieto",
+      "passer_pos": "GK",
+      "receiver": "José Luis Cortés",
+      "receiver_pos": "LF",
+      "count": 5,
+      "pct_bar": 2.9,
+      "precision": 41,
+      "ratio": 17
+    },
+    {
+      "passer": "Andrés Prieto",
+      "passer_pos": "GK",
+      "receiver": "Borja Valle",
+      "receiver_pos": "CF",
+      "count": 5,
+      "pct_bar": 2.9,
+      "precision": 64,
+      "ratio": 18
+    },
+    {
+      "passer": "Koke",
+      "passer_pos": "RB",
+      "receiver": "Borja Vázquez",
+      "receiver_pos": "LW",
+      "count": 5,
+      "pct_bar": 2.9,
+      "precision": 78,
+      "ratio": 10
+    },
+    {
+      "passer": "Andoni López",
+      "passer_pos": "LB",
+      "receiver": "Xemi Fernández",
+      "receiver_pos": "AM",
+      "count": 4,
+      "pct_bar": 2.3,
+      "precision": 53,
+      "ratio": 7
+    }
+  ]
+}
