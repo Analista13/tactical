@@ -7084,7 +7084,7 @@
       <line x1="${AMX}" y1="${fy1}" x2="${AW-AMX}" y2="${fy1}" stroke="rgba(88,166,255,0.2)" stroke-width="1" stroke-dasharray="5,4"/>
       <line x1="${AMX}" y1="${fy2}" x2="${AW-AMX}" y2="${fy2}" stroke="rgba(240,136,62,0.2)" stroke-width="1" stroke-dasharray="5,4"/>
       <text x="${AMX-6}" y="${(parseFloat(fy1)/2+AMY/2).toFixed(0)}" text-anchor="middle" transform="rotate(-90,${AMX-6},${(parseFloat(fy1)/2+AMY/2).toFixed(0)})" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="rgba(88,166,255,0.5)">BANDA IZQ</text>
-      <text x="${AMX-6}" y="${(AH-(parseFloat(fy2)/2+AMY/2)).toFixed(0)}" text-anchor="middle" transform="rotate(-90,${AMX-6},${(AH-(parseFloat(fy2)/2+AMY/2)).toFixed(0)})" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="rgba(240,136,62,0.5)">BANDA DER</text>`;
+      <text x="${AMX-6}" y="${((parseFloat(fy2)+(AH-AMY))/2).toFixed(0)}" text-anchor="middle" transform="rotate(-90,${AMX-6},${((parseFloat(fy2)+(AH-AMY))/2).toFixed(0)})" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="rgba(240,136,62,0.5)">BANDA DER</text>`;
     return {AW,AH,AMX,AMY,APW,APH,sv,base};
   }
 
@@ -7130,10 +7130,10 @@
       </div>`;
     }).join('');
   }
-  function _centrosSvgWrap(svg, id='centros-tip') {
+  function _centrosSvgWrap(svg) {
     return `<div style="position:relative;background:#0b150b;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden" onmousemove="centrosShowTip(event)" onmouseleave="centrosHideTip()">
       ${svg}
-      <div id="${id}" style="display:none;position:absolute;background:rgba(13,17,23,0.97);border:1px solid rgba(255,255,255,0.13);color:#e6edf3;padding:6px 11px;border-radius:7px;font-size:11px;font-family:'DM Sans',sans-serif;pointer-events:none;z-index:10;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.5)"></div>
+      <div id="centros-tip" style="display:none;position:absolute;background:rgba(13,17,23,0.97);border:1px solid rgba(255,255,255,0.13);color:#e6edf3;padding:7px 12px;border-radius:7px;font-size:11px;line-height:1.5;font-family:'DM Sans',sans-serif;pointer-events:none;z-index:10;max-width:230px;word-wrap:break-word;box-shadow:0 4px 16px rgba(0,0,0,0.6)"></div>
     </div>`;
   }
 
@@ -7181,7 +7181,7 @@
     let arrows='', origins='', dests='';
     filtered.forEach(e => {
       const isIzq = e.flank==='wide_left';
-      const lCol  = isIzq ? 'rgba(88,166,255,0.55)' : 'rgba(240,136,62,0.55)';
+      const lCol  = isIzq ? '#58a6ff' : '#f0883e';
       const isSh=e.lead_to_shot, isGl=e.lead_to_goal, isOk=e.outcome==='successful';
       const {sx:x1,sy:y1}=sv(e.x_start,e.y_start);
       const zone=_crossZone(e.x_end,e.y_end,e.flank,true);
@@ -7193,22 +7193,20 @@
           const ang=Math.atan2(dy,dx),as=5;
           const a1=`${(x2-as*Math.cos(ang-0.45)).toFixed(1)},${(y2-as*Math.sin(ang-0.45)).toFixed(1)}`;
           const a2=`${(x2-as*Math.cos(ang+0.45)).toFixed(1)},${(y2-as*Math.sin(ang+0.45)).toFixed(1)}`;
-          arrows+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${lCol}" stroke-width="1.4" stroke-opacity="${isOk?0.7:0.22}" stroke-linecap="round"/>
-            <polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${a1} ${a2}" fill="${lCol}" fill-opacity="${isOk?0.7:0.25}"/>`;
+          arrows+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${lCol}" stroke-width="1.6" stroke-opacity="${isOk?0.7:0.25}" stroke-linecap="round"/>
+            <polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${a1} ${a2}" fill="${lCol}" fill-opacity="${isOk?0.75:0.28}"/>`;
         }
-        // Destination dot colored by zone
         const dr=isGl?9:isSh?8:7;
         const dstr=isGl?'#ffd700':isSh?'#fff':'none';
         const dsw=isGl||isSh?'2':'0';
-        const zoneLbl=_ZLBL[zone]||zone;
-        const alt=e.high_pass?'Alto':'Raso';
-        const res=isGl?'⚽ GOL':isSh?'→ Tiro':isOk?'Completado':'Fallado';
-        const tgtStr=e.target?(` → ${e.target}${e.target_pos?' ('+e.target_pos+')':''}`):'';
-        const tip=`${e.player||'?'} (${e.position||'?'})${tgtStr} · ${isIzq?'Izq':'Der'} · ${zoneLbl} · ${alt} · ${e.minute!=null?e.minute+"'":''} · ${res}`;
-        dests+=`<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="${dr}" fill="${zCol}" fill-opacity="${isOk?0.88:0.45}"
+        const sn  = e.player ? e.player.split(' ').pop() : '?';
+        const tgt = e.target ? e.target.split(' ').pop() : '—';
+        const res = isGl?'⚽ GOL':isSh?'→ Tiro':isOk?'✓ OK':'✗ Fallado';
+        const tip = `${sn} (${e.position||'?'}) → ${tgt}${e.target_pos?' ('+e.target_pos+')':''}\n${_ZLBL[zone]} · ${e.high_pass?'Alto':'Raso'} · ${e.minute!=null?e.minute+"' ·":''} ${res}`;
+        dests+=`<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="${dr}" fill="${zCol}" fill-opacity="${isOk?0.92:0.5}"
           stroke="${dstr}" stroke-width="${dsw}" data-tip="${tip}" style="cursor:pointer"/>`;
       }
-      origins+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="${lCol}" fill-opacity="0.8"/>`;
+      origins+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="${lCol}" fill-opacity="0.85"/>`;
     });
     const svg=`<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${base}${arrows}${origins}${dests}</svg>`;
 
@@ -7346,11 +7344,11 @@
     let arrows='',origins='',dests='';
     filtered.forEach(e=>{
       const isIzq=e.flank==='wide_left';
-      const lCol=isIzq?'rgba(248,81,73,0.55)':'rgba(255,123,114,0.55)';
+      const lCol=isIzq?'#f85149':'#ff7b72';
       const isSh=e.lead_to_shot,isGl=e.lead_to_goal,isOk=e.outcome==='successful';
       const {sx:x1,sy:y1}=sv(e.x_start,e.y_start);
       const zone=_crossZone(e.x_end,e.y_end,e.flank,false);
-      const zCol=isOk?_ZCOL[zone]:'#484f58';
+      const zCol=_ZCOL[zone];
       if(e.x_end!=null&&e.y_end!=null){
         const {sx:x2,sy:y2}=sv(e.x_end,e.y_end);
         const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
@@ -7358,21 +7356,20 @@
           const ang=Math.atan2(dy,dx),as=5;
           const a1=`${(x2-as*Math.cos(ang-0.45)).toFixed(1)},${(y2-as*Math.sin(ang-0.45)).toFixed(1)}`;
           const a2=`${(x2-as*Math.cos(ang+0.45)).toFixed(1)},${(y2-as*Math.sin(ang+0.45)).toFixed(1)}`;
-          arrows+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${lCol}" stroke-width="1.4" stroke-opacity="${isOk?0.7:0.22}" stroke-linecap="round"/>
-            <polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${a1} ${a2}" fill="${lCol}" fill-opacity="${isOk?0.7:0.25}"/>`;
+          arrows+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${lCol}" stroke-width="1.6" stroke-opacity="${isOk?0.7:0.25}" stroke-linecap="round"/>
+            <polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${a1} ${a2}" fill="${lCol}" fill-opacity="${isOk?0.75:0.28}"/>`;
         }
         const dr=isGl?9:isSh?8:7;
         const dstr=isGl?'#ffd700':isSh?'#fff':'none';
         const dsw=isGl||isSh?'2':'0';
-        const zoneLbl=_ZLBL[zone]||zone;
-        const alt=e.high_pass?'Alto':'Raso';
-        const res=isGl?'⚽ GOL rival':isSh?'→ Tiro rival':isOk?'Llegó al área':'Despejado';
-        const tgtStr=e.target?` → ${e.target}${e.target_pos?' ('+e.target_pos+')':''}`:' → (sin rematador)';
-        const tip=`${e.player||'?'} (${e.position||'?'})${tgtStr} · ${isIzq?'Izq rival':'Der rival'} · ${zoneLbl} · ${alt} · ${e.minute!=null?e.minute+"'":''} · ${res}`;
-        dests+=`<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="${dr}" fill="${zCol}" fill-opacity="${isOk?0.85:0.35}"
+        const sn  = e.player ? e.player.split(' ').pop() : '?';
+        const tgt = e.target ? e.target.split(' ').pop() : '—';
+        const res = isGl?'⚽ GOL rival':isSh?'→ Tiro rival':isOk?'Llegó al área':'Despejado';
+        const tip = `${sn} (${e.position||'?'}) → ${tgt}${e.target_pos?' ('+e.target_pos+')':''}\n${_ZLBL[zone]} · ${e.high_pass?'Alto':'Raso'} · ${e.minute!=null?e.minute+"' ·":''} ${res}`;
+        dests+=`<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="${dr}" fill="${zCol}" fill-opacity="${isOk?0.92:0.5}"
           stroke="${dstr}" stroke-width="${dsw}" data-tip="${tip}" style="cursor:pointer"/>`;
       }
-      origins+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="${lCol}" fill-opacity="0.8"/>`;
+      origins+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="${lCol}" fill-opacity="0.85"/>`;
     });
     const svg=`<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${base}${arrows}${origins}${dests}</svg>`;
 
@@ -7469,12 +7466,14 @@
     const box = document.getElementById('centros-tip');
     if (!box) return;
     if (!tip) { box.style.display='none'; return; }
-    box.textContent = tip;
+    // Render \n as HTML line breaks
+    box.innerHTML = tip.replace(/\n/g,'<br>');
     box.style.display = 'block';
     const rect = e.currentTarget.getBoundingClientRect();
     let lx = e.clientX - rect.left + 14;
-    let ly = e.clientY - rect.top  - 38;
-    if (lx + 220 > rect.width) lx = e.clientX - rect.left - 200;
+    let ly = e.clientY - rect.top  - 54;
+    if (lx + 240 > rect.width) lx = e.clientX - rect.left - 220;
+    if (ly < 4) ly = 4;
     box.style.left = lx + 'px';
     box.style.top  = ly + 'px';
   }
