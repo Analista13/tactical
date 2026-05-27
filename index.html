@@ -6646,6 +6646,7 @@
     // ── SVG ────────────────────────────────────────────────────────────────
     const {AW,AH,sv,base} = _transPitch(['Zona 1','Zona 2','Zona 3']);
     let arrows='', dots='';
+    const thirdLbl = {'defensive_third':'Zona 1','middle_third':'Zona 2','attacking_third':'Zona 3'};
     filtered.forEach(e => {
       if (e.x_start == null || e.y_start == null) return;
       const isQB  = e.team_in_possession_phase_type === 'quick_break';
@@ -6664,7 +6665,10 @@
         }
       }
       const r = isSh ? 7 : 5;
-      dots+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="${r}" fill="${col}" fill-opacity="0.82" stroke="${isSh?'#fff':'none'}" stroke-width="${isSh?'1.5':'0'}"/>`;
+      const zona = thirdLbl[e.third_start] || '';
+      const tipParts = [e.player_name||'?', isQB?'QB':'Trans', zona, isSh?'→ Tiro':''].filter(Boolean);
+      const tip = tipParts.join(' · ');
+      dots+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="${r}" fill="${col}" fill-opacity="0.82" stroke="${isSh?'#fff':'none'}" stroke-width="${isSh?'1.5':'0'}" data-tip="${tip}" style="cursor:pointer"/>`;
     });
     const svg = `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${base}${arrows}${dots}</svg>`;
 
@@ -6725,11 +6729,16 @@
       <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3fb950;border:1.5px solid #fff;margin-right:4px;vertical-align:middle"></span>Llevó a disparo</span>
     </div>`;
 
+    const svgWrap = `<div style="position:relative;background:#0b150b;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden" onmousemove="transShowTip(event)" onmouseleave="transHideTip()">
+      ${svg}
+      <div id="trans-tip" style="display:none;position:absolute;background:rgba(13,17,23,0.95);border:1px solid rgba(255,255,255,0.12);color:#e6edf3;padding:5px 10px;border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;pointer-events:none;z-index:10;white-space:nowrap"></div>
+    </div>`;
+
     return `<div style="display:flex;gap:6px;margin-bottom:12px">${typeBtns}</div>
       ${stats}
       <div style="display:grid;grid-template-columns:1fr 270px;gap:14px;align-items:start">
         <div>
-          <div style="background:#0b150b;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">${svg}</div>
+          ${svgWrap}
           ${legend}
         </div>
         ${table}
@@ -6795,7 +6804,10 @@
       const r   = (isSh || isGl) ? 7 : 5;
       const str = isGl ? '#ffd700' : isSh ? '#fff' : 'none';
       const sw  = (isSh || isGl) ? '1.5' : '0';
-      dots+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="${r}" fill="${col}" fill-opacity="0.82" stroke="${str}" stroke-width="${sw}"/>`;
+      const min = e.minute != null ? `${e.minute}'` : '';
+      const tipParts = [e.player||'?', e.position||'', isQB?'QB':'Trans', min, isGl?'⚽ GOL':isSh?'→ Tiro':''].filter(Boolean);
+      const tip = tipParts.join(' · ');
+      dots+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="${r}" fill="${col}" fill-opacity="0.82" stroke="${str}" stroke-width="${sw}" data-tip="${tip}" style="cursor:pointer"/>`;
     });
     const svg = `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${base}${arrows}${dots}</svg>`;
 
@@ -6871,16 +6883,41 @@
       ⚠️ No hay datos CSV disponibles para este partido. Selecciona otro para ver transiciones defensivas reales.
     </div>` : '';
 
+    const svgWrap = `<div style="position:relative;background:#0b150b;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden" onmousemove="transShowTip(event)" onmouseleave="transHideTip()">
+      ${svg}
+      <div id="trans-tip" style="display:none;position:absolute;background:rgba(13,17,23,0.95);border:1px solid rgba(255,255,255,0.12);color:#e6edf3;padding:5px 10px;border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;pointer-events:none;z-index:10;white-space:nowrap"></div>
+    </div>`;
+
     return `${noDataNote}
       <div style="display:flex;gap:6px;margin-bottom:12px">${typeBtns}</div>
       ${stats}
       <div style="display:grid;grid-template-columns:1fr 270px;gap:14px;align-items:start">
         <div>
-          <div style="background:#0b150b;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">${svg}</div>
+          ${svgWrap}
           ${legend}
         </div>
         ${table}
       </div>`;
+  }
+
+  // ── Tooltip helpers (transiciones) ───────────────────────────────────────
+  function transShowTip(e) {
+    const tip = e.target.getAttribute && e.target.getAttribute('data-tip');
+    const box = document.getElementById('trans-tip');
+    if (!box) return;
+    if (!tip) { box.style.display='none'; return; }
+    box.textContent = tip;
+    box.style.display = 'block';
+    const rect = e.currentTarget.getBoundingClientRect();
+    let lx = e.clientX - rect.left + 14;
+    let ly = e.clientY - rect.top  - 38;
+    if (lx + 200 > rect.width) lx = e.clientX - rect.left - 180;
+    box.style.left = lx + 'px';
+    box.style.top  = ly + 'px';
+  }
+  function transHideTip() {
+    const b = document.getElementById('trans-tip');
+    if (b) b.style.display = 'none';
   }
 
   // INIT
