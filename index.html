@@ -6666,7 +6666,12 @@
       }
       const r = isSh ? 7 : 5;
       const zona = thirdLbl[e.third_start] || '';
-      const tipParts = [e.player_name||'?', isQB?'QB':'Trans', zona, isSh?'→ Tiro':''].filter(Boolean);
+      let dist = '';
+      if (e.x_end != null && e.y_end != null) {
+        const d = Math.sqrt((e.x_end-e.x_start)**2+(e.y_end-e.y_start)**2);
+        if (d > 0.5) dist = d.toFixed(1)+'m';
+      }
+      const tipParts = [e.player_name||'?', isQB?'QB':'Trans', zona, dist, isSh?'→ Tiro':''].filter(Boolean);
       const tip = tipParts.join(' · ');
       dots+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="${r}" fill="${col}" fill-opacity="0.82" stroke="${isSh?'#fff':'none'}" stroke-width="${isSh?'1.5':'0'}" data-tip="${tip}" style="cursor:pointer"/>`;
     });
@@ -6685,12 +6690,15 @@
       <div style="font-size:20px;font-weight:800;color:${col}">${val}</div>
       <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.2">${lbl}</div>
     </div>`;
+    const dists = filtered.filter(e => e.x_end != null && e.y_end != null).map(e => Math.sqrt((e.x_end-e.x_start)**2+(e.y_end-e.y_start)**2));
+    const avgDist = dists.length ? (dists.reduce((a,b)=>a+b,0)/dists.length).toFixed(1)+'m' : '—';
     const stats = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
       ${chip('Acciones', total,'var(--text1)')}
       ${chip('Transición', trCnt,'#3fb950')}
       ${chip('Quick Break', qbCnt,'#f0883e')}
       ${chip('→ Tiro', shots,'#f85149')}
       ${chip('% Lead to shot', total?Math.round(shots/total*100)+'%':'—','#f85149')}
+      ${chip('Dist. media', avgDist,'var(--text2)')}
       ${chip('Pérdidas', losses,'var(--text3)')}
     </div>`;
 
@@ -6805,7 +6813,8 @@
       const str = isGl ? '#ffd700' : isSh ? '#fff' : 'none';
       const sw  = (isSh || isGl) ? '1.5' : '0';
       const min = e.minute != null ? `${e.minute}'` : '';
-      const tipParts = [e.player||'?', e.position||'', isQB?'QB':'Trans', min, isGl?'⚽ GOL':isSh?'→ Tiro':''].filter(Boolean);
+      const dist = e.distance != null ? e.distance+'m' : '';
+      const tipParts = [e.player||'?', e.position||'', isQB?'QB':'Trans', min, dist, isGl?'⚽ GOL':isSh?'→ Tiro':''].filter(Boolean);
       const tip = tipParts.join(' · ');
       dots+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="${r}" fill="${col}" fill-opacity="0.82" stroke="${str}" stroke-width="${sw}" data-tip="${tip}" style="cursor:pointer"/>`;
     });
@@ -6824,6 +6833,8 @@
       <div style="font-size:20px;font-weight:800;color:${col}">${val}</div>
       <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.2">${lbl}</div>
     </div>`;
+    const defDists = filtered.filter(e => e.distance != null).map(e => e.distance);
+    const defAvgDist = defDists.length ? (defDists.reduce((a,b)=>a+b,0)/defDists.length).toFixed(1)+'m' : '—';
     const stats = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
       ${chip('Trans. rivales', total,'var(--text1)')}
       ${chip('Transición', trCnt,'#58a6ff')}
@@ -6831,6 +6842,7 @@
       ${chip('→ Tiro rival', shots,'#f85149')}
       ${chip('→ Gol rival', goals,'#ffd700')}
       ${chip('% Lead to shot', total?Math.round(shots/total*100)+'%':'—','#f85149')}
+      ${chip('Dist. media', defAvgDist,'var(--text2)')}
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
       ${chip('Bloque bajo', zCP,'#f85149')}
