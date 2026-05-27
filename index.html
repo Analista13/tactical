@@ -6958,7 +6958,7 @@
 
   async function renderCentros() {
     const cont = document.getElementById('content');
-    const partidos = _filteredPartidos();
+    const partidos = getPartidos();
     if (!centrosMatchId) centrosMatchId = partidos[partidos.length - 1]?.id ?? null;
     const partido = partidos.find(p => p.id === centrosMatchId);
 
@@ -6977,9 +6977,8 @@
     // ── Match selector (collapsible grid) ─────────────────────────────────
     const gridCards = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:5px;margin-top:10px">
       ${partidos.map(p => {
-        const home = p.s && !p.s.startsWith('0-') && typeof p.local !== 'undefined' ? p.local : (p.s ? p.s.split('-')[0] > p.s.split('-')[1] : false);
-        const esLocal = p.local !== undefined ? p.local : true;
-        const rival = (p.rival || '').substring(0,14);
+        const esLocal = p.local === currentTeam.name;
+        const rival   = (esLocal ? p.vis : p.local).substring(0,14);
         const rvShort = rival.length > 13 ? rival.substring(0,12)+'…' : rival;
         const sel = p.id === centrosMatchId;
         return `<button onclick="centrosMatchId=${p.id};centrosDropOpen=false;centrosFlank='all';renderCentros()"
@@ -6994,8 +6993,8 @@
       }).join('')}
     </div>`;
 
-    const rival  = partido?.rival || '?';
-    const esLocal = partido?.local !== undefined ? partido.local : true;
+    const esLocal = partido ? partido.local === currentTeam.name : true;
+    const rival   = partido ? (esLocal ? partido.vis : partido.local) : '?';
     const matchGrid = `<div style="background:var(--bg2);border:1px solid ${centrosDropOpen?'rgba(88,166,255,0.35)':'var(--border)'};border-radius:10px;padding:12px 14px;margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:10px">
