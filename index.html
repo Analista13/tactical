@@ -7049,7 +7049,24 @@
     </div>`;
   }
 
-  // ── Pitch helper for centros (flank bands instead of vertical zones) ──────
+  // ── Zone classifier ───────────────────────────────────────────────────────
+  // isOff=true → attack direction is positive x (area at x≥36)
+  // isOff=false → attack direction is negative x (rival area at x≤-36, Ponfe's at x≤-36)
+  function _crossZone(xe, ye, flank, isOff) {
+    if (xe == null || ye == null) return 'fuera';
+    const inArea = isOff ? xe >= 36 : xe <= -36;
+    if (!inArea) return 'fuera';
+    // Near post = same side as crosser; far post = opposite side
+    const nearSide = flank === 'wide_left' ? ye > 3 : ye < -3;
+    const farSide  = flank === 'wide_left' ? ye < -3 : ye > 3;
+    if (nearSide) return 'primer';
+    if (farSide)  return 'segundo';
+    return 'centro';
+  }
+  const _ZCOL = { primer:'#58a6ff', segundo:'#f0883e', centro:'#ffd700', fuera:'#484f58' };
+  const _ZLBL = { primer:'Primer palo', segundo:'Segundo palo', centro:'Centro del área', fuera:'Fuera del área' };
+
+  // ── Pitch helper for centros ───────────────────────────────────────────────
   function _centrosPitch() {
     const AW=860,AH=540,AMX=52,AMY=40,APW=AW-AMX*2,APH=AH-AMY*2;
     const sv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW, sy:AMY+((34-y)/68)*APH});
@@ -7083,6 +7100,43 @@
       <polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${a1} ${a2}" fill="${col}" fill-opacity="${opacity}"/>`;
   }
 
+  // ── Shared helpers ─────────────────────────────────────────────────────────
+  function _centrosFlankBtns(labels) {
+    return labels.map(([id,lbl,col]) => {
+      const act = centrosFlank === id;
+      return `<button onclick="centrosFlank='${id}';renderCentros()"
+        style="padding:4px 13px;border-radius:20px;border:1px solid ${act?col:'var(--border)'};background:${act?col+'22':'var(--bg2)'};color:${act?col:'var(--text2)'};font-size:12px;font-weight:${act?700:400};cursor:pointer;transition:all .15s">${lbl}</button>`;
+    }).join('');
+  }
+  function _centrosChip(lbl,val,col) {
+    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;text-align:center;min-width:72px">
+      <div style="font-size:19px;font-weight:800;color:${col}">${val}</div>
+      <div style="font-size:9px;color:var(--text3);margin-top:2px;line-height:1.3;letter-spacing:0.3px;text-transform:uppercase">${lbl}</div>
+    </div>`;
+  }
+  function _centrosZoneLegend(filtered, isOff) {
+    const total = filtered.length;
+    return ['primer','centro','segundo','fuera'].map(z => {
+      const cnt = filtered.filter(e => _crossZone(e.x_end, e.y_end, e.flank, isOff) === z).length;
+      const pct = total ? Math.round(cnt/total*100) : 0;
+      const col = _ZCOL[z];
+      return `<div style="display:flex;align-items:center;gap:8px;font-size:11px">
+        <span style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;display:inline-block"></span>
+        <span style="color:var(--text2);width:120px;flex-shrink:0">${_ZLBL[z]}</span>
+        <div style="flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;min-width:60px">
+          <div style="width:${pct}%;height:100%;background:${col};border-radius:2px"></div>
+        </div>
+        <span style="color:var(--text2);min-width:52px;text-align:right;font-variant-numeric:tabular-nums">${cnt} <span style="color:var(--text3)">(${pct}%)</span></span>
+      </div>`;
+    }).join('');
+  }
+  function _centrosSvgWrap(svg, id='centros-tip') {
+    return `<div style="position:relative;background:#0b150b;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden" onmousemove="centrosShowTip(event)" onmouseleave="centrosHideTip()">
+      ${svg}
+      <div id="${id}" style="display:none;position:absolute;background:rgba(13,17,23,0.97);border:1px solid rgba(255,255,255,0.13);color:#e6edf3;padding:6px 11px;border-radius:7px;font-size:11px;font-family:'DM Sans',sans-serif;pointer-events:none;z-index:10;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.5)"></div>
+    </div>`;
+  }
+
   // ── Ofensivos ─────────────────────────────────────────────────────────────
   function buildCentrosOfensivos(events) {
     let filtered = events.filter(e => e.x_start != null);
@@ -7099,115 +7153,151 @@
     const izq     = filtered.filter(e => e.flank === 'wide_left').length;
     const der     = filtered.filter(e => e.flank === 'wide_right').length;
 
-    // Player stats
-    const pm = {};
+    // Crosser stats
+    const centMap = {};
     filtered.forEach(e => {
       const n = e.player; if (!n) return;
-      if (!pm[n]) pm[n] = {total:0,shot:0,goal:0,pos:e.position||''};
-      pm[n].total++;
-      if (e.lead_to_shot) pm[n].shot++;
-      if (e.lead_to_goal) pm[n].goal++;
+      if (!centMap[n]) centMap[n] = {tot:0,ok:0,shot:0,goal:0,pos:e.position||''};
+      centMap[n].tot++;
+      if (e.outcome==='successful') centMap[n].ok++;
+      if (e.lead_to_shot) centMap[n].shot++;
+      if (e.lead_to_goal) centMap[n].goal++;
     });
-    const players = Object.entries(pm).sort((a,b)=>b[1].total-a[1].total);
-    const maxT = players[0]?.[1].total || 1;
-
-    // SVG
-    const {AW,AH,sv,base} = _centrosPitch();
-    let arrows='', dots='';
+    // Target player (rematador) stats
+    const remMap = {};
     filtered.forEach(e => {
-      const isIzq = e.flank === 'wide_left';
-      const col   = isIzq ? '#58a6ff' : '#f0883e';
-      const isSh  = e.lead_to_shot;
-      const isGl  = e.lead_to_goal;
-      const isOk  = e.outcome === 'successful';
-      const {sx:x1,sy:y1} = sv(e.x_start, e.y_start);
-      if (e.x_end != null && e.y_end != null) {
-        const {sx:x2,sy:y2} = sv(e.x_end, e.y_end);
-        arrows += _crossArrow(x1,y1,x2,y2,col, isOk?0.65:0.3);
-      }
-      const r   = isGl ? 8 : isSh ? 7 : 5;
-      const str = isGl ? '#ffd700' : isSh ? '#fff' : (isOk?col:'none');
-      const sw  = isGl||isSh ? '2' : isOk ? '1' : '0';
-      const min = e.minute != null ? `${e.minute}'` : '';
-      const pos = e.position || '';
-      const alt = e.high_pass ? 'Alto' : 'Raso';
-      const res = isGl ? '⚽ GOL' : isSh ? '→ Tiro' : isOk ? '✓ OK' : '✗ Fallado';
-      const tip = [e.player||'?', pos, isIzq?'Izquierda':'Derecha', alt, min, res].filter(Boolean).join(' · ');
-      dots += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="${r}" fill="${col}" fill-opacity="${isOk?0.85:0.4}"
-        stroke="${str}" stroke-width="${sw}" data-tip="${tip}" style="cursor:pointer"/>`;
+      const n = e.target; if (!n) return;
+      if (!remMap[n]) remMap[n] = {tot:0,shot:0,goal:0,pos:e.target_pos||''};
+      remMap[n].tot++;
+      if (e.lead_to_shot) remMap[n].shot++;
+      if (e.lead_to_goal) remMap[n].goal++;
     });
-    const svg = `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${base}${arrows}${dots}</svg>`;
+    const centradores = Object.entries(centMap).sort((a,b)=>b[1].tot-a[1].tot);
+    const rematadores = Object.entries(remMap).sort((a,b)=>b[1].tot-a[1].tot);
+    const maxC = centradores[0]?.[1].tot||1, maxR = rematadores[0]?.[1].tot||1;
+
+    // SVG — line color by flank, destination dot by zone
+    const {AW,AH,sv,base} = _centrosPitch();
+    let arrows='', origins='', dests='';
+    filtered.forEach(e => {
+      const isIzq = e.flank==='wide_left';
+      const lCol  = isIzq ? 'rgba(88,166,255,0.55)' : 'rgba(240,136,62,0.55)';
+      const isSh=e.lead_to_shot, isGl=e.lead_to_goal, isOk=e.outcome==='successful';
+      const {sx:x1,sy:y1}=sv(e.x_start,e.y_start);
+      const zone=_crossZone(e.x_end,e.y_end,e.flank,true);
+      const zCol=_ZCOL[zone];
+      if (e.x_end!=null && e.y_end!=null) {
+        const {sx:x2,sy:y2}=sv(e.x_end,e.y_end);
+        const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+        if (len>5) {
+          const ang=Math.atan2(dy,dx),as=5;
+          const a1=`${(x2-as*Math.cos(ang-0.45)).toFixed(1)},${(y2-as*Math.sin(ang-0.45)).toFixed(1)}`;
+          const a2=`${(x2-as*Math.cos(ang+0.45)).toFixed(1)},${(y2-as*Math.sin(ang+0.45)).toFixed(1)}`;
+          arrows+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${lCol}" stroke-width="1.4" stroke-opacity="${isOk?0.7:0.22}" stroke-linecap="round"/>
+            <polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${a1} ${a2}" fill="${lCol}" fill-opacity="${isOk?0.7:0.25}"/>`;
+        }
+        // Destination dot colored by zone
+        const dr=isGl?9:isSh?8:7;
+        const dstr=isGl?'#ffd700':isSh?'#fff':'none';
+        const dsw=isGl||isSh?'2':'0';
+        const zoneLbl=_ZLBL[zone]||zone;
+        const alt=e.high_pass?'Alto':'Raso';
+        const res=isGl?'⚽ GOL':isSh?'→ Tiro':isOk?'Completado':'Fallado';
+        const tgtStr=e.target?(` → ${e.target}${e.target_pos?' ('+e.target_pos+')':''}`):'';
+        const tip=`${e.player||'?'} (${e.position||'?'})${tgtStr} · ${isIzq?'Izq':'Der'} · ${zoneLbl} · ${alt} · ${e.minute!=null?e.minute+"'":''} · ${res}`;
+        dests+=`<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="${dr}" fill="${zCol}" fill-opacity="${isOk?0.88:0.45}"
+          stroke="${dstr}" stroke-width="${dsw}" data-tip="${tip}" style="cursor:pointer"/>`;
+      }
+      origins+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="${lCol}" fill-opacity="0.8"/>`;
+    });
+    const svg=`<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${base}${arrows}${origins}${dests}</svg>`;
 
     // Flank filter
-    const flankBtns = [['all','Ambas bandas'],['wide_left','↖ Izquierda'],['wide_right','↙ Derecha']].map(([id,lbl])=>{
-      const act = centrosFlank===id;
-      const col = id==='wide_left'?'#58a6ff':id==='wide_right'?'#f0883e':'var(--accent)';
-      return `<button onclick="centrosFlank='${id}';renderCentros()"
-        style="padding:4px 12px;border-radius:20px;border:1px solid ${act?col:'var(--border)'};background:${act?col+'22':'var(--bg2)'};color:${act?col:'var(--text2)'};font-size:12px;font-weight:${act?700:400};cursor:pointer;transition:all .15s">${lbl}</button>`;
-    }).join('');
+    const flankBtns=_centrosFlankBtns([
+      ['all','Ambas bandas','var(--accent)'],
+      ['wide_left','↖ Izquierda','#58a6ff'],
+      ['wide_right','↙ Derecha','#f0883e']
+    ]);
 
     // Stats chips
-    const chip=(lbl,val,col)=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;min-width:80px">
-      <div style="font-size:20px;font-weight:800;color:${col}">${val}</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.3">${lbl}</div>
-    </div>`;
-    const stats = `<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">
-      ${chip('Centros', total, 'var(--text)')}
-      ${chip('↖ Izquierda', izq, '#58a6ff')}
-      ${chip('↙ Derecha', der, '#f0883e')}
-      ${chip('✓ Completados', exitoso, '#3fb950')}
-      ${chip('% Comp.', total?Math.round(exitoso/total*100)+'%':'—', '#3fb950')}
-      ${chip('→ Tiro', shots, '#f85149')}
-      ${chip('⚽ Gol', goals, '#ffd700')}
-      ${chip('✈️ Altos', altos, 'var(--text2)')}
+    const stats=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+      ${_centrosChip('Centros',total,'var(--text)')}
+      ${_centrosChip('Izquierda',izq,'#58a6ff')}
+      ${_centrosChip('Derecha',der,'#f0883e')}
+      ${_centrosChip('Completados',exitoso,'#3fb950')}
+      ${_centrosChip('% Comp.',total?Math.round(exitoso/total*100)+'%':'—','#3fb950')}
+      ${_centrosChip('→ Tiro',shots,'#f85149')}
+      ${_centrosChip('% Tiro',total?Math.round(shots/total*100)+'%':'—','#f85149')}
+      ${_centrosChip('⚽ Gol',goals,'#ffd700')}
+      ${_centrosChip('Altos',altos,'var(--text2)')}
     </div>`;
 
-    // Player table
-    const rows = players.slice(0,14).map(([name,d])=>{
-      const bw = Math.round(d.total/maxT*100);
-      const sn = name.split(' ').slice(-1)[0].substring(0,12);
-      return `<tr>
-        <td style="padding:6px 8px;font-size:12px;font-weight:600;color:var(--text)">${sn}</td>
-        <td style="padding:6px 8px;font-size:11px;color:var(--text3);text-align:center">${d.pos||'—'}</td>
-        <td style="padding:6px 8px;font-size:13px;font-weight:800;color:var(--text);text-align:center">${d.total}</td>
-        <td style="padding:6px 8px;font-size:12px;color:#f85149;text-align:center">${d.shot||'—'}</td>
-        <td style="padding:6px 8px;font-size:12px;color:#ffd700;text-align:center">${d.goal||'—'}</td>
-        <td style="padding:6px 8px;width:55px"><div style="height:4px;background:var(--bg4);border-radius:2px"><div style="width:${bw}%;height:4px;background:#58a6ff;border-radius:2px"></div></div></td>
+    // Zone breakdown
+    const zonePanel=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-top:10px">
+      <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px">Zona de llegada del centro</div>
+      <div style="display:flex;flex-direction:column;gap:7px">${_centrosZoneLegend(filtered,true)}</div>
+    </div>`;
+
+    // Cross-ref legend
+    const vizLegend=`<div style="display:flex;gap:12px;align-items:center;font-size:10px;color:var(--text3);margin-top:8px;flex-wrap:wrap">
+      <span><span style="display:inline-block;width:9px;height:2px;background:rgba(88,166,255,0.7);margin-right:4px;vertical-align:middle"></span>Banda izq</span>
+      <span><span style="display:inline-block;width:9px;height:2px;background:rgba(240,136,62,0.7);margin-right:4px;vertical-align:middle"></span>Banda der</span>
+      <span style="color:#58a6ff">● Primer palo</span>
+      <span style="color:#ffd700">● Centro</span>
+      <span style="color:#f0883e">● Segundo palo</span>
+      <span style="color:#484f58">● Fuera</span>
+      <span>| ○ blanco = tiro · ○ oro = gol</span>
+    </div>`;
+
+    // Crossers table
+    function tblRow(name,d,accent,maxV) {
+      const pct=d.tot?Math.round(d.ok/d.tot*100):0;
+      const bw=Math.round(d.tot/maxV*100);
+      const sn=name.split(' ').pop().substring(0,12);
+      return `<tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
+        <td style="padding:5px 7px;font-size:12px;font-weight:600;color:var(--text)">${sn}</td>
+        <td style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">${d.pos||'—'}</td>
+        <td style="padding:5px 5px;font-size:13px;font-weight:800;color:var(--text);text-align:center">${d.tot}</td>
+        <td style="padding:5px 5px;font-size:11px;color:#3fb950;text-align:center">${d.ok||'—'}</td>
+        <td style="padding:5px 5px;font-size:10px;color:var(--text3);text-align:center">${pct}%</td>
+        <td style="padding:5px 5px;font-size:11px;color:#f85149;text-align:center">${d.shot||'—'}</td>
+        <td style="padding:5px 5px;font-size:11px;color:#ffd700;text-align:center">${d.goal||'—'}</td>
+        <td style="padding:5px 6px;width:44px"><div style="height:3px;background:var(--bg4);border-radius:2px"><div style="width:${bw}%;height:3px;background:${accent};border-radius:2px"></div></div></td>
       </tr>`;
-    }).join('');
-    const table = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-      <div style="padding:9px 12px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.5px">CENTROS POR JUGADOR</div>
-      <table style="width:100%;border-collapse:collapse">
-        <thead><tr style="border-bottom:1px solid var(--border)">
-          <th style="padding:6px 8px;font-size:10px;color:var(--text3);text-align:left">JUGADOR</th>
-          <th style="padding:6px 8px;font-size:10px;color:var(--text3);text-align:center">POS</th>
-          <th style="padding:6px 8px;font-size:10px;color:var(--text3);text-align:center">TOT</th>
-          <th style="padding:6px 8px;font-size:10px;color:#f85149;text-align:center">🎯</th>
-          <th style="padding:6px 8px;font-size:10px;color:#ffd700;text-align:center">⚽</th>
-          <th></th>
-        </tr></thead>
-        <tbody>${rows||`<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Sin centros este partido</td></tr>`}</tbody>
-      </table>
-    </div>`;
-
-    const legend = `<div style="display:flex;gap:14px;align-items:center;font-size:11px;color:var(--text3);margin-top:8px;flex-wrap:wrap">
-      <span><span style="display:inline-block;width:10px;height:2px;background:#58a6ff;margin-right:5px;vertical-align:middle"></span>Banda izquierda</span>
-      <span><span style="display:inline-block;width:10px;height:2px;background:#f0883e;margin-right:5px;vertical-align:middle"></span>Banda derecha</span>
-      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#58a6ff;border:1.5px solid #fff;margin-right:4px;vertical-align:middle"></span>Tiro</span>
-      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#58a6ff;border:2px solid #ffd700;margin-right:4px;vertical-align:middle"></span>Gol</span>
-      <span style="opacity:0.5">Opacidad baja = centro fallado</span>
-    </div>`;
-
-    const svgWrap = `<div style="position:relative;background:#0b150b;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden" onmousemove="centrosShowTip(event)" onmouseleave="centrosHideTip()">
-      ${svg}
-      <div id="centros-tip" style="display:none;position:absolute;background:rgba(13,17,23,0.95);border:1px solid rgba(255,255,255,0.12);color:#e6edf3;padding:5px 10px;border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;pointer-events:none;z-index:10;white-space:nowrap"></div>
+    }
+    const tblHead=(extra)=>`<thead><tr style="border-bottom:1px solid var(--border)">
+      <th style="padding:5px 7px;font-size:9px;color:var(--text3);text-align:left;font-weight:700">JUGADOR</th>
+      <th style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">POS</th>
+      <th style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">TOT</th>
+      <th style="padding:5px 5px;font-size:9px;color:#3fb950;text-align:center">OK</th>
+      <th style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">%</th>
+      <th style="padding:5px 5px;font-size:9px;color:#f85149;text-align:center">TIR</th>
+      <th style="padding:5px 5px;font-size:9px;color:#ffd700;text-align:center">GOL</th>
+      <th></th>
+    </tr></thead>`;
+    const centRows=centradores.slice(0,10).map(([n,d])=>tblRow(n,d,'#58a6ff',maxC)).join('');
+    const remRows=rematadores.slice(0,10).map(([n,d])=>tblRow(n,d,'#3fb950',maxR)).join('');
+    const empty=(cols,msg)=>`<tr><td colspan="${cols}" style="padding:14px;text-align:center;color:var(--text3);font-size:11px">${msg}</td></tr>`;
+    const tables=`<div style="display:flex;flex-direction:column;gap:8px">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        <div style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase">⚽ Centradores</div>
+        <table style="width:100%;border-collapse:collapse">${tblHead()}
+          <tbody>${centRows||empty(8,'Sin centros este partido')}</tbody>
+        </table>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        <div style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase">🎯 Rematadores</div>
+        <table style="width:100%;border-collapse:collapse">${tblHead()}
+          <tbody>${remRows||empty(8,'Sin datos de rematador')}</tbody>
+        </table>
+      </div>
     </div>`;
 
     return `<div style="display:flex;gap:6px;margin-bottom:12px">${flankBtns}</div>
       ${stats}
-      <div style="display:grid;grid-template-columns:1fr 255px;gap:14px;align-items:start">
-        <div>${svgWrap}${legend}</div>
-        ${table}
+      <div style="display:grid;grid-template-columns:1fr 285px;gap:14px;align-items:start">
+        <div>${_centrosSvgWrap(svg)}${vizLegend}${zonePanel}</div>
+        ${tables}
       </div>`;
   }
 
@@ -7228,121 +7318,148 @@
     const izq     = filtered.filter(e => e.flank === 'wide_left').length;
     const der     = filtered.filter(e => e.flank === 'wide_right').length;
 
-    // Player stats (rival crossers)
-    const pm = {};
-    filtered.forEach(e => {
-      const n = e.player; if (!n) return;
-      if (!pm[n]) pm[n] = {total:0,shot:0,goal:0,pos:e.position||''};
-      pm[n].total++;
-      if (e.lead_to_shot) pm[n].shot++;
-      if (e.lead_to_goal) pm[n].goal++;
+    // Crosser stats (rival)
+    const centMap={};
+    filtered.forEach(e=>{
+      const n=e.player; if(!n) return;
+      if(!centMap[n]) centMap[n]={tot:0,ok:0,shot:0,goal:0,pos:e.position||''};
+      centMap[n].tot++;
+      if(e.outcome==='successful') centMap[n].ok++;
+      if(e.lead_to_shot) centMap[n].shot++;
+      if(e.lead_to_goal) centMap[n].goal++;
     });
-    const players = Object.entries(pm).sort((a,b)=>b[1].total-a[1].total);
-    const maxT = players[0]?.[1].total || 1;
+    // Target (ponfe defenders who receive/contend)
+    const remMap={};
+    filtered.forEach(e=>{
+      const n=e.target; if(!n) return;
+      if(!remMap[n]) remMap[n]={tot:0,shot:0,goal:0,pos:e.target_pos||''};
+      remMap[n].tot++;
+      if(e.lead_to_shot) remMap[n].shot++;
+      if(e.lead_to_goal) remMap[n].goal++;
+    });
+    const centradores=Object.entries(centMap).sort((a,b)=>b[1].tot-a[1].tot);
+    const rematadores=Object.entries(remMap).sort((a,b)=>b[1].tot-a[1].tot);
+    const maxC=centradores[0]?.[1].tot||1, maxR=rematadores[0]?.[1].tot||1;
 
     // SVG
-    const {AW,AH,sv,base} = _centrosPitch();
-    let arrows='', dots='';
-    filtered.forEach(e => {
-      const isIzq = e.flank === 'wide_left';
-      // Defensive: rival center from their perspective — use red tones
-      const col   = isIzq ? '#f85149' : '#ff7b72';
-      const isSh  = e.lead_to_shot;
-      const isGl  = e.lead_to_goal;
-      const isOk  = e.outcome === 'successful';
-      const {sx:x1,sy:y1} = sv(e.x_start, e.y_start);
-      if (e.x_end != null && e.y_end != null) {
-        const {sx:x2,sy:y2} = sv(e.x_end, e.y_end);
-        arrows += _crossArrow(x1,y1,x2,y2,col, isOk?0.65:0.3);
+    const {AW,AH,sv,base}=_centrosPitch();
+    let arrows='',origins='',dests='';
+    filtered.forEach(e=>{
+      const isIzq=e.flank==='wide_left';
+      const lCol=isIzq?'rgba(248,81,73,0.55)':'rgba(255,123,114,0.55)';
+      const isSh=e.lead_to_shot,isGl=e.lead_to_goal,isOk=e.outcome==='successful';
+      const {sx:x1,sy:y1}=sv(e.x_start,e.y_start);
+      const zone=_crossZone(e.x_end,e.y_end,e.flank,false);
+      const zCol=isOk?_ZCOL[zone]:'#484f58';
+      if(e.x_end!=null&&e.y_end!=null){
+        const {sx:x2,sy:y2}=sv(e.x_end,e.y_end);
+        const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+        if(len>5){
+          const ang=Math.atan2(dy,dx),as=5;
+          const a1=`${(x2-as*Math.cos(ang-0.45)).toFixed(1)},${(y2-as*Math.sin(ang-0.45)).toFixed(1)}`;
+          const a2=`${(x2-as*Math.cos(ang+0.45)).toFixed(1)},${(y2-as*Math.sin(ang+0.45)).toFixed(1)}`;
+          arrows+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${lCol}" stroke-width="1.4" stroke-opacity="${isOk?0.7:0.22}" stroke-linecap="round"/>
+            <polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${a1} ${a2}" fill="${lCol}" fill-opacity="${isOk?0.7:0.25}"/>`;
+        }
+        const dr=isGl?9:isSh?8:7;
+        const dstr=isGl?'#ffd700':isSh?'#fff':'none';
+        const dsw=isGl||isSh?'2':'0';
+        const zoneLbl=_ZLBL[zone]||zone;
+        const alt=e.high_pass?'Alto':'Raso';
+        const res=isGl?'⚽ GOL rival':isSh?'→ Tiro rival':isOk?'Llegó al área':'Despejado';
+        const tgtStr=e.target?` → ${e.target}${e.target_pos?' ('+e.target_pos+')':''}`:' → (sin rematador)';
+        const tip=`${e.player||'?'} (${e.position||'?'})${tgtStr} · ${isIzq?'Izq rival':'Der rival'} · ${zoneLbl} · ${alt} · ${e.minute!=null?e.minute+"'":''} · ${res}`;
+        dests+=`<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="${dr}" fill="${zCol}" fill-opacity="${isOk?0.85:0.35}"
+          stroke="${dstr}" stroke-width="${dsw}" data-tip="${tip}" style="cursor:pointer"/>`;
       }
-      const r   = isGl ? 8 : isSh ? 7 : 5;
-      const str = isGl ? '#ffd700' : isSh ? '#fff' : (isOk?col:'none');
-      const sw  = isGl||isSh ? '2' : isOk ? '1' : '0';
-      const min = e.minute != null ? `${e.minute}'` : '';
-      const pos = e.position || '';
-      const alt = e.high_pass ? 'Alto' : 'Raso';
-      const res = isGl ? '⚽ GOL rival' : isSh ? '→ Tiro rival' : isOk ? '✓ Llegó' : '✗ Despejado';
-      const tip = [e.player||'?', pos, isIzq?'Izquierda rival':'Derecha rival', alt, min, res].filter(Boolean).join(' · ');
-      dots += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="${r}" fill="${col}" fill-opacity="${isOk?0.8:0.35}"
-        stroke="${str}" stroke-width="${sw}" data-tip="${tip}" style="cursor:pointer"/>`;
+      origins+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="${lCol}" fill-opacity="0.8"/>`;
     });
-    const svg = `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${base}${arrows}${dots}</svg>`;
+    const svg=`<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${base}${arrows}${origins}${dests}</svg>`;
 
-    // Flank filter
-    const flankBtns = [['all','Ambas bandas'],['wide_left','↖ Izquierda rival'],['wide_right','↙ Derecha rival']].map(([id,lbl])=>{
-      const act = centrosFlank===id;
-      const col = id==='wide_left'?'#f85149':id==='wide_right'?'#ff7b72':'var(--accent)';
-      return `<button onclick="centrosFlank='${id}';renderCentros()"
-        style="padding:4px 12px;border-radius:20px;border:1px solid ${act?col:'var(--border)'};background:${act?col+'22':'var(--bg2)'};color:${act?col:'var(--text2)'};font-size:12px;font-weight:${act?700:400};cursor:pointer;transition:all .15s">${lbl}</button>`;
-    }).join('');
+    const flankBtns=_centrosFlankBtns([
+      ['all','Ambas bandas','var(--accent)'],
+      ['wide_left','↖ Izq rival','#f85149'],
+      ['wide_right','↙ Der rival','#ff7b72']
+    ]);
 
-    // Stats chips
-    const chip=(lbl,val,col)=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;min-width:80px">
-      <div style="font-size:20px;font-weight:800;color:${col}">${val}</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.3">${lbl}</div>
-    </div>`;
-    const stats = `<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">
-      ${chip('Centros recibidos', total, 'var(--text)')}
-      ${chip('↖ Izq rival', izq, '#f85149')}
-      ${chip('↙ Der rival', der, '#ff7b72')}
-      ${chip('Completados', exitoso, '#f85149')}
-      ${chip('% Comp.', total?Math.round(exitoso/total*100)+'%':'—', '#f85149')}
-      ${chip('→ Tiro rival', shots, '#f0883e')}
-      ${chip('⚽ Gol rival', goals, '#ffd700')}
-      ${chip('✈️ Altos', altos, 'var(--text2)')}
+    const stats=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+      ${_centrosChip('Centros recibidos',total,'var(--text)')}
+      ${_centrosChip('Izq rival',izq,'#f85149')}
+      ${_centrosChip('Der rival',der,'#ff7b72')}
+      ${_centrosChip('Completados',exitoso,'#f85149')}
+      ${_centrosChip('% Comp.',total?Math.round(exitoso/total*100)+'%':'—','#f85149')}
+      ${_centrosChip('→ Tiro',shots,'#f0883e')}
+      ${_centrosChip('% Tiro',total?Math.round(shots/total*100)+'%':'—','#f0883e')}
+      ${_centrosChip('⚽ Gol',goals,'#ffd700')}
+      ${_centrosChip('Altos',altos,'var(--text2)')}
     </div>`;
 
-    // Player table (rival crossers)
-    const rows = players.slice(0,14).map(([name,d])=>{
-      const bw = Math.round(d.total/maxT*100);
-      const sn = name.split(' ').slice(-1)[0].substring(0,12);
-      return `<tr>
-        <td style="padding:6px 8px;font-size:12px;font-weight:600;color:var(--text)">${sn}</td>
-        <td style="padding:6px 8px;font-size:11px;color:var(--text3);text-align:center">${d.pos||'—'}</td>
-        <td style="padding:6px 8px;font-size:13px;font-weight:800;color:var(--text);text-align:center">${d.total}</td>
-        <td style="padding:6px 8px;font-size:12px;color:#f0883e;text-align:center">${d.shot||'—'}</td>
-        <td style="padding:6px 8px;font-size:12px;color:#ffd700;text-align:center">${d.goal||'—'}</td>
-        <td style="padding:6px 8px;width:55px"><div style="height:4px;background:var(--bg4);border-radius:2px"><div style="width:${bw}%;height:4px;background:#f85149;border-radius:2px"></div></div></td>
+    const zonePanel=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-top:10px">
+      <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px">Zona de llegada en el área de Ponferradina</div>
+      <div style="display:flex;flex-direction:column;gap:7px">${_centrosZoneLegend(filtered,false)}</div>
+    </div>`;
+
+    const vizLegend=`<div style="display:flex;gap:12px;align-items:center;font-size:10px;color:var(--text3);margin-top:8px;flex-wrap:wrap">
+      <span><span style="display:inline-block;width:9px;height:2px;background:rgba(248,81,73,0.7);margin-right:4px;vertical-align:middle"></span>Izq rival</span>
+      <span><span style="display:inline-block;width:9px;height:2px;background:rgba(255,123,114,0.7);margin-right:4px;vertical-align:middle"></span>Der rival</span>
+      <span style="color:#58a6ff">● Primer palo</span>
+      <span style="color:#ffd700">● Centro</span>
+      <span style="color:#f0883e">● Segundo palo</span>
+      <span style="color:#484f58">● Fuera</span>
+      <span>| ○ blanco = tiro · ○ oro = gol</span>
+    </div>`;
+
+    function tblRow(name,d,accent,maxV) {
+      const pct=d.tot?Math.round(d.ok/d.tot*100):0;
+      const bw=Math.round(d.tot/maxV*100);
+      const sn=name.split(' ').pop().substring(0,12);
+      return `<tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
+        <td style="padding:5px 7px;font-size:12px;font-weight:600;color:var(--text)">${sn}</td>
+        <td style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">${d.pos||'—'}</td>
+        <td style="padding:5px 5px;font-size:13px;font-weight:800;color:var(--text);text-align:center">${d.tot}</td>
+        <td style="padding:5px 5px;font-size:11px;color:#f85149;text-align:center">${d.ok||'—'}</td>
+        <td style="padding:5px 5px;font-size:10px;color:var(--text3);text-align:center">${pct}%</td>
+        <td style="padding:5px 5px;font-size:11px;color:#f0883e;text-align:center">${d.shot||'—'}</td>
+        <td style="padding:5px 5px;font-size:11px;color:#ffd700;text-align:center">${d.goal||'—'}</td>
+        <td style="padding:5px 6px;width:44px"><div style="height:3px;background:var(--bg4);border-radius:2px"><div style="width:${bw}%;height:3px;background:${accent};border-radius:2px"></div></div></td>
       </tr>`;
-    }).join('');
-    const table = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-      <div style="padding:9px 12px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.5px">CENTROS RIVAL POR JUGADOR</div>
-      <table style="width:100%;border-collapse:collapse">
-        <thead><tr style="border-bottom:1px solid var(--border)">
-          <th style="padding:6px 8px;font-size:10px;color:var(--text3);text-align:left">JUGADOR</th>
-          <th style="padding:6px 8px;font-size:10px;color:var(--text3);text-align:center">POS</th>
-          <th style="padding:6px 8px;font-size:10px;color:var(--text3);text-align:center">TOT</th>
-          <th style="padding:6px 8px;font-size:10px;color:#f0883e;text-align:center">🎯</th>
-          <th style="padding:6px 8px;font-size:10px;color:#ffd700;text-align:center">⚽</th>
-          <th></th>
-        </tr></thead>
-        <tbody>${rows||`<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3);font-size:12px">${noData?'Sin datos CSV para este partido':'Sin centros del rival'}</td></tr>`}</tbody>
-      </table>
-    </div>`;
+    }
+    const tblHead=`<thead><tr style="border-bottom:1px solid var(--border)">
+      <th style="padding:5px 7px;font-size:9px;color:var(--text3);text-align:left;font-weight:700">JUGADOR</th>
+      <th style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">POS</th>
+      <th style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">TOT</th>
+      <th style="padding:5px 5px;font-size:9px;color:#f85149;text-align:center">OK</th>
+      <th style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">%</th>
+      <th style="padding:5px 5px;font-size:9px;color:#f0883e;text-align:center">TIR</th>
+      <th style="padding:5px 5px;font-size:9px;color:#ffd700;text-align:center">GOL</th>
+      <th></th>
+    </tr></thead>`;
+    const centRows=centradores.slice(0,10).map(([n,d])=>tblRow(n,d,'#f85149',maxC)).join('');
+    const remRows=rematadores.slice(0,10).map(([n,d])=>tblRow(n,d,'#3fb950',maxR)).join('');
+    const empty=(msg)=>`<tr><td colspan="8" style="padding:14px;text-align:center;color:var(--text3);font-size:11px">${msg}</td></tr>`;
+    const noDataNote=noData?`<div style="margin-bottom:14px;padding:10px 14px;background:rgba(240,136,62,0.08);border:1px solid rgba(240,136,62,0.2);border-radius:8px;font-size:12px;color:var(--text3)">⚠️ Sin datos CSV para este partido.</div>`:'';
 
-    const noDataNote = noData ? `<div style="margin-bottom:14px;padding:10px 14px;background:rgba(240,136,62,0.08);border:1px solid rgba(240,136,62,0.2);border-radius:8px;font-size:12px;color:var(--text3)">
-      ⚠️ Sin datos CSV para este partido.
-    </div>` : '';
-
-    const legend = `<div style="display:flex;gap:14px;align-items:center;font-size:11px;color:var(--text3);margin-top:8px;flex-wrap:wrap">
-      <span><span style="display:inline-block;width:10px;height:2px;background:#f85149;margin-right:5px;vertical-align:middle"></span>Izquierda rival</span>
-      <span><span style="display:inline-block;width:10px;height:2px;background:#ff7b72;margin-right:5px;vertical-align:middle"></span>Derecha rival</span>
-      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#f85149;border:1.5px solid #fff;margin-right:4px;vertical-align:middle"></span>Tiro rival</span>
-      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#f85149;border:2px solid #ffd700;margin-right:4px;vertical-align:middle"></span>Gol rival</span>
-      <span style="opacity:0.5">Opacidad baja = centro despejado</span>
-    </div>`;
-
-    const svgWrap = `<div style="position:relative;background:#0b150b;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden" onmousemove="centrosShowTip(event)" onmouseleave="centrosHideTip()">
-      ${svg}
-      <div id="centros-tip" style="display:none;position:absolute;background:rgba(13,17,23,0.95);border:1px solid rgba(255,255,255,0.12);color:#e6edf3;padding:5px 10px;border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;pointer-events:none;z-index:10;white-space:nowrap"></div>
+    const tables=`<div style="display:flex;flex-direction:column;gap:8px">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        <div style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase">⚽ Centradores rival</div>
+        <table style="width:100%;border-collapse:collapse">${tblHead}
+          <tbody>${centRows||empty(noData?'Sin datos CSV para este partido':'Sin centros este partido')}</tbody>
+        </table>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+        <div style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase">🛡️ Rematadores (en área Ponfe)</div>
+        <table style="width:100%;border-collapse:collapse">${tblHead}
+          <tbody>${remRows||empty('Sin datos de rematador')}</tbody>
+        </table>
+      </div>
     </div>`;
 
     return `${noDataNote}
       <div style="display:flex;gap:6px;margin-bottom:12px">${flankBtns}</div>
       ${stats}
-      <div style="display:grid;grid-template-columns:1fr 255px;gap:14px;align-items:start">
-        <div>${svgWrap}${legend}</div>
-        ${table}
+      <div style="display:grid;grid-template-columns:1fr 285px;gap:14px;align-items:start">
+        <div>${_centrosSvgWrap(svg)}${vizLegend}${zonePanel}</div>
+        ${tables}
       </div>`;
   }
 
