@@ -219,6 +219,7 @@
   let perdidasRecSub    = 'perdidas';  // 'perdidas' | 'recuperaciones'
   let perdidasRecDropOpen = false;     // dropdown selector de partido
   let perdidasPlayer       = null;     // jugador seleccionado para ver sus pérdidas en campo
+  let perdidasTypeFilter   = 'all';   // 'all' | 'direct' | 'pass'
   let recuperacionesPlayer = null;     // jugador seleccionado para ver sus recuperaciones en campo
   let pasesMatchId      = null;       // partido seleccionado en mapa de pases
   let pasesPeriod       = 't';        // 't' | '1' | '2'
@@ -657,6 +658,7 @@
   function setPerdidasPart(p) {
     perdidasPart=p;
     perdidasPlayer=null;
+    perdidasTypeFilter='all';
     recuperacionesPlayer=null;
     if(perdidasRecSub==='recuperaciones'){
       const cont=document.getElementById('recupTabCont');
@@ -1236,7 +1238,11 @@
       let zoneSVG='';
       if (perdidasPlayer) {
         // ── Modo jugador: dots individuales ────────────────────────────────
-        const playerLosses = allLoss.filter(e => e.player_name === perdidasPlayer);
+        const playerLosses = allLoss
+          .filter(e => e.player_name === perdidasPlayer)
+          .filter(e => perdidasTypeFilter==='direct' ? e.end_type==='possession_loss'
+                     : perdidasTypeFilter==='pass'   ? e.pass_outcome==='unsuccessful'
+                     : true);
         playerLosses.forEach(e => {
           const {sx,sy}=sv(e.x_end,e.y_end);
           const isDirect = e.end_type==='possession_loss';
@@ -1302,7 +1308,7 @@
         const isSel=perdidasPlayer===p.name;
         const rowBg=isSel?'rgba(248,81,73,0.18)':isTop&&!perdidasPlayer?'rgba(248,81,73,0.07)':'';
         const rowBorder=isSel?'2px solid rgba(248,81,73,0.5)':'1px solid var(--border)';
-        return `<tr onclick="perdidasPlayer=${isSel?'null':`'${p.name.replace(/'/g,"\\'")}'`};renderPerdidas()"
+        return `<tr onclick="perdidasPlayer=${isSel?'null':`'${p.name.replace(/'/g,"\\'")}'`};perdidasTypeFilter='all';renderPerdidas()"
           style="border-bottom:${rowBorder};${rowBg?`background:${rowBg};`:''}cursor:pointer;transition:background .15s"
           onmouseover="this.style.background='rgba(248,81,73,0.12)'" onmouseout="this.style.background='${rowBg}'">
           <td style="padding:8px 12px;white-space:nowrap">
@@ -1347,16 +1353,21 @@
         </div>
         <div style="display:grid;grid-template-columns:1fr 400px;gap:16px;align-items:start">
           <div>
-            ${perdidasPlayer?`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-              <button onclick="perdidasPlayer=null;renderPerdidas()" style="background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:5px 13px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px">← Ver equipo</button>
+            ${perdidasPlayer?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+              <button onclick="perdidasPlayer=null;perdidasTypeFilter='all';renderPerdidas()" style="background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:5px 13px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">← Ver equipo</button>
               <span style="font-size:14px;font-weight:700;color:#f85149">${dispN(perdidasPlayer)}</span>
-              <span style="font-size:11px;color:var(--text3)">— pérdidas individuales</span>
-              <span style="display:flex;gap:10px;margin-left:auto;font-size:11px;flex-wrap:wrap;align-items:center">
-                <span><span style="color:#f85149">●</span> Pérdida directa</span>
-                <span><span style="color:#58a6ff">●</span> Pase corto</span>
-                <span><span style="color:#e3b341">●</span> Pase medio</span>
-                <span><span style="color:#a371f7">●</span> Pase largo</span>
-                <span style="color:var(--text3);font-size:10px">· pasa el ratón para ver detalles</span>
+              <div style="display:flex;gap:4px">
+                ${[['all','Todas'],['direct','Directas'],['pass','Pases']].map(([id,lbl])=>{
+                  const act=perdidasTypeFilter===id;
+                  return `<button onclick="perdidasTypeFilter='${id}';renderPerdidas()" style="padding:4px 12px;border-radius:20px;border:1px solid ${act?'#f85149':'var(--border)'};background:${act?'rgba(248,81,73,0.15)':'var(--bg2)'};color:${act?'#f85149':'var(--text2)'};font-size:11px;font-weight:${act?700:400};cursor:pointer;transition:all .15s">${lbl}</button>`;
+                }).join('')}
+              </div>
+              <span style="display:flex;gap:8px;margin-left:auto;font-size:11px;align-items:center;flex-wrap:wrap">
+                <span><span style="color:#f85149">●</span> Directa</span>
+                <span><span style="color:#58a6ff">●</span> Corto</span>
+                <span><span style="color:#e3b341">●</span> Medio</span>
+                <span><span style="color:#a371f7">●</span> Largo</span>
+                <span style="color:var(--text3);font-size:10px">· pasa el ratón para detalles</span>
               </span>
             </div>`:''}
             <div id="_pdTip" style="display:none;position:fixed;z-index:9999;background:#1c2128;border:1px solid #30363d;border-radius:7px;padding:6px 12px;font-family:'DM Sans',sans-serif;font-size:12px;color:#c9d1d9;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,0.5);white-space:nowrap"></div>
