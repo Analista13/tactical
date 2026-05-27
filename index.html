@@ -3850,21 +3850,26 @@
       fromLineup: false,
     }));
 
-    // Add GK from lineup if not in OOP events (GKs rarely engage in defensive positioning events)
+    // Add any STARTERS missing from OOP events (GK + outfield) using global avg position
     const namesInOOP = new Set(fromOOP.map(p => p.name));
     const lineupEntries = matchId ? (PONF_LINEUPS[matchId] || []) : [];
-    const gkFallback = [];
-    for (const r of lineupEntries) {
+    // Only starters (start_time='00:00:00') — subs don't count as reference XI
+    const starterEntries = matchId ? lineupEntries.filter(r => r[3] === '00:00:00') : lineupEntries;
+    const fallbackPlayers = [];
+    for (const r of starterEntries) {
       const name = r[1];
       if (namesInOOP.has(name)) continue;
       const pos = posMap[name] || resolvePlayerPosition({id: r[0], position: r[2]});
       if (isGK({position: pos})) {
-        // Place GK near their own goal in defensive shape
-        gkFallback.push({name, n: 0, position: pos, x: -46, y: 0, fromLineup: true});
+        // GK always placed at own goal
+        fallbackPlayers.push({name, n: 0, position: pos, x: -46, y: 0, fromLineup: true});
+      } else if (r[5] != null && r[6] != null) {
+        // Outfield: use global avg position from lineup (dimmed, labelled "(global)")
+        fallbackPlayers.push({name, n: 0, position: pos, x: r[5], y: r[6], fromLineup: true});
       }
     }
 
-    const allPlayers = [...fromOOP, ...gkFallback];
+    const allPlayers = [...fromOOP, ...fallbackPlayers];
     if (allPlayers.length < 3) return null;
     const gk       = allPlayers.filter(p => isGK(p));
     const outfield = allPlayers.filter(p => !isGK(p));
