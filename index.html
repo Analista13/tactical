@@ -7356,6 +7356,8 @@
     const altos   = filtered.filter(e => e.high_pass).length;
     const izq     = filtered.filter(e => e.flank === 'wide_left').length;
     const der     = filtered.filter(e => e.flank === 'wide_right').length;
+    const cabeza  = filtered.filter(e => e.finish_type === 'head').length;
+    const pie     = filtered.filter(e => e.finish_type === 'foot').length;
 
     // Crosser stats (rival)
     const centMap={};
@@ -7367,14 +7369,16 @@
       if(e.lead_to_shot) centMap[n].shot++;
       if(e.lead_to_goal) centMap[n].goal++;
     });
-    // Target (ponfe defenders who receive/contend)
+    // Target (rival attacker receiving the cross)
     const remMap={};
     filtered.forEach(e=>{
       const n=e.target; if(!n) return;
-      if(!remMap[n]) remMap[n]={tot:0,shot:0,goal:0,pos:e.target_pos||''};
+      if(!remMap[n]) remMap[n]={tot:0,shot:0,goal:0,head:0,foot:0,pos:e.target_pos||''};
       remMap[n].tot++;
       if(e.lead_to_shot) remMap[n].shot++;
       if(e.lead_to_goal) remMap[n].goal++;
+      if(e.finish_type === 'head') remMap[n].head++;
+      if(e.finish_type === 'foot') remMap[n].foot++;
     });
     const centradores=Object.entries(centMap).sort((a,b)=>b[1].tot-a[1].tot);
     const rematadores=Object.entries(remMap).sort((a,b)=>b[1].tot-a[1].tot);
@@ -7405,8 +7409,9 @@
         const dsw=isGl||isSh?'2':'0';
         const sn  = e.player ? e.player.split(' ').pop() : '?';
         const tgt = e.target ? e.target.split(' ').pop() : '—';
+        const finLbl = e.finish_type==='head'?' · 🤜 Cabeza':e.finish_type==='foot'?' · 👟 Pie':'';
         const res = isGl?'⚽ GOL rival':isSh?'→ Tiro rival':isOk?'Llegó al área':'Despejado';
-        const tip = `${sn} (${e.position||'?'}) → ${tgt}${e.target_pos?' ('+e.target_pos+')':''}\n${_ZLBL[zone]} · ${e.high_pass?'Alto':'Raso'} · ${e.minute!=null?e.minute+"' ·":''} ${res}`;
+        const tip = `${sn} (${e.position||'?'}) → ${tgt}${e.target_pos?' ('+e.target_pos+')':''}\n${_ZLBL[zone]} · ${e.high_pass?'Alto':'Raso'} · ${e.minute!=null?e.minute+"' ·":''} ${res}${finLbl}`;
         dests+=`<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="${dr}" fill="${zCol}" fill-opacity="${isOk?0.92:0.5}"
           stroke="${dstr}" stroke-width="${dsw}" data-tip="${tip}" style="cursor:pointer"/>`;
       }
@@ -7429,6 +7434,8 @@
       ${_centrosChip('→ Tiro',shots,'#f0883e')}
       ${_centrosChip('% Tiro',total?Math.round(shots/total*100)+'%':'—','#f0883e')}
       ${_centrosChip('⚽ Gol',goals,'#ffd700')}
+      ${cabeza||pie ? _centrosChip('🤜 Cabeza',cabeza,'#a78bfa') : ''}
+      ${cabeza||pie ? _centrosChip('👟 Pie',pie,'#34d399') : ''}
       ${_centrosChip('Altos',altos,'var(--text2)')}
     </div>`;
 
@@ -7479,28 +7486,47 @@
       <th style="padding:5px 7px;font-size:9px;color:var(--text3);text-align:left;font-weight:700">JUGADOR</th>
       <th style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">POS</th>
       <th style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">TOT</th>
-      <th style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">OK</th>
       <th style="padding:5px 5px;font-size:9px;color:#f0883e;text-align:center">%TIR</th>
       <th style="padding:5px 5px;font-size:9px;color:#f0883e;text-align:center">TIR</th>
+      <th style="padding:5px 5px;font-size:9px;color:#a78bfa;text-align:center">CAB</th>
+      <th style="padding:5px 5px;font-size:9px;color:#34d399;text-align:center">PIE</th>
       <th style="padding:5px 5px;font-size:9px;color:#ffd700;text-align:center">GOL</th>
       <th></th>
     </tr></thead>`;
+    function remRowDef(name,d,maxV) {
+      const pct = d.tot ? Math.round((d.shot||0)/d.tot*100)+'%' : '—';
+      const bw  = Math.round(d.tot/maxV*100);
+      const sn  = name.split(' ').pop().substring(0,12);
+      const headLbl = d.head ? `<span style="color:#a78bfa">🤜${d.head}</span>` : '—';
+      const footLbl = d.foot ? `<span style="color:#34d399">👟${d.foot}</span>` : '—';
+      return `<tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
+        <td style="padding:5px 7px;font-size:12px;font-weight:600;color:var(--text)">${sn}</td>
+        <td style="padding:5px 5px;font-size:9px;color:var(--text3);text-align:center">${d.pos||'—'}</td>
+        <td style="padding:5px 5px;font-size:13px;font-weight:800;color:var(--text);text-align:center">${d.tot}</td>
+        <td style="padding:5px 5px;font-size:10px;color:var(--text3);text-align:center">${pct}</td>
+        <td style="padding:5px 5px;font-size:11px;color:#f0883e;text-align:center">${d.shot||'—'}</td>
+        <td style="padding:5px 5px;font-size:11px;text-align:center">${headLbl}</td>
+        <td style="padding:5px 5px;font-size:11px;text-align:center">${footLbl}</td>
+        <td style="padding:5px 5px;font-size:11px;color:#ffd700;text-align:center">${d.goal||'—'}</td>
+        <td style="padding:5px 6px;width:44px"><div style="height:3px;background:var(--bg4);border-radius:2px"><div style="width:${bw}%;height:3px;background:#3fb950;border-radius:2px"></div></div></td>
+      </tr>`;
+    }
     const centRows=centradores.slice(0,10).map(([n,d])=>tblRow(n,d,'#f85149',maxC,false)).join('');
-    const remRows=rematadores.slice(0,10).map(([n,d])=>tblRow(n,d,'#3fb950',maxR,true)).join('');
-    const empty=(msg)=>`<tr><td colspan="8" style="padding:14px;text-align:center;color:var(--text3);font-size:11px">${msg}</td></tr>`;
+    const remRows=rematadores.slice(0,10).map(([n,d])=>remRowDef(n,d,maxR)).join('');
+    const empty=(cols,msg)=>`<tr><td colspan="${cols}" style="padding:14px;text-align:center;color:var(--text3);font-size:11px">${msg}</td></tr>`;
     const noDataNote=noData?`<div style="margin-bottom:14px;padding:10px 14px;background:rgba(240,136,62,0.08);border:1px solid rgba(240,136,62,0.2);border-radius:8px;font-size:12px;color:var(--text3)">⚠️ Sin datos CSV para este partido.</div>`:'';
 
     const tables=`<div style="display:flex;flex-direction:column;gap:8px">
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
         <div style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase">⚽ Centradores rival</div>
         <table style="width:100%;border-collapse:collapse">${tblHead}
-          <tbody>${centRows||empty(noData?'Sin datos CSV para este partido':'Sin centros este partido')}</tbody>
+          <tbody>${centRows||empty(8,noData?'Sin datos CSV para este partido':'Sin centros este partido')}</tbody>
         </table>
       </div>
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
         <div style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase">🛡️ Rematadores (en área Ponfe)</div>
         <table style="width:100%;border-collapse:collapse">${tblHeadRem}
-          <tbody>${remRows||empty('Sin datos de rematador')}</tbody>
+          <tbody>${remRows||empty(9,'Sin datos de rematador')}</tbody>
         </table>
       </div>
     </div>`;
