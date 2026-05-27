@@ -6975,122 +6975,121 @@
   function _runGrid(season) {
     if(!season||Object.keys(season).length===0) return '';
 
-    // Offensive positions filter
-    const OFF_POS=['CF','LW','RW','LM','RM','AM','CAM','SS','FW','EXT','LF','RF'];
-    function isOff(pos){ return OFF_POS.some(p=>pos&&pos.toUpperCase().includes(p)); }
+    // True attackers: CF / LW / RW / LM / RM / AM — exclude wingbacks (LWB/RWB)
+    function isAtk(pos){
+      const p=(pos||'').toUpperCase();
+      if(p.includes('LWB')||p.includes('RWB')) return false;
+      return ['CF','LW','RW','LM','RM','AM','CAM','SS','FW','EXT'].some(t=>p.includes(t));
+    }
     function posLabel(pos){
       const p=(pos||'').toUpperCase();
-      if(p.includes('CF')||p.includes('SS')||p.includes('FW')||p.includes('LF')||p.includes('RF')) return 'DEL';
-      if(p.includes('LW')||p.includes('RW')||p.includes('LM')||p.includes('RM')||p.includes('EXT')) return 'EXT';
-      if(p.includes('AM')||p.includes('CAM')) return 'MC';
-      return pos||'—';
+      if(['CF','SS','FW'].some(t=>p.includes(t))) return 'DEL';
+      return 'EXT';
     }
 
-    // Filter players: ≥5 matches, offensive/midfield positions (or top runners)
+    // Filter: ≥5 matches, attacking positions, order DEL first then EXT
     let players = Object.entries(season)
-      .filter(([,d]) => d.matches >= 5)
+      .filter(([,d]) => d.matches >= 5 && isAtk(d.pos))
       .sort((a,b) => {
-        const pa=isOff(a[1].pos)?0:1, pb=isOff(b[1].pos)?0:1;
+        const pa = posLabel(a[1].pos)==='DEL'?0:1;
+        const pb = posLabel(b[1].pos)==='DEL'?0:1;
         if(pa!==pb) return pa-pb;
         return b[1].tot - a[1].tot;
       })
-      .slice(0,9); // max 9 players
+      .slice(0,8);
 
     if(players.length < 2) return '';
     const N = players.length;
 
-    // Metric definitions: [key, label, group, extractor]
+    // Exact metric names from the PDF screenshot
     const METRICS = [
-      // Group 1: Perfil (per match)
-      ['g1',  null, 'group', 'Perfil de carreras (por partido)'],
-      ['esp', 'A la espalda',        'metric', d => d.matches ? d.espalda/d.matches : 0],
-      ['adel','Adelanto',            'metric', d => d.matches ? d.adelanto/d.matches : 0],
-      ['rec', 'Receptor de centro',  'metric', d => d.matches ? d.receptor_centro/d.matches : 0],
-      ['enl', 'Para enlazar el juego','metric', d => d.matches ? d.enlace/d.matches : 0],
-      // Group 2: Características
-      ['g2',  null, 'group', 'Características de las carreras'],
-      ['prc', '% Carreras recibidas','metric', d => d.tot ? d.rec/d.tot*100 : 0],
-      ['dst', 'Distancia media (m)', 'metric', d => d.dist_mean||0],
-      ['xth', 'Amenaza media (xT)',  'metric', d => d.xthreat_mean!=null ? d.xthreat_mean*1000 : 0],
+      {type:'group', label:'Perfil de carreras (por partido)'},
+      {type:'metric', label:'Carreras a la espalda\nde la defensa',   fn: d=>d.matches?d.espalda/d.matches:0},
+      {type:'metric', label:'Carreras delante\nde línea de balón',    fn: d=>d.matches?d.adelanto/d.matches:0},
+      {type:'metric', label:'Carreras para rematar centro',           fn: d=>d.matches?d.receptor_centro/d.matches:0},
+      {type:'metric', label:'Carreras para enlazar el juego',         fn: d=>d.matches?d.enlace/d.matches:0},
+      {type:'group', label:'Características de las carreras'},
+      {type:'metric', label:'Porcentaje de carreras\na alta velocidad', fn: d=>d.tot?d.high_speed/d.tot*100:0},
+      {type:'metric', label:'Distancia media\nrecorrida por carrera',  fn: d=>d.dist_mean||0},
+      {type:'metric', label:'Amenaza media por carrera',               fn: d=>d.xthreat_mean!=null?d.xthreat_mean*1000:0},
     ];
 
-    // For each real metric, compute values and rank
     function rankColor(pct) {
       if(pct>=0.75) return '#2ea043';
-      if(pct>=0.50) return '#7ed99a';
-      if(pct>=0.25) return '#ffb3b3';
+      if(pct>=0.50) return '#6fcf97';
+      if(pct>=0.25) return '#f2a5a5';
       return '#f85149';
     }
-    function ordinal(n){
-      const sfx=['º','º','º']; return n+(sfx[n-1]||'º');
-    }
 
-    const metricRows = METRICS.map(([key,lbl,type,fn]) => {
-      if(type==='group') return {type:'group', label:fn};
-      // Compute value per player
-      const vals = players.map(([,d]) => fn(d));
-      const sorted=[...vals].sort((a,b)=>a-b);
-      const maxVal = sorted[sorted.length-1]||1;
-      // Rank: 1 = best (highest value)
-      const cells = players.map(([,d],i) => {
-        const v = fn(d);
-        const rank = N - sorted.indexOf(v); // 1=best
-        const pct = 1-(rank-1)/(N-1);       // 1=best, 0=worst
-        const barW = Math.max(6, Math.round(pct*100));
-        const col = rankColor(pct);
-        const show = v>=0.01 ? (lbl.includes('%')?v.toFixed(0)+'%':v.toFixed(1)) : '—';
-        return {rank,pct,barW,col,show,v};
+    // Pre-compute ranked cells for each metric row
+    const metricRows = METRICS.map(m => {
+      if(m.type==='group') return m;
+      const vals = players.map(([,d])=>m.fn(d));
+      const asc  = [...vals].sort((a,b)=>a-b);
+      const cells = players.map(([,d])=>{
+        const v   = m.fn(d);
+        // rank 1=best (highest), ties resolved by indexOf
+        const rank = N - asc.lastIndexOf(v);
+        const pct  = N>1 ? 1-(rank-1)/(N-1) : 1;
+        const barW = Math.max(5, Math.round(pct*100));
+        return {rank, pct, barW, col:rankColor(pct)};
       });
-      return {type:'metric', label:lbl, cells};
+      return {...m, cells};
     });
 
-    // Build column headers
-    const CW = 88; // cell width px
-    const LW = 148; // label column width
-    const headerCols = players.map(([name,d]) => {
-      const sn = name.includes(' ') ? name.split(' ').pop() : name;
+    // Column widths
+    const CW=84, LW=162;
+
+    const headerCols = players.map(([name,d])=>{
+      const sn = name.split(' ').slice(-1)[0];
       const pl = posLabel(d.pos);
-      return `<th style="padding:6px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--text1);width:${CW}px;min-width:${CW}px;white-space:nowrap;vertical-align:bottom">
-        <div>${sn}</div>
-        <div style="font-size:9px;font-weight:400;color:var(--text3);margin-top:1px">${pl}</div>
+      return `<th style="padding:8px 3px;text-align:center;width:${CW}px;min-width:${CW}px;vertical-align:bottom;border-left:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;color:var(--text1)">${sn}</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:2px">${pl}</div>
       </th>`;
     }).join('');
 
-    const rows = metricRows.map((row,ri) => {
-      if(row.type==='group') return `
-        <tr>
-          <td colspan="${N+1}" style="padding:10px 8px 4px;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.5px;background:var(--bg3);border-top:1px solid var(--border)">${row.label}</td>
-        </tr>`;
-      const rowBg = ri%2===0 ? 'rgba(255,255,255,0.01)' : 'transparent';
-      const cells = row.cells.map(c => `
-        <td style="padding:5px 4px;text-align:center">
-          <div style="position:relative;background:rgba(255,255,255,0.06);border-radius:3px;height:30px;overflow:hidden">
-            <div style="position:absolute;left:0;top:0;width:${c.barW}%;height:100%;background:${c.col};opacity:0.85;border-radius:3px"></div>
-            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.6)">${ordinal(c.rank)}</div>
+    let rowHtml='', rowIdx=0;
+    metricRows.forEach(row=>{
+      if(row.type==='group'){
+        rowHtml+=`<tr><td colspan="${N+1}" style="padding:10px 10px 5px;font-size:11px;font-weight:800;color:var(--text1);background:rgba(255,255,255,0.03);border-top:2px solid var(--border);border-bottom:1px solid var(--border)">${row.label}</td></tr>`;
+        return;
+      }
+      const bg=rowIdx%2===0?'transparent':'rgba(255,255,255,0.015)';
+      rowIdx++;
+      // Multi-line label
+      const lblHtml = row.label.replace(/\n/g,'<br>');
+      const cells=row.cells.map(c=>`
+        <td style="padding:6px 3px;text-align:center;border-left:1px solid rgba(255,255,255,0.05)">
+          <div style="position:relative;background:rgba(255,255,255,0.06);border-radius:3px;height:32px;overflow:hidden;margin:0 2px">
+            <div style="position:absolute;left:0;top:0;width:${c.barW}%;height:100%;background:${c.col};border-radius:3px;transition:width .3s"></div>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.7)">${c.rank}º</div>
           </div>
         </td>`).join('');
-      return `<tr style="background:${rowBg}">
-        <td style="padding:5px 8px;font-size:11px;color:var(--text2);white-space:normal;line-height:1.3;max-width:${LW}px">${row.label}</td>
+      rowHtml+=`<tr style="background:${bg};border-bottom:1px solid rgba(255,255,255,0.04)">
+        <td style="padding:7px 10px;font-size:11px;color:var(--text2);line-height:1.4;width:${LW}px;min-width:${LW}px">${lblHtml}</td>
         ${cells}
       </tr>`;
-    }).join('');
+    });
 
-    return `<div style="flex:1;overflow:hidden;background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow-x:auto">
-      <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;padding:10px 12px 0">Perfil de carreras sin balón — temporada completa · ranking dentro del equipo</div>
-      <table style="border-collapse:collapse;width:100%;min-width:${LW+CW*N}px">
-        <thead>
-          <tr style="border-bottom:2px solid var(--border)">
-            <th style="padding:6px 8px;text-align:left;width:${LW}px;min-width:${LW}px;font-size:9px;color:var(--text3)">MÉTRICA</th>
-            ${headerCols}
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-      <div style="padding:6px 12px;font-size:9px;color:var(--text3)">
-        <span style="display:inline-block;width:10px;height:8px;background:#2ea043;border-radius:2px;margin-right:3px;vertical-align:middle"></span>1º rank
-        <span style="display:inline-block;width:10px;height:8px;background:#7ed99a;border-radius:2px;margin-right:3px;margin-left:8px;vertical-align:middle"></span>Top 50%
-        <span style="display:inline-block;width:10px;height:8px;background:#ffb3b3;border-radius:2px;margin-right:3px;margin-left:8px;vertical-align:middle"></span>Bot 50%
-        <span style="display:inline-block;width:10px;height:8px;background:#f85149;border-radius:2px;margin-right:3px;margin-left:8px;vertical-align:middle"></span>Último rank
+    return `<div style="flex:1;min-width:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+      <div style="overflow-x:auto">
+        <table style="border-collapse:collapse;width:100%;min-width:${LW+CW*N+2}px">
+          <thead>
+            <tr style="border-bottom:2px solid var(--border)">
+              <th style="padding:8px 10px;text-align:left;width:${LW}px;min-width:${LW}px;font-size:9px;font-weight:700;color:var(--text3);letter-spacing:0.5px">Temporada 25–26 · Atacantes</th>
+              ${headerCols}
+            </tr>
+          </thead>
+          <tbody>${rowHtml}</tbody>
+        </table>
+      </div>
+      <div style="padding:6px 10px 8px;display:flex;gap:10px;font-size:9px;color:var(--text3)">
+        <span><span style="display:inline-block;width:12px;height:8px;background:#2ea043;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Mejor</span>
+        <span><span style="display:inline-block;width:12px;height:8px;background:#6fcf97;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Top 50%</span>
+        <span><span style="display:inline-block;width:12px;height:8px;background:#f2a5a5;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Bot 50%</span>
+        <span><span style="display:inline-block;width:12px;height:8px;background:#f85149;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Último</span>
+        <span style="margin-left:4px">· Ranking dentro del equipo</span>
       </div>
     </div>`;
   }
