@@ -7013,7 +7013,7 @@
       const W=PW+mx*2, H=PH+myT*2;
 
       const sc = (fx, fy) => [
-        +(mx + ((fy + 34) / 68) * PW).toFixed(1),
+        +(mx + ((34 - fy) / 68) * PW).toFixed(1),
         +(myT + ((52.5 - fx) / 105) * PH).toFixed(1)
       ];
 
@@ -7215,7 +7215,7 @@
       const W=PW+mx*2, H=PH+myT*2;
 
       const sc = (fx, fy) => [
-        +(mx + ((fy + 34) / 68) * PW).toFixed(1),
+        +(mx + ((34 - fy) / 68) * PW).toFixed(1),
         +(myT + ((52.5 - fx) / 105) * PH).toFixed(1)
       ];
 
