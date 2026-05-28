@@ -119,6 +119,7 @@
 
 <!-- Tooltip flotante de pases — fuera del SVG, sigue al cursor -->
 <div id="passTip" style="display:none;position:fixed;z-index:9999;pointer-events:none;transition:opacity 0.1s"></div>
+<div id="mapaPassTip" style="display:none;position:fixed;z-index:9999;pointer-events:none"></div>
 
 <main>
   <div class="tabs-bar" id="tabsBar">
@@ -6539,7 +6540,7 @@
     if (pasadoresData && !pasadoresData.pass_maps_v2) pasadoresData = null;
     if (!pasadoresData) {
       try {
-        const r = await fetch('data/pasadores_season.json?v=2');
+        const r = await fetch('data/pasadores_season.json?v=3');
         pasadoresData = await r.json();
       } catch(e) {
         cont.innerHTML = `<div style="color:var(--red);padding:40px;text-align:center">Error cargando datos de pasadores</div>`;
@@ -6622,7 +6623,7 @@
     if (pasadoresData && !pasadoresData.pass_maps_v2) pasadoresData = null;
     if (!pasadoresData) {
       try {
-        const r = await fetch('data/pasadores_season.json?v=2');
+        const r = await fetch('data/pasadores_season.json?v=3');
         pasadoresData = await r.json();
       } catch(e) {
         cont.innerHTML = `<div style="color:var(--red);padding:40px;text-align:center">Error cargando datos</div>`;
@@ -6738,6 +6739,39 @@
       </div>`;
   }
 
+  // ── Tooltip para el mapa de pasadores ────────────────────────────────────
+  function showMapaTip(evt, rec, ok) {
+    const tip = document.getElementById('mapaPassTip');
+    if (!tip) return;
+    const color  = ok ? '#3fb950' : '#f85149';
+    const status = ok ? '✅ Completado' : '❌ Fallido';
+    const recLbl = rec || '—';
+    tip.innerHTML = `<div style="background:#0d1117;border:1px solid ${color};border-left:3px solid ${color};
+      border-radius:7px;padding:8px 12px;font-family:'DM Sans',sans-serif;
+      box-shadow:0 4px 20px rgba(0,0,0,0.7);min-width:130px">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#6b7280;margin-bottom:3px">Receptor</div>
+      <div style="font-size:12px;font-weight:700;color:#e6edf3">${recLbl}</div>
+      <div style="font-size:10px;color:${color};margin-top:4px">${status}</div>
+    </div>`;
+    tip.style.display = 'block';
+    moveMapaTip(evt);
+  }
+  function moveMapaTip(evt) {
+    const tip = document.getElementById('mapaPassTip');
+    if (!tip || tip.style.display === 'none') return;
+    const inner = tip.firstElementChild;
+    const w = inner ? inner.offsetWidth  : 145;
+    const h = inner ? inner.offsetHeight : 65;
+    const x = evt.clientX + 14;
+    const y = evt.clientY - 14;
+    tip.style.left = Math.min(x, window.innerWidth  - w - 10) + 'px';
+    tip.style.top  = Math.max(5, Math.min(y, window.innerHeight - h - 10)) + 'px';
+  }
+  function hideMapaTip() {
+    const tip = document.getElementById('mapaPassTip');
+    if (tip) tip.style.display = 'none';
+  }
+
   // ── Campo vertical con pases de ruptura del top pasador ───────────────────
   async function renderMapaPasadores(cont) {
     if (!cont) cont = document.getElementById('content');
@@ -6745,7 +6779,7 @@
     if (pasadoresData && !pasadoresData.pass_maps_v2) pasadoresData = null;
     if (!pasadoresData) {
       try {
-        const r = await fetch('data/pasadores_season.json?v=2');
+        const r = await fetch('data/pasadores_season.json?v=3');
         pasadoresData = await r.json();
       } catch(e) {
         cont.innerHTML = `<div style="color:var(--red);padding:40px;text-align:center">Error cargando datos</div>`;
@@ -6816,10 +6850,18 @@
       const lines = passes.map(p => {
         const [x1,y1]=sc(p.x0,p.y0),[x2,y2]=sc(p.x1,p.y1);
         const clr=p.ok?'#3fb950':'#8b949e', op=p.ok?0.55:0.30;
-        return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
-                      stroke="${clr}" stroke-width="1.2" stroke-opacity="${op}" stroke-linecap="round"/>
-                <circle cx="${x1}" cy="${y1}" r="1.8" fill="${clr}" fill-opacity="${op}"/>
-                <circle cx="${x2}" cy="${y2}" r="2.5" fill="${clr}" fill-opacity="${op}"/>`;
+        const recSafe = (p.rec||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        return `<g onmouseenter="showMapaTip(event,'${recSafe}',${p.ok})"
+                   onmousemove="moveMapaTip(event)"
+                   onmouseleave="hideMapaTip()"
+                   style="cursor:crosshair">
+                  <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+                        stroke="${clr}" stroke-width="1.2" stroke-opacity="${op}" stroke-linecap="round"/>
+                  <circle cx="${x1}" cy="${y1}" r="1.8" fill="${clr}" fill-opacity="${op}"/>
+                  <circle cx="${x2}" cy="${y2}" r="2.5" fill="${clr}" fill-opacity="${op}"/>
+                  <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+                        stroke="transparent" stroke-width="12" stroke-linecap="round"/>
+                </g>`;
       }).join('');
 
       const ok_n=passes.filter(p=>p.ok).length, nok_n=passes.length-ok_n;
