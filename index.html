@@ -37,9 +37,11 @@
     .sidebar-divider { height:1px; background:var(--border); margin:8px 16px; }
 
     main { grid-area:main; display:flex; flex-direction:column; overflow:hidden; }
-    .tabs-bar { height:var(--tabs); background:var(--bg2); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 16px; gap:4px; flex-shrink:0; overflow-x:auto; }
+    .tabs-bar { height:var(--tabs); background:var(--bg2); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0; flex-shrink:0; overflow:hidden; }
+    .tabs-scroll { display:flex; align-items:center; gap:2px; flex:1; overflow-x:auto; overflow-y:hidden; padding:0 8px; }
+    .tabs-scroll::-webkit-scrollbar { display:none; }
     .tabs-bar::-webkit-scrollbar { display:none; }
-    .tab { display:flex; align-items:center; gap:6px; padding:6px 13px; border-radius:6px; font-size:13px; font-weight:500; color:var(--text2); cursor:pointer; white-space:nowrap; transition:all 0.15s; border:1px solid transparent; }
+    .tab { display:flex; align-items:center; gap:5px; padding:6px 9px; border-radius:6px; font-size:12px; font-weight:500; color:var(--text2); cursor:pointer; white-space:nowrap; transition:all 0.15s; border:1px solid transparent; }
     .tab:hover { background:var(--bg3); color:var(--text); }
     .tab.active { background:rgba(200,169,110,0.1); border-color:rgba(200,169,110,0.2); color:var(--accent); }
 
@@ -123,19 +125,21 @@
 
 <main>
   <div class="tabs-bar" id="tabsBar">
-    <div class="tab active" data-tab="redpases" onclick="switchTab('redpases')">🕸️ Red de Pases</div>
-    <div class="tab" data-tab="bloque" onclick="switchTab('bloque')">📐 Bloque</div>
-    <div class="tab" data-tab="pases" onclick="switchTab('pases')">🗺️ Mapa de Pases</div>
-    <div class="tab" data-tab="perdidasrec" onclick="switchTab('perdidasrec')">📉 Pérdidas & Rec.</div>
-    <!-- TAB ALINEACIONES: temporalmente oculto, código preservado -->
-    <div class="tab" data-tab="posesion" onclick="switchTab('posesion')">⚡ Posesión</div>
-    <div class="tab" data-tab="transiciones" onclick="switchTab('transiciones')">🔄 Transiciones</div>
-    <div class="tab" data-tab="centros" onclick="switchTab('centros')">📐 Centros</div>
-    <div class="tab" data-tab="faltas" onclick="switchTab('faltas')">🟨 Faltas</div>
-    <div style="margin-left:auto;display:flex;gap:3px;align-items:center;padding-right:4px">
-      <button id="lv-todos"      onclick="setLocVis('todos')"     style="background:var(--accent);color:#0d1117;font-weight:700;border:none;border-radius:14px;padding:4px 13px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all 0.15s">Todos</button>
-      <button id="lv-local"      onclick="setLocVis('local')"     style="background:transparent;color:var(--text2);font-weight:500;border:none;border-radius:14px;padding:4px 13px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all 0.15s">🏠 Local</button>
-      <button id="lv-visitante"  onclick="setLocVis('visitante')" style="background:transparent;color:var(--text2);font-weight:500;border:none;border-radius:14px;padding:4px 13px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all 0.15s">✈️ Fuera</button>
+    <div class="tabs-scroll">
+      <div class="tab active" data-tab="redpases" onclick="switchTab('redpases')">🕸️ Red de Pases</div>
+      <div class="tab" data-tab="bloque" onclick="switchTab('bloque')">Bloque</div>
+      <div class="tab" data-tab="pases" onclick="switchTab('pases')">Mapa de Pases</div>
+      <div class="tab" data-tab="perdidasrec" onclick="switchTab('perdidasrec')">Pérdidas</div>
+      <!-- TAB ALINEACIONES: temporalmente oculto, código preservado -->
+      <div class="tab" data-tab="posesion" onclick="switchTab('posesion')">Posesión</div>
+      <div class="tab" data-tab="transiciones" onclick="switchTab('transiciones')">Transiciones</div>
+      <div class="tab" data-tab="centros" onclick="switchTab('centros')">Centros</div>
+      <div class="tab" data-tab="faltas" onclick="switchTab('faltas')">🟨 Faltas</div>
+    </div>
+    <div style="display:flex;gap:2px;align-items:center;padding:0 6px;flex-shrink:0;border-left:1px solid var(--border)">
+      <button id="lv-todos"      onclick="setLocVis('todos')"     style="background:var(--accent);color:#0d1117;font-weight:700;border:none;border-radius:14px;padding:3px 10px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all 0.15s">Todos</button>
+      <button id="lv-local"      onclick="setLocVis('local')"     style="background:transparent;color:var(--text2);font-weight:500;border:none;border-radius:14px;padding:3px 10px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all 0.15s">🏠 Local</button>
+      <button id="lv-visitante"  onclick="setLocVis('visitante')" style="background:transparent;color:var(--text2);font-weight:500;border:none;border-radius:14px;padding:3px 10px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all 0.15s">✈️ Fuera</button>
     </div>
   </div>
   <div class="content" id="content">
