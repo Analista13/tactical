@@ -167,10 +167,6 @@
       teams: [
         { id:923, name:'SD Ponferradina', escudo:'https://tmssl.akamaized.net/images/wappen/head/4032.png', partidos:31 }
       ]
-    },
-    {
-      id: 'segunda', name: 'Segunda Federación', disabled: true,
-      teams: []
     }
   ];
 
@@ -192,11 +188,10 @@
       root.innerHTML = `
         <div class="sidebar-label">Ligas</div>
         ${LEAGUES_CFG.map(l => `
-          <div class="team-item${l.disabled?' disabled':''}" style="${l.disabled?'opacity:0.35;cursor:default':''}" >
-            <div style="width:8px;height:8px;border-radius:50%;background:${l.disabled?'var(--text3)':'var(--accent)'};flex-shrink:0"></div>
+          <div class="team-item">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0"></div>
             <div class="team-info">
               <div class="team-name" style="font-size:12px">${l.name}</div>
-              ${l.disabled?'<div class="team-sub">Próximamente</div>':''}
             </div>
           </div>`).join('')}`;
     } else {
@@ -240,13 +235,6 @@
               </div>
             </div>
           </div>`).join('')}
-        <div class="home-league-block" style="opacity:0.3">
-          <div class="home-league-title">Segunda Federación</div>
-          <div class="home-teams-row">
-            <div class="home-future-card"><div class="home-future-icon">+</div><div class="home-future-name">Próximamente</div></div>
-            <div class="home-future-card"><div class="home-future-icon">+</div><div class="home-future-name">Próximamente</div></div>
-          </div>
-        </div>
       </div>`;
   }
 
