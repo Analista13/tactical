@@ -3482,8 +3482,11 @@
       <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
       <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
       <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
-      <text x="${AW-AMX-4}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
-      <polygon points="${AW-AMX+10},${AH/2} ${AW-AMX},${AH/2-6} ${AW-AMX},${AH/2+6}" fill="rgba(255,255,255,0.18)"/>`;
+      ${phase==='defensa'
+        ? `<text x="${AMX+4}" y="${AMY-8}" text-anchor="start" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">← ATAQUE RIVAL</text>
+      <polygon points="${AMX-10},${AH/2} ${AMX},${AH/2-6} ${AMX},${AH/2+6}" fill="rgba(255,255,255,0.18)"/>`
+        : `<text x="${AW-AMX-4}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+      <polygon points="${AW-AMX+10},${AH/2} ${AW-AMX},${AH/2-6} ${AW-AMX},${AH/2+6}" fill="rgba(255,255,255,0.18)"/>`}`;
 
     // Convex hull polygon
     let hull = '';
@@ -3682,6 +3685,7 @@
     };
 
     // SVG de campo inline — completamente autónomo, sin llamar a buildBloqueSVG
+    const isDefPhase = phase === 'defensa';
     const mkSVG=(shape,phCol)=>{
       const AW=920,AH=590,AMX=55,AMY=40,APW=AW-AMX*2,APH=AH-AMY*2;
       const sv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW, sy:AMY+((34-y)/68)*APH});
@@ -3694,8 +3698,11 @@
         <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
         <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
         <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
-        <text x="${AW-AMX-4}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
-        <polygon points="${AW-AMX+10},${AH/2} ${AW-AMX},${AH/2-6} ${AW-AMX},${AH/2+6}" fill="rgba(255,255,255,0.18)"/>`;
+        ${isDefPhase
+          ? `<text x="${AMX+4}" y="${AMY-8}" text-anchor="start" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">← ATAQUE RIVAL</text>
+        <polygon points="${AMX-10},${AH/2} ${AMX},${AH/2-6} ${AMX},${AH/2+6}" fill="rgba(255,255,255,0.18)"/>`
+          : `<text x="${AW-AMX-4}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+        <polygon points="${AW-AMX+10},${AH/2} ${AW-AMX},${AH/2-6} ${AW-AMX},${AH/2+6}" fill="rgba(255,255,255,0.18)"/>`}`;
 
       let hullSVG='';
       if(shape.hull&&shape.hull.length>=3){
@@ -7493,7 +7500,7 @@
   }
 
   // ── Pitch helper (transition views) ───────────────────────────────────────
-  function _transPitch(labels) {
+  function _transPitch(labels, isDefensive=false) {
     // labels = [left, center, right] — defaults differ by sub-tab
     const [lL, lC, lR] = labels || ['Zona 1','Zona 2','Zona 3'];
     const AW=850,AH=530,AMX=50,AMY=38,APW=AW-AMX*2,APH=AH-AMY*2;
@@ -7513,8 +7520,11 @@
       <text x="${sv(-35,0).sx.toFixed(1)}" y="${(AMY-10)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="600" fill="rgba(200,169,110,0.55)">${lL}</text>
       <text x="${AW/2}" y="${(AMY-10)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="600" fill="rgba(200,169,110,0.55)">${lC}</text>
       <text x="${sv(35,0).sx.toFixed(1)}" y="${(AMY-10)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="600" fill="rgba(200,169,110,0.55)">${lR}</text>
-      <text x="${(AW-AMX-2)}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
-      <polygon points="${AW-AMX+8},${AH/2} ${AW-AMX},${AH/2-5} ${AW-AMX},${AH/2+5}" fill="rgba(255,255,255,0.18)"/>`;
+      ${isDefensive
+        ? `<text x="${AMX+4}" y="${AMY-8}" text-anchor="start" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">← ATAQUE RIVAL</text>
+      <polygon points="${AMX-8},${AH/2} ${AMX},${AH/2-5} ${AMX},${AH/2+5}" fill="rgba(255,255,255,0.18)"/>`
+        : `<text x="${(AW-AMX-2)}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+      <polygon points="${AW-AMX+8},${AH/2} ${AW-AMX},${AH/2-5} ${AW-AMX},${AH/2+5}" fill="rgba(255,255,255,0.18)"/>`}`;
     return {AW,AH,AMX,AMY,APW,APH,sv,base};
   }
 
@@ -7711,7 +7721,7 @@
     const maxT = players[0]?.[1].total || 1;
 
     // ── SVG ────────────────────────────────────────────────────────────────
-    const {AW,AH,sv,base} = _transPitch(['Bloque bajo','Bloque medio','Bloque alto']);
+    const {AW,AH,sv,base} = _transPitch(['Bloque bajo','Bloque medio','Bloque alto'], true);
     let arrows='', dots='';
     filtered.forEach(e => {
       const isQB  = e.phase_type === 'quick_break';
@@ -8306,7 +8316,7 @@
   const _ZLBL = { primer:'Primer palo', segundo:'Segundo palo', centro:'Centro del área', fuera:'Fuera del área' };
 
   // ── Pitch helper for centros ───────────────────────────────────────────────
-  function _centrosPitch() {
+  function _centrosPitch(isDefensive=false) {
     const AW=860,AH=540,AMX=52,AMY=40,APW=AW-AMX*2,APH=AH-AMY*2;
     const sv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW, sy:AMY+((34-y)/68)*APH});
     // Flank dividers at y = ±22 (wide channel boundary)
@@ -8324,8 +8334,11 @@
       <line x1="${AMX}" y1="${fy2}" x2="${AW-AMX}" y2="${fy2}" stroke="rgba(240,136,62,0.2)" stroke-width="1" stroke-dasharray="5,4"/>
       <text x="${AMX-6}" y="${(parseFloat(fy1)/2+AMY/2).toFixed(0)}" text-anchor="middle" transform="rotate(-90,${AMX-6},${(parseFloat(fy1)/2+AMY/2).toFixed(0)})" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="rgba(88,166,255,0.5)">BANDA IZQ</text>
       <text x="${AMX-6}" y="${((parseFloat(fy2)+(AH-AMY))/2).toFixed(0)}" text-anchor="middle" transform="rotate(-90,${AMX-6},${((parseFloat(fy2)+(AH-AMY))/2).toFixed(0)})" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="rgba(240,136,62,0.5)">BANDA DER</text>
-      <text x="${(AW-AMX-2)}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
-      <polygon points="${AW-AMX+9},${AH/2} ${AW-AMX},${AH/2-5} ${AW-AMX},${AH/2+5}" fill="rgba(255,255,255,0.18)"/>`;
+      ${isDefensive
+        ? `<text x="${AMX+4}" y="${AMY-8}" text-anchor="start" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">← ATAQUE RIVAL</text>
+      <polygon points="${AMX-9},${AH/2} ${AMX},${AH/2-5} ${AMX},${AH/2+5}" fill="rgba(255,255,255,0.18)"/>`
+        : `<text x="${(AW-AMX-2)}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+      <polygon points="${AW-AMX+9},${AH/2} ${AW-AMX},${AH/2-5} ${AW-AMX},${AH/2+5}" fill="rgba(255,255,255,0.18)"/>`}`;
     return {AW,AH,AMX,AMY,APW,APH,sv,base};
   }
 
@@ -8645,7 +8658,7 @@
     const maxC=centradores[0]?.[1].tot||1, maxR=rematadores[0]?.[1].tot||1;
 
     // SVG
-    const {AW,AH,sv,base}=_centrosPitch();
+    const {AW,AH,sv,base}=_centrosPitch(true);
     let arrows='',origins='',dests='';
     filtered.forEach(e=>{
       const isIzq=e.flank==='wide_left';
