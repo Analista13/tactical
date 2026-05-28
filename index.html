@@ -6536,9 +6536,11 @@
   // ── Campo vertical con pases de ruptura del top pasador ───────────────────
   async function renderMapaPasadores(cont) {
     if (!cont) cont = document.getElementById('content');
+    // Si pasadoresData fue cargado con versión vieja (sin pass_maps_v2), forzar re-fetch
+    if (pasadoresData && !pasadoresData.pass_maps_v2) pasadoresData = null;
     if (!pasadoresData) {
       try {
-        const r = await fetch('data/pasadores_season.json');
+        const r = await fetch('data/pasadores_season.json?v=2');
         pasadoresData = await r.json();
       } catch(e) {
         cont.innerHTML = `<div style="color:var(--red);padding:40px;text-align:center">Error cargando datos</div>`;
