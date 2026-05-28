@@ -6533,6 +6533,211 @@
     else                                      await renderPasadores(cont);
   }
 
+  // ── Pasadores: top parejas por línea ─────────────────────────────────────
+  async function renderPasadores(cont) {
+    if (!cont) cont = document.getElementById('content');
+    if (pasadoresData && !pasadoresData.pass_maps_v2) pasadoresData = null;
+    if (!pasadoresData) {
+      try {
+        const r = await fetch('data/pasadores_season.json?v=2');
+        pasadoresData = await r.json();
+      } catch(e) {
+        cont.innerHTML = `<div style="color:var(--red);padding:40px;text-align:center">Error cargando datos de pasadores</div>`;
+        return;
+      }
+    }
+
+    function buildLineCol(lineKey, title) {
+      const pairs = pasadoresData[lineKey] || [];
+      const maxPct = pairs.length ? pairs[0].pct_bar : 1;
+
+      const bars = pairs.map(p => {
+        const barW = maxPct > 0 ? Math.round(p.pct_bar / maxPct * 100) : 0;
+        const label = `${p.precision}% / ${p.ratio}%`;
+        return `
+          <div style="margin-bottom:14px">
+            <div style="font-size:10px;color:var(--text2);margin-bottom:4px;line-height:1.3">
+              <span style="font-weight:600;color:var(--text)">${p.passer}</span>
+              <span style="color:var(--text3)"> | ${p.passer_pos}</span><br>
+              <span style="color:var(--accent)">→</span>
+              <span style="font-weight:600;color:var(--text)"> ${p.receiver}</span>
+              <span style="color:var(--text3)"> | ${p.receiver_pos}</span>
+            </div>
+            <div style="position:relative;height:26px;background:var(--bg3);border-radius:4px;overflow:hidden">
+              <div style="position:absolute;left:0;top:0;height:100%;width:${barW}%;background:#3fb950;border-radius:4px;transition:width 0.3s"></div>
+              <div style="position:absolute;inset:0;display:flex;align-items:center;padding:0 8px;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.6)">${label}</div>
+            </div>
+            <div style="font-size:9px;color:var(--text3);margin-top:2px;text-align:right">${p.pct_bar}% del total · ${p.count} pases</div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div style="flex:1;min-width:0;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px">
+          <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:2px">${title}</div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:14px">% sobre pases de ruptura de esta línea</div>
+          <div style="font-size:9px;font-weight:700;color:var(--text3);display:flex;gap:4px;margin-bottom:10px">
+            <span style="flex:1">PAREJA</span>
+            <span>PRECISIÓN / % A TRAVÉS</span>
+          </div>
+          ${bars || '<div style="color:var(--text3);font-size:12px">Sin datos</div>'}
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:9px;color:var(--text3)">
+            Precisión = % pases completados · % a través = % de sus pases que rompen esta línea
+          </div>
+        </div>`;
+    }
+
+    cont.innerHTML = `
+      <div style="padding:20px 24px">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+          <img src="${currentTeam.escudo}" style="width:48px;height:48px;object-fit:contain"/>
+          <div>
+            <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px">${currentTeam.name.toUpperCase()}</div>
+            <div style="font-size:12px;color:var(--text3)">Primera Federación · Temporada 2025–26</div>
+          </div>
+        </div>
+
+        ${buildPasesSubTabs()}
+        ${buildProgresionSubTabs()}
+
+        <div style="background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.2);border-radius:8px;padding:12px 16px;margin-bottom:20px">
+          <div style="font-size:12px;font-weight:700;color:#3fb950;margin-bottom:4px">¿CÓMO PROGRESAN CON BALÓN?</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.5">
+            Parejas pasador/receptor que rompen cada línea defensiva rival.<br>
+            <strong>Precisión</strong> = % de pases completados entre esa pareja en toda la temporada.
+            <strong>% a través</strong> = de todos sus pases, qué % rompen esa línea concreta.
+          </div>
+        </div>
+
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          ${buildLineCol('primera', '1ª Línea')}
+          ${buildLineCol('segunda', '2ª Línea')}
+          ${buildLineCol('ultima',  'Última línea')}
+        </div>
+      </div>`;
+  }
+
+  // ── Pasadores por línea: gráfico de barras horizontales ──────────────────
+  async function renderPasadoresPorLinea(cont) {
+    if (!cont) cont = document.getElementById('content');
+    if (pasadoresData && !pasadoresData.pass_maps_v2) pasadoresData = null;
+    if (!pasadoresData) {
+      try {
+        const r = await fetch('data/pasadores_season.json?v=2');
+        pasadoresData = await r.json();
+      } catch(e) {
+        cont.innerHTML = `<div style="color:var(--red);padding:40px;text-align:center">Error cargando datos</div>`;
+        return;
+      }
+    }
+
+    function getPlayerData(lineKey) {
+      const pk = 'players_' + lineKey;
+      if (pasadoresData[pk] && pasadoresData[pk].length) return pasadoresData[pk];
+      const pairs  = pasadoresData[lineKey] || [];
+      const total  = (pasadoresData.totals || {})[lineKey] || 1;
+      const map    = {};
+      for (const p of pairs) {
+        if (!map[p.passer]) map[p.passer] = { player: p.passer, pos: p.passer_pos, count: 0, ps: 0, rs: 0 };
+        map[p.passer].count += p.count;
+        map[p.passer].ps    += p.precision * p.count;
+        map[p.passer].rs    += p.ratio     * p.count;
+      }
+      return Object.values(map).map(d => ({
+        player: d.player, pos: d.pos, count: d.count,
+        pct_bar:   Math.round(d.count / total * 1000) / 10,
+        precision: Math.round(d.ps / d.count),
+        ratio:     Math.round(d.rs / d.count),
+      })).sort((a,b) => b.count - a.count);
+    }
+
+    function buildCol(lineKey, title, subtitle) {
+      const players = getPlayerData(lineKey).slice(0, 8);
+      if (!players.length) return `<div style="flex:1;color:var(--text3);font-size:12px;padding:20px">Sin datos</div>`;
+
+      const maxPct  = players[0].pct_bar || 1;
+      const axisMax = Math.max(Math.ceil(maxPct / 5) * 5, 5);
+
+      const LM = 82, W = 390, RM = 8, BAR_W = W - LM - RM;
+      const ROW_H = 46, AX_H = 28;
+      const SVG_H = players.length * ROW_H + AX_H;
+
+      const ticks = axisMax / 5;
+      let axis = '';
+      for (let i = 0; i <= ticks; i++) {
+        const v = i * 5;
+        const x = LM + BAR_W * (v / axisMax);
+        axis += `
+          <line x1="${x}" y1="0" x2="${x}" y2="${players.length * ROW_H + 5}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+          <text x="${x}" y="${players.length * ROW_H + AX_H - 2}" text-anchor="middle" font-size="9" fill="#6b7280" font-family="DM Mono,monospace">${v}%</text>`;
+      }
+
+      const rows = players.map((p, i) => {
+        const bw  = Math.max(Math.round(p.pct_bar / axisMax * BAR_W), 3);
+        const y   = i * ROW_H + 10;
+        const BH  = 26;
+        const nm  = p.player.split(' ').slice(-1)[0];
+        const lbl = `${p.precision}% / ${p.ratio}%`;
+        return `
+          <text x="${LM - 6}" y="${y + BH/2}" text-anchor="end" font-size="11" font-weight="600"
+                fill="#e6edf3" font-family="DM Sans,sans-serif">${nm}</text>
+          <text x="${LM - 6}" y="${y + BH/2 + 12}" text-anchor="end" font-size="9" font-weight="500"
+                fill="#6b7280" font-family="DM Sans,sans-serif">${p.pos}</text>
+          <rect x="${LM}" y="${y}" width="${bw}" height="${BH}" fill="#3fb950" rx="2"/>
+          <text x="${LM + bw + 5}" y="${y + BH/2 + 4}" text-anchor="start" font-size="10" font-weight="700"
+                fill="#6fcf97" font-family="DM Sans,sans-serif">${lbl}</text>`;
+      }).join('');
+
+      return `
+        <div style="flex:1;min-width:240px">
+          <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:2px;
+                      text-transform:uppercase;letter-spacing:0.5px">${title}</div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:10px">${subtitle}</div>
+          <svg viewBox="0 0 ${W} ${SVG_H}" width="100%" style="overflow:visible;max-width:${W}px">
+            ${axis}
+            <line x1="${LM}" y1="0" x2="${LM}" y2="${players.length * ROW_H}"
+                  stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+            ${rows}
+          </svg>
+        </div>`;
+    }
+
+    cont.innerHTML = `
+      <div style="padding:20px 24px">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+          <img src="${currentTeam.escudo}" style="width:48px;height:48px;object-fit:contain"/>
+          <div>
+            <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px">${currentTeam.name.toUpperCase()}</div>
+            <div style="font-size:12px;color:var(--text3)">Primera Federación · Temporada 2025–26</div>
+          </div>
+        </div>
+
+        ${buildPasesSubTabs()}
+        ${buildProgresionSubTabs()}
+
+        <div style="margin-bottom:20px">
+          <div style="font-size:16px;font-weight:900;letter-spacing:-0.5px;text-transform:uppercase">
+            Pasadores por Línea
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">
+            Precisión / Ratio a través de línea · Temporada completa
+          </div>
+        </div>
+
+        <div style="display:flex;gap:32px;flex-wrap:wrap">
+          ${buildCol('primera', '1ª Línea',     'Porcentaje sobre pases de ruptura de primera línea')}
+          ${buildCol('segunda', '2ª Línea',     'Porcentaje sobre pases de ruptura de segunda línea')}
+          ${buildCol('ultima',  'Última Línea', 'Porcentaje sobre pases de ruptura de última línea')}
+        </div>
+
+        <div style="margin-top:22px;padding-top:12px;border-top:1px solid var(--border);
+                    font-size:10px;color:var(--text3);display:flex;gap:20px;flex-wrap:wrap">
+          <span>🟩 Barra = % de los pases de ruptura de esa línea atribuibles al jugador</span>
+          <span><strong>Precisión</strong> = % pases completados &nbsp;·&nbsp;
+                <strong>Ratio</strong> = % de sus pases que rompen esa línea</span>
+        </div>
+      </div>`;
+  }
+
   // ── Campo vertical con pases de ruptura del top pasador ───────────────────
   async function renderMapaPasadores(cont) {
     if (!cont) cont = document.getElementById('content');
