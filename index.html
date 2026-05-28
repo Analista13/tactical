@@ -336,6 +336,7 @@
   let pasesZoneFilter   = null;       // null | 1 | 2 | 3
   let pasesDropdownOpen = false;      // dropdown selector de partido
   let pasesSubTab       = 'equipo';   // 'equipo' | 'jugadores' | 'progresion'
+  let plantillaView     = 'plantilla'; // 'plantilla' | 'fichajes'
   let progresionSubTab  = 'pasadores'; // 'pasadores' | 'porlinea' | 'receptores' | 'mapa' | 'mapa_rec'
   let pasadoresData     = null;
   // Estado subtab Mapa Pasadores
@@ -9258,6 +9259,34 @@
     ],
   };
 
+  // ─── Fichajes 25/26 (fuente: Transfermarkt) ───────────────────────────────
+  const FICHAJES_923 = {
+    verano: [
+      { name:'Borja Vázquez',     pos:'Delantero',    img:'img/jugadores/18_borja_vazquez.png', from:'Cádiz B',          liga:'España',        type:'Cesión', val:'200k€', active:true  },
+      { name:'Vasco Sousa',       pos:'Lateral izq.', img:'img/jugadores/15_vasco.png',         from:'Betis Deportivo',  liga:'1ª Fed.',       type:'Cesión', val:'100k€', active:true  },
+      { name:'Boris Moltenis',    pos:'Def. central', img:'img/jugadores/04_moltenis.png',       from:'FC Sochaux',       liga:'Ch. National',  type:'Libre',  val:'250k€', active:true  },
+      { name:'Vladyslav Kysil',   pos:'Def. central', img:'img/jugadores/26_kisil.png',          from:'Atl. Bembibre',   liga:'España',        type:'Libre',  val:'50k€',  active:true  },
+      { name:'Eneko Undabarrena', pos:'Mediocentro',  img:'img/jugadores/05_undabarrena.png',    from:'CD Alcoyano',      liga:'2ª Fed.',       type:'Libre',  val:'150k€', active:true  },
+      { name:'Fede San Emeterio', pos:'Mediocentro',  img:'img/jugadores/06_san_emeterio.png',   from:'Cádiz CF',         liga:'2ª División',   type:'Libre',  val:'300k€', active:true  },
+      { name:'Eugene Frimpong',   pos:'Mediocentro',  img:'img/jugadores/16_frimpong.png',       from:'Zamora CF',        liga:'1ª Fed.',       type:'Libre',  val:'150k€', active:true  },
+      { name:'Xemi Fernández',    pos:'MC ofensivo',  img:'img/jugadores/14_xemi.png',           from:'Antequera CF',     liga:'1ª Fed.',       type:'Libre',  val:'200k€', active:true  },
+      { name:'Abdoulaye Keita',   pos:'Extremo izq.', img:'img/jugadores/17_keita.png',          from:'Getafe CF B',      liga:'2ª Fed.',       type:'Libre',  val:'200k€', active:true  },
+      { name:'Pau Ferrer',        pos:'Delantero',    img:'img/jugadores/20_pau_ferrer.png',     from:'Las Palmas Atl.',  liga:'2ª Fed.',       type:'Libre',  val:'150k€', active:true  },
+      { name:'Eneko Aguilar',     pos:'Mediocentro',  img:'',                                   from:'Bilbao Athletic',  liga:'1ª Fed.',       type:'Libre',  val:'200k€', active:false, leftTo:'CE Sabadell'     },
+      { name:'Diego Moreno',      pos:'Lateral der.', img:'',                                   from:'Osasuna B',        liga:'1ª Fed.',       type:'Libre',  val:'75k€',  active:false, leftTo:'Libre'           },
+      { name:'Sergio Benito',     pos:'Delantero',    img:'',                                   from:'Real Unión',       liga:'2ª Fed.',       type:'Libre',  val:'100k€', active:false, leftTo:'Ourense CF'      },
+      { name:'Lian',              pos:'Extremo izq.', img:'',                                   from:'Grêmio U20',       liga:'Brasil Sub-20', type:'Libre',  val:'—',     active:false, leftTo:'Barbadás (ces.)' },
+    ],
+    invierno: [
+      { name:'Slavy',             pos:'Delantero',    img:'img/jugadores/08_slavy.png',          from:'Hércules CF',      liga:'1ª Fed.',       type:'Libre',  val:'400k€', active:true  },
+      { name:'Carlos Calderón',   pos:'Extremo der.', img:'img/jugadores/07_calderon.png',       from:'FC Cartagena',     liga:'1ª Fed.',       type:'Libre',  val:'200k€', active:true  },
+      { name:'Steven Petkov',     pos:'Delantero',    img:'img/jugadores/11_petkov.png',         from:'Botev Plovdiv',    liga:'Bulgaria',      type:'Libre',  val:'100k€', active:true  },
+      { name:'Koke Iglesias',     pos:'Lateral der.', img:'img/jugadores/12_iglesias.png',       from:'Valladolid Prom.', liga:'2ª Fed.',       type:'Cesión', val:'150k€', active:true  },
+      { name:'Nuke Mfulu',        pos:'Mediocentro',  img:'img/jugadores/21_mfulu.png',          from:'Sin equipo',       liga:'—',             type:'—',      val:'300k€', active:true  },
+      { name:'Erik Morán',        pos:'Mediocentro',  img:'img/jugadores/24_moran.png',          from:'Sin equipo',       liga:'—',             type:'—',      val:'100k€', active:true  },
+    ],
+  };
+
   function loadPlantillaTab() {
     document.getElementById('content').innerHTML = '<div class="loading"><div class="spinner"></div><span>Cargando plantilla...</span></div>';
     setTimeout(renderPlantillaTab, 0);
@@ -9298,21 +9327,150 @@
           ${players.map(card).join('')}
         </div>
       </div>`;
+    if (plantillaView === 'fichajes') { renderFichajesTab(); return; }
+
     const d = PLANTILLA_923;
     const total = d.porteros.length + d.defensas.length + d.centrocampistas.length + d.delanteros.length;
+
+    // ── Tab switcher ───────────────────────────────────────────────────
+    const tabSwitch = `
+      <div style="display:inline-flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:3px;margin-bottom:20px">
+        <button onclick="plantillaView='plantilla';renderPlantillaTab()" style="padding:6px 20px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:var(--accent);color:#0d1117">Plantilla</button>
+        <button onclick="plantillaView='fichajes';renderPlantillaTab()" style="padding:6px 20px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:transparent;color:var(--text2)">Fichajes</button>
+      </div>`;
+
     cont.innerHTML = `
       <div style="padding:20px 24px">
-        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
           <img src="${currentTeam.escudo}" style="width:48px;height:48px;object-fit:contain"/>
           <div>
             <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--text1)">${currentTeam.name.toUpperCase()}</div>
             <div style="font-size:12px;color:var(--text3)">Playoff · Temporada 2025–26 · ${total} jugadores</div>
           </div>
         </div>
+        ${tabSwitch}
         ${section('Porteros', d.porteros, '#f0883e')}
         ${section('Defensas', d.defensas, '#58a6ff')}
         ${section('Centrocampistas', d.centrocampistas, '#e3b341')}
         ${section('Delanteros', d.delanteros, '#3fb950')}
+      </div>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  FICHAJES TAB
+  // ═══════════════════════════════════════════════════════════════════
+  function renderFichajesTab() {
+    const cont = document.getElementById('content');
+    const PCOL = {
+      'Portero':'#f0883e','Def. central':'#58a6ff','Lateral izq.':'#58a6ff',
+      'Lateral der.':'#58a6ff','Mediocentro':'#e3b341','MC ofensivo':'#e3b341',
+      'Extremo izq.':'#3fb950','Extremo der.':'#3fb950','Delantero':'#3fb950',
+    };
+
+    const typeBadge = type => {
+      if (type === 'Cesión')  return `<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(88,166,255,0.15);color:#58a6ff;border:1px solid rgba(88,166,255,0.3);white-space:nowrap">Cesión</span>`;
+      if (type === 'Libre')   return `<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(63,185,80,0.12);color:#3fb950;border:1px solid rgba(63,185,80,0.28);white-space:nowrap">Libre</span>`;
+      return `<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(139,148,158,0.15);color:#8b949e;border:1px solid rgba(139,148,158,0.25);white-space:nowrap">—</span>`;
+    };
+
+    const playerRow = p => {
+      const col = PCOL[p.pos] || 'var(--text2)';
+      const photo = p.img
+        ? `<img src="${p.img}" style="width:44px;height:44px;object-fit:cover;object-position:top" onerror="this.parentElement.innerHTML='<div style=\\'width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text3)\\'>👤</div>'">`
+        : `<div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text3)">👤</div>`;
+      const leftBadge = !p.active
+        ? `<span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(248,81,73,0.12);color:#f85149;border:1px solid rgba(248,81,73,0.25);white-space:nowrap;margin-left:6px">↗ ${p.leftTo}</span>`
+        : '';
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);transition:background 0.12s;opacity:${p.active ? 1 : 0.55}"
+             onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+          <div style="width:44px;height:44px;border-radius:10px;overflow:hidden;background:var(--bg3);flex-shrink:0;border:1px solid var(--border)">
+            ${photo}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span style="font-size:13px;font-weight:700;color:var(--text1)">${p.name}</span>
+              ${leftBadge}
+            </div>
+            <span style="font-size:10px;font-weight:600;color:${col}">${p.pos}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-right:8px">
+            <span style="font-size:13px;color:var(--text3)">←</span>
+            <div style="text-align:right">
+              <div style="font-size:12px;font-weight:600;color:var(--text2);white-space:nowrap">${p.from}</div>
+              <div style="font-size:10px;color:var(--text3)">${p.liga}</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;min-width:72px">
+            ${typeBadge(p.type)}
+            <span style="font-size:10px;color:var(--text3);font-weight:500">${p.val}</span>
+          </div>
+        </div>`;
+    };
+
+    const windowSection = (icon, title, subtitle, players, borderCol) => {
+      const active = players.filter(p => p.active);
+      const inactive = players.filter(p => !p.active);
+      return `
+        <div style="margin-bottom:24px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+          <div style="padding:14px 16px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+            <span style="font-size:18px">${icon}</span>
+            <div>
+              <div style="font-size:13px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:var(--text1)">${title}</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:1px">${subtitle} · <span style="color:${borderCol};font-weight:700">${active.length} en plantilla</span>${inactive.length ? ` · <span style="color:#8b949e">${inactive.length} salieron</span>` : ''}</div>
+            </div>
+          </div>
+          ${active.map(playerRow).join('')}
+          ${inactive.length ? `
+            <div style="padding:8px 16px;background:rgba(248,81,73,0.04);border-top:1px solid rgba(248,81,73,0.12)">
+              <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;color:#f85149;margin-bottom:6px;text-transform:uppercase">Ya no en plantilla</div>
+              ${inactive.map(playerRow).join('')}
+            </div>` : ''}
+        </div>`;
+    };
+
+    const nVerano = FICHAJES_923.verano.length;
+    const nInvierno = FICHAJES_923.invierno.length;
+    const tabSwitch = `
+      <div style="display:inline-flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:3px;margin-bottom:20px">
+        <button onclick="plantillaView='plantilla';renderPlantillaTab()" style="padding:6px 20px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:transparent;color:var(--text2)">Plantilla</button>
+        <button onclick="plantillaView='fichajes';renderPlantillaTab()" style="padding:6px 20px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:var(--accent);color:#0d1117">Fichajes</button>
+      </div>`;
+
+    cont.innerHTML = `
+      <div style="padding:20px 24px">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+          <img src="${currentTeam.escudo}" style="width:48px;height:48px;object-fit:contain"/>
+          <div>
+            <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--text1)">${currentTeam.name.toUpperCase()}</div>
+            <div style="font-size:12px;color:var(--text3)">Temporada 2025–26 · Movimientos de mercado</div>
+          </div>
+        </div>
+
+        ${tabSwitch}
+
+        <!-- Balance resumen -->
+        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+          <div style="flex:1;min-width:120px;background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.25);border-radius:10px;padding:12px 16px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:#3fb950">${nVerano + nInvierno}</div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Altas</div>
+          </div>
+          <div style="flex:1;min-width:120px;background:rgba(248,81,73,0.07);border:1px solid rgba(248,81,73,0.22);border-radius:10px;padding:12px 16px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:#f85149">18</div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Bajas</div>
+          </div>
+          <div style="flex:1;min-width:120px;background:rgba(200,169,110,0.08);border:1px solid rgba(200,169,110,0.25);border-radius:10px;padding:12px 16px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--accent)">+250k€</div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Balance neto</div>
+          </div>
+        </div>
+
+        ${windowSection('☀️', 'Mercado de Verano', '2025 · ' + nVerano + ' incorporaciones', FICHAJES_923.verano, '#e3b341')}
+        ${windowSection('❄️', 'Mercado de Invierno', '2026 · ' + nInvierno + ' incorporaciones', FICHAJES_923.invierno, '#58a6ff')}
+
+        <div style="font-size:10px;color:var(--text3);text-align:center;padding-bottom:8px">
+          Fuente: Transfermarkt · Valores de mercado a fecha de la temporada
+        </div>
       </div>`;
   }
 
