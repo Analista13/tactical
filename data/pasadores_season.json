@@ -189,5 +189,251 @@
       "precision": 53,
       "ratio": 7
     }
+  ],
+  "players_primera": [
+    {
+      "player": "Andrés Prieto",
+      "pos": "GK",
+      "count": 85,
+      "pct_bar": 15.9,
+      "precision": 68,
+      "ratio": 32
+    },
+    {
+      "player": "Eneko Undabarrena",
+      "pos": "RCB",
+      "count": 62,
+      "pct_bar": 11.6,
+      "precision": 86,
+      "ratio": 8
+    },
+    {
+      "player": "David Andújar",
+      "pos": "CM",
+      "count": 60,
+      "pct_bar": 11.2,
+      "precision": 86,
+      "ratio": 17
+    },
+    {
+      "player": "Germán Novoa",
+      "pos": "LCB",
+      "count": 59,
+      "pct_bar": 11.0,
+      "precision": 84,
+      "ratio": 10
+    },
+    {
+      "player": "Andoni López",
+      "pos": "LB",
+      "count": 55,
+      "pct_bar": 10.3,
+      "precision": 67,
+      "ratio": 9
+    },
+    {
+      "player": "Koke",
+      "pos": "RB",
+      "count": 48,
+      "pct_bar": 9.0,
+      "precision": 78,
+      "ratio": 16
+    },
+    {
+      "player": "B. Moltenis",
+      "pos": "RW",
+      "count": 34,
+      "pct_bar": 6.4,
+      "precision": 80,
+      "ratio": 12
+    },
+    {
+      "player": "Ángel Jiménez",
+      "pos": "GK",
+      "count": 28,
+      "pct_bar": 5.2,
+      "precision": 71,
+      "ratio": 23
+    },
+    {
+      "player": "Borja Valle",
+      "pos": "CF",
+      "count": 19,
+      "pct_bar": 3.6,
+      "precision": 82,
+      "ratio": 3
+    },
+    {
+      "player": "Mario Jorrín",
+      "pos": "RB",
+      "count": 16,
+      "pct_bar": 3.0,
+      "precision": 70,
+      "ratio": 9
+    }
+  ],
+  "players_segunda": [
+    {
+      "player": "Andrés Prieto",
+      "pos": "GK",
+      "count": 116,
+      "pct_bar": 15.8,
+      "precision": 68,
+      "ratio": 44
+    },
+    {
+      "player": "Andoni López",
+      "pos": "LB",
+      "count": 103,
+      "pct_bar": 14.0,
+      "precision": 67,
+      "ratio": 16
+    },
+    {
+      "player": "Koke",
+      "pos": "RB",
+      "count": 56,
+      "pct_bar": 7.6,
+      "precision": 78,
+      "ratio": 19
+    },
+    {
+      "player": "Eneko Undabarrena",
+      "pos": "RCB",
+      "count": 55,
+      "pct_bar": 7.5,
+      "precision": 86,
+      "ratio": 7
+    },
+    {
+      "player": "Ángel Jiménez",
+      "pos": "GK",
+      "count": 46,
+      "pct_bar": 6.3,
+      "precision": 71,
+      "ratio": 37
+    },
+    {
+      "player": "Germán Novoa",
+      "pos": "LCB",
+      "count": 44,
+      "pct_bar": 6.0,
+      "precision": 84,
+      "ratio": 7
+    },
+    {
+      "player": "David Andújar",
+      "pos": "CM",
+      "count": 42,
+      "pct_bar": 5.7,
+      "precision": 86,
+      "ratio": 12
+    },
+    {
+      "player": "Borja Vázquez",
+      "pos": "LW",
+      "count": 34,
+      "pct_bar": 4.6,
+      "precision": 66,
+      "ratio": 7
+    },
+    {
+      "player": "Vicente Esquerdo",
+      "pos": "LM",
+      "count": 34,
+      "pct_bar": 4.6,
+      "precision": 83,
+      "ratio": 12
+    },
+    {
+      "player": "Diego Moreno",
+      "pos": "RB",
+      "count": 28,
+      "pct_bar": 3.8,
+      "precision": 73,
+      "ratio": 12
+    }
+  ],
+  "players_ultima": [
+    {
+      "player": "Andoni López",
+      "pos": "LB",
+      "count": 31,
+      "pct_bar": 17.8,
+      "precision": 67,
+      "ratio": 5
+    },
+    {
+      "player": "Andrés Prieto",
+      "pos": "GK",
+      "count": 19,
+      "pct_bar": 10.9,
+      "precision": 68,
+      "ratio": 7
+    },
+    {
+      "player": "Koke",
+      "pos": "RB",
+      "count": 18,
+      "pct_bar": 10.3,
+      "precision": 78,
+      "ratio": 6
+    },
+    {
+      "player": "Borja Vázquez",
+      "pos": "LW",
+      "count": 14,
+      "pct_bar": 8.0,
+      "precision": 66,
+      "ratio": 3
+    },
+    {
+      "player": "Diego Moreno",
+      "pos": "RB",
+      "count": 8,
+      "pct_bar": 4.6,
+      "precision": 73,
+      "ratio": 4
+    },
+    {
+      "player": "Eneko Undabarrena",
+      "pos": "RCB",
+      "count": 7,
+      "pct_bar": 4.0,
+      "precision": 86,
+      "ratio": 1
+    },
+    {
+      "player": "David Andújar",
+      "pos": "CM",
+      "count": 7,
+      "pct_bar": 4.0,
+      "precision": 86,
+      "ratio": 2
+    },
+    {
+      "player": "B. Moltenis",
+      "pos": "RW",
+      "count": 7,
+      "pct_bar": 4.0,
+      "precision": 80,
+      "ratio": 3
+    },
+    {
+      "player": "Ángel Jiménez",
+      "pos": "GK",
+      "count": 7,
+      "pct_bar": 4.0,
+      "precision": 71,
+      "ratio": 6
+    },
+    {
+      "player": "E. Frimpong",
+      "pos": "CF",
+      "count": 7,
+      "pct_bar": 4.0,
+      "precision": 83,
+      "ratio": 2
+    }
   ]
 }
