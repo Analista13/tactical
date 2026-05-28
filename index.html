@@ -6595,8 +6595,10 @@
         const lbl = `${p.precision}% / ${p.ratio}%`;
         const lblInside = bw > 100;
         return `
-          <text x="${LM - 6}" y="${y + BH/2 + 4}" text-anchor="end" font-size="11" font-weight="600"
+          <text x="${LM - 6}" y="${y + BH/2}" text-anchor="end" font-size="11" font-weight="600"
                 fill="#e6edf3" font-family="DM Sans,sans-serif">${nm}</text>
+          <text x="${LM - 6}" y="${y + BH/2 + 12}" text-anchor="end" font-size="9" font-weight="500"
+                fill="#6b7280" font-family="DM Sans,sans-serif">${p.pos}</text>
           <rect x="${LM}" y="${y}" width="${bw}" height="${BH}" fill="#3fb950" rx="2"/>
           ${lblInside
             ? `<text x="${LM + bw - 6}" y="${y + BH/2 + 4}" text-anchor="end" font-size="10" font-weight="700"
