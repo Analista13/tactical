@@ -944,8 +944,10 @@
               <rect x="${MX}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
               <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
               <rect x="${(W-MX-PW*5.5/105).toFixed(1)}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
-              <text x="${MX+8}" y="${H-MY+22}" font-size="10" fill="#2a4a2a">← Portería propia</text>
-              <text x="${W-MX-8}" y="${H-MY+22}" text-anchor="end" font-size="10" fill="#2a4a2a">Portería rival →</text>
+              <text x="${MX+8}" y="${H-MY+22}" font-size="10" fill="rgba(255,255,255,0.2)">← Portería propia</text>
+              <text x="${W-MX-8}" y="${H-MY+22}" text-anchor="end" font-size="10" fill="rgba(255,255,255,0.2)">Portería rival →</text>
+              <text x="${W-MX-4}" y="${MY-8}" text-anchor="end" font-family="'DM Sans',sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+              <polygon points="${W-MX+10},${H/2} ${W-MX},${H/2-6} ${W-MX},${H/2+6}" fill="rgba(255,255,255,0.18)"/>
               ${lin}${nod}${leyenda}
             </svg>
           </div>
@@ -1108,6 +1110,8 @@
           <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.6"/>
           <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.6"/>
           ${ax}
+          <text x="${W-MX-4}" y="${MY-6}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="0.8">ATAQUE →</text>
+          <polygon points="${W-MX+7},${H/2} ${W-MX},${H/2-4} ${W-MX},${H/2+4}" fill="rgba(255,255,255,0.18)"/>
         </svg>`;
       };
 
@@ -1414,8 +1418,10 @@
                 <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#3a1e1e" stroke-width="0.8"/>
                 <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#3a1e1e" stroke-width="0.8"/>
                 ${axisLabels}
-                <text x="${MX+8}" y="${H-MY+22}" font-size="10" fill="#3a1e1e">← Portería propia</text>
-                <text x="${W-MX-8}" y="${H-MY+22}" text-anchor="end" font-size="10" fill="#3a1e1e">Portería rival →</text>
+                <text x="${MX+8}" y="${H-MY+22}" font-size="10" fill="rgba(255,255,255,0.2)">← Portería propia</text>
+                <text x="${W-MX-8}" y="${H-MY+22}" text-anchor="end" font-size="10" fill="rgba(255,255,255,0.2)">Portería rival →</text>
+                <text x="${W-MX-4}" y="${MY-8}" text-anchor="end" font-family="'DM Sans',sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+                <polygon points="${W-MX+10},${H/2} ${W-MX},${H/2-6} ${W-MX},${H/2+6}" fill="rgba(255,255,255,0.18)"/>
               </svg>
             </div>
           </div>
@@ -1644,8 +1650,10 @@
                 <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#0d2a1a" stroke-width="0.8"/>
                 <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#0d2a1a" stroke-width="0.8"/>
                 ${axisLabels}
-                <text x="${MX+8}" y="${H-MY+22}" font-size="10" fill="#0d2a1a">← Portería propia</text>
-                <text x="${W-MX-8}" y="${H-MY+22}" text-anchor="end" font-size="10" fill="#0d2a1a">Portería rival →</text>
+                <text x="${MX+8}" y="${H-MY+22}" font-size="10" fill="rgba(255,255,255,0.2)">← Portería propia</text>
+                <text x="${W-MX-8}" y="${H-MY+22}" text-anchor="end" font-size="10" fill="rgba(255,255,255,0.2)">Portería rival →</text>
+                <text x="${W-MX-4}" y="${MY-8}" text-anchor="end" font-family="'DM Sans',sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+                <polygon points="${W-MX+10},${H/2} ${W-MX},${H/2-6} ${W-MX},${H/2+6}" fill="rgba(255,255,255,0.18)"/>
               </svg>
             </div>
           </div>
@@ -1780,8 +1788,9 @@
             <circle cx="${MW/2}" cy="${MH/2}" r="${(MPH*9.15/68).toFixed(0)}" fill="none" stroke="#1e3a1e" stroke-width="0.8"/>
             <rect x="${MMX}" y="${(MMY+MPH*(68-40.32)/2/68).toFixed(1)}" width="${(MPW*16.5/105).toFixed(1)}" height="${(MPH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.6"/>
             <rect x="${(MW-MMX-MPW*16.5/105).toFixed(1)}" y="${(MMY+MPH*(68-40.32)/2/68).toFixed(1)}" width="${(MPW*16.5/105).toFixed(1)}" height="${(MPH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.6"/>
-            <text x="${MMX+6}" y="${MH-MMY+18}" font-size="9" fill="#2a4a2a">← Def.</text>
-            <text x="${MW-MMX-6}" y="${MH-MMY+18}" text-anchor="end" font-size="9" fill="#2a4a2a">Ata. →</text>
+            <text x="${MMX+6}" y="${MH-MMY+18}" font-size="9" fill="rgba(255,255,255,0.2)">← Def.</text>
+            <text x="${MW-MMX-6}" y="${MH-MMY+18}" text-anchor="end" font-size="9" font-weight="700" fill="rgba(255,255,255,0.3)">ATAQUE →</text>
+            <polygon points="${MW-MMX+8},${MH/2} ${MW-MMX},${MH/2-5} ${MW-MMX},${MH/2+5}" fill="rgba(255,255,255,0.18)"/>
             ${lin}${nod}
           </svg>
         </div>`;
@@ -1896,7 +1905,9 @@
       <line x1="${AMX}" y1="${(AMY+CH).toFixed(1)}" x2="${AW-AMX}" y2="${(AMY+CH).toFixed(1)}" stroke="rgba(200,169,110,0.08)" stroke-width="0.5"/>
       <line x1="${AMX}" y1="${(AMY+CH*2).toFixed(1)}" x2="${AW-AMX}" y2="${(AMY+CH*2).toFixed(1)}" stroke="rgba(200,169,110,0.08)" stroke-width="0.5"/>
       <line x1="${AMX}" y1="${(AMY+CH*3).toFixed(1)}" x2="${AW-AMX}" y2="${(AMY+CH*3).toFixed(1)}" stroke="rgba(200,169,110,0.08)" stroke-width="0.5"/>
-      <line x1="${AMX}" y1="${(AMY+CH*4).toFixed(1)}" x2="${AW-AMX}" y2="${(AMY+CH*4).toFixed(1)}" stroke="rgba(200,169,110,0.08)" stroke-width="0.5"/>`;
+      <line x1="${AMX}" y1="${(AMY+CH*4).toFixed(1)}" x2="${AW-AMX}" y2="${(AMY+CH*4).toFixed(1)}" stroke="rgba(200,169,110,0.08)" stroke-width="0.5"/>
+      <text x="${AW-AMX-4}" y="${AMY-4}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="${compact?5.5:9}" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="0.8">ATAQUE →</text>
+      <polygon points="${AW-AMX+(compact?4:7)},${AH/2} ${AW-AMX},${AH/2-(compact?3:4)} ${AW-AMX},${AH/2+(compact?3:4)}" fill="rgba(255,255,255,0.18)"/>`;
     // posición media
     let marker='';
     if(total>0){
@@ -2011,7 +2022,9 @@
         <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.6"/>
         <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.6"/>
         <rect x="${MX}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.4"/>
-        <rect x="${(W-MX-PW*5.5/105).toFixed(1)}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.4"/>`;
+        <rect x="${(W-MX-PW*5.5/105).toFixed(1)}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.4"/>
+        <text x="${(W-MX-2)}" y="${(MY-3)}" text-anchor="end" font-family="'DM Sans',sans-serif" font-size="6.5" font-weight="700" fill="rgba(255,255,255,0.3)" letter-spacing="0.5">ATAQUE →</text>
+        <polygon points="${(W-MX+6)},${(H/2).toFixed(1)} ${(W-MX)},${(H/2-4).toFixed(1)} ${(W-MX)},${(H/2+4).toFixed(1)}" fill="rgba(255,255,255,0.18)"/>`;
 
       const playerDot=(px,py,tc)=>`
         <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="8" fill="${tc}" fill-opacity="0.15" stroke="${tc}" stroke-width="0"/>
@@ -2214,7 +2227,9 @@
             <rect x="${TMX}" y="${(TMY+TPH*(68-40.32)/2/68).toFixed(1)}" width="${(TPW*16.5/105).toFixed(1)}" height="${(TPH*40.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.8"/>
             <rect x="${(TW-TMX-TPW*16.5/105).toFixed(1)}" y="${(TMY+TPH*(68-40.32)/2/68).toFixed(1)}" width="${(TPW*16.5/105).toFixed(1)}" height="${(TPH*40.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.8"/>
             <rect x="${TMX}" y="${(TMY+TPH*(68-18.32)/2/68).toFixed(1)}" width="${(TPW*5.5/105).toFixed(1)}" height="${(TPH*18.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.5"/>
-            <rect x="${(TW-TMX-TPW*5.5/105).toFixed(1)}" y="${(TMY+TPH*(68-18.32)/2/68).toFixed(1)}" width="${(TPW*5.5/105).toFixed(1)}" height="${(TPH*18.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.5"/>`;
+            <rect x="${(TW-TMX-TPW*5.5/105).toFixed(1)}" y="${(TMY+TPH*(68-18.32)/2/68).toFixed(1)}" width="${(TPW*5.5/105).toFixed(1)}" height="${(TPH*18.32/68).toFixed(1)}" fill="none" stroke="#1a3a1a" stroke-width="0.5"/>
+            <text x="${TW-TMX-4}" y="${TMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+            <polygon points="${TW-TMX+10},${TH/2} ${TW-TMX},${TH/2-6} ${TW-TMX},${TH/2+6}" fill="rgba(255,255,255,0.18)"/>`;
 
           let tLines='',tNodes='';
           teaPairs.sort((a,b)=>a.cnt-b.cnt).forEach(({a,b,cnt})=>{
@@ -2658,7 +2673,9 @@
       <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="0.8"/>
       <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="0.8"/>
       <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="0.5"/>
-      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="0.5"/>`;
+      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="0.5"/>
+      <text x="${AW-AMX-4}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+      <polygon points="${AW-AMX+10},${AH/2} ${AW-AMX},${AH/2-6} ${AW-AMX},${AH/2+6}" fill="rgba(255,255,255,0.18)"/>`;
 
     // Nodos
     let nodes='';
@@ -3465,7 +3482,9 @@
       <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
       <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
       <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
-      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>`;
+      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+      <text x="${AW-AMX-4}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+      <polygon points="${AW-AMX+10},${AH/2} ${AW-AMX},${AH/2-6} ${AW-AMX},${AH/2+6}" fill="rgba(255,255,255,0.18)"/>`;
 
     // Convex hull polygon
     let hull = '';
@@ -3675,7 +3694,9 @@
         <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
         <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
         <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
-        <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>`;
+        <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+        <text x="${AW-AMX-4}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+        <polygon points="${AW-AMX+10},${AH/2} ${AW-AMX},${AH/2-6} ${AW-AMX},${AH/2+6}" fill="rgba(255,255,255,0.18)"/>`;
 
       let hullSVG='';
       if(shape.hull&&shape.hull.length>=3){
@@ -5935,7 +5956,9 @@
       <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
       <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
       <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
-      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>`;
+      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+      <text x="${AW-AMX-4}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+      <polygon points="${AW-AMX+10},${AH/2} ${AW-AMX},${AH/2-6} ${AW-AMX},${AH/2+6}" fill="rgba(255,255,255,0.18)"/>`;
 
     // Zone highlights — only from/to zones are bright; third zone dimmed
     const {sx:zAx}=sv(-52.5,34), {sx:zBx}=sv(-17.5,34), {sx:zCx}=sv(17.5,34), {sx:zDx}=sv(52.5,34);
@@ -6315,7 +6338,9 @@
       <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="#1c3a1c" stroke-width="1"/>
       <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="#1c3a1c" stroke-width="1"/>
       <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
-      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>`;
+      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <text x="${AW-AMX-4}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+      <polygon points="${AW-AMX+10},${AH/2} ${AW-AMX},${AH/2-6} ${AW-AMX},${AH/2+6}" fill="rgba(255,255,255,0.18)"/>`;
     const mapSVG=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px">
       <svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block;overflow:visible">${pitchBg}${zHL}${passLines}</svg>
     </div>`;
@@ -6475,7 +6500,9 @@
       <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
       <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
       <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
-      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>`;
+      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+      <text x="${AW-AMX-4}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+      <polygon points="${AW-AMX+10},${AH/2} ${AW-AMX},${AH/2-6} ${AW-AMX},${AH/2+6}" fill="rgba(255,255,255,0.18)"/>`;
 
     // ── Zone overlays ──────────────────────────────────────────────────────────
     // Zone 1: x ∈ [-52.5, -17.5], Zone 2: [-17.5, 17.5], Zone 3: [17.5, 52.5]
