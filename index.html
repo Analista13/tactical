@@ -2666,14 +2666,13 @@
     // Campo
     const fieldSVG=`
       <rect x="0" y="0" width="${AW}" height="${AH}" fill="#0b150b"/>
-      <rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="${colorOverride ? '#0f200f' : '#0d1f0d'}" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="1.5"/>
-      ${colorOverride ? `<rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="${phCol}" fill-opacity="0.04"/>` : ''}
-      <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="1"/>
-      <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="1"/>
-      <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="0.8"/>
-      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="0.8"/>
-      <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="0.5"/>
-      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="${colorOverride ? '#2a4a2a' : '#1c3a1c'}" stroke-width="0.5"/>
+      <rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="#0d1f0d" stroke="#1c3a1c" stroke-width="1.5"/>
+      <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="#1c3a1c" stroke-width="1"/>
+      <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="#1c3a1c" stroke-width="1"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
       <text x="${AW-AMX-4}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
       <polygon points="${AW-AMX+10},${AH/2} ${AW-AMX},${AH/2-6} ${AW-AMX},${AH/2+6}" fill="rgba(255,255,255,0.18)"/>`;
 
