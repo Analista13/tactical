@@ -7282,11 +7282,12 @@
 
     function getPlayers(lk) {
       const all = maps[lk] || [];
-      if (mapaRecView === 'total') return all.filter(p => p.count > 0);
+      if (mapaRecView === 'total')
+        return all.filter(p => p.count > 0).sort((a, b) => b.count - a.count);
       return all.map(p => ({
         ...p,
         passes: p.passes.filter(x => x.j === mapaRecJornada)
-      })).filter(p => p.passes.length > 0);
+      })).filter(p => p.passes.length > 0).sort((a, b) => b.passes.length - a.passes.length);
     }
 
     function getPasses(lk) {
