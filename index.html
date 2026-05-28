@@ -2619,7 +2619,7 @@
     else if(tab === 'transiciones') loadTransiciones();
     else if(tab === 'centros')      loadCentros();
     else if(tab === 'faltas')       loadFaltas();
-    else if(tab === 'plantilla')    loadPlantilla();
+    else if(tab === 'plantilla')    loadPlantillaTab();
   }
 
   // ─── ALINEACIONES ────────────────────────────────────────────────────────────
@@ -9262,12 +9262,12 @@
     ],
   };
 
-  function loadPlantilla() {
+  function loadPlantillaTab() {
     document.getElementById('content').innerHTML = '<div class="loading"><div class="spinner"></div><span>Cargando plantilla...</span></div>';
-    setTimeout(renderPlantilla, 0);
+    setTimeout(renderPlantillaTab, 0);
   }
 
-  function renderPlantilla() {
+  function renderPlantillaTab() {
     const cont = document.getElementById('content');
     const PCOL = {
       'Portero':'#f0883e','Def. central':'#58a6ff','Lateral izq.':'#58a6ff',
