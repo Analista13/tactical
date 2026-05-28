@@ -98,6 +98,33 @@
     .subtab { background:transparent; border:none; color:var(--text2); padding:7px 16px; border-radius:6px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
     .subtab:hover { color:var(--text); background:var(--bg3); }
     .subtab.active { background:rgba(200,169,110,0.1); color:var(--accent); }
+
+    /* ── Sidebar nav (análisis) ── */
+    .nav-item { display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:8px; cursor:pointer; transition:all .15s; margin-bottom:2px; border:1px solid transparent; }
+    .nav-item:hover { background:var(--bg3); }
+    .nav-item.active { background:rgba(200,169,110,0.1); border-color:rgba(200,169,110,0.2); }
+    .nav-item-icon { font-size:14px; width:20px; text-align:center; flex-shrink:0; }
+    .nav-item-label { font-size:12px; font-weight:500; color:var(--text2); transition:color .15s; }
+    .nav-item.active .nav-item-label { color:var(--accent); font-weight:700; }
+    .nav-section-hdr { font-size:10px; color:var(--text3); letter-spacing:1.2px; text-transform:uppercase; padding:12px 10px 4px; font-weight:600; }
+    .sidebar-team-hdr { padding:12px 14px 10px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; cursor:pointer; transition:background .15s; flex-shrink:0; }
+    .sidebar-team-hdr:hover { background:var(--bg3); }
+    .sidebar-team-hdr img { width:32px; height:32px; object-fit:contain; flex-shrink:0; }
+    .sidebar-back { font-size:10px; color:var(--accent); margin-top:1px; }
+
+    /* ── Home screen ── */
+    .home-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:44px; padding:40px; }
+    .home-league-block { text-align:center; width:100%; }
+    .home-league-title { font-size:10px; color:var(--text3); letter-spacing:2px; text-transform:uppercase; font-weight:600; margin-bottom:18px; }
+    .home-teams-row { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
+    .home-team-card { display:flex; flex-direction:column; align-items:center; gap:10px; padding:22px 26px; border-radius:14px; cursor:pointer; border:1px solid var(--border); background:var(--bg2); transition:all .2s; }
+    .home-team-card:hover { border-color:rgba(200,169,110,0.45); background:var(--bg3); transform:translateY(-2px); box-shadow:0 8px 28px rgba(0,0,0,0.45); }
+    .home-team-card img { width:68px; height:68px; object-fit:contain; filter:drop-shadow(0 3px 8px rgba(0,0,0,0.5)); }
+    .home-team-name { font-size:13px; font-weight:700; color:var(--text); }
+    .home-team-sub { font-size:10px; color:var(--text3); }
+    .home-future-card { display:flex; flex-direction:column; align-items:center; gap:10px; padding:22px 26px; border-radius:14px; border:1px dashed rgba(255,255,255,0.06); opacity:0.3; }
+    .home-future-icon { width:68px; height:68px; border-radius:50%; background:var(--bg3); display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--text3); }
+    .home-future-name { font-size:11px; color:var(--text3); }
   </style>
 </head>
 <body>
@@ -108,43 +135,22 @@
   <div><div class="header-title">Tactical</div></div>
   <div class="header-sub">Primera Federación · 2025-26</div>
   <div class="header-badge">⚽ 51.036 eventos</div>
+  <div style="margin-left:auto;display:flex;gap:2px;align-items:center">
+    <button id="lv-todos"     onclick="setLocVis('todos')"     style="background:var(--accent);color:#0d1117;font-weight:700;border:none;border-radius:14px;padding:3px 11px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s">Todos</button>
+    <button id="lv-local"     onclick="setLocVis('local')"     style="background:transparent;color:var(--text2);font-weight:500;border:none;border-radius:14px;padding:3px 11px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s">🏠 Local</button>
+    <button id="lv-visitante" onclick="setLocVis('visitante')" style="background:transparent;color:var(--text2);font-weight:500;border:none;border-radius:14px;padding:3px 11px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s">✈️ Fuera</button>
+  </div>
 </header>
 
 
-<aside>
-  <div class="sidebar-label">Equipos</div>
-  <div class="team-item active" id="team-923" onclick="selectTeam(923,'SD Ponferradina','https://tmssl.akamaized.net/images/wappen/head/4032.png')">
-    <img class="team-escudo" src="https://tmssl.akamaized.net/images/wappen/head/4032.png" alt="">
-    <div class="team-info"><div class="team-name">SD Ponferradina</div><div class="team-sub">31 partidos</div></div>
-  </div>
-</aside>
+<aside id="aside-root"></aside>
 
 <!-- Tooltip flotante de pases — fuera del SVG, sigue al cursor -->
 <div id="passTip" style="display:none;position:fixed;z-index:9999;pointer-events:none;transition:opacity 0.1s"></div>
 <div id="mapaPassTip" style="display:none;position:fixed;z-index:9999;pointer-events:none"></div>
 
 <main>
-  <div class="tabs-bar" id="tabsBar">
-    <div class="tabs-scroll">
-      <div class="tab active" data-tab="redpases" onclick="switchTab('redpases')">🕸️ Red de Pases</div>
-      <div class="tab" data-tab="bloque" onclick="switchTab('bloque')">Bloque</div>
-      <div class="tab" data-tab="pases" onclick="switchTab('pases')">Mapa de Pases</div>
-      <div class="tab" data-tab="perdidasrec" onclick="switchTab('perdidasrec')">Pérdidas</div>
-      <!-- TAB ALINEACIONES: temporalmente oculto, código preservado -->
-      <div class="tab" data-tab="posesion" onclick="switchTab('posesion')">Posesión</div>
-      <div class="tab" data-tab="transiciones" onclick="switchTab('transiciones')">Transiciones</div>
-      <div class="tab" data-tab="centros" onclick="switchTab('centros')">Centros</div>
-      <div class="tab" data-tab="faltas" onclick="switchTab('faltas')">🟨 Faltas</div>
-    </div>
-    <div style="display:flex;gap:2px;align-items:center;padding:0 6px;flex-shrink:0;border-left:1px solid var(--border)">
-      <button id="lv-todos"      onclick="setLocVis('todos')"     style="background:var(--accent);color:#0d1117;font-weight:700;border:none;border-radius:14px;padding:3px 10px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all 0.15s">Todos</button>
-      <button id="lv-local"      onclick="setLocVis('local')"     style="background:transparent;color:var(--text2);font-weight:500;border:none;border-radius:14px;padding:3px 10px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all 0.15s">🏠 Local</button>
-      <button id="lv-visitante"  onclick="setLocVis('visitante')" style="background:transparent;color:var(--text2);font-weight:500;border:none;border-radius:14px;padding:3px 10px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all 0.15s">✈️ Fuera</button>
-    </div>
-  </div>
-  <div class="content" id="content">
-    <div class="loading"><div class="spinner"></div><span>Cargando...</span></div>
-  </div>
+  <div class="content" id="content"></div>
 </main>
 
 <script>
@@ -152,6 +158,113 @@
   // Ruta: /data/{match_id}.json — pre-filtrado: event_type=player_possession, team_id=923
 
   let currentTeam = { id:923, name:'SD Ponferradina', escudo:'https://tmssl.akamaized.net/images/wappen/head/4032.png' };
+  let appState = 'home'; // 'home' | 'analysis'
+
+  // ── Configuración de equipos y ligas ────────────────────────────────────────
+  const LEAGUES_CFG = [
+    {
+      id: 'primera', name: 'Primera Federación — Grupo 1',
+      teams: [
+        { id:923, name:'SD Ponferradina', escudo:'https://tmssl.akamaized.net/images/wappen/head/4032.png', partidos:31 }
+      ]
+    },
+    {
+      id: 'segunda', name: 'Segunda Federación', disabled: true,
+      teams: []
+    }
+  ];
+
+  const NAV_ITEMS = [
+    { tab:'redpases',     icon:'🕸️', label:'Red de Pases' },
+    { tab:'bloque',       icon:'📐', label:'Bloque' },
+    { tab:'pases',        icon:'🗺️', label:'Mapa de Pases' },
+    { tab:'perdidasrec',  icon:'📉', label:'Pérdidas & Rec.' },
+    { tab:'posesion',     icon:'⚡', label:'Posesión' },
+    { tab:'transiciones', icon:'🔄', label:'Transiciones' },
+    { tab:'centros',      icon:'📐', label:'Centros' },
+    { tab:'faltas',       icon:'🟨', label:'Faltas' },
+  ];
+
+  // ── Render aside ─────────────────────────────────────────────────────────────
+  function renderAside() {
+    const root = document.getElementById('aside-root');
+    if (appState === 'home') {
+      root.innerHTML = `
+        <div class="sidebar-label">Ligas</div>
+        ${LEAGUES_CFG.map(l => `
+          <div class="team-item${l.disabled?' disabled':''}" style="${l.disabled?'opacity:0.35;cursor:default':''}" >
+            <div style="width:8px;height:8px;border-radius:50%;background:${l.disabled?'var(--text3)':'var(--accent)'};flex-shrink:0"></div>
+            <div class="team-info">
+              <div class="team-name" style="font-size:12px">${l.name}</div>
+              ${l.disabled?'<div class="team-sub">Próximamente</div>':''}
+            </div>
+          </div>`).join('')}`;
+    } else {
+      root.innerHTML = `
+        <div class="sidebar-team-hdr" onclick="goHome()">
+          <img src="${currentTeam.escudo}" onerror="this.src=''"/>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${currentTeam.name}</div>
+            <div class="sidebar-back">← Inicio</div>
+          </div>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:8px 6px">
+          <div class="nav-section-hdr">Análisis</div>
+          ${NAV_ITEMS.map(n => `
+            <div class="nav-item${currentMainTab===n.tab?' active':''}" data-tab="${n.tab}" onclick="switchTab('${n.tab}')">
+              <span class="nav-item-icon">${n.icon}</span>
+              <span class="nav-item-label">${n.label}</span>
+            </div>`).join('')}
+        </div>`;
+    }
+  }
+
+  // ── Home screen (contenido central) ─────────────────────────────────────────
+  function renderHomeContent() {
+    const cont = document.getElementById('content');
+    cont.innerHTML = `
+      <div class="home-screen anim">
+        ${LEAGUES_CFG.filter(l => !l.disabled).map(l => `
+          <div class="home-league-block">
+            <div class="home-league-title">${l.name}</div>
+            <div class="home-teams-row">
+              ${l.teams.map(t => `
+                <div class="home-team-card" onclick="openTeam(${t.id},'${t.name.replace(/'/g,"\\'")}','${t.escudo}')">
+                  <img src="${t.escudo}" alt="${t.name}" onerror="this.style.display='none'"/>
+                  <div class="home-team-name">${t.name}</div>
+                  <div class="home-team-sub">${t.partidos} partidos</div>
+                </div>`).join('')}
+              <div class="home-future-card">
+                <div class="home-future-icon">+</div>
+                <div class="home-future-name">Próximo equipo</div>
+              </div>
+            </div>
+          </div>`).join('')}
+        <div class="home-league-block" style="opacity:0.3">
+          <div class="home-league-title">Segunda Federación</div>
+          <div class="home-teams-row">
+            <div class="home-future-card"><div class="home-future-icon">+</div><div class="home-future-name">Próximamente</div></div>
+            <div class="home-future-card"><div class="home-future-icon">+</div><div class="home-future-name">Próximamente</div></div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ── Navegación principal ─────────────────────────────────────────────────────
+  function openTeam(id, name, escudo) {
+    currentTeam = {id, name, escudo};
+    PARTIDOS = PARTIDOS_MAP[id] || PARTIDOS_MAP[2908];
+    PLAYER_DORSALES = PLAYER_DORSALES_MAP_D[id] || {};
+    appState = 'analysis';
+    renderAside();
+    switchTab(currentMainTab || 'redpases');
+  }
+
+  function goHome() {
+    appState = 'home';
+    renderAside();
+    renderHomeContent();
+  }
   let redMatchId    = null;
   let redPrimaryTab = 'equipo';
   let redSubTab     = '1parte';
@@ -585,26 +698,8 @@
   ];
 
   function selectTeam(id, name, escudo) {
-    document.querySelectorAll('.team-item').forEach(i => i.classList.remove('active'));
-    document.getElementById(`team-${id}`)?.classList.add('active');
-    currentTeam = {id, name, escudo};
-    PARTIDOS = PARTIDOS_MAP[id] || PARTIDOS_MAP[2908];
-    PLAYER_DORSALES = PLAYER_DORSALES_MAP_D[id] || {};
-    // headerLogo is fixed (club branding), not updated per team
-    redMatchId = null;
-    aliMatchId = null;
-    bloqueMatchId = null;
-    bloqueCustomIds = [];
-    aliNMatches = 1;
-    aliCustomIds = [];
-    jugSubTab = 'mapa';
-    jugCalorPlayer = null;
-    telaranaMode = 'todos';
-    perdidasPart = 'total';
-    aliParte = '1';
-    if(currentMainTab === 'redpases')     loadRedPases();
-    else if(currentMainTab === 'bloque') loadBloque();
-    else                                 loadAlineaciones();
+    // Redirige a la nueva arquitectura
+    openTeam(id, name, escudo);
   }
 
   // Betweenness centrality (Brandes) — módulo compartido
@@ -2522,7 +2617,8 @@
 
   function switchTab(tab) {
     currentMainTab = tab;
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    // Actualiza nav items del sidebar
+    document.querySelectorAll('.nav-item[data-tab]').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
     if(tab === 'redpases')          loadRedPases();
     else if(tab === 'bloque')       loadBloque();
     else if(tab === 'pases')        loadPases();
@@ -9017,7 +9113,8 @@
   }
 
   // INIT
-  loadRedPases();
+  renderAside();
+  renderHomeContent();
 </script>
 </body>
 </html>
