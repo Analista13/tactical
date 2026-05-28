@@ -137,8 +137,8 @@
   <div class="header-badge">⚽ 51.036 eventos</div>
   <div style="margin-left:auto;display:flex;gap:2px;align-items:center">
     <button id="lv-todos"     onclick="setLocVis('todos')"     style="background:var(--accent);color:#0d1117;font-weight:700;border:none;border-radius:14px;padding:3px 11px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s">Todos</button>
-    <button id="lv-local"     onclick="setLocVis('local')"     style="background:transparent;color:var(--text2);font-weight:500;border:none;border-radius:14px;padding:3px 11px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s">🏠 Local</button>
-    <button id="lv-visitante" onclick="setLocVis('visitante')" style="background:transparent;color:var(--text2);font-weight:500;border:none;border-radius:14px;padding:3px 11px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s">✈️ Fuera</button>
+    <button id="lv-local"     onclick="setLocVis('local')"     style="background:transparent;color:var(--text2);font-weight:500;border:none;border-radius:14px;padding:3px 11px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s">Local</button>
+    <button id="lv-visitante" onclick="setLocVis('visitante')" style="background:transparent;color:var(--text2);font-weight:500;border:none;border-radius:14px;padding:3px 11px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s">Fuera</button>
   </div>
 </header>
 
@@ -1263,13 +1263,13 @@
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
           <div>
-            <div style="font-size:11px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;font-weight:700;margin-bottom:8px;padding-left:2px">⚽ 1ª Parte</div>
+            <div style="font-size:11px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;font-weight:700;margin-bottom:8px;padding-left:2px">1ª Parte</div>
             <div style="background:var(--bg2);border:1px solid rgba(200,169,110,0.25);border-radius:var(--radius);overflow:hidden">
               ${buildFieldSVG(zones1,t1)}
             </div>
           </div>
           <div>
-            <div style="font-size:11px;letter-spacing:2px;color:#58a6ff;text-transform:uppercase;font-weight:700;margin-bottom:8px;padding-left:2px">⚽ 2ª Parte</div>
+            <div style="font-size:11px;letter-spacing:2px;color:#58a6ff;text-transform:uppercase;font-weight:700;margin-bottom:8px;padding-left:2px">2ª Parte</div>
             <div style="background:var(--bg2);border:1px solid rgba(88,166,255,0.25);border-radius:var(--radius);overflow:hidden">
               ${buildFieldSVG(zones2,t2)}
             </div>
@@ -1923,8 +1923,8 @@
           <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:var(--accent)">${partido.s}</div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
-          ${miniNet(m1,'⚽ 1ª Parte','#c8a96e')}
-          ${miniNet(m2,'⚽ 2ª Parte','#58a6ff')}
+          ${miniNet(m1,'1ª Parte','#c8a96e')}
+          ${miniNet(m2,'2ª Parte','#58a6ff')}
         </div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
           <table style="width:100%;border-collapse:collapse">
@@ -2358,7 +2358,7 @@
 
         // Toggle Todos / XI Inicial
         const modeToggle=`<div style="display:flex;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;width:fit-content;margin-bottom:16px">
-          ${[['todos','👥 Todos'],['titulares','🟡 XI Inicial']].map(([m,lbl])=>`
+          ${[['todos','Todos'],['titulares','XI Inicial']].map(([m,lbl])=>`
             <button onclick="setTelaranaMode('${m}')" style="background:${telaranaMode===m?'var(--accent)':'transparent'};color:${telaranaMode===m?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:6px 16px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s;white-space:nowrap">${lbl}</button>`).join('')}
         </div>`;
 
@@ -2378,10 +2378,10 @@
 
         const svgRed = buildRed(activePlayers);
         const teLabel = telaranaMode==='titulares'
-          ? `🟡 XI Inicial · ${activePlayers.length} jugadores`
-          : `👥 Todos · ${activePlayers.length} jugadores`;
+          ? `XI Inicial · ${activePlayers.length} jugadores`
+          : `Todos · ${activePlayers.length} jugadores`;
 
-        html=matchHeader(`🕸️ Telaraña — ${teLabel}`,tLegend);
+        html=matchHeader(`Telaraña — ${teLabel}`,tLegend);
         html+=modeToggle;
         html+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">${svgRed}</div>`;
 
@@ -2428,7 +2428,7 @@
             <div style="font-size:10px;color:var(--text3);line-height:1.4">${d.desc}</div>
           </div>`).join('')}
         </div>`;
-        html=matchHeader('📊 Métricas avanzadas', metLegend);
+        html=matchHeader('Métricas avanzadas', metLegend);
 
         for(let t=0;t<=3;t++){
           const tp=metRows.filter(p=>p.tier===t); if(!tp.length) continue;
@@ -5618,7 +5618,7 @@
   // ── Barra de sub-tabs compartida (Equipo | Jugadores) ─────────────────────
   function buildPasesSubTabs() {
     return `<div style="display:flex;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;width:fit-content;margin-bottom:16px">
-      ${[['equipo','👥 Equipo'],['jugadores','🔎 Jugadores'],['progresion','📈 Progresión']].map(([id,lbl]) => {
+      ${[['equipo','Equipo'],['jugadores','Jugadores'],['progresion','Progresión']].map(([id,lbl]) => {
         const act = pasesSubTab === id;
         return `<button onclick="pasesSubTab='${id}';pasesDropdownOpen=false;loadPases()"
           style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:7px 20px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s;white-space:nowrap">${lbl}</button>`;
@@ -7403,16 +7403,16 @@
       style="padding:4px 14px;border-radius:14px;font-size:11px;font-weight:700;cursor:pointer;border:none;
              background:${mapaRecView==='total'?'var(--accent)':'var(--bg3)'};
              color:${mapaRecView==='total'?'#0d1117':'var(--text2)'}">
-      🗓️ Total temporada</button>`;
+      Total temporada</button>`;
 
     const jornadaBtn = `<button onclick="mapaRecView='jornada';renderMapaReceptores()"
       style="padding:4px 14px;border-radius:14px;font-size:11px;font-weight:700;cursor:pointer;border:none;
              background:${mapaRecView==='jornada'?'var(--accent)':'var(--bg3)'};
              color:${mapaRecView==='jornada'?'#0d1117':'var(--text2)'}">
-      ⚽ Por jornada</button>`;
+      Por jornada</button>`;
 
     const filterBtns = ['all','ok','fail'].map(f => {
-      const lbl = f==='all'?'Todos':f==='ok'?'✅ Completados':'❌ Fallidos';
+      const lbl = f==='all'?'Todos':f==='ok'?'Completados':'Fallidos';
       const act = mapaRecFilter === f;
       return `<button onclick="mapaRecFilter='${f}';renderMapaReceptores()"
         style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:700;cursor:pointer;border:none;
