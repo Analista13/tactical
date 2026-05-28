@@ -6551,11 +6551,11 @@
       const W = PW + mx*2, H = PH + myT*2;
 
       // Convierte coordenadas de campo → SVG
-      // x: -52.5 (arriba, portería propia) → +52.5 (abajo, portería rival)
+      // x: -52.5 (portería propia) → abajo | +52.5 (portería rival) → arriba
       // y: -34 (izq) → +34 (der)
       const sc = (fx, fy) => [
         +(mx + ((fy + 34) / 68) * PW).toFixed(1),
-        +(myT + ((fx + 52.5) / 105) * PH).toFixed(1)
+        +(myT + ((52.5 - fx) / 105) * PH).toFixed(1)
       ];
 
       const LC = 'rgba(255,255,255,0.15)';  // color líneas campo
