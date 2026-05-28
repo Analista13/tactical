@@ -374,6 +374,9 @@
 
   let faltasSubTab     = 'ofensiva';   // 'ofensiva' | 'defensiva'
   let faltasSelected   = [];            // jugadores seleccionados (multi)
+  let faltasMatchId    = null;          // match_id del partido seleccionado
+  let faltasPart       = 'total';       // 'total' | '1' | '2'
+  let faltasDropOpen   = false;
 
   // Filtro Casa/Fuera — devuelve PARTIDOS filtrado por locVis
   function getPartidos() {
@@ -8954,6 +8957,7 @@
   // ══════════════════════════════════════════════════════════════════════════════
   function loadFaltas() {
     document.getElementById('content').innerHTML = `<div class="loading"><div class="spinner"></div><span>Cargando...</span></div>`;
+    faltasSelected = [];
     renderFaltas();
   }
 
@@ -8970,25 +8974,104 @@
     }
     const data = window._faltasCache;
 
-    // Ofensiva = faltas RECIBIDAS (el rival nos falta a nosotros mientras atacamos)
-    // Defensiva = faltas COMETIDAS (nosotros faltamos mientras defendemos)
+    // Default: último partido
+    if (!faltasMatchId) faltasMatchId = data.matches_meta[data.matches_meta.length - 1].match_id;
+
+    const selMeta = data.matches_meta.find(m => m.match_id === faltasMatchId);
+    const selJ    = selMeta ? selMeta.j : null;
+    const partido = PARTIDOS.find(p => p.id === faltasMatchId);
+
+    // Ofensiva = faltas RECIBIDAS (rival nos falta a nosotros)
+    // Defensiva = faltas COMETIDAS (nosotros faltamos al rival)
     const isOfen = faltasSubTab === 'ofensiva';
     const list   = isOfen ? data.recibidas : data.cometidas;
 
-    // Paleta de colores por jugador
+    // ── Stats temporada y partido ─────────────────────────────────────────────
+    const seasonTotal = list.reduce((a, p) => a + p.count, 0);
+    const matchTotal  = list.reduce((a, p) => a + p.fouls.filter(f => f.j === selJ).length, 0);
+    const part1Total  = list.reduce((a, p) => a + p.fouls.filter(f => f.j === selJ && f.per === 1).length, 0);
+    const part2Total  = list.reduce((a, p) => a + p.fouls.filter(f => f.j === selJ && f.per === 2).length, 0);
+
+    // ── Filtrar fouls para el partido + parte seleccionada ────────────────────
+    const filteredList = list.map(p => ({
+      player: p.player,
+      pos:    p.pos,
+      count:  p.count,
+      fouls:  p.fouls.filter(f => {
+        if (f.j !== selJ) return false;
+        if (faltasPart === 'total') return true;
+        return f.per === parseInt(faltasPart);
+      })
+    })).filter(p => p.fouls.length > 0);
+
+    // ── Colores por ranking de temporada ─────────────────────────────────────
     const COLORS = ['#3fb950','#58a6ff','#f0883e','#d2a8ff','#ff7b72','#ffa657',
                     '#79c0ff','#56d364','#e3b341','#f778ba','#a5d6ff','#87e8de',
                     '#ffca28','#ef5350','#26c6da','#ab47bc'];
-    const colorOf = i => COLORS[i % COLORS.length];
+    const colorOf = player => {
+      const idx = list.findIndex(p => p.player === player);
+      return idx >= 0 ? COLORS[idx % COLORS.length] : '#8b949e';
+    };
 
-    // ── Pitch ────────────────────────────────────────────────────────────────
+    // ── Match selector grid ───────────────────────────────────────────────────
+    const gridCards = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:5px;margin-top:10px">
+      ${data.matches_meta.map(m => {
+        const p2      = PARTIDOS.find(pp => pp.id === m.match_id);
+        const esLocal = p2 ? p2.local === currentTeam.name : null;
+        const rival   = m.rival.length > 13 ? m.rival.substring(0,12)+'…' : m.rival;
+        const sel     = m.match_id === faltasMatchId;
+        const jLabel  = p2 ? p2.j : 'P'+m.j;
+        const score   = p2 ? p2.s : '';
+        const locIcon = esLocal === null ? '' : (esLocal ? '🏠' : '✈️');
+        return `<button onclick="faltasMatchId=${m.match_id};faltasDropOpen=false;faltasPart='total';faltasSelected=[];renderFaltas()"
+          style="background:${sel?'rgba(200,169,110,0.12)':'var(--bg3)'};border:1px solid ${sel?'rgba(200,169,110,0.4)':'var(--border)'};border-radius:8px;padding:8px 7px;cursor:pointer;text-align:left;transition:all .15s">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${sel?'var(--accent)':'var(--text2)'}">${jLabel}</span>
+            <span style="font-size:12px">${locIcon}</span>
+          </div>
+          <span style="font-size:10px;color:${sel?'var(--text1)':'var(--text3)'};display:block;margin-bottom:3px">${rival}</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:${sel?'var(--accent)':'var(--text2)'}">${score||'—'}</span>
+        </button>`;
+      }).join('')}
+    </div>`;
+
+    const esLocalSel = partido ? partido.local === currentTeam.name : null;
+    const rivalSel   = partido ? (esLocalSel ? partido.vis : partido.local)
+                               : (selMeta ? selMeta.rival : '?');
+    const matchGrid = `<div style="background:var(--bg2);border:1px solid ${faltasDropOpen?'rgba(88,166,255,0.35)':'var(--border)'};border-radius:10px;padding:12px 14px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          ${partido ? `
+            <span style="font-size:13px;font-weight:600;color:var(--text1)">${esLocalSel?'🏠':'✈️'} ${partido.j} · ${rivalSel}</span>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--accent)">${partido.s}</span>
+            <span style="font-size:11px;color:var(--text3)">${partido.f}</span>
+          ` : `<span style="font-size:13px;font-weight:600;color:var(--text2)">${rivalSel}</span>`}
+        </div>
+        <button onclick="faltasDropOpen=!faltasDropOpen;renderFaltas()"
+          style="background:${faltasDropOpen?'rgba(88,166,255,0.12)':'var(--bg3)'};border:1px solid ${faltasDropOpen?'rgba(88,166,255,0.4)':'var(--border)'};color:${faltasDropOpen?'var(--blue)':'var(--text2)'};padding:5px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">
+          ${faltasDropOpen ? '▲ Cerrar' : '▼ Elegir'}
+        </button>
+      </div>
+      ${faltasDropOpen ? gridCards : ''}
+    </div>`;
+
+    // ── Filtro de parte ───────────────────────────────────────────────────────
+    const partBtn = (id, lbl) => {
+      const act = faltasPart === id;
+      return `<button onclick="faltasPart='${id}';renderFaltas()"
+        style="padding:4px 11px;border-radius:20px;border:1px solid ${act?'var(--accent)':'var(--border)'};background:${act?'rgba(200,169,110,0.12)':'var(--bg2)'};color:${act?'var(--accent)':'var(--text2)'};font-size:12px;font-weight:${act?700:400};cursor:pointer;transition:all .15s">${lbl}</button>`;
+    };
+    const partBtns = `<div style="display:flex;gap:6px;margin-bottom:14px">
+      ${partBtn('total','Total')}${partBtn('1','1ª Parte')}${partBtn('2','2ª Parte')}
+    </div>`;
+
+    // ── Pitch ─────────────────────────────────────────────────────────────────
     const AW=850, AH=530, AMX=50, AMY=38, APW=AW-AMX*2, APH=AH-AMY*2;
     const sv = (x, y) => ({
       sx: AMX + ((x + 52.5) / 105) * APW,
       sy: AMY + ((34 - y) / 68) * APH
     });
 
-    // Flecha: ofensiva → ataque nuestro (→), defensiva → ataque rival (←)
     const arrowSvg = isOfen
       ? `<text x="${AW-AMX-4}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
          <polygon points="${AW-AMX+8},${AH/2} ${AW-AMX},${AH/2-5} ${AW-AMX},${AH/2+5}" fill="rgba(255,255,255,0.18)"/>`
@@ -9006,15 +9089,15 @@
       <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
       ${arrowSvg}`;
 
-    // ── Dots en el campo ─────────────────────────────────────────────────────
+    // ── Dots ──────────────────────────────────────────────────────────────────
     const hasSel = faltasSelected.length > 0;
     let dots = '';
-    list.forEach((p, i) => {
-      const col   = colorOf(i);
+    filteredList.forEach(p => {
+      const col  = colorOf(p.player);
       const isSel = !hasSel || faltasSelected.includes(p.player);
       p.fouls.forEach(f => {
         const {sx, sy} = sv(f.x, f.y);
-        const op = hasSel ? (isSel ? 0.88 : 0.07) : 0.55;
+        const op = hasSel ? (isSel ? 0.88 : 0.07) : 0.6;
         const r  = hasSel && isSel ? 7 : 5;
         const stroke = isSel ? `stroke="rgba(255,255,255,0.3)" stroke-width="0.8"` : '';
         dots += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${r}" fill="${col}" fill-opacity="${op}" ${stroke}/>`;
@@ -9023,10 +9106,11 @@
 
     const svgHtml = `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block;border-radius:6px;overflow:hidden">${basePitch}${dots}</svg>`;
 
-    // ── Lista de jugadores (multi-select) ────────────────────────────────────
-    const playerRows = list.map((p, i) => {
-      const col     = colorOf(i);
-      const isSel   = faltasSelected.includes(p.player);
+    // ── Lista de jugadores ────────────────────────────────────────────────────
+    const playerRows = filteredList.map(p => {
+      const col      = colorOf(p.player);
+      const isSel    = faltasSelected.includes(p.player);
+      const cnt      = p.fouls.length;
       const nameSafe = p.player.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       return `<div onclick="(function(){var n='${nameSafe}',idx=faltasSelected.indexOf(n);if(idx>=0)faltasSelected.splice(idx,1);else faltasSelected.push(n);renderFaltas()})()"
         style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;cursor:pointer;
@@ -9040,7 +9124,7 @@
                       white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.player}</div>
           <div style="font-size:10px;color:var(--text3)">${p.pos}</div>
         </div>
-        <div style="font-size:17px;font-weight:800;color:${isSel?col:'var(--text3)'};min-width:24px;text-align:right">${p.count}</div>
+        <div style="font-size:17px;font-weight:800;color:${isSel?col:'var(--text3)'};min-width:24px;text-align:right">${cnt}</div>
       </div>`;
     }).join('');
 
@@ -9051,26 +9135,25 @@
                   cursor:pointer;margin-bottom:8px">✕ Quitar selección</button>`
       : `<div style="font-size:11px;color:var(--text3);margin-bottom:8px">Clic para filtrar jugador</div>`;
 
-    // ── Stats chips ──────────────────────────────────────────────────────────
-    const total = list.reduce((a, p) => a + p.count, 0);
-    const top   = list[0];
-    const chip  = (lbl, val, col) => `
+    // ── Stats chips ───────────────────────────────────────────────────────────
+    const chip = (lbl, val, col) => `
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;
                   padding:10px 18px;text-align:center;min-width:90px">
         <div style="font-size:20px;font-weight:800;color:${col}">${val}</div>
         <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.2">${lbl}</div>
       </div>`;
 
-    const statsHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
-      ${chip(isOfen ? 'Total recibidas' : 'Total cometidas', total, 'var(--text1)')}
-      ${top ? chip('Más ' + (isOfen ? 'recibidas' : 'cometidas'), top.player.split(' ').slice(-1)[0] + ' · ' + top.count, colorOf(0)) : ''}
-      ${chip('Jugadores', list.length, 'var(--text2)')}
+    const statsHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+      ${chip('Temporada total', seasonTotal, 'var(--text1)')}
+      ${chip('Partido total', matchTotal, 'var(--accent)')}
+      ${chip('1ª Parte', part1Total, 'var(--blue)')}
+      ${chip('2ª Parte', part2Total, '#3fb950')}
     </div>`;
 
-    // ── Subtab buttons ───────────────────────────────────────────────────────
+    // ── Subtab buttons ────────────────────────────────────────────────────────
     const stBtn = (id, lbl, col) => {
       const act = faltasSubTab === id;
-      return `<button onclick="faltasSubTab='${id}';faltasSelected=[];renderFaltas()"
+      return `<button onclick="faltasSubTab='${id}';faltasSelected=[];faltasPart='total';renderFaltas()"
         style="background:transparent;border:none;border-bottom:2px solid ${act?col:'transparent'};
                color:${act?col:'var(--text2)'};padding:10px 22px;font-family:'DM Sans',sans-serif;
                font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s">${lbl}</button>`;
@@ -9089,6 +9172,8 @@
           ${stBtn('ofensiva','⚡ Ofensiva','#3fb950')}
           ${stBtn('defensiva','🛡️ Defensiva','#58a6ff')}
         </div>
+        ${matchGrid}
+        ${partBtns}
         <div style="display:flex;gap:20px;align-items:flex-start">
           <div style="flex:1;min-width:0">${svgHtml}</div>
           <div style="width:210px;flex-shrink:0">
