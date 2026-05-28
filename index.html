@@ -6509,7 +6509,7 @@
   // ─── PROGRESIÓN / RUPTURA DE LÍNEA ───────────────────────────────────────
 
   function buildProgresionSubTabs() {
-    const tabs = [['pasadores','🎯 Pasadores'],['porlinea','📊 Por línea']];
+    const tabs = [['pasadores','🎯 Pasadores'],['porlinea','📊 Por línea'],['mapa','🗺️ Mapa']];
     return `<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
       ${tabs.map(([id,lbl]) => {
         const act = progresionSubTab === id;
@@ -6523,11 +6523,166 @@
 
   async function renderProgresion() {
     const cont = document.getElementById('content');
-    if (progresionSubTab === 'porlinea') {
-      await renderPasadoresPorLinea(cont);
-    } else {
-      await renderPasadores(cont);
+    if      (progresionSubTab === 'porlinea') await renderPasadoresPorLinea(cont);
+    else if (progresionSubTab === 'mapa')     await renderMapaPasadores(cont);
+    else                                      await renderPasadores(cont);
+  }
+
+  // ── Campo vertical con pases de ruptura del top pasador ───────────────────
+  async function renderMapaPasadores(cont) {
+    if (!cont) cont = document.getElementById('content');
+    if (!pasadoresData) {
+      try {
+        const r = await fetch('data/pasadores_season.json');
+        pasadoresData = await r.json();
+      } catch(e) {
+        cont.innerHTML = `<div style="color:var(--red);padding:40px;text-align:center">Error cargando datos</div>`;
+        return;
+      }
     }
+
+    const maps = pasadoresData.pass_maps || {};
+
+    // ── Dibuja un campo vertical (portrait) con líneas de pase ──────────────
+    function buildPitchSVG(pm, lineLabel) {
+      if (!pm || !pm.passes) return `<div style="flex:1;color:var(--text3);font-size:12px;padding:20px">Sin datos</div>`;
+
+      const mx=16, myT=14, PW=210, PH=334;
+      const W = PW + mx*2, H = PH + myT*2;
+
+      // Convierte coordenadas de campo → SVG
+      // x: -52.5 (arriba, portería propia) → +52.5 (abajo, portería rival)
+      // y: -34 (izq) → +34 (der)
+      const sc = (fx, fy) => [
+        +(mx + ((fy + 34) / 68) * PW).toFixed(1),
+        +(myT + ((fx + 52.5) / 105) * PH).toFixed(1)
+      ];
+
+      const LC = 'rgba(255,255,255,0.15)';  // color líneas campo
+      const BG = '#0f1923';                  // fondo césped
+
+      // Marcas del campo
+      const PA_D=16.5, PA_W=20.16, GA_D=5.5, GA_W=9.16, GL_W=3.66;
+      const PS_D=11, CCR=9.15;
+
+      function rect(fx1,fy1,fx2,fy2,stroke,fill='none',sw=0.8) {
+        const [ax,ay]=sc(fx1,fy1), [bx,by]=sc(fx2,fy2);
+        const xm=Math.min(ax,bx), ym=Math.min(ay,by);
+        const wd=Math.abs(bx-ax).toFixed(1), ht=Math.abs(by-ay).toFixed(1);
+        return `<rect x="${xm.toFixed(1)}" y="${ym.toFixed(1)}" width="${wd}" height="${ht}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" rx="0"/>`;
+      }
+
+      const [cx,cy] = sc(0,0);
+      const [ps1x,ps1y] = sc(-52.5+PS_D, 0);
+      const [ps2x,ps2y] = sc( 52.5-PS_D, 0);
+      const ccRx = (CCR/68*PW).toFixed(1);
+      const ccRy = (CCR/105*PH).toFixed(1);
+
+      // Portería arriba y abajo (pequeño rect fuera del campo)
+      const [ga1x,] = sc(-52.5,-GL_W);
+      const [ga2x,] = sc(-52.5, GL_W);
+      const goalW   = Math.abs(ga2x-ga1x).toFixed(1);
+      const goalH   = 8;
+      const goalX   = Math.min(ga1x,ga2x).toFixed(1);
+
+      // Líneas de pase
+      const lines = pm.passes.map(p => {
+        const [x1,y1]=sc(p.x0,p.y0), [x2,y2]=sc(p.x1,p.y1);
+        const clr = p.ok ? '#3fb950' : '#8b949e';
+        const op  = p.ok ? 0.55 : 0.30;
+        return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+                      stroke="${clr}" stroke-width="1.2" stroke-opacity="${op}" stroke-linecap="round"/>
+                <circle cx="${x1}" cy="${y1}" r="1.8" fill="${clr}" fill-opacity="${op}"/>
+                <circle cx="${x2}" cy="${y2}" r="2.5" fill="${clr}" fill-opacity="${op}"/>`;
+      }).join('');
+
+      const ok_n  = pm.passes.filter(p=>p.ok).length;
+      const nok_n = pm.passes.length - ok_n;
+
+      return `
+        <div style="flex:1;min-width:220px;max-width:280px">
+          <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:1px">${pm.player}</div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:10px">${pm.pos} · ${lineLabel}</div>
+          <svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible;max-width:${W}px">
+
+            <!-- Fondo césped -->
+            ${rect(-52.5,-34,52.5,34,LC,BG,1)}
+
+            <!-- Área penal arriba -->
+            ${rect(-52.5,-PA_W,-52.5+PA_D,PA_W,LC)}
+            <!-- Área pequeña arriba -->
+            ${rect(-52.5,-GA_W,-52.5+GA_D,GA_W,LC)}
+            <!-- Portería arriba -->
+            <rect x="${goalX}" y="${(myT-goalH).toFixed(1)}" width="${goalW}" height="${goalH}" fill="none" stroke="${LC}" stroke-width="0.8"/>
+
+            <!-- Área penal abajo -->
+            ${rect(52.5-PA_D,-PA_W,52.5,PA_W,LC)}
+            <!-- Área pequeña abajo -->
+            ${rect(52.5-GA_D,-GA_W,52.5,GA_W,LC)}
+            <!-- Portería abajo -->
+            <rect x="${goalX}" y="${(myT+PH).toFixed(1)}" width="${goalW}" height="${goalH}" fill="none" stroke="${LC}" stroke-width="0.8"/>
+
+            <!-- Línea central -->
+            <line x1="${mx}" y1="${cy}" x2="${mx+PW}" y2="${cy}" stroke="${LC}" stroke-width="0.8"/>
+
+            <!-- Círculo central -->
+            <ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${ccRx}" ry="${ccRy}"
+                     fill="none" stroke="${LC}" stroke-width="0.8"/>
+            <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="1.5" fill="${LC}"/>
+
+            <!-- Puntos de penalti -->
+            <circle cx="${ps1x.toFixed(1)}" cy="${ps1y.toFixed(1)}" r="1.5" fill="${LC}"/>
+            <circle cx="${ps2x.toFixed(1)}" cy="${ps2y.toFixed(1)}" r="1.5" fill="${LC}"/>
+
+            <!-- Pases -->
+            ${lines}
+
+          </svg>
+          <!-- Leyenda -->
+          <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--text3)">
+            <span><span style="color:#3fb950;font-weight:700">${ok_n}</span> completados</span>
+            <span><span style="color:#8b949e;font-weight:700">${nok_n}</span> fallados</span>
+          </div>
+        </div>`;
+    }
+
+    const ps = getPartidos();
+    if (!pasesMatchId) pasesMatchId = ps[ps.length-1]?.id || null;
+
+    cont.innerHTML = `
+      <div style="padding:20px 24px">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+          <img src="${currentTeam.escudo}" style="width:48px;height:48px;object-fit:contain"/>
+          <div>
+            <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px">${currentTeam.name.toUpperCase()}</div>
+            <div style="font-size:12px;color:var(--text3)">Primera Federación · Temporada 2025–26</div>
+          </div>
+        </div>
+
+        ${buildPasesSubTabs()}
+        ${buildProgresionSubTabs()}
+
+        <div style="margin-bottom:20px">
+          <div style="font-size:16px;font-weight:900;letter-spacing:-0.5px;text-transform:uppercase">
+            Los mejores pasadores por línea
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">
+            Todos los pases que rompen cada línea defensiva rival · Temporada completa
+          </div>
+        </div>
+
+        <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+          ${buildPitchSVG(maps.primera, '1ª Línea')}
+          ${buildPitchSVG(maps.segunda, '2ª Línea')}
+          ${buildPitchSVG(maps.ultima,  'Última Línea')}
+        </div>
+
+        <div style="margin-top:18px;padding-top:12px;border-top:1px solid var(--border);
+                    font-size:10px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap">
+          <span>🟢 Pase completado &nbsp;·&nbsp; ⚫ Pase fallado</span>
+          <span>Origen = círculo pequeño · Destino = círculo grande</span>
+        </div>
+      </div>`;
   }
 
   async function renderPasadoresPorLinea(cont) {
