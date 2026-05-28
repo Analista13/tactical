@@ -230,13 +230,18 @@
   let pasesZoneFilter   = null;       // null | 1 | 2 | 3
   let pasesDropdownOpen = false;      // dropdown selector de partido
   let pasesSubTab       = 'equipo';   // 'equipo' | 'jugadores' | 'progresion'
-  let progresionSubTab  = 'pasadores'; // 'pasadores' | 'porlinea' | 'mapa'
+  let progresionSubTab  = 'pasadores'; // 'pasadores' | 'porlinea' | 'receptores' | 'mapa' | 'mapa_rec'
   let pasadoresData     = null;
-  // Estado subtab Mapa
+  // Estado subtab Mapa Pasadores
   let mapaPasView    = 'total';   // 'total' | 'jornada'
   let mapaPasJornada = 1;
   let mapaPasPlayer  = {primera: null, segunda: null, ultima: null};
   let mapaPasFilter  = 'all';     // 'all' | 'ok' | 'fail'
+  // Estado subtab Mapa Receptores
+  let mapaRecView    = 'total';
+  let mapaRecJornada = 1;
+  let mapaRecPlayer  = {primera: null, segunda: null, ultima: null};
+  let mapaRecFilter  = 'all';
   let pasesZonePair     = '1-2';      // '1-2'|'1-3'|'2-1'|'2-3'|'3-2'
   let pasesJugadoresSub = 'zonas';    // 'zonas' | 'individual'
   let pasesIndivZone    = 1;          // 1 | 2 | 3
@@ -6515,7 +6520,7 @@
   // ─── PROGRESIÓN / RUPTURA DE LÍNEA ───────────────────────────────────────
 
   function buildProgresionSubTabs() {
-    const tabs = [['pasadores','🎯 Pasadores'],['porlinea','📊 Por línea'],['receptores','📥 Receptores'],['mapa','🗺️ Mapa']];
+    const tabs = [['pasadores','🎯 Pasadores'],['porlinea','📊 Por línea'],['receptores','📥 Receptores'],['mapa','🗺️ Map. Pasadores'],['mapa_rec','🗺️ Map. Receptores']];
     return `<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
       ${tabs.map(([id,lbl]) => {
         const act = progresionSubTab === id;
@@ -6532,6 +6537,7 @@
     if      (progresionSubTab === 'porlinea')   await renderPasadoresPorLinea(cont);
     else if (progresionSubTab === 'receptores') await renderReceptoresPorLinea(cont);
     else if (progresionSubTab === 'mapa')       await renderMapaPasadores(cont);
+    else if (progresionSubTab === 'mapa_rec')   await renderMapaReceptores(cont);
     else                                      await renderPasadores(cont);
   }
 
@@ -6541,7 +6547,7 @@
     if (pasadoresData && !pasadoresData.pass_maps_v2) pasadoresData = null;
     if (!pasadoresData) {
       try {
-        const r = await fetch('data/pasadores_season.json?v=4');
+        const r = await fetch('data/pasadores_season.json?v=5');
         pasadoresData = await r.json();
       } catch(e) {
         cont.innerHTML = `<div style="color:var(--red);padding:40px;text-align:center">Error cargando datos de pasadores</div>`;
@@ -6624,7 +6630,7 @@
     if (pasadoresData && !pasadoresData.pass_maps_v2) pasadoresData = null;
     if (!pasadoresData) {
       try {
-        const r = await fetch('data/pasadores_season.json?v=4');
+        const r = await fetch('data/pasadores_season.json?v=5');
         pasadoresData = await r.json();
       } catch(e) {
         cont.innerHTML = `<div style="color:var(--red);padding:40px;text-align:center">Error cargando datos</div>`;
@@ -6746,7 +6752,7 @@
     if (pasadoresData && !pasadoresData.pass_maps_v2) pasadoresData = null;
     if (!pasadoresData) {
       try {
-        const r = await fetch('data/pasadores_season.json?v=4');
+        const r = await fetch('data/pasadores_season.json?v=5');
         pasadoresData = await r.json();
       } catch(e) {
         cont.innerHTML = `<div style="color:var(--red);padding:40px;text-align:center">Error cargando datos</div>`;
@@ -6847,18 +6853,18 @@
       </div>`;
   }
 
-  // ── Tooltip para el mapa de pasadores ────────────────────────────────────
-  function showMapaTip(evt, rec, ok) {
+  // ── Tooltip para los mapas de pasadores/receptores ───────────────────────
+  function showMapaTip(evt, name, ok, label) {
     const tip = document.getElementById('mapaPassTip');
     if (!tip) return;
     const color  = ok ? '#3fb950' : '#f85149';
     const status = ok ? '✅ Completado' : '❌ Fallido';
-    const recLbl = rec || '—';
+    const lbl    = label || 'Receptor';
     tip.innerHTML = `<div style="background:#0d1117;border:1px solid ${color};border-left:3px solid ${color};
       border-radius:7px;padding:8px 12px;font-family:'DM Sans',sans-serif;
       box-shadow:0 4px 20px rgba(0,0,0,0.7);min-width:130px">
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#6b7280;margin-bottom:3px">Receptor</div>
-      <div style="font-size:12px;font-weight:700;color:#e6edf3">${recLbl}</div>
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#6b7280;margin-bottom:3px">${lbl}</div>
+      <div style="font-size:12px;font-weight:700;color:#e6edf3">${name || '—'}</div>
       <div style="font-size:10px;color:${color};margin-top:4px">${status}</div>
     </div>`;
     tip.style.display = 'block';
@@ -6887,7 +6893,7 @@
     if (pasadoresData && !pasadoresData.pass_maps_v2) pasadoresData = null;
     if (!pasadoresData) {
       try {
-        const r = await fetch('data/pasadores_season.json?v=4');
+        const r = await fetch('data/pasadores_season.json?v=5');
         pasadoresData = await r.json();
       } catch(e) {
         cont.innerHTML = `<div style="color:var(--red);padding:40px;text-align:center">Error cargando datos</div>`;
@@ -7093,6 +7099,202 @@
                     font-size:10px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap">
           <span>🟢 Pase completado &nbsp;·&nbsp; ⚫ Pase fallado</span>
           <span>Punto pequeño = origen &nbsp;·&nbsp; Punto grande = destino</span>
+          <span>Portería rival ↑ &nbsp;·&nbsp; Portería propia ↓</span>
+        </div>
+      </div>`;
+  }
+
+  // ── Mapa interactivo de receptores ───────────────────────────────────────
+  async function renderMapaReceptores(cont) {
+    if (!cont) cont = document.getElementById('content');
+    if (pasadoresData && !pasadoresData.pass_maps_v2) pasadoresData = null;
+    if (!pasadoresData) {
+      try {
+        const r = await fetch('data/pasadores_season.json?v=5');
+        pasadoresData = await r.json();
+      } catch(e) {
+        cont.innerHTML = `<div style="color:var(--red);padding:40px;text-align:center">Error cargando datos</div>`;
+        return;
+      }
+    }
+
+    const maps = pasadoresData.recv_maps_v2 || {};
+    const meta = pasadoresData.matches_meta || [];
+
+    function getPlayers(lk) {
+      const all = maps[lk] || [];
+      if (mapaRecView === 'total') return all.filter(p => p.count > 0);
+      return all.map(p => ({
+        ...p,
+        passes: p.passes.filter(x => x.j === mapaRecJornada)
+      })).filter(p => p.passes.length > 0);
+    }
+
+    function getPasses(lk) {
+      const players = getPlayers(lk);
+      if (!players.length) return [];
+      const sel = mapaRecPlayer[lk] || players[0].player;
+      const pl  = players.find(p => p.player === sel) || players[0];
+      const passes = pl ? pl.passes : [];
+      if (mapaRecFilter === 'ok')   return passes.filter(p => p.ok);
+      if (mapaRecFilter === 'fail') return passes.filter(p => !p.ok);
+      return passes;
+    }
+
+    function buildPitchSVG(lk, lineLabel) {
+      const passes  = getPasses(lk);
+      const players = getPlayers(lk);
+      if (!players.length) return `<div style="flex:1;color:var(--text3);font-size:12px;padding:20px">Sin datos</div>`;
+
+      const sel    = mapaRecPlayer[lk] || players[0].player;
+      const plInfo = players.find(p => p.player === sel) || players[0];
+
+      const mx=16, myT=14, PW=210, PH=334;
+      const W=PW+mx*2, H=PH+myT*2;
+
+      const sc = (fx, fy) => [
+        +(mx + ((fy + 34) / 68) * PW).toFixed(1),
+        +(myT + ((52.5 - fx) / 105) * PH).toFixed(1)
+      ];
+
+      const LC='rgba(255,255,255,0.15)', BG='#0f1923';
+      const PA_D=16.5,PA_W=20.16,GA_D=5.5,GA_W=9.16,GL_W=3.66,PS_D=11,CCR=9.15;
+
+      function rect(fx1,fy1,fx2,fy2,stroke,fill='none',sw=0.8) {
+        const [ax,ay]=sc(fx1,fy1),[bx,by]=sc(fx2,fy2);
+        const xm=Math.min(ax,bx).toFixed(1),ym=Math.min(ay,by).toFixed(1);
+        return `<rect x="${xm}" y="${ym}" width="${Math.abs(bx-ax).toFixed(1)}" height="${Math.abs(by-ay).toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+      }
+
+      const [cx,cy]=sc(0,0);
+      const [ps1x,ps1y]=sc(-52.5+PS_D,0);
+      const [ps2x,ps2y]=sc(52.5-PS_D,0);
+      const ccRx=(CCR/68*PW).toFixed(1), ccRy=(CCR/105*PH).toFixed(1);
+      const [ga1x,]=sc(-52.5,-GL_W),[ga2x,]=sc(-52.5,GL_W);
+      const goalW=Math.abs(ga2x-ga1x).toFixed(1),goalX=Math.min(ga1x,ga2x).toFixed(1);
+
+      const lines = passes.map(p => {
+        const [x1,y1]=sc(p.x0,p.y0),[x2,y2]=sc(p.x1,p.y1);
+        const clr=p.ok?'#58a6ff':'#8b949e', op=p.ok?0.60:0.30;
+        const pasSafe = (p.pas||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        return `<g onmouseenter="showMapaTip(event,'${pasSafe}',${p.ok},'Pasador')"
+                   onmousemove="moveMapaTip(event)"
+                   onmouseleave="hideMapaTip()"
+                   style="cursor:crosshair">
+                  <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+                        stroke="${clr}" stroke-width="1.2" stroke-opacity="${op}" stroke-linecap="round"/>
+                  <circle cx="${x1}" cy="${y1}" r="1.8" fill="${clr}" fill-opacity="${op}"/>
+                  <circle cx="${x2}" cy="${y2}" r="3" fill="${clr}" fill-opacity="${op+0.15}"/>
+                  <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+                        stroke="transparent" stroke-width="12" stroke-linecap="round"/>
+                </g>`;
+      }).join('');
+
+      const ok_n=passes.filter(p=>p.ok).length, nok_n=passes.length-ok_n;
+
+      const playerOpts = players.map(p => {
+        const cnt = p.passes.length;
+        const sel2 = (mapaRecPlayer[lk] || players[0].player) === p.player;
+        return `<option value="${p.player}" ${sel2?'selected':''}>${p.player} (${cnt})</option>`;
+      }).join('');
+
+      return `
+        <div style="flex:1;min-width:220px;max-width:280px">
+          <div style="font-size:12px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">${lineLabel}</div>
+          <select onchange="mapaRecPlayer['${lk}']=this.value;renderMapaReceptores()"
+                  style="width:100%;background:var(--bg3);color:var(--text);border:1px solid var(--border);
+                         border-radius:6px;padding:5px 8px;font-size:11px;font-family:'DM Sans',sans-serif;
+                         margin-bottom:10px;cursor:pointer">
+            ${playerOpts}
+          </select>
+          <svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible;max-width:${W}px">
+            ${rect(-52.5,-34,52.5,34,LC,BG,1)}
+            ${rect(-52.5,-PA_W,-52.5+PA_D,PA_W,LC)}
+            ${rect(-52.5,-GA_W,-52.5+GA_D,GA_W,LC)}
+            <rect x="${goalX}" y="${(myT+PH).toFixed(1)}" width="${goalW}" height="8" fill="none" stroke="${LC}" stroke-width="0.8"/>
+            ${rect(52.5-PA_D,-PA_W,52.5,PA_W,LC)}
+            ${rect(52.5-GA_D,-GA_W,52.5,GA_W,LC)}
+            <rect x="${goalX}" y="${(myT-8).toFixed(1)}" width="${goalW}" height="8" fill="none" stroke="${LC}" stroke-width="0.8"/>
+            <line x1="${mx}" y1="${cy}" x2="${mx+PW}" y2="${cy}" stroke="${LC}" stroke-width="0.8"/>
+            <ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${ccRx}" ry="${ccRy}" fill="none" stroke="${LC}" stroke-width="0.8"/>
+            <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="1.5" fill="${LC}"/>
+            <circle cx="${ps1x.toFixed(1)}" cy="${ps1y.toFixed(1)}" r="1.5" fill="${LC}"/>
+            <circle cx="${ps2x.toFixed(1)}" cy="${ps2y.toFixed(1)}" r="1.5" fill="${LC}"/>
+            ${lines}
+          </svg>
+          <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--text3)">
+            <span><span style="color:#58a6ff;font-weight:700">${ok_n}</span> completados</span>
+            <span><span style="color:#8b949e;font-weight:700">${nok_n}</span> fallidos</span>
+            <span style="color:var(--text3)">${passes.length} total</span>
+          </div>
+        </div>`;
+    }
+
+    // ── Controles de jornada / filtro ────────────────────────────────────────
+    const jornadaBtns = meta.map(m => {
+      const act = mapaRecView === 'jornada' && mapaRecJornada === m.j;
+      return `<button onclick="mapaRecView='jornada';mapaRecJornada=${m.j};renderMapaReceptores()"
+        style="padding:3px 8px;border-radius:10px;font-size:10px;font-weight:${act?'700':'500'};
+               cursor:pointer;border:1px solid ${act?'var(--accent)':'var(--border)'};
+               background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'}">
+        J${m.j}</button>`;
+    }).join('');
+
+    const totalBtn = `<button onclick="mapaRecView='total';renderMapaReceptores()"
+      style="padding:4px 14px;border-radius:14px;font-size:11px;font-weight:700;cursor:pointer;border:none;
+             background:${mapaRecView==='total'?'var(--accent)':'var(--bg3)'};
+             color:${mapaRecView==='total'?'#0d1117':'var(--text2)'}">
+      🗓️ Total temporada</button>`;
+
+    const jornadaBtn = `<button onclick="mapaRecView='jornada';renderMapaReceptores()"
+      style="padding:4px 14px;border-radius:14px;font-size:11px;font-weight:700;cursor:pointer;border:none;
+             background:${mapaRecView==='jornada'?'var(--accent)':'var(--bg3)'};
+             color:${mapaRecView==='jornada'?'#0d1117':'var(--text2)'}">
+      ⚽ Por jornada</button>`;
+
+    const filterBtns = ['all','ok','fail'].map(f => {
+      const lbl = f==='all'?'Todos':f==='ok'?'✅ Completados':'❌ Fallidos';
+      const act = mapaRecFilter === f;
+      return `<button onclick="mapaRecFilter='${f}';renderMapaReceptores()"
+        style="padding:4px 12px;border-radius:14px;font-size:11px;font-weight:700;cursor:pointer;border:none;
+               background:${act?'var(--accent)':'var(--bg3)'};color:${act?'#0d1117':'var(--text2)'}">
+        ${lbl}</button>`;
+    }).join('');
+
+    const jornadaRow = mapaRecView === 'jornada' ? `
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px">
+        ${jornadaBtns}
+      </div>` : '';
+
+    cont.innerHTML = `
+      <div style="padding:20px 24px">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+          <img src="${currentTeam.escudo}" style="width:48px;height:48px;object-fit:contain"/>
+          <div>
+            <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px">${currentTeam.name.toUpperCase()}</div>
+            <div style="font-size:12px;color:var(--text3)">Primera Federación · Temporada 2025–26</div>
+          </div>
+        </div>
+
+        ${buildPasesSubTabs()}
+        ${buildProgresionSubTabs()}
+
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+          ${totalBtn}${jornadaBtn}
+          <div style="flex:1"></div>
+          ${filterBtns}
+        </div>
+        ${jornadaRow}
+
+        <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:16px">
+          ${buildPitchSVG('primera','1ª LÍNEA')}
+          ${buildPitchSVG('segunda','2ª LÍNEA')}
+          ${buildPitchSVG('ultima','ÚLTIMA LÍNEA')}
+        </div>
+
+        <div style="margin-top:14px;font-size:10px;color:var(--text3);display:flex;gap:16px">
+          <span>🔵 Completado &nbsp;·&nbsp; ⚫ Fallido</span>
+          <span>Punto grande = posición del receptor · Hover para ver el pasador</span>
           <span>Portería rival ↑ &nbsp;·&nbsp; Portería propia ↓</span>
         </div>
       </div>`;
