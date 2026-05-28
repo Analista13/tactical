@@ -131,6 +131,7 @@
     <div class="tab" data-tab="posesion" onclick="switchTab('posesion')">⚡ Posesión</div>
     <div class="tab" data-tab="transiciones" onclick="switchTab('transiciones')">🔄 Transiciones</div>
     <div class="tab" data-tab="centros" onclick="switchTab('centros')">📐 Centros</div>
+    <div class="tab" data-tab="faltas" onclick="switchTab('faltas')">🟨 Faltas</div>
     <div style="margin-left:auto;display:flex;gap:3px;align-items:center;padding-right:4px">
       <button id="lv-todos"      onclick="setLocVis('todos')"     style="background:var(--accent);color:#0d1117;font-weight:700;border:none;border-radius:14px;padding:4px 13px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all 0.15s">Todos</button>
       <button id="lv-local"      onclick="setLocVis('local')"     style="background:transparent;color:var(--text2);font-weight:500;border:none;border-radius:14px;padding:4px 13px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all 0.15s">🏠 Local</button>
@@ -265,6 +266,9 @@
   let centrosFlank    = 'all';         // 'all' | 'wide_left' | 'wide_right'
   let centrosCentradorFilter = null;   // nombre centrador seleccionado
   let centrosRematadorFilter = null;   // nombre rematador seleccionado
+
+  let faltasSubTab     = 'ofensiva';   // 'ofensiva' | 'defensiva'
+  let faltasSelected   = [];            // jugadores seleccionados (multi)
 
   // Filtro Casa/Fuera — devuelve PARTIDOS filtrado por locVis
   function getPartidos() {
@@ -2523,6 +2527,7 @@
     else if(tab === 'posesion')    loadPosesion();
     else if(tab === 'transiciones') loadTransiciones();
     else if(tab === 'centros')      loadCentros();
+    else if(tab === 'faltas')       loadFaltas();
   }
 
   // ─── ALINEACIONES ────────────────────────────────────────────────────────────
@@ -8856,6 +8861,156 @@
 
   // ─── (Físico eliminado) ───────────────────────────────────────────────────────
 
+  // ══════════════════════════════════════════════════════════════════════════════
+  // TAB FALTAS
+  // ══════════════════════════════════════════════════════════════════════════════
+  function loadFaltas() {
+    document.getElementById('content').innerHTML = `<div class="loading"><div class="spinner"></div><span>Cargando...</span></div>`;
+    renderFaltas();
+  }
+
+  async function renderFaltas() {
+    const cont = document.getElementById('content');
+    if (!window._faltasCache) {
+      try {
+        const r = await fetch('data/faltas_season.json');
+        window._faltasCache = await r.json();
+      } catch(e) {
+        cont.innerHTML = `<div style="padding:40px;color:var(--text3)">Error cargando datos de faltas.</div>`;
+        return;
+      }
+    }
+    const data = window._faltasCache;
+
+    // Ofensiva = faltas RECIBIDAS (el rival nos falta a nosotros mientras atacamos)
+    // Defensiva = faltas COMETIDAS (nosotros faltamos mientras defendemos)
+    const isOfen = faltasSubTab === 'ofensiva';
+    const list   = isOfen ? data.recibidas : data.cometidas;
+
+    // Paleta de colores por jugador
+    const COLORS = ['#3fb950','#58a6ff','#f0883e','#d2a8ff','#ff7b72','#ffa657',
+                    '#79c0ff','#56d364','#e3b341','#f778ba','#a5d6ff','#87e8de',
+                    '#ffca28','#ef5350','#26c6da','#ab47bc'];
+    const colorOf = i => COLORS[i % COLORS.length];
+
+    // ── Pitch ────────────────────────────────────────────────────────────────
+    const AW=850, AH=530, AMX=50, AMY=38, APW=AW-AMX*2, APH=AH-AMY*2;
+    const sv = (x, y) => ({
+      sx: AMX + ((x + 52.5) / 105) * APW,
+      sy: AMY + ((34 - y) / 68) * APH
+    });
+
+    // Flecha: ofensiva → ataque nuestro (→), defensiva → ataque rival (←)
+    const arrowSvg = isOfen
+      ? `<text x="${AW-AMX-4}" y="${AMY-8}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+         <polygon points="${AW-AMX+8},${AH/2} ${AW-AMX},${AH/2-5} ${AW-AMX},${AH/2+5}" fill="rgba(255,255,255,0.18)"/>`
+      : `<text x="${AMX+4}" y="${AMY-8}" text-anchor="start" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">← ATAQUE RIVAL</text>
+         <polygon points="${AMX-8},${AH/2} ${AMX},${AH/2-5} ${AMX},${AH/2+5}" fill="rgba(255,255,255,0.18)"/>`;
+
+    const basePitch = `
+      <rect x="0" y="0" width="${AW}" height="${AH}" fill="#0b150b"/>
+      <rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="#0d1f0d" stroke="#1c3a1c" stroke-width="1.5"/>
+      <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="#1c3a1c" stroke-width="1"/>
+      <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="#1c3a1c" stroke-width="1"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+      ${arrowSvg}`;
+
+    // ── Dots en el campo ─────────────────────────────────────────────────────
+    const hasSel = faltasSelected.length > 0;
+    let dots = '';
+    list.forEach((p, i) => {
+      const col   = colorOf(i);
+      const isSel = !hasSel || faltasSelected.includes(p.player);
+      p.fouls.forEach(f => {
+        const {sx, sy} = sv(f.x, f.y);
+        const op = hasSel ? (isSel ? 0.88 : 0.07) : 0.55;
+        const r  = hasSel && isSel ? 7 : 5;
+        const stroke = isSel ? `stroke="rgba(255,255,255,0.3)" stroke-width="0.8"` : '';
+        dots += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${r}" fill="${col}" fill-opacity="${op}" ${stroke}/>`;
+      });
+    });
+
+    const svgHtml = `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block;border-radius:6px;overflow:hidden">${basePitch}${dots}</svg>`;
+
+    // ── Lista de jugadores (multi-select) ────────────────────────────────────
+    const playerRows = list.map((p, i) => {
+      const col     = colorOf(i);
+      const isSel   = faltasSelected.includes(p.player);
+      const nameSafe = p.player.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return `<div onclick="(function(){var n='${nameSafe}',idx=faltasSelected.indexOf(n);if(idx>=0)faltasSelected.splice(idx,1);else faltasSelected.push(n);renderFaltas()})()"
+        style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;cursor:pointer;
+               background:${isSel ? col+'1a' : 'transparent'};
+               border:1px solid ${isSel ? col+'55' : 'transparent'};
+               transition:all 0.12s;margin-bottom:2px">
+        <div style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;
+                    box-shadow:${isSel ? '0 0 6px '+col : 'none'}"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:${isSel?700:500};color:${isSel?'var(--text1)':'var(--text2)'};
+                      white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.player}</div>
+          <div style="font-size:10px;color:var(--text3)">${p.pos}</div>
+        </div>
+        <div style="font-size:17px;font-weight:800;color:${isSel?col:'var(--text3)'};min-width:24px;text-align:right">${p.count}</div>
+      </div>`;
+    }).join('');
+
+    const sideNote = hasSel
+      ? `<button onclick="faltasSelected=[];renderFaltas()"
+           style="background:transparent;border:1px solid var(--border);color:var(--text3);
+                  padding:3px 10px;border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif;
+                  cursor:pointer;margin-bottom:8px">✕ Quitar selección</button>`
+      : `<div style="font-size:11px;color:var(--text3);margin-bottom:8px">Clic para filtrar jugador</div>`;
+
+    // ── Stats chips ──────────────────────────────────────────────────────────
+    const total = list.reduce((a, p) => a + p.count, 0);
+    const top   = list[0];
+    const chip  = (lbl, val, col) => `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+                  padding:10px 18px;text-align:center;min-width:90px">
+        <div style="font-size:20px;font-weight:800;color:${col}">${val}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.2">${lbl}</div>
+      </div>`;
+
+    const statsHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+      ${chip(isOfen ? 'Total recibidas' : 'Total cometidas', total, 'var(--text1)')}
+      ${top ? chip('Más ' + (isOfen ? 'recibidas' : 'cometidas'), top.player.split(' ').slice(-1)[0] + ' · ' + top.count, colorOf(0)) : ''}
+      ${chip('Jugadores', list.length, 'var(--text2)')}
+    </div>`;
+
+    // ── Subtab buttons ───────────────────────────────────────────────────────
+    const stBtn = (id, lbl, col) => {
+      const act = faltasSubTab === id;
+      return `<button onclick="faltasSubTab='${id}';faltasSelected=[];renderFaltas()"
+        style="background:transparent;border:none;border-bottom:2px solid ${act?col:'transparent'};
+               color:${act?col:'var(--text2)'};padding:10px 22px;font-family:'DM Sans',sans-serif;
+               font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s">${lbl}</button>`;
+    };
+
+    cont.innerHTML = `
+      <div style="padding:20px 24px">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+          <img src="${currentTeam.escudo}" style="width:48px;height:48px;object-fit:contain"/>
+          <div>
+            <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--text1)">${currentTeam.name.toUpperCase()}</div>
+            <div style="font-size:12px;color:var(--text3)">Primera Federación · Temporada 2025–26</div>
+          </div>
+        </div>
+        <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:20px">
+          ${stBtn('ofensiva','⚡ Ofensiva','#3fb950')}
+          ${stBtn('defensiva','🛡️ Defensiva','#58a6ff')}
+        </div>
+        <div style="display:flex;gap:20px;align-items:flex-start">
+          <div style="flex:1;min-width:0">${svgHtml}</div>
+          <div style="width:210px;flex-shrink:0">
+            ${sideNote}
+            <div style="max-height:460px;overflow-y:auto;padding-right:2px">${playerRows}</div>
+          </div>
+        </div>
+        ${statsHtml}
+      </div>`;
+  }
 
   // INIT
   loadRedPases();
