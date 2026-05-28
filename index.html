@@ -179,6 +179,7 @@
     { tab:'transiciones', label:'Transiciones' },
     { tab:'centros',      label:'Centros' },
     { tab:'faltas',       label:'Faltas' },
+    { tab:'plantilla',    label:'Plantilla' },
   ];
 
   // ── Render aside ─────────────────────────────────────────────────────────────
@@ -2618,6 +2619,7 @@
     else if(tab === 'transiciones') loadTransiciones();
     else if(tab === 'centros')      loadCentros();
     else if(tab === 'faltas')       loadFaltas();
+    else if(tab === 'plantilla')    loadPlantilla();
   }
 
   // ─── ALINEACIONES ────────────────────────────────────────────────────────────
@@ -9220,6 +9222,102 @@
   function hideFaltaTip() {
     const tip = document.getElementById('falta-tip');
     if (tip) tip.style.display = 'none';
+  }
+
+  // ── Plantilla SD Ponferradina 2025-26 ────────────────────────────────────────
+  const PLANTILLA_923 = {
+    porteros: [
+      { d:1,  img:'img/jugadores/01_prieto.png',       name:'Andrés Prieto',     pos:'Portero',      age:32, val:'150k€' },
+      { d:13, img:null,                                name:'Ángel Jiménez',     pos:'Portero',      age:23, val:'150k€' },
+      { d:25, img:null,                                name:'Pablo Barredo',      pos:'Portero',      age:22, val:'50k€'  },
+    ],
+    defensas: [
+      { d:2,  img:'img/jugadores/02_andujar.png',      name:'David Andújar',     pos:'Def. central', age:34, val:'100k€' },
+      { d:3,  img:'img/jugadores/03_novoa.png',        name:'Germán Nóvoa',      pos:'Def. central', age:29, val:'200k€' },
+      { d:4,  img:'img/jugadores/04_moltenis.png',     name:'Boris Moltenis',    pos:'Def. central', age:27, val:'250k€' },
+      { d:26, img:'img/jugadores/26_kisil.png',        name:'Vladyslav Kysil',   pos:'Def. central', age:20, val:'50k€'  },
+      { d:19, img:'img/jugadores/19_andoni.png',       name:'Andoni López',      pos:'Lateral izq.', age:30, val:'250k€' },
+      { d:15, img:'img/jugadores/15_vasco.png',        name:'Vasco Sousa',       pos:'Lateral izq.', age:22, val:'100k€' },
+      { d:12, img:'img/jugadores/12_iglesias.png',     name:'Koke Iglesias',     pos:'Lateral der.', age:21, val:'150k€' },
+      { d:23, img:'img/jugadores/23_jorrin.png',       name:'Mario Jorrín',      pos:'Lateral der.', age:23, val:'100k€' },
+    ],
+    centrocampistas: [
+      { d:5,  img:'img/jugadores/05_undabarrena.png',  name:'Eneko Undabarrena', pos:'Mediocentro',  age:33, val:'150k€' },
+      { d:6,  img:'img/jugadores/06_san_emeterio.png', name:'Fede San Emeterio', pos:'Mediocentro',  age:29, val:'300k€' },
+      { d:21, img:'img/jugadores/21_mfulu.png',        name:'Nuke Mfulu',        pos:'Mediocentro',  age:32, val:'300k€' },
+      { d:16, img:'img/jugadores/16_frimpong.png',     name:'Eugene Frimpong',   pos:'Mediocentro',  age:23, val:'150k€' },
+      { d:24, img:'img/jugadores/24_moran.png',        name:'Erik Morán',        pos:'Mediocentro',  age:35, val:'100k€' },
+      { d:14, img:'img/jugadores/14_xemi.png',         name:'Xemi Fernández',    pos:'MC ofensivo',  age:31, val:'200k€' },
+      { d:22, img:'img/jugadores/22_esquerdo.png',     name:'Vicente Esquerdo',  pos:'MC ofensivo',  age:27, val:'150k€' },
+    ],
+    delanteros: [
+      { d:17, img:'img/jugadores/17_keita.png',        name:'Abdoulaye Keita',   pos:'Extremo izq.', age:23, val:'200k€' },
+      { d:7,  img:'img/jugadores/07_calderon.png',     name:'Carlos Calderón',   pos:'Extremo der.', age:31, val:'200k€' },
+      { d:8,  img:'img/jugadores/08_slavy.png',        name:'Slavy',             pos:'Delantero',    age:24, val:'400k€' },
+      { d:9,  img:'img/jugadores/09_cortes.png',       name:'José Luis Cortés',  pos:'Delantero',    age:24, val:'250k€' },
+      { d:10, img:'img/jugadores/10_borja_valle.png',  name:'Borja Valle',       pos:'Delantero',    age:33, val:'200k€' },
+      { d:18, img:'img/jugadores/18_borja_vazquez.png',name:'Borja Vázquez',     pos:'Delantero',    age:21, val:'200k€' },
+      { d:20, img:'img/jugadores/20_pau_ferrer.png',   name:'Pau Ferrer',        pos:'Delantero',    age:22, val:'150k€' },
+      { d:11, img:'img/jugadores/11_petkov.png',       name:'Steven Petkov',     pos:'Delantero',    age:31, val:'100k€' },
+    ],
+  };
+
+  function loadPlantilla() {
+    document.getElementById('content').innerHTML = '<div class="loading"><div class="spinner"></div><span>Cargando plantilla...</span></div>';
+    setTimeout(renderPlantilla, 0);
+  }
+
+  function renderPlantilla() {
+    const cont = document.getElementById('content');
+    const PCOL = {
+      'Portero':'#f0883e','Def. central':'#58a6ff','Lateral izq.':'#58a6ff',
+      'Lateral der.':'#58a6ff','Mediocentro':'#e3b341','MC ofensivo':'#e3b341',
+      'Extremo izq.':'#3fb950','Extremo der.':'#3fb950','Delantero':'#3fb950',
+    };
+    const card = p => {
+      const col = PCOL[p.pos] || 'var(--text2)';
+      const photo = p.img
+        ? `<img src="${p.img}" style="width:100%;height:175px;object-fit:contain;display:block;background:var(--bg3);padding:4px">`
+        : `<div style="width:100%;height:175px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:800;color:var(--text3);font-family:'Bebas Neue',sans-serif">${p.d}</div>`;
+      return `<div style="border-radius:10px;overflow:hidden;background:var(--bg2);border:1px solid var(--border);transition:all 0.2s" onmouseover="this.style.borderColor='${col}66';this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.45)'" onmouseout="this.style.borderColor='';this.style.transform='';this.style.boxShadow=''">
+        <div style="position:relative">
+          ${photo}
+          <div style="position:absolute;top:7px;left:7px;background:rgba(13,17,23,0.82);border:1px solid ${col};color:${col};font-family:'Bebas Neue',sans-serif;font-size:15px;padding:1px 7px;border-radius:5px;line-height:1.3">${p.d}</div>
+        </div>
+        <div style="padding:8px 10px 10px">
+          <div style="font-size:12px;font-weight:700;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px">${p.name}</div>
+          <div style="font-size:10px;font-weight:600;color:${col};margin-bottom:3px">${p.pos}</div>
+          <div style="font-size:10px;color:var(--text3)">${p.age} años · ${p.val}</div>
+        </div>
+      </div>`;
+    };
+    const section = (title, players, col) => `
+      <div style="margin-bottom:28px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <div style="width:3px;height:18px;background:${col};border-radius:2px;flex-shrink:0"></div>
+          <span style="font-size:12px;font-weight:700;color:var(--text1);letter-spacing:1px;text-transform:uppercase">${title}</span>
+          <span style="font-size:11px;color:var(--text3)">${players.length}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px">
+          ${players.map(card).join('')}
+        </div>
+      </div>`;
+    const d = PLANTILLA_923;
+    const total = d.porteros.length + d.defensas.length + d.centrocampistas.length + d.delanteros.length;
+    cont.innerHTML = `
+      <div style="padding:20px 24px">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+          <img src="${currentTeam.escudo}" style="width:48px;height:48px;object-fit:contain"/>
+          <div>
+            <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--text1)">${currentTeam.name.toUpperCase()}</div>
+            <div style="font-size:12px;color:var(--text3)">Playoff · Temporada 2025–26 · ${total} jugadores</div>
+          </div>
+        </div>
+        ${section('Porteros', d.porteros, '#f0883e')}
+        ${section('Defensas', d.defensas, '#58a6ff')}
+        ${section('Centrocampistas', d.centrocampistas, '#e3b341')}
+        ${section('Delanteros', d.delanteros, '#3fb950')}
+      </div>`;
   }
 
   // INIT
