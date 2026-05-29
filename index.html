@@ -180,6 +180,7 @@
     { tab:'transiciones', label:'Transiciones' },
     { tab:'centros',      label:'Centros' },
     { tab:'faltas',       label:'Faltas' },
+    { tab:'obe',          label:'Fuera de posesión' },
   ];
 
   // ── Render aside ─────────────────────────────────────────────────────────────
@@ -2655,6 +2656,7 @@
     else if(tab === 'transiciones') loadTransiciones();
     else if(tab === 'centros')      loadCentros();
     else if(tab === 'faltas')       loadFaltas();
+    else if(tab === 'obe')          loadOBE();
     else if(tab === 'plantilla')    loadPlantillaTab();
   }
 
@@ -10201,6 +10203,210 @@
     ctx.closePath(); ctx.fill();
 
     ctx.restore();
+  }
+
+  // ── OBE — Fuera de posesión ──────────────────────────────────────────────────
+  const _OBE_METRICS = [
+    // [key, label, group]
+    ['Total OBE',          'Total OBE',          'Contexto'],
+    ['Bloque alto',        'Bloque alto',         'Contexto'],
+    ['Bloque medio',       'Bloque medio',        'Contexto'],
+    ['Bloque bajo',        'Bloque bajo',         'Contexto'],
+    ['Transición',         'Transición',          'Contexto'],
+    ['Presión directa',    'Presión directa',     'Tipo de pressing'],
+    ['Presión cadena',     'Presión cadena',      'Tipo de pressing'],
+    ['Contrapresión',      'Contrapresión',       'Tipo de pressing'],
+    ['Presión atrás',      'Presión atrás',       'Tipo de pressing'],
+    ['Disrup. directa',    'Disrup. directa',     'Resultados'],
+    ['Recuper. directa',   'Recuper. directa',    'Resultados'],
+    ['Forzado atrás',      'Forzado atrás',       'Resultados'],
+    ['Línea afectada',     'Línea afectada',      'Resultados'],
+    ['Superado mov.',      'Superado mov.',        'Resultados'],
+    ['Superado posesión',  'Superado posesión',   'Resultados'],
+    ['Tray. adelante',     'Tray. adelante',      'Resultados'],
+  ];
+
+  const _OBE_DATA = {
+    'David Andújar': {
+      pos:'DC',
+      'Total OBE':         {v:10.31,r:2,  n:150,p:99},
+      'Bloque alto':       {v:0.13, r:38, n:150,p:75},
+      'Bloque medio':      {v:1.98, r:5,  n:150,p:97},
+      'Bloque bajo':       {v:4.36, r:3,  n:150,p:99},
+      'Transición':        {v:1.06, r:8,  n:150,p:95},
+      'Presión directa':   {v:2.25, r:4,  n:150,p:98},
+      'Presión cadena':    {v:0.53, r:3,  n:150,p:99},
+      'Contrapresión':     {v:0.79, r:52, n:150,p:66},
+      'Presión atrás':     {v:2.91, r:14, n:150,p:91},
+      'Disrup. directa':   {v:1.01, r:38, n:150,p:75},
+      'Recuper. directa':  {v:11.65,r:100,n:150,p:34},
+      'Forzado atrás':     {v:3.71, r:91, n:150,p:40},
+      'Línea afectada':    {v:0.0,  r:8,  n:150,p:95},
+      'Superado mov.':     {v:6.7,  r:16, n:150,p:90},
+      'Superado posesión': {v:5.42, r:12, n:150,p:93},
+      'Tray. adelante':    {v:0.0,  r:26, n:150,p:83},
+    },
+    'Boris Moltenis': {
+      pos:'DC',
+      'Total OBE':         {v:16.78,r:40, n:150,p:74},
+      'Bloque alto':       {v:0.56, r:88, n:150,p:42},
+      'Bloque medio':      {v:4.39, r:57, n:150,p:62},
+      'Bloque bajo':       {v:6.76, r:42, n:150,p:72},
+      'Transición':        {v:1.35, r:20, n:150,p:87},
+      'Presión directa':   {v:4.39, r:47, n:150,p:69},
+      'Presión cadena':    {v:1.91, r:57, n:150,p:62},
+      'Contrapresión':     {v:1.01, r:71, n:150,p:53},
+      'Presión atrás':     {v:3.49, r:29, n:150,p:81},
+      'Disrup. directa':   {v:1.19, r:49, n:150,p:68},
+      'Recuper. directa':  {v:2.66, r:16, n:150,p:90},
+      'Forzado atrás':     {v:5.51, r:98, n:150,p:35},
+      'Línea afectada':    {v:1.74, r:63, n:150,p:58},
+      'Superado mov.':     {v:5.47, r:27, n:150,p:83},
+      'Superado posesión': {v:2.72, r:76, n:150,p:50},
+      'Tray. adelante':    {v:0.0,  r:26, n:150,p:83},
+    },
+    'Eneko Undabarrena': {
+      pos:'DC',
+      'Total OBE':         {v:12.77,r:9,  n:150,p:95},
+      'Bloque alto':       {v:0.23, r:53, n:150,p:65},
+      'Bloque medio':      {v:2.6,  r:11, n:150,p:93},
+      'Bloque bajo':       {v:5.96, r:22, n:150,p:86},
+      'Transición':        {v:1.3,  r:18, n:150,p:89},
+      'Presión directa':   {v:2.68, r:8,  n:150,p:95},
+      'Presión cadena':    {v:1.07, r:12, n:150,p:93},
+      'Contrapresión':     {v:0.23, r:6,  n:150,p:97},
+      'Presión atrás':     {v:2.6,  r:8,  n:150,p:95},
+      'Disrup. directa':   {v:1.04, r:40, n:150,p:74},
+      'Recuper. directa':  {v:7.64, r:81, n:150,p:46},
+      'Forzado atrás':     {v:2.37, r:60, n:150,p:60},
+      'Línea afectada':    {v:1.56, r:56, n:150,p:63},
+      'Superado mov.':     {v:7.47, r:10, n:150,p:94},
+      'Superado posesión': {v:3.58, r:49, n:150,p:68},
+      'Tray. adelante':    {v:0.0,  r:26, n:150,p:83},
+    },
+    'Germán Novoa': {
+      pos:'DC',
+      'Total OBE':         {v:19.56,r:69, n:150,p:54},
+      'Bloque alto':       {v:0.21, r:51, n:150,p:66},
+      'Bloque medio':      {v:5.31, r:78, n:150,p:48},
+      'Bloque bajo':       {v:8.84, r:84, n:150,p:44},
+      'Transición':        {v:2.18, r:64, n:150,p:58},
+      'Presión directa':   {v:5.2,  r:65, n:150,p:57},
+      'Presión cadena':    {v:2.29, r:74, n:150,p:51},
+      'Contrapresión':     {v:0.94, r:65, n:150,p:57},
+      'Presión atrás':     {v:4.68, r:64, n:150,p:58},
+      'Disrup. directa':   {v:1.15, r:46, n:150,p:70},
+      'Recuper. directa':  {v:6.0,  r:59, n:150,p:61},
+      'Forzado atrás':     {v:2.8,  r:75, n:150,p:50},
+      'Línea afectada':    {v:1.68, r:62, n:150,p:59},
+      'Superado mov.':     {v:2.92, r:72, n:150,p:52},
+      'Superado posesión': {v:3.26, r:62, n:150,p:59},
+      'Tray. adelante':    {v:0.19, r:82, n:150,p:46},
+    },
+  };
+
+  let obeSelectedPlayer = 'David Andújar';
+
+  function loadOBE() {
+    document.getElementById('content').innerHTML =
+      `<div class="loading"><div class="spinner"></div><span>Cargando...</span></div>`;
+    renderOBE();
+  }
+
+  function renderOBE() {
+    const cont = document.getElementById('content');
+    const players = Object.keys(_OBE_DATA);
+
+    // ── Color por percentil ──────────────────────────────────────────────────
+    const pCol = p => p >= 75 ? '#3fb950' : p >= 50 ? '#c8a96e' : p >= 25 ? '#f0883e' : '#f85149';
+
+    // ── Selector de jugadores ────────────────────────────────────────────────
+    const playerBtns = players.map(name => {
+      const act = obeSelectedPlayer === name;
+      return `<button onclick="obeSelectedPlayer='${name.replace(/'/g,"\\'")}';renderOBE()"
+        style="padding:6px 14px;border-radius:20px;border:1px solid ${act?'var(--accent)':'var(--border)'};
+               background:${act?'rgba(200,169,110,0.12)':'var(--bg2)'};color:${act?'var(--accent)':'var(--text2)'};
+               font-size:12px;font-weight:${act?700:500};cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif">
+        ${name}
+      </button>`;
+    }).join('');
+
+    // ── Grid de métricas ─────────────────────────────────────────────────────
+    const pData = _OBE_DATA[obeSelectedPlayer] || {};
+    let lastGroup = '';
+    let rows = '';
+
+    _OBE_METRICS.forEach(([key, lbl, grp]) => {
+      // Separador de grupo
+      if (grp !== lastGroup) {
+        lastGroup = grp;
+        const grpIcon = grp === 'Contexto' ? '📍' : grp === 'Tipo de pressing' ? '⚡' : '📊';
+        rows += `<tr>
+          <td colspan="2" style="padding:14px 12px 6px;background:var(--bg3);border-bottom:1px solid var(--border)">
+            <span style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase">
+              ${grpIcon} ${grp}
+            </span>
+          </td>
+        </tr>`;
+      }
+
+      const d = pData[key];
+      if (!d) {
+        rows += `<tr>
+          <td style="padding:8px 12px;font-size:12px;color:var(--text2);border-bottom:1px solid rgba(255,255,255,0.04);white-space:nowrap">${lbl}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.04)">
+            <span style="font-size:11px;color:var(--text3)">—</span>
+          </td>
+        </tr>`;
+        return;
+      }
+
+      const col   = pCol(d.p);
+      const barW  = d.p;
+      rows += `<tr style="transition:background .1s" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background=''">
+        <td style="padding:9px 12px;font-size:12px;color:var(--text2);border-bottom:1px solid rgba(255,255,255,0.04);white-space:nowrap;min-width:140px">${lbl}</td>
+        <td style="padding:6px 12px;border-bottom:1px solid rgba(255,255,255,0.04);min-width:220px">
+          <div style="position:relative;height:28px;border-radius:5px;background:var(--bg3);overflow:hidden">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:${barW}%;background:${col};opacity:0.25;border-radius:5px;transition:width .4s"></div>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px">
+              <span style="font-size:13px;font-weight:800;color:${col}">P${d.p}</span>
+              <span style="font-size:11px;color:var(--text3)">${d.v}</span>
+            </div>
+          </div>
+          <div style="font-size:9px;color:var(--text3);margin-top:3px;text-align:right">#${d.r}/${d.n} DC liga</div>
+        </td>
+      </tr>`;
+    });
+
+    cont.innerHTML = `<div class="anim" style="padding:20px 24px;max-width:700px">
+      <div class="content-head" style="margin-bottom:20px">
+        <div>
+          <h2 style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px">🛡️ Fuera de posesión · OBE</h2>
+          <p style="font-size:12px;color:var(--text2);margin-top:2px">
+            Métricas de pressing vs 150 defensas centrales · Primera División RFEF 25/26
+          </p>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">${playerBtns}</div>
+
+      <table style="width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+        <thead>
+          <tr style="background:var(--bg3)">
+            <th style="padding:10px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)">Métrica</th>
+            <th style="padding:10px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)">Percentil vs Liga</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+
+      <div style="display:flex;gap:16px;margin-top:14px;font-size:10px;color:var(--text3);flex-wrap:wrap">
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#3fb950;margin-right:4px;vertical-align:middle"></span>P75–100</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#c8a96e;margin-right:4px;vertical-align:middle"></span>P50–74</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#f0883e;margin-right:4px;vertical-align:middle"></span>P25–49</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#f85149;margin-right:4px;vertical-align:middle"></span>P0–24</span>
+      </div>
+    </div>`;
   }
 
   // INIT
