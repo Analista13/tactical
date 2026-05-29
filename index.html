@@ -8061,30 +8061,35 @@
     const metricRows = METRICS.map(m => {
       if(m.type==='group') return m;
 
+      // Always compute within-team ranking (used in equipo mode and as fallback)
+      const vals = players.map(([,d])=>m.fn(d));
+      const asc  = [...vals].sort((a,b)=>a-b);
+      const teamCells = players.map(([,d],i)=>{
+        const v   = m.fn(d);
+        const rank = N - asc.lastIndexOf(v);
+        const pct  = N>1 ? 1-(rank-1)/(N-1) : 1;
+        const barW = Math.max(5, Math.round(pct*100));
+        const perc = Math.round(pct*100);
+        return {rank, total:N, pct, barW, perc, col:rankColor(pct), noData:false, teamOnly:true};
+      });
+
       if(isLiga && m.ligaKey) {
-        // Liga mode: use _LIGA_RUNS rank data
-        const cells = players.map(([name])=>{
+        // Liga mode: use _LIGA_RUNS rank data, fall back to team cell if no data
+        const cells = players.map(([name],i)=>{
           const ld = _LIGA_RUNS[name]?.[m.ligaKey];
           if(!ld) return {noData:true};
           const pct = ld.n > 1 ? Math.max(0, 1 - (ld.r - 1) / (ld.n - 1)) : 1;
           const barW = Math.max(5, Math.round(pct * 100));
           const perc = Math.round(pct * 100);
-          const grp = _LIGA_RUNS[name]?.grp || '?';
-          return {pct, barW, col:rankColor(pct), rank:ld.r, total:ld.n, perc, grp, noData:false};
+          return {pct, barW, col:rankColor(pct), rank:ld.r, total:ld.n, perc, noData:false, teamOnly:false};
         });
         return {...m, cells, isLiga:true};
+      } else if(isLiga) {
+        // Liga mode but no ligaKey — show within-team percentile in same P-format
+        return {...m, cells:teamCells, isLiga:true};
       } else {
-        // Equipo mode (or liga mode without ligaKey): within-team ranking
-        const vals = players.map(([,d])=>m.fn(d));
-        const asc  = [...vals].sort((a,b)=>a-b);
-        const cells = players.map(([,d])=>{
-          const v   = m.fn(d);
-          const rank = N - asc.lastIndexOf(v);
-          const pct  = N>1 ? 1-(rank-1)/(N-1) : 1;
-          const barW = Math.max(5, Math.round(pct*100));
-          return {rank, pct, barW, col:rankColor(pct), noData:false};
-        });
-        return {...m, cells, isLiga:false};
+        // Equipo mode: plain % bars
+        return {...m, cells:teamCells.map(c=>({...c, teamOnly:false})), isLiga:false};
       }
     });
 
@@ -8113,13 +8118,14 @@
       const cells=row.cells.map(c=>{
         if(c.noData) return `<td style="padding:6px 3px;text-align:center;border-left:1px solid rgba(255,255,255,0.05)"><div style="display:flex;align-items:center;justify-content:center;height:42px;font-size:12px;color:var(--text3)">—</div></td>`;
         if(row.isLiga) {
-          // Liga cell: bar + percentile + rank
+          // Liga cell: bar + percentile + rank (teamOnly = within-team fallback)
+          const subLabel = c.teamOnly ? `#${c.rank}/${c.total} eq.` : `#${c.rank}/${c.total}`;
           return `<td style="padding:6px 3px;text-align:center;border-left:1px solid rgba(255,255,255,0.05)">
             <div style="position:relative;background:rgba(255,255,255,0.06);border-radius:3px;height:28px;overflow:hidden;margin:0 2px">
-              <div style="position:absolute;left:0;top:0;width:${c.barW}%;height:100%;background:${c.col};border-radius:3px;transition:width .3s"></div>
+              <div style="position:absolute;left:0;top:0;width:${c.barW}%;height:100%;background:${c.col};opacity:${c.teamOnly?0.7:1};border-radius:3px;transition:width .3s"></div>
               <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.7)">P${c.perc}</div>
             </div>
-            <div style="font-size:9px;color:var(--text3);margin-top:3px">#${c.rank}/${c.total}</div>
+            <div style="font-size:9px;color:var(--text3);margin-top:3px">${subLabel}</div>
           </td>`;
         } else {
           return `<td style="padding:6px 3px;text-align:center;border-left:1px solid rgba(255,255,255,0.05)">
@@ -8159,7 +8165,7 @@
       <span><span style="display:inline-block;width:12px;height:8px;background:#6fcf97;border-radius:2px;vertical-align:middle;margin-right:3px"></span>P50–74</span>
       <span><span style="display:inline-block;width:12px;height:8px;background:#f2a5a5;border-radius:2px;vertical-align:middle;margin-right:3px"></span>P25–49</span>
       <span><span style="display:inline-block;width:12px;height:8px;background:#f85149;border-radius:2px;vertical-align:middle;margin-right:3px"></span>P&lt;25 · Bot 25%</span>
-      <span style="margin-left:4px">· Características: sin datos de liga (comparativa interna)</span>
+      <span style="margin-left:4px">· Perfil de carreras: vs liga · Características (#eq.): ranking interno del equipo</span>
     </div>`;
 
     return `${modeToggle}<div style="flex:1;min-width:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden">
