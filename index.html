@@ -258,6 +258,7 @@
   let redSubTab     = '1parte';
   let jugSubTab     = 'mapa';
   let jugCalorPlayer = null;  // null=grid, 'name'=individual
+  let jugCaloPhase   = 'off'; // 'off' = ofensiva | 'def' = defensiva
   let telaranaMode  = 'todos'; // 'todos' | 'titulares'
   let perdidasPart  = 'total'; // 'total' | '1' | '2'
   let _redRenderSeq = 0;       // cancel stale async renders
@@ -800,6 +801,12 @@
 
   function setJugCalorPlayer(name) {
     jugCalorPlayer=name;
+    renderJugadores();
+  }
+
+  function setJugCaloPhase(phase) {
+    jugCaloPhase=phase;
+    jugCalorPlayer=null;
     renderJugadores();
   }
 
@@ -2057,6 +2064,19 @@
         posA[e.player_name].x+=e.x_start; posA[e.player_name].y+=e.y_start; posC[e.player_name]++;
         posRaw[e.player_name].push({x:e.x_start,y:e.y_start});
       });
+
+      // ── Datos defensivos (player_heatmap.json — temporada completa) ──────────
+      const defRaw={};
+      if(!__hmData){
+        try{ const r=await fetch('data/player_heatmap.json'); __hmData=await r.json(); }catch(e){}
+      }
+      if(__hmData){
+        allPlayers.forEach(n=>{
+          const entry=__hmData[n]||{def:[]};
+          defRaw[n]=entry.def.map(([x,y])=>({x,y}));
+        });
+      }
+
       const posM={};
       const GK_POS=['GK','PT','PORTERO','POR','P','GOALKEEPER'];
       allPlayers.forEach(n=>{
@@ -2508,9 +2528,21 @@
         // 3 tercios × 5 canales = 15 zonas
         const AW=860,AH=520,AMX=80,AMY=38;
 
+        // ── Toggle Ofensiva / Defensiva ───────────────────────────────────────
+        const phaseToggle=`<div style="display:inline-flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:3px;margin-bottom:18px">
+          <button onclick="setJugCaloPhase('off')" style="padding:6px 18px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:${jugCaloPhase==='off'?'var(--accent)':'transparent'};color:${jugCaloPhase==='off'?'#0d1117':'var(--text2)'}">Ofensiva</button>
+          <button onclick="setJugCaloPhase('def')" style="padding:6px 18px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:${jugCaloPhase==='def'?'var(--accent)':'transparent'};color:${jugCaloPhase==='def'?'#0d1117':'var(--text2)'}">Defensiva</button>
+        </div>`;
+
+        // Fuente de datos según fase
+        const activeRaw = jugCaloPhase==='def' ? defRaw : posRaw;
+        const dataLabel  = jugCaloPhase==='def' ? 'pressing' : 'posesiones';
+        const seasonNote = jugCaloPhase==='def'
+          ? `<span style="font-size:10px;color:var(--text3);margin-left:6px">· Temporada completa</span>` : '';
+
         if(jugCalorPlayer){
           // ── VISTA INDIVIDUAL ──────────────────────────────────────────────
-          const pts=posRaw[jugCalorPlayer]||[];
+          const pts=activeRaw[jugCalorPlayer]||[];
           const p=sorted.find(s=>s.name===jugCalorPlayer)||{};
           const t=p.tier??2; const tc=TIER_COL[t]; const bo=TIER_BO[t];
           const dorsal=p.id&&PLAYER_DORSALES[p.id];
@@ -2531,12 +2563,13 @@
                 </td>`;
               }).join('')}
             </tr>`).join('');
-          html=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+          html=`${phaseToggle}
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
             <button onclick="setJugCalorPlayer(null)" style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 14px;color:var(--text2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">← Todos</button>
             ${dorsal?`<span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${tc};opacity:0.7">${dorsal}</span>`:''}
             <span style="color:${tc};font-size:10px;font-weight:700;background:rgba(0,0,0,0.3);border:1px solid ${bo};padding:3px 8px;border-radius:3px;letter-spacing:0.8px;font-family:'DM Mono',monospace">${p.pos||''}</span>
             <span style="font-size:16px;font-weight:700;color:var(--text)">${jugCalorPlayer}</span>
-            <span style="margin-left:auto;font-size:12px;color:var(--text3)">${pts.length} posesiones</span>
+            <span style="margin-left:auto;font-size:12px;color:var(--text3)">${pts.length} ${dataLabel}${seasonNote}</span>
           </div>
           <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start">
             <div style="background:var(--bg2);border:1px solid ${bo};border-radius:var(--radius);overflow:hidden">
@@ -2563,9 +2596,9 @@
         } else {
           // ── VISTA GRID — todos los jugadores ──────────────────────────────
           const MW=280,MH=180,MMX=18,MMY=12;
-          html=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">`;
+          html=phaseToggle+`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">`;
           sorted.forEach(({name,pos,id,tier})=>{
-            const pts=posRaw[name]||[];
+            const pts=activeRaw[name]||[];
             const tc=TIER_COL[tier], bo=TIER_BO[tier];
             const dorsal=id&&PLAYER_DORSALES[id];
             html+=`<div onclick="setJugCalorPlayer('${name.replace(/'/g,"\\'")}') " style="background:var(--bg2);border:1px solid ${bo};border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:border-color 0.15s,transform 0.12s" onmouseenter="this.style.borderColor='${tc}';this.style.transform='translateY(-2px)'" onmouseleave="this.style.borderColor='${bo}';this.style.transform=''">
