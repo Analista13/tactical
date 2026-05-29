@@ -8410,7 +8410,15 @@
     const partido = partidos.find(p => p.id === centrosMatchId);
 
     let offEvents = [], defEvents = [];
-    if (centrosMatchId) {
+    if (centrosSubTab === 'todas') {
+      // Cargar todos los partidos (tab "Todas · Jugadores")
+      const allRes = await Promise.all(
+        partidos.map(p =>
+          fetch(`data/${p.id}_centros_off.json`).then(r => r.ok ? r.json() : []).catch(() => [])
+        )
+      );
+      offEvents = allRes.flat();
+    } else if (centrosMatchId) {
       try {
         const r1 = await fetch(`data/${centrosMatchId}_centros_off.json`);
         if (r1.ok) offEvents = await r1.json();
@@ -8491,7 +8499,7 @@
           <p style="font-size:12px;color:var(--text2);margin-top:2px">Centros ofensivos de Ponferradina y centros defensivos recibidos</p>
         </div>
       </div>
-      ${matchGrid}
+      ${centrosSubTab === 'todas' ? '' : matchGrid}
       ${subTabs}
       ${partBtns}
       ${body}
@@ -9410,10 +9418,10 @@
           ${stBtn('defensiva','Defensiva','#58a6ff')}
           ${stBtn('todas','Todas · Jugadores','var(--accent)')}
         </div>
-        ${matchGrid}
+        ${faltasSubTab === 'todas' ? '' : matchGrid}
         ${partBtns}
         ${faltasSubTab === 'todas'
-          ? buildFaltasTodas(data, selJ)
+          ? buildFaltasTodas(data)
           : `<div style="display:flex;gap:20px;align-items:flex-start">
               <div style="flex:1;min-width:0">${svgHtml}</div>
               <div style="width:210px;flex-shrink:0">
@@ -9426,7 +9434,8 @@
       </div>
       <div id="falta-tip" style="position:fixed;display:none;background:rgba(13,17,23,0.97);border:1px solid rgba(200,169,110,0.4);border-radius:8px;padding:9px 13px;pointer-events:none;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.6);min-width:150px">
         <div id="falta-tip-player" style="font-size:13px;font-weight:700;color:#e6edf3;margin-bottom:2px"></div>
-        <div id="falta-tip-pos" style="font-size:10px;color:#8b949e;margin-bottom:6px"></div>
+        <div id="falta-tip-pos" style="font-size:10px;color:#8b949e;margin-bottom:4px"></div>
+        <div id="falta-tip-j" style="font-size:10px;color:var(--accent);margin-bottom:4px;display:none"></div>
         <div style="display:flex;align-items:baseline;gap:8px">
           <span id="falta-tip-min" style="font-size:11px;color:#8b949e"></span>
           <span style="color:#484f58">·</span>
@@ -9436,13 +9445,12 @@
   }
 
   // ── Todas · Jugadores ────────────────────────────────────────────────────
-  function buildFaltasTodas(data, selJ) {
+  function buildFaltasTodas(data) {
     // Merge recibidas + cometidas, tag each with type
     const allPlayers = {};
     const merge = (list, tipo) => list.forEach(p => {
       if (!allPlayers[p.player]) allPlayers[p.player] = {pos:p.pos, rec:[], com:[]};
       const fouls = p.fouls.filter(f => {
-        if (f.j !== selJ) return false;
         if (faltasPart === 'total') return true;
         return f.per === parseInt(faltasPart);
       });
@@ -9481,14 +9489,14 @@
         const {sx,sy} = sv(f.x, f.y);
         dots += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="7" fill="#3fb950" fill-opacity="0.75"
           stroke="rgba(255,255,255,0.25)" stroke-width="0.8"
-          data-p="${pEnc}" data-pos="${p.pos}" data-m="${f.min}" data-per="${f.per}" data-sc="${f.sc||'—'}"
+          data-p="${pEnc}" data-pos="${p.pos}" data-m="${f.min}" data-per="${f.per}" data-sc="${f.sc||'—'}" data-j="${f.j||''}"
           style="cursor:pointer" onmouseenter="showFaltaTip(event)" onmouseleave="hideFaltaTip()"/>`;
       });
       p.com.forEach(f => {
         const {sx,sy} = sv(f.x, f.y);
         dots += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="7" fill="#f85149" fill-opacity="0.75"
           stroke="rgba(255,255,255,0.25)" stroke-width="0.8"
-          data-p="${pEnc}" data-pos="${p.pos}" data-m="${f.min}" data-per="${f.per}" data-sc="${f.sc||'—'}"
+          data-p="${pEnc}" data-pos="${p.pos}" data-m="${f.min}" data-per="${f.per}" data-sc="${f.sc||'—'}" data-j="${f.j||''}"
           style="cursor:pointer" onmouseenter="showFaltaTip(event)" onmouseleave="hideFaltaTip()"/>`;
       });
     });
@@ -9568,6 +9576,11 @@
     const per = el.dataset.per === '1' ? '1ª P' : '2ª P';
     document.getElementById('falta-tip-min').textContent    = 'min. ' + el.dataset.m + '  (' + per + ')';
     document.getElementById('falta-tip-sc').textContent     = el.dataset.sc  || '';
+    const jEl = document.getElementById('falta-tip-j');
+    if (jEl) {
+      if (el.dataset.j) { jEl.textContent = 'J' + el.dataset.j; jEl.style.display = 'block'; }
+      else               { jEl.style.display = 'none'; }
+    }
     tip.style.display = 'block';
     tip.style.left = (e.clientX + 15) + 'px';
     tip.style.top  = (e.clientY - 12) + 'px';
