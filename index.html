@@ -368,7 +368,7 @@
   let transPlayerFilter = null;        // nombre del jugador a resaltar en mapa trans
 
   let centrosMatchId  = null;
-  let centrosSubTab   = 'ofensivos';   // 'ofensivos' | 'defensivos'
+  let centrosSubTab   = 'ofensivos';   // 'ofensivos' | 'defensivos' | 'todas'
   let centrosDropOpen = false;
   let centrosPart     = 'total';       // 'total' | '1' | '2'
   let centrosFlank    = 'all';         // 'all' | 'wide_left' | 'wide_right'
@@ -8471,7 +8471,7 @@
     };
 
     const subTabs = `<div style="display:flex;gap:4px;margin-bottom:14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content">
-      ${stBtn('ofensivos','Ofensivos')}${stBtn('defensivos','Defensivos')}
+      ${stBtn('ofensivos','Ofensivos')}${stBtn('defensivos','Defensivos')}${stBtn('todas','Todas · Jugadores')}
     </div>`;
     const partBtns = `<div style="display:flex;gap:6px;margin-bottom:12px">
       ${partBtn('total','Total')}${partBtn('1','1ª parte')}${partBtn('2','2ª parte')}
@@ -8479,7 +8479,9 @@
 
     const body = centrosSubTab === 'ofensivos'
       ? buildCentrosOfensivos(offEvents)
-      : buildCentrosDefensivos(defEvents);
+      : centrosSubTab === 'todas'
+        ? buildCentrosTodas(offEvents)
+        : buildCentrosDefensivos(defEvents);
 
     cont.innerHTML = `<div class="anim">
       <div class="content-head" style="margin-bottom:16px">
@@ -8808,6 +8810,134 @@
       <div style="display:grid;grid-template-columns:1fr 285px;gap:14px;align-items:start">
         <div>${_centrosSvgWrap(svg)}${vizLegend}${zonePanel}</div>
         ${tables}
+      </div>`;
+  }
+
+  // ── Todas · Jugadores ────────────────────────────────────────────────────
+  function buildCentrosTodas(events) {
+    let base = events.filter(e => e.x_start != null);
+    if (centrosPart === '1') base = base.filter(e => e.period === 1);
+    if (centrosPart === '2') base = base.filter(e => e.period === 2);
+
+    // Active player filter
+    const sel = centrosCentradorFilter;
+    const filtered = sel ? base.filter(e => e.player === sel) : base;
+
+    // Player list — aggregate stats
+    const centMap = {};
+    base.forEach(e => {
+      const n = e.player; if (!n) return;
+      if (!centMap[n]) centMap[n] = {tot:0, ok:0, shot:0, goal:0, izq:0, der:0, pos:e.position||''};
+      centMap[n].tot++;
+      if (e.outcome === 'successful') centMap[n].ok++;
+      if (e.lead_to_shot)  centMap[n].shot++;
+      if (e.lead_to_goal)  centMap[n].goal++;
+      if (e.flank === 'wide_left')  centMap[n].izq++;
+      if (e.flank === 'wide_right') centMap[n].der++;
+    });
+    const players = Object.entries(centMap).sort((a,b)=>b[1].tot-a[1].tot);
+
+    // SVG pitch — show only filtered player's crosses (or all if no filter)
+    const {AW,AH,sv,base:pitchBase} = _centrosPitch();
+    let arrows='', origins='', dests='';
+    filtered.forEach(e => {
+      const isIzq = e.flank === 'wide_left';
+      const lCol  = isIzq ? '#58a6ff' : '#f0883e';
+      const isSh  = e.lead_to_shot, isGl = e.lead_to_goal, isOk = e.outcome === 'successful';
+      const lineOp = isOk ? 0.72 : 0.28;
+      const dotOp  = isOk ? 0.92 : 0.5;
+      const {sx:x1,sy:y1} = sv(e.x_start, e.y_start);
+      const zone = _crossZone(e.x_end, e.y_end, e.flank, true);
+      const zCol = _ZCOL[zone];
+      if (e.x_end != null && e.y_end != null) {
+        const {sx:x2,sy:y2} = sv(e.x_end, e.y_end);
+        const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+        if (len > 5) {
+          const ang=Math.atan2(dy,dx), as=5;
+          const a1=`${(x2-as*Math.cos(ang-0.45)).toFixed(1)},${(y2-as*Math.sin(ang-0.45)).toFixed(1)}`;
+          const a2=`${(x2-as*Math.cos(ang+0.45)).toFixed(1)},${(y2-as*Math.sin(ang+0.45)).toFixed(1)}`;
+          arrows+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${lCol}" stroke-width="1.6" stroke-opacity="${lineOp*0.6}" stroke-linecap="round"/>
+            <polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${a1} ${a2}" fill="${lCol}" fill-opacity="${isOk?0.75:0.28}"/>`;
+        }
+        const dr=isGl?9:isSh?8:7;
+        const dstr=isGl?'#ffd700':isSh?'#fff':'none';
+        const dsw=isGl||isSh?'2':'0';
+        const sn  = e.player ? e.player.split(' ').pop() : '?';
+        const tgt = e.target ? e.target.split(' ').pop() : '—';
+        const finLbl = e.finish_type==='head'?' · 🤜 Cab':e.finish_type==='foot'?' · 👟 Pie':'';
+        const res = isGl?'⚽ GOL':isSh?'→ Tiro':isOk?'✓ OK':'✗ Fallado';
+        const tip = `${sn} (${e.position||'?'}) → ${tgt}${e.target_pos?' ('+e.target_pos+')':''}\n${_ZLBL[zone]} · ${e.minute!=null?e.minute+"' · ":''}${res}${finLbl}`;
+        dests+=`<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="${dr}" fill="${zCol}" fill-opacity="${dotOp}"
+          stroke="${dstr}" stroke-width="${dsw}" data-tip="${tip}" style="cursor:pointer"/>`;
+      }
+      origins+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="${lCol}" fill-opacity="0.85"/>`;
+    });
+    const svg=`<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${pitchBase}${arrows}${origins}${dests}</svg>`;
+
+    // Summary chips (shown for current filter)
+    const total  = filtered.length;
+    const ok     = filtered.filter(e=>e.outcome==='successful').length;
+    const shots  = filtered.filter(e=>e.lead_to_shot).length;
+    const goals  = filtered.filter(e=>e.lead_to_goal).length;
+    const chips = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      ${_centrosChip('Centros', total, 'var(--text)')}
+      ${_centrosChip('Completados', ok, '#3fb950')}
+      ${_centrosChip('% Comp.', total?Math.round(ok/total*100)+'%':'—', '#3fb950')}
+      ${_centrosChip('→ Tiro', shots, '#f85149')}
+      ${_centrosChip('⚽ Gol', goals, '#ffd700')}
+    </div>`;
+
+    // Zone legend
+    const zonePanel=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-top:8px">
+      <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px">Zona de llegada</div>
+      <div style="display:flex;flex-direction:column;gap:6px">${_centrosZoneLegend(filtered,true)}</div>
+    </div>`;
+
+    const vizLegend=`<div style="display:flex;gap:10px;align-items:center;font-size:10px;color:var(--text3);margin-top:6px;flex-wrap:wrap">
+      <span style="color:#58a6ff">— Izq</span><span style="color:#f0883e">— Der</span>
+      <span style="color:#58a6ff">● Primer palo</span><span style="color:#ffd700">● Centro</span>
+      <span style="color:#f0883e">● Seg. palo</span><span style="color:#484f58">● Fuera</span>
+      <span>| ○ blanco = tiro · ○ oro = gol</span>
+    </div>`;
+
+    // Player list (right panel)
+    const playerList = players.map(([name, d]) => {
+      const isSel = centrosCentradorFilter === name;
+      const sn    = name.split(' ').pop();
+      const okPct = d.tot ? Math.round(d.ok/d.tot*100) : 0;
+      return `<div onclick="centrosCentradorFilter=${isSel?'null':`'${name.replace(/'/g,"\\'")}' `};renderCentros()"
+        style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;transition:background .15s;
+               background:${isSel?'rgba(200,169,110,0.12)':'transparent'};border:1px solid ${isSel?'rgba(200,169,110,0.35)':'transparent'}"
+        onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='${isSel?'rgba(200,169,110,0.12)':'transparent'}'">
+        <div style="width:28px;height:28px;border-radius:50%;background:${isSel?'var(--accent)':'var(--bg3)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <span style="font-size:10px;font-weight:800;color:${isSel?'#0d1117':'var(--text2)'}">${d.tot}</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:${isSel?700:600};color:${isSel?'var(--accent)':'var(--text1)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sn}</div>
+          <div style="font-size:9px;color:var(--text3)">${d.pos} · ${okPct}% comp${d.goal?` · ⚽${d.goal}`:''}</div>
+        </div>
+        <div style="display:flex;gap:3px;flex-shrink:0">
+          ${d.izq?`<span style="font-size:9px;color:#58a6ff;background:rgba(88,166,255,0.1);padding:1px 5px;border-radius:8px">${d.izq}↖</span>`:''}
+          ${d.der?`<span style="font-size:9px;color:#f0883e;background:rgba(240,136,62,0.1);padding:1px 5px;border-radius:8px">${d.der}↙</span>`:''}
+          ${d.shot?`<span style="font-size:9px;color:#f85149;background:rgba(248,81,73,0.1);padding:1px 5px;border-radius:8px">${d.shot}🎯</span>`:''}
+        </div>
+      </div>`;
+    }).join('');
+
+    const playerPanel=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+      <div style="padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase">Centradores</span>
+        ${sel?`<button onclick="centrosCentradorFilter=null;renderCentros()"
+          style="font-size:10px;color:var(--text3);background:transparent;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;transition:color .15s"
+          onmouseover="this.style.color='var(--text1)'" onmouseout="this.style.color='var(--text3)'">✕ Ver todos</button>`:''}
+      </div>
+      <div style="padding:6px;max-height:460px;overflow-y:auto">${playerList}</div>
+    </div>`;
+
+    return `${chips}
+      <div style="display:grid;grid-template-columns:1fr 240px;gap:14px;align-items:start">
+        <div>${_centrosSvgWrap(svg)}${vizLegend}${zonePanel}</div>
+        ${playerPanel}
       </div>`;
   }
 
