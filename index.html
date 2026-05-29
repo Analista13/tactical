@@ -9606,11 +9606,25 @@
       const offEl = document.getElementById('pp-off-count');
       const defEl = document.getElementById('pp-def-count');
       if (offEl) offEl.textContent = entry.off.length + ' acc.';
-      if (defEl) defEl.textContent = entry.def.length + ' acc.';
+      if (defEl) defEl.textContent = entry.def.length > 0 ? entry.def.length + ' acc.' : '—';
       const cvOff = document.getElementById('cv-off');
       const cvDef = document.getElementById('cv-def');
       if (cvOff) drawPitchOnCanvas(cvOff, entry.off);
-      if (cvDef) drawPitchOnCanvas(cvDef, entry.def);
+      if (cvDef) {
+        drawPitchOnCanvas(cvDef, entry.def);
+        if (entry.def.length === 0) {
+          // Overlay: no pressing data for this player (e.g. goalkeepers)
+          const ctx = cvDef.getContext('2d');
+          const W = cvDef.width, H = cvDef.height;
+          ctx.save();
+          ctx.fillStyle = 'rgba(255,255,255,0.45)';
+          ctx.font = 'bold 15px "DM Sans", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('Sin datos de pressing', W / 2, H / 2);
+          ctx.restore();
+        }
+      }
     };
 
     if (__hmData) {
