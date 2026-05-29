@@ -8825,8 +8825,10 @@
   // ── Todas · Jugadores ────────────────────────────────────────────────────
   function buildCentrosTodas(events) {
     let base = events.filter(e => e.x_start != null);
-    if (centrosPart === '1') base = base.filter(e => e.period === 1);
-    if (centrosPart === '2') base = base.filter(e => e.period === 2);
+    if (centrosPart === '1')        base = base.filter(e => e.period === 1);
+    if (centrosPart === '2')        base = base.filter(e => e.period === 2);
+    if (centrosFlank === 'wide_left')  base = base.filter(e => e.flank === 'wide_left');
+    if (centrosFlank === 'wide_right') base = base.filter(e => e.flank === 'wide_right');
 
     // Active player filter
     const sel = centrosCentradorFilter;
@@ -8943,7 +8945,13 @@
       <div style="padding:6px;max-height:460px;overflow-y:auto">${playerList}</div>
     </div>`;
 
-    return `${chips}
+    const flankBtns = `<div style="display:flex;gap:6px;margin-bottom:10px">${_centrosFlankBtns([
+      ['all','Ambos flancos','var(--text2)'],
+      ['wide_left','← Izquierda','#58a6ff'],
+      ['wide_right','Derecha →','#f0883e'],
+    ])}</div>`;
+
+    return `${flankBtns}${chips}
       <div style="display:grid;grid-template-columns:1fr 240px;gap:14px;align-items:start">
         <div>${_centrosSvgWrap(svg)}${vizLegend}${zonePanel}</div>
         ${playerPanel}
