@@ -10039,15 +10039,30 @@
                   </td>
                 </tr>`;
               }).join('');
-              return `<table style="width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+              const tabDesc = _profileTab === 'defensiva'
+                ? 'Métricas de acciones fuera de posesión (OBE): dónde y con qué resultado interviene el jugador cuando el equipo no tiene el balón.'
+                : 'Tipo e intensidad del pressing ejercido por el jugador cuando el equipo no tiene el balón.';
+              return `
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start">
+                <span style="font-size:15px;flex-shrink:0">ℹ️</span>
+                <div>
+                  <p style="font-size:11px;color:var(--text2);margin:0 0 4px;line-height:1.5">${tabDesc}</p>
+                  <p style="font-size:10px;color:var(--text3);margin:0;line-height:1.4">
+                    El percentil (P) y el ranking (#) se calculan comparando con los
+                    <strong style="color:var(--text2)">150 defensas centrales</strong>
+                    de la Primera División RFEF temporada 2025/26.
+                    Rango 1 = mejor valor de la liga.
+                  </p>
+                </div>
+              </div>
+              <table style="width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
                 <tbody>${rows}</tbody>
               </table>
-              <div style="display:flex;gap:14px;margin-top:12px;font-size:10px;color:var(--text3);flex-wrap:wrap">
-                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#3fb950;margin-right:3px;vertical-align:middle"></span>P75–100</span>
-                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#c8a96e;margin-right:3px;vertical-align:middle"></span>P50–74</span>
-                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f0883e;margin-right:3px;vertical-align:middle"></span>P25–49</span>
-                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f85149;margin-right:3px;vertical-align:middle"></span>P0–24</span>
-                <span style="margin-left:auto">vs 150 DC · Primera División RFEF 25/26</span>
+              <div style="display:flex;gap:14px;margin-top:10px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
+                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#3fb950;margin-right:3px;vertical-align:middle"></span>P75–100 Élite</span>
+                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#c8a96e;margin-right:3px;vertical-align:middle"></span>P50–74 Por encima media</span>
+                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f0883e;margin-right:3px;vertical-align:middle"></span>P25–49 Por debajo media</span>
+                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f85149;margin-right:3px;vertical-align:middle"></span>P0–24 Bajo</span>
               </div>`;
             })()}
 
