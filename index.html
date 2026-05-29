@@ -9709,7 +9709,7 @@
       const photo = p.img
         ? `<img src="${p.img}" style="width:100%;height:175px;object-fit:contain;display:block;background:var(--bg3);padding:4px">`
         : `<div style="width:100%;height:175px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:800;color:var(--text3);font-family:'Bebas Neue',sans-serif">${p.d}</div>`;
-      return `<div style="border-radius:10px;overflow:hidden;background:var(--bg2);border:1px solid var(--border);transition:all 0.2s;cursor:pointer" onclick="openPlayerProfile(${p.d})" onmouseover="this.style.borderColor='${col}66';this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.45)'" onmouseout="this.style.borderColor='';this.style.transform='';this.style.boxShadow=''">
+      return `<div style="border-radius:10px;overflow:hidden;background:var(--bg2);border:1px solid var(--border);transition:all 0.2s;cursor:pointer" onclick="_profileTab='heatmap';openPlayerProfile(${p.d})" onmouseover="this.style.borderColor='${col}66';this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.45)'" onmouseout="this.style.borderColor='';this.style.transform='';this.style.boxShadow=''">
         <div style="position:relative">
           ${photo}
           <div style="position:absolute;top:7px;left:7px;background:rgba(13,17,23,0.82);border:1px solid ${col};color:${col};font-family:'Bebas Neue',sans-serif;font-size:15px;padding:1px 7px;border-radius:5px;line-height:1.3">${p.d}</div>
@@ -9882,7 +9882,25 @@
   // ═══════════════════════════════════════════════════════════════════
   //  PLAYER PROFILE PAGE
   // ═══════════════════════════════════════════════════════════════════
-  let __hmData = null;  // lazy-loaded player_heatmap.json cache
+  let __hmData = null;           // lazy-loaded player_heatmap.json cache
+  let _profileTab = 'heatmap';  // 'heatmap' | 'defensiva' | 'presion'
+  let _profileDorsal = null;
+
+  // Mapeo nombre plantilla → clave _OBE_DATA
+  const _OBE_KEY_MAP = {
+    'David Andújar':    'David Andújar',
+    'Boris Moltenis':   'Boris Moltenis',
+    'Eneko Undabarrena':'Eneko Undabarrena',
+    'Germán Nóvoa':     'Germán Novoa',
+  };
+
+  // Grupos de métricas por tab
+  const _OBE_TAB = {
+    defensiva: ['Total OBE','Bloque alto','Bloque medio','Bloque bajo','Transición',
+                'Disrup. directa','Recuper. directa','Forzado atrás','Línea afectada',
+                'Superado mov.','Superado posesión'],
+    presion:   ['Presión directa','Presión cadena','Contrapresión','Presión atrás','Tray. adelante'],
+  };
 
   function openPlayerProfile(dorsal) {
     const ALL = [
@@ -9891,6 +9909,12 @@
     ];
     const p = ALL.find(x => x.d === dorsal);
     if (!p) return;
+    _profileDorsal = dorsal;
+
+    const obeKey  = _OBE_KEY_MAP[p.name];
+    const obeData = obeKey ? _OBE_DATA[obeKey] : null;
+    // Si se llama desde un click de tab, respetar _profileTab; si es nuevo jugador, reset
+    // (se resetea desde el card click)
 
     const PCOL = {
       'Portero':'#f0883e','Def. central':'#58a6ff','Lateral izq.':'#58a6ff',
@@ -9949,50 +9973,86 @@
             </div>
           </div>
 
-          <!-- ── Right: heatmaps ── -->
+          <!-- ── Right: tabs ── -->
           <div style="flex:1;min-width:300px">
-            <div style="display:flex;gap:18px;flex-wrap:wrap">
 
-              <!-- Offensive -->
-              <div style="flex:1;min-width:280px">
-                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
-                  <span style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:1px;text-transform:uppercase">
-                    Posicionamiento Ofensivo
-                  </span>
-                  <span id="pp-off-count" style="font-size:10px;color:var(--text3)">—</span>
-                </div>
-                <div style="border-radius:8px;overflow:hidden;border:1px solid var(--border)">
-                  <canvas id="cv-off" width="380" height="246"
-                    style="display:block;width:100%;height:auto"></canvas>
-                </div>
-                <div style="margin-top:5px;font-size:10px;color:var(--text3)">ataque →</div>
-              </div>
-
-              <!-- Defensive -->
-              <div style="flex:1;min-width:280px">
-                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
-                  <span style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:1px;text-transform:uppercase">
-                    Posicionamiento Defensivo
-                  </span>
-                  <span id="pp-def-count" style="font-size:10px;color:var(--text3)">—</span>
-                </div>
-                <div style="border-radius:8px;overflow:hidden;border:1px solid var(--border)">
-                  <canvas id="cv-def" width="380" height="246"
-                    style="display:block;width:100%;height:auto"></canvas>
-                </div>
-                <div style="margin-top:5px;font-size:10px;color:var(--text3)">ataque →</div>
-              </div>
-
+            <!-- Tab bar -->
+            <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:18px;gap:0">
+              ${[
+                ['heatmap',   'Posicionamiento'],
+                ...(obeData ? [['defensiva','Acciones defensivas'],['presion','Presión']] : [])
+              ].map(([id,lbl]) => {
+                const act = _profileTab === id;
+                return `<button onclick="_profileTab='${id}';openPlayerProfile(${p.d})"
+                  style="background:transparent;border:none;border-bottom:2px solid ${act?'var(--accent)':'transparent'};
+                         color:${act?'var(--accent)':'var(--text2)'};padding:8px 18px;
+                         font-family:'DM Sans',sans-serif;font-size:13px;font-weight:${act?700:500};
+                         cursor:pointer;transition:all .15s;white-space:nowrap">${lbl}</button>`;
+              }).join('')}
             </div>
 
-            <!-- Legend -->
-            <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
-              <span style="font-size:10px;color:var(--text3)">Densidad baja</span>
-              <div style="height:7px;width:160px;border-radius:3px;
-                background:linear-gradient(to right,#0000c8,#00c8c8,#ffdc00,#ff6400,#ff0000);
-                flex-shrink:0"></div>
-              <span style="font-size:10px;color:var(--text3)">Alta</span>
-            </div>
+            <!-- Tab content -->
+            ${_profileTab === 'heatmap' ? `
+              <div style="display:flex;gap:18px;flex-wrap:wrap">
+                <div style="flex:1;min-width:280px">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+                    <span style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:1px;text-transform:uppercase">Posicionamiento Ofensivo</span>
+                    <span id="pp-off-count" style="font-size:10px;color:var(--text3)">—</span>
+                  </div>
+                  <div style="border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+                    <canvas id="cv-off" width="380" height="246" style="display:block;width:100%;height:auto"></canvas>
+                  </div>
+                  <div style="margin-top:5px;font-size:10px;color:var(--text3)">ataque →</div>
+                </div>
+                <div style="flex:1;min-width:280px">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+                    <span style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:1px;text-transform:uppercase">Posicionamiento Defensivo</span>
+                    <span id="pp-def-count" style="font-size:10px;color:var(--text3)">—</span>
+                  </div>
+                  <div style="border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+                    <canvas id="cv-def" width="380" height="246" style="display:block;width:100%;height:auto"></canvas>
+                  </div>
+                  <div style="margin-top:5px;font-size:10px;color:var(--text3)">ataque →</div>
+                </div>
+              </div>
+              <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
+                <span style="font-size:10px;color:var(--text3)">Densidad baja</span>
+                <div style="height:7px;width:160px;border-radius:3px;background:linear-gradient(to right,#0000c8,#00c8c8,#ffdc00,#ff6400,#ff0000);flex-shrink:0"></div>
+                <span style="font-size:10px;color:var(--text3)">Alta</span>
+              </div>
+            ` : (() => {
+              const keys   = _OBE_TAB[_profileTab] || [];
+              const pCol   = p => p >= 75 ? '#3fb950' : p >= 50 ? '#c8a96e' : p >= 25 ? '#f0883e' : '#f85149';
+              const rows   = keys.map(key => {
+                const d = obeData?.[key];
+                if (!d) return `<tr><td style="padding:8px 12px;font-size:12px;color:var(--text2);border-bottom:1px solid rgba(255,255,255,0.04)">${key}</td><td style="padding:8px 12px;font-size:11px;color:var(--text3);border-bottom:1px solid rgba(255,255,255,0.04)">—</td></tr>`;
+                const col = pCol(d.p);
+                return `<tr onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background=''">
+                  <td style="padding:9px 12px;font-size:12px;color:var(--text2);border-bottom:1px solid rgba(255,255,255,0.04);white-space:nowrap;min-width:140px">${key}</td>
+                  <td style="padding:6px 12px;border-bottom:1px solid rgba(255,255,255,0.04);min-width:200px">
+                    <div style="position:relative;height:28px;border-radius:5px;background:var(--bg3);overflow:hidden">
+                      <div style="position:absolute;left:0;top:0;bottom:0;width:${d.p}%;background:${col};opacity:0.25;border-radius:5px"></div>
+                      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px">
+                        <span style="font-size:13px;font-weight:800;color:${col}">P${d.p}</span>
+                        <span style="font-size:11px;color:var(--text3)">${d.v}</span>
+                      </div>
+                    </div>
+                    <div style="font-size:9px;color:var(--text3);margin-top:2px;text-align:right">#${d.r}/${d.n} DC liga</div>
+                  </td>
+                </tr>`;
+              }).join('');
+              return `<table style="width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+                <tbody>${rows}</tbody>
+              </table>
+              <div style="display:flex;gap:14px;margin-top:12px;font-size:10px;color:var(--text3);flex-wrap:wrap">
+                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#3fb950;margin-right:3px;vertical-align:middle"></span>P75–100</span>
+                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#c8a96e;margin-right:3px;vertical-align:middle"></span>P50–74</span>
+                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f0883e;margin-right:3px;vertical-align:middle"></span>P25–49</span>
+                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f85149;margin-right:3px;vertical-align:middle"></span>P0–24</span>
+                <span style="margin-left:auto">vs 150 DC · Primera División RFEF 25/26</span>
+              </div>`;
+            })()}
+
           </div>
 
         </div>
