@@ -10040,8 +10040,8 @@
                 </tr>`;
               }).join('');
               const tabDesc = _profileTab === 'defensiva'
-                ? 'Métricas de acciones fuera de posesión (OBE): dónde y con qué resultado interviene el jugador cuando el equipo no tiene el balón.'
-                : 'Tipo e intensidad del pressing ejercido por el jugador cuando el equipo no tiene el balón.';
+                ? '<strong style="color:var(--text1)">OBE (Out of Possession Ball Engagement)</strong> mide cada vez que un jugador interviene activamente sobre el balón cuando su equipo <em>no</em> lo tiene: intercepciones, duelos defensivos, coberturas y recuperaciones. Aquí se muestra <strong style="color:var(--text1)">dónde</strong> se producen esas intervenciones (bloque alto/medio/bajo o en transición) y <strong style="color:var(--text1)">qué resultado</strong> generan (recuperación, disrupción, línea afectada…).'
+                : 'Métricas de <strong style="color:var(--text1)">pressing</strong>: con qué frecuencia y de qué forma el jugador presiona al rival cuando su equipo no tiene el balón. Presión directa = presión inmediata al portador; Contrapresión = presión tras pérdida; Presión cadena = pressing organizado en bloque; Presión atrás = recuperación de posición.';
               return `
               <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start">
                 <span style="font-size:15px;flex-shrink:0">ℹ️</span>
