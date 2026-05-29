@@ -377,6 +377,7 @@
 
   let faltasSubTab     = 'ofensiva';   // 'ofensiva' | 'defensiva' | 'todas'
   let faltasTodosPlayer = null;       // jugador seleccionado en tab 'todas'
+  let faltasTodosType  = 'all';       // 'all' | 'rec' | 'com'
   let faltasSelected   = [];            // jugadores seleccionados (multi)
   let faltasMatchId    = null;          // match_id del partido seleccionado
   let faltasPart       = 'total';       // 'total' | '1' | '2'
@@ -9211,7 +9212,6 @@
   }
 
   async function renderFaltas() {
-    if (faltasSubTab === 'todas') faltasSubTab = 'ofensiva';
     const cont = document.getElementById('content');
     if (!window._faltasCache) {
       try {
@@ -9407,7 +9407,7 @@
     // ── Subtab buttons ────────────────────────────────────────────────────────
     const stBtn = (id, lbl, col) => {
       const act = faltasSubTab === id;
-      return `<button onclick="faltasSubTab='${id}';faltasSelected=[];faltasPart='total';faltasTodosPlayer=null;renderFaltas()"
+      return `<button onclick="faltasSubTab='${id}';faltasSelected=[];faltasPart='total';faltasTodosPlayer=null;faltasTodosType='all';renderFaltas()"
         style="background:transparent;border:none;border-bottom:2px solid ${act?col:'transparent'};
                color:${act?col:'var(--text2)'};padding:10px 22px;font-family:'DM Sans',sans-serif;
                font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s">${lbl}</button>`;
@@ -9425,17 +9425,21 @@
         <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:20px">
           ${stBtn('ofensiva','Ofensiva','#3fb950')}
           ${stBtn('defensiva','Defensiva','#58a6ff')}
+          ${stBtn('todas','Todas · Jugadores','var(--accent)')}
         </div>
-        ${matchGrid}
+        ${faltasSubTab === 'todas' ? '' : matchGrid}
         ${partBtns}
-        <div style="display:flex;gap:20px;align-items:flex-start">
-          <div style="flex:1;min-width:0">${svgHtml}</div>
-          <div style="width:210px;flex-shrink:0">
-            ${sideNote}
-            <div style="max-height:460px;overflow-y:auto;padding-right:2px">${playerRows}</div>
-          </div>
-        </div>
-        ${statsHtml}
+        ${faltasSubTab === 'todas'
+          ? buildFaltasTodas(data)
+          : `<div style="display:flex;gap:20px;align-items:flex-start">
+              <div style="flex:1;min-width:0">${svgHtml}</div>
+              <div style="width:210px;flex-shrink:0">
+                ${sideNote}
+                <div style="max-height:460px;overflow-y:auto;padding-right:2px">${playerRows}</div>
+              </div>
+            </div>
+            ${statsHtml}`
+        }
       </div>
       <div id="falta-tip" style="position:fixed;display:none;background:rgba(13,17,23,0.97);border:1px solid rgba(200,169,110,0.4);border-radius:8px;padding:9px 13px;pointer-events:none;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.6);min-width:150px">
         <div id="falta-tip-player" style="font-size:13px;font-weight:700;color:#e6edf3;margin-bottom:2px"></div>
@@ -9465,9 +9469,15 @@
     merge(data.recibidas, 'rec');
     merge(data.cometidas, 'com');
 
-    // Filter to players with at least one foul, sort by total
+    // Type filter: 'all' | 'rec' (ofensivas) | 'com' (defensivas)
+    const showRec = faltasTodosType !== 'com';
+    const showCom = faltasTodosType !== 'rec';
+
+    // Filter to players with at least one visible foul, sort by total
     const players = Object.entries(allPlayers)
-      .map(([name, d]) => ({name, pos:d.pos, rec:d.rec, com:d.com, tot:d.rec.length+d.com.length}))
+      .map(([name, d]) => ({name, pos:d.pos, rec:d.rec, com:d.com,
+        tot: (showRec ? d.rec.length : 0) + (showCom ? d.com.length : 0)
+      }))
       .filter(p => p.tot > 0)
       .sort((a,b) => b.tot - a.tot);
 
@@ -9490,14 +9500,14 @@
     active.forEach(p => {
       const pEnc = p.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
       // Recibidas = verde, Cometidas = rojo
-      p.rec.forEach(f => {
+      if (showRec) p.rec.forEach(f => {
         const {sx,sy} = sv(f.x, f.y);
         dots += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="7" fill="#3fb950" fill-opacity="0.75"
           stroke="rgba(255,255,255,0.25)" stroke-width="0.8"
           data-p="${pEnc}" data-pos="${p.pos}" data-m="${f.min}" data-per="${f.per}" data-sc="${f.sc||'—'}" data-j="${f.j||''}"
           style="cursor:pointer" onmouseenter="showFaltaTip(event)" onmouseleave="hideFaltaTip()"/>`;
       });
-      p.com.forEach(f => {
+      if (showCom) p.com.forEach(f => {
         const {sx,sy} = sv(f.x, f.y);
         dots += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="7" fill="#f85149" fill-opacity="0.75"
           stroke="rgba(255,255,255,0.25)" stroke-width="0.8"
@@ -9514,22 +9524,34 @@
       </div>
     </div>`;
 
+    // Type filter buttons
+    const tBtn = (id, lbl, col) => {
+      const act = faltasTodosType === id;
+      return `<button onclick="faltasTodosType='${id}';renderFaltas()"
+        style="padding:4px 13px;border-radius:20px;border:1px solid ${act?col:'var(--border)'};background:${act?col+'22':'var(--bg2)'};color:${act?col:'var(--text2)'};font-size:12px;font-weight:${act?700:400};cursor:pointer;transition:all .15s">${lbl}</button>`;
+    };
+    const typeBtns = `<div style="display:flex;gap:6px;margin-bottom:10px">
+      ${tBtn('all','Todas','var(--text2)')}
+      ${tBtn('rec','Ofensivas','#3fb950')}
+      ${tBtn('com','Defensivas','#f85149')}
+    </div>`;
+
     // Stats chips
-    const totRec = active.reduce((s,p)=>s+p.rec.length,0);
-    const totCom = active.reduce((s,p)=>s+p.com.length,0);
+    const totRec = showRec ? active.reduce((s,p)=>s+p.rec.length,0) : 0;
+    const totCom = showCom ? active.reduce((s,p)=>s+p.com.length,0) : 0;
     const chips = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 13px;text-align:center">
         <div style="font-size:18px;font-weight:800;color:var(--text1)">${totRec+totCom}</div>
         <div style="font-size:9px;color:var(--text3);margin-top:1px">TOTAL</div>
       </div>
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 13px;text-align:center">
+      ${showRec ? `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 13px;text-align:center">
         <div style="font-size:18px;font-weight:800;color:#3fb950">${totRec}</div>
-        <div style="font-size:9px;color:var(--text3);margin-top:1px">RECIBIDAS</div>
-      </div>
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 13px;text-align:center">
+        <div style="font-size:9px;color:var(--text3);margin-top:1px">OFENSIVAS</div>
+      </div>` : ''}
+      ${showCom ? `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 13px;text-align:center">
         <div style="font-size:18px;font-weight:800;color:#f85149">${totCom}</div>
-        <div style="font-size:9px;color:var(--text3);margin-top:1px">COMETIDAS</div>
-      </div>
+        <div style="font-size:9px;color:var(--text3);margin-top:1px">DEFENSIVAS</div>
+      </div>` : ''}
     </div>`;
 
     // Player list
@@ -9565,7 +9587,7 @@
       <div style="padding:6px;max-height:460px;overflow-y:auto">${playerList||'<div style="padding:12px;font-size:11px;color:var(--text3)">Sin faltas en este partido</div>'}</div>
     </div>`;
 
-    return `${chips}
+    return `${typeBtns}${chips}
       <div style="display:grid;grid-template-columns:1fr 240px;gap:14px;align-items:start">
         ${svgHtml}
         ${playerPanel}
