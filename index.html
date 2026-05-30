@@ -9883,6 +9883,8 @@
   let __hmData = null;           // lazy-loaded player_heatmap.json cache
   let _profileTab = 'heatmap';  // 'heatmap' | 'defensiva' | 'presion'
   let _profileDorsal = null;
+  let _profileObeView = 'tabla';  // 'tabla' | 'dist'
+  let _profileObeDistMetric = 'Total OBE';
 
   // Mapeo nombre plantilla → clave _OBE_DATA (solo si difieren)
   const _OBE_KEY_MAP = {
@@ -9987,7 +9989,7 @@
                 ...(obeData ? [['defensiva','Acciones defensivas'],['presion','Presión']] : [])
               ].map(([id,lbl]) => {
                 const act = _profileTab === id;
-                return `<button onclick="_profileTab='${id}';openPlayerProfile(${p.d})"
+                return `<button onclick="_profileTab='${id}';_profileObeView='tabla';openPlayerProfile(${p.d})"
                   style="background:transparent;border:none;border-bottom:2px solid ${act?'var(--accent)':'transparent'};
                          color:${act?'var(--accent)':'var(--text2)'};padding:8px 18px;
                          font-family:'DM Sans',sans-serif;font-size:13px;font-weight:${act?700:500};
@@ -10048,7 +10050,82 @@
               const tabDesc = _profileTab === 'defensiva'
                 ? '<strong style="color:var(--text1)">OBE (Out of Possession Ball Engagement)</strong> mide cada vez que un jugador interviene activamente sobre el balón cuando su equipo <em>no</em> lo tiene: intercepciones, duelos defensivos, coberturas y recuperaciones. Aquí se muestra <strong style="color:var(--text1)">dónde</strong> se producen esas intervenciones (bloque alto/medio/bajo o en transición) y <strong style="color:var(--text1)">qué resultado</strong> generan (recuperación, disrupción, línea afectada…).'
                 : 'Métricas de <strong style="color:var(--text1)">pressing</strong>: con qué frecuencia y de qué forma el jugador presiona al rival cuando su equipo no tiene el balón. Presión directa = presión inmediata al portador; Contrapresión = presión tras pérdida; Presión cadena = pressing organizado en bloque; Presión atrás = recuperación de posición.';
-              return `
+
+              // ── Subtab toggle (Tabla / Distribución) ──────────────────────────────
+              const _obeTog = `<div style="display:flex;gap:8px;margin-bottom:14px">
+                <button onclick="_profileObeView='tabla';openPlayerProfile(${p.d})" style="padding:5px 16px;border-radius:6px;border:1px solid ${_profileObeView==='tabla'?'var(--accent)':'var(--border)'};background:${_profileObeView==='tabla'?'rgba(200,169,110,0.12)':'var(--bg2)'};color:${_profileObeView==='tabla'?'var(--accent)':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profileObeView==='tabla'?700:500}">📋 Tabla</button>
+                <button onclick="_profileObeView='dist';openPlayerProfile(${p.d})" style="padding:5px 16px;border-radius:6px;border:1px solid ${_profileObeView==='dist'?'#58a6ff':'var(--border)'};background:${_profileObeView==='dist'?'rgba(88,166,255,0.12)':'var(--bg2)'};color:${_profileObeView==='dist'?'#58a6ff':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profileObeView==='dist'?700:500}">📊 Distribución</button>
+              </div>`;
+
+              if (_profileObeView === 'dist') {
+                // ── Beeswarm distribution chart ────────────────────────────────────
+                const _pos_d = obeData.pos || 'DC';
+                const _pCol_d = q => q >= 75 ? '#3fb950' : q >= 50 ? '#c8a96e' : q >= 25 ? '#f0883e' : '#f85149';
+                const _metricPills_d = _OBE_METRICS.map(([key,,grp]) => {
+                  const act = _profileObeDistMetric === key;
+                  return `<button onclick="_profileObeDistMetric='${key.replace(/'/g,"\\'")}';openPlayerProfile(${p.d})"
+                    style="padding:4px 11px;border-radius:16px;border:1px solid ${act?'#58a6ff':'var(--border)'};
+                           background:${act?'rgba(88,166,255,0.18)':'var(--bg2)'};color:${act?'#58a6ff':'var(--text2)'};
+                           font-size:11px;font-weight:${act?700:400};cursor:pointer;white-space:nowrap;transition:all .15s">
+                    ${key}
+                  </button>`;
+                }).join('');
+                const _leagueVals_d = (_DIST_DATA[_pos_d] || {})[_profileObeDistMetric] || [];
+                const _dMet_d = obeData[_profileObeDistMetric] || {};
+                const _selVal_d = _dMet_d.v;
+                const _selP_d = _dMet_d.p !== undefined ? _dMet_d.p : null;
+                // Geometry
+                const _W=640,_H=240,_PL=10,_PR=10,_PT=36,_PB=28;
+                const _plotW=_W-_PL-_PR,_plotH=_H-_PT-_PB,_midY=_PT+_plotH/2,_R=5;
+                const _allV_d = _leagueVals_d.length ? _leagueVals_d : [0,1];
+                let _minV_d=_allV_d[0], _maxV_d=_allV_d[_allV_d.length-1];
+                if (_selVal_d!==undefined){_minV_d=Math.min(_minV_d,_selVal_d);_maxV_d=Math.max(_maxV_d,_selVal_d);}
+                const _span_d=_maxV_d-_minV_d||1;
+                _minV_d-=_span_d*0.05; _maxV_d+=_span_d*0.05;
+                const _xSc_d = v => _PL+(v-_minV_d)/(_maxV_d-_minV_d)*_plotW;
+                // Beeswarm
+                const _placed_d=[];
+                for (let i=0;i<_leagueVals_d.length;i++){
+                  const v=_leagueVals_d[i],x=_xSc_d(v);
+                  let yOff=0;
+                  for (let step=0;step<=_plotH/2;step+=_R*2.1){
+                    const cands=step===0?[0]:[step,-step];let ok_y=null;
+                    for (const off of cands){
+                      let ok=true;
+                      for (const pt of _placed_d){if((x-pt.x)**2+(_midY+off-pt.y)**2<(_R*2.1)**2){ok=false;break;}}
+                      if(ok){ok_y=off;break;}
+                    }
+                    if(ok_y!==null){yOff=ok_y;break;}
+                  }
+                  _placed_d.push({x,y:_midY+yOff});
+                }
+                const _dots_d=_placed_d.map(pt=>`<circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${_R}" fill="rgba(255,255,255,0.22)" fill-opacity="0.9"/>`).join('');
+                let _ticks_d='';
+                for(let i=0;i<=5;i++){const v=_minV_d+(_maxV_d-_minV_d)*i/5,x=_xSc_d(v).toFixed(1);_ticks_d+=`<line x1="${x}" y1="${_PT+_plotH}" x2="${x}" y2="${_PT+_plotH+5}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/><text x="${x}" y="${_PT+_plotH+16}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.35)">${v.toFixed(v>10?0:1)}</text>`;}
+                const _cline_d=`<line x1="${_PL}" y1="${_midY}" x2="${_W-_PR}" y2="${_midY}" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="4,4"/>`;
+                let _selDot_d='';
+                if (_selVal_d!==undefined){
+                  const sx=_xSc_d(_selVal_d).toFixed(1),sc=_pCol_d(_selP_d!==null?_selP_d:50);
+                  _selDot_d=`<defs><filter id="pgd" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                    <line x1="${sx}" y1="${_PT}" x2="${sx}" y2="${_PT+_plotH}" stroke="${sc}" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+                    <circle cx="${sx}" cy="${_midY}" r="${_R+4}" fill="none" stroke="${sc}" stroke-width="2.5" filter="url(#pgd)"/>
+                    <circle cx="${sx}" cy="${_midY}" r="${_R+1.5}" fill="${sc}" filter="url(#pgd)"/>
+                    <rect x="${(parseFloat(sx)-66).toFixed(1)}" y="${(_PT+2).toFixed(1)}" width="132" height="16" rx="4" fill="rgba(13,17,23,0.9)" stroke="${sc}" stroke-width="0.8"/>
+                    <text x="${sx}" y="${(_PT+14).toFixed(1)}" text-anchor="middle" font-size="10" fill="${sc}" font-weight="700">${p.name} · P${_selP_d!==null?_selP_d:'?'} · ${_selVal_d}</text>`;
+                }
+                const _svg_d=`<svg viewBox="0 0 ${_W} ${_H}" width="100%" style="display:block;overflow:visible">${_cline_d}${_dots_d}${_selDot_d}<line x1="${_PL}" y1="${_PT+_plotH}" x2="${_W-_PR}" y2="${_PT+_plotH}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>${_ticks_d}</svg>`;
+                return _obeTog + `
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center">${_metricPills_d}</div>
+                <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 6px 4px;overflow:hidden">${_svg_d}</div>
+                <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
+                  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3fb950;margin-right:3px;vertical-align:middle"></span>P75–100</span>
+                  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#c8a96e;margin-right:3px;vertical-align:middle"></span>P50–74</span>
+                  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f0883e;margin-right:3px;vertical-align:middle"></span>P25–49</span>
+                  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f85149;margin-right:3px;vertical-align:middle"></span>P0–24</span>
+                  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#58a6ff;margin-right:3px;vertical-align:middle"></span>${p.name}</span>
+                </div>`;
+              }
+              return _obeTog + `
               <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start">
                 <span style="font-size:15px;flex-shrink:0">ℹ️</span>
                 <div>
