@@ -366,6 +366,7 @@
   let transPart       = 'total';       // 'total' | '1' | '2'
   let transTypeFilter = 'all';         // 'all' | 'transition' | 'quick_break'
   let transRunFilter  = 'all';         // subtype filter for carreras sin balón
+  let carrerasPlayer  = null;          // player filter for carreras sin balón pitch
   let runSubView      = 'campo';       // 'campo' | 'grafico'
   let runGridMode     = 'equipo';      // 'equipo' | 'liga'
 
@@ -7584,7 +7585,7 @@
     const subTabBtn = (id, lbl) => {
       const act = transSubTab === id;
       const col  = id === 'ofensivas' ? '#3fb950' : id === 'defensivas' ? '#58a6ff' : '#f0883e';
-      return `<button onclick="transSubTab='${id}';transTypeFilter='all';transRunFilter='all';runSubView='campo';transPlayerFilter=null;renderTransiciones()"
+      return `<button onclick="transSubTab='${id}';transTypeFilter='all';transRunFilter='all';carrerasPlayer=null;runSubView='campo';transPlayerFilter=null;renderTransiciones()"
         style="background:transparent;border:none;border-bottom:2px solid ${act?col:'transparent'};color:${act?col:'var(--text2)'};padding:10px 22px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${lbl}</button>`;
     };
 
@@ -8234,17 +8235,20 @@
     let filtered = base_runs;
     if (transRunFilter && transRunFilter !== 'all') filtered = filtered.filter(e => e.subtype === transRunFilter);
 
+    // Player filter applies only to pitch rendering & chips (table always shows all)
+    const pitchRuns = carrerasPlayer ? filtered.filter(e => e.player === carrerasPlayer) : filtered;
+
     const noData  = runs.length === 0;
-    const total   = filtered.length;
-    const recib   = filtered.filter(e => e.received).length;
-    const pelig   = filtered.filter(e => e.dangerous).length;
-    const shots   = filtered.filter(e => e.lead_to_shot).length;
-    const goals   = filtered.filter(e => e.lead_to_goal).length;
+    const total   = pitchRuns.length;
+    const recib   = pitchRuns.filter(e => e.received).length;
+    const pelig   = pitchRuns.filter(e => e.dangerous).length;
+    const shots   = pitchRuns.filter(e => e.lead_to_shot).length;
+    const goals   = pitchRuns.filter(e => e.lead_to_goal).length;
 
     // ── Pitch SVG ─────────────────────────────────────────────────────────
     const {AW,AH,sv,base:pitchBase} = _centrosPitch();
     let arrows='', dests='';
-    filtered.forEach(e => {
+    pitchRuns.forEach(e => {
       if (e.x_start==null||e.x_end==null) return;
       const {sx:x1,sy:y1}=sv(e.x_start,e.y_start);
       const {sx:x2,sy:y2}=sv(e.x_end,e.y_end);
@@ -8270,7 +8274,13 @@
       dests+=`<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="${dr}" fill="${col}" fill-opacity="${op.toFixed(2)}"
         stroke="${dstr}" stroke-width="${dsw}" data-tip="${tip}" style="cursor:pointer"/>`;
     });
-    const pitchSvg=`<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${pitchBase}${arrows}${dests}</svg>`;
+
+    // Player name label on pitch when filtered
+    let playerLabel = '';
+    if (carrerasPlayer) {
+      playerLabel = `<text x="10" y="18" font-family="'DM Sans',sans-serif" font-size="11" font-weight="700" fill="#f0883e">${carrerasPlayer}</text>`;
+    }
+    const pitchSvg=`<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${pitchBase}${arrows}${dests}${playerLabel}</svg>`;
 
     // ── Subtype filter buttons ─────────────────────────────────────────────
     const stCounts={};
@@ -8279,12 +8289,13 @@
     const typeBtn=(id,lbl)=>{
       const act=transRunFilter===id;
       const col=_RC[id]||'var(--accent)';
-      return `<button onclick="transRunFilter='${id}';renderTransiciones()"
+      return `<button onclick="transRunFilter='${id}';carrerasPlayer=null;renderTransiciones()"
         style="padding:4px 13px;border-radius:20px;border:1px solid ${act?col:'var(--border)'};background:${act?col+'22':'var(--bg2)'};color:${act?col:'var(--text2)'};font-size:12px;font-weight:${act?700:400};cursor:pointer;transition:all .15s">${lbl}</button>`;
     };
     const filterBtns=`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">
       ${typeBtn('all','Todos')}
       ${allST.map(st=>typeBtn(st,_RL[st]||st)).join('')}
+      ${carrerasPlayer?`<button onclick="carrerasPlayer=null;renderTransiciones()" style="padding:4px 13px;border-radius:20px;border:1px solid #f0883e;background:rgba(240,136,62,0.15);color:#f0883e;font-size:12px;font-weight:700;cursor:pointer;margin-left:8px">← ${carrerasPlayer.split(' ').slice(-1)[0]} · Ver todos</button>`:''}
     </div>`;
 
     // ── Stats chips ───────────────────────────────────────────────────────
@@ -8326,7 +8337,7 @@
 
     // ── Player table ──────────────────────────────────────────────────────
     const playerMap={};
-    filtered.forEach(e=>{
+    filtered.forEach(e=>{                    // always built from full filtered (all players visible)
       const n=e.player; if(!n) return;
       if(!playerMap[n]) playerMap[n]={tot:0,rec:0,pelig:0,shot:0,goal:0,pos:e.position||'',subtypes:{}};
       playerMap[n].tot++;
@@ -8339,24 +8350,36 @@
     const players=Object.entries(playerMap).sort((a,b)=>b[1].tot-a[1].tot);
     const maxP=players[0]?.[1].tot||1;
     const playerRows=players.slice(0,12).map(([name,d])=>{
+      const isSel = carrerasPlayer === name;
       const sn=name.split(' ').pop().substring(0,12);
       const bw=Math.round(d.tot/maxP*100);
       const topST=Object.entries(d.subtypes).sort((a,b)=>b[1]-a[1])[0];
       const stCol=topST?(_RC[topST[0]]||'#8b949e'):'#8b949e';
       const recPct=d.tot?Math.round(d.rec/d.tot*100):0;
-      return `<tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
-        <td style="padding:5px 7px;font-size:12px;font-weight:600;color:var(--text)">${sn}</td>
+      const rowBg = isSel ? 'rgba(240,136,62,0.14)' : '';
+      const rowBrd = isSel ? '1px solid rgba(240,136,62,0.35)' : '1px solid rgba(255,255,255,0.03)';
+      const nameCol = isSel ? '#f0883e' : 'var(--text)';
+      const safeN = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return `<tr onclick="carrerasPlayer=${isSel?'null':`'${safeN}'`};renderTransiciones()"
+        style="border-bottom:${rowBrd};background:${rowBg};cursor:pointer;transition:background .12s"
+        onmouseover="if(carrerasPlayer!=='${safeN}')this.style.background='rgba(255,255,255,0.04)'"
+        onmouseout="this.style.background='${rowBg}'">
+        <td style="padding:5px 7px;font-size:12px;font-weight:600;color:${nameCol}">${isSel?'▶ ':''}<span title="${name}">${sn}</span></td>
         <td style="padding:5px 4px;font-size:9px;color:var(--text3);text-align:center">${d.pos}</td>
-        <td style="padding:5px 4px;font-size:13px;font-weight:800;color:var(--text);text-align:center">${d.tot}</td>
+        <td style="padding:5px 4px;font-size:13px;font-weight:800;color:${isSel?'#f0883e':'var(--text)'};text-align:center">${d.tot}</td>
         <td style="padding:5px 4px;font-size:11px;color:#3fb950;text-align:center">${d.rec}</td>
         <td style="padding:5px 4px;font-size:10px;color:var(--text3);text-align:center">${recPct}%</td>
         <td style="padding:5px 4px;font-size:11px;color:#f0883e;text-align:center">${d.pelig||'—'}</td>
         <td style="padding:5px 4px;font-size:11px;color:#ffd700;text-align:center">${d.goal||'—'}</td>
-        <td style="padding:5px 5px;width:38px"><div style="height:3px;background:var(--bg4);border-radius:2px"><div style="width:${bw}%;height:3px;background:${stCol};border-radius:2px"></div></div></td>
+        <td style="padding:5px 5px;width:38px"><div style="height:3px;background:var(--bg4);border-radius:2px"><div style="width:${bw}%;height:3px;background:${isSel?'#f0883e':stCol};border-radius:2px"></div></div></td>
       </tr>`;
     }).join('');
-    const table=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-      <div style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase">Jugadores</div>
+    const tableHdr = `<div style="padding:7px 12px;border-bottom:1px solid var(--border);font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:8px">
+      Jugadores
+      ${carrerasPlayer?`<span style="font-size:9px;color:#f0883e;font-weight:700;text-transform:none;letter-spacing:0">· ${carrerasPlayer} seleccionado · <button onclick="carrerasPlayer=null;renderTransiciones()" style="background:none;border:none;color:#f0883e;cursor:pointer;font-size:9px;font-family:inherit;padding:0;text-decoration:underline">ver todos</button></span>`:'<span style="font-size:8px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">· clic para filtrar campo</span>'}
+    </div>`;
+    const table=`<div style="background:var(--bg2);border:1px solid ${carrerasPlayer?'rgba(240,136,62,0.3)':'var(--border)'};border-radius:var(--radius);overflow:hidden;transition:border-color .2s">
+      ${tableHdr}
       <table style="width:100%;border-collapse:collapse">
         <thead><tr style="border-bottom:1px solid var(--border)">
           <th style="padding:5px 7px;font-size:9px;color:var(--text3);text-align:left;font-weight:700">JUGADOR</th>
