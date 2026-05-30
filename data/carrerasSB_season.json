@@ -1,1 +1,3161 @@
-{"Xemi Fern\u00e1ndez": {"pos": "LM", "matches": 22, "tot": 367, "rec": 48, "pelig": 174, "shot": 42, "goal": 3, "espalda": 22, "adelanto": 126, "receptor_centro": 75, "enlace": 115, "amplitud": 10, "high_speed": 96, "dist_mean": 15.0, "xthreat_mean": 0.0408}, "Eneko Undabarrena": {"pos": "RM", "matches": 22, "tot": 190, "rec": 55, "pelig": 6, "shot": 5, "goal": 0, "espalda": 1, "adelanto": 9, "receptor_centro": 3, "enlace": 79, "amplitud": 2, "high_speed": 16, "dist_mean": 11.4, "xthreat_mean": 0.0032}, "P. Ferrer": {"pos": "CF", "matches": 17, "tot": 193, "rec": 25, "pelig": 118, "shot": 26, "goal": 5, "espalda": 30, "adelanto": 51, "receptor_centro": 59, "enlace": 40, "amplitud": 5, "high_speed": 58, "dist_mean": 14.2, "xthreat_mean": 0.0485}, "Diego Moreno": {"pos": "RWB", "matches": 9, "tot": 137, "rec": 40, "pelig": 17, "shot": 15, "goal": 1, "espalda": 1, "adelanto": 47, "receptor_centro": 9, "enlace": 44, "amplitud": 14, "high_speed": 48, "dist_mean": 15.4, "xthreat_mean": 0.0101}, "A. Keita": {"pos": "CF", "matches": 25, "tot": 258, "rec": 56, "pelig": 102, "shot": 35, "goal": 7, "espalda": 19, "adelanto": 94, "receptor_centro": 41, "enlace": 54, "amplitud": 25, "high_speed": 83, "dist_mean": 15.7, "xthreat_mean": 0.031}, "Andoni L\u00f3pez": {"pos": "LWB", "matches": 23, "tot": 261, "rec": 86, "pelig": 39, "shot": 16, "goal": 3, "espalda": 6, "adelanto": 63, "receptor_centro": 5, "enlace": 83, "amplitud": 25, "high_speed": 91, "dist_mean": 17.2, "xthreat_mean": 0.0131}, "B. Moltenis": {"pos": "LCB", "matches": 11, "tot": 59, "rec": 20, "pelig": 6, "shot": 3, "goal": 0, "espalda": 0, "adelanto": 9, "receptor_centro": 4, "enlace": 6, "amplitud": 1, "high_speed": 12, "dist_mean": 12.7, "xthreat_mean": 0.0106}, "Germ\u00e1n Novoa": {"pos": "RCB", "matches": 23, "tot": 203, "rec": 56, "pelig": 27, "shot": 16, "goal": 3, "espalda": 5, "adelanto": 41, "receptor_centro": 6, "enlace": 45, "amplitud": 6, "high_speed": 47, "dist_mean": 12.3, "xthreat_mean": 0.0107}, "Borja V\u00e1zquez": {"pos": "CF", "matches": 26, "tot": 438, "rec": 119, "pelig": 91, "shot": 47, "goal": 2, "espalda": 26, "adelanto": 176, "receptor_centro": 32, "enlace": 85, "amplitud": 72, "high_speed": 114, "dist_mean": 14.8, "xthreat_mean": 0.0156}, "Jos\u00e9 Luis Cort\u00e9s": {"pos": "CF", "matches": 24, "tot": 365, "rec": 90, "pelig": 175, "shot": 55, "goal": 8, "espalda": 58, "adelanto": 141, "receptor_centro": 65, "enlace": 35, "amplitud": 33, "high_speed": 113, "dist_mean": 14.4, "xthreat_mean": 0.034}, "Borja Valle": {"pos": "RM", "matches": 22, "tot": 267, "rec": 74, "pelig": 86, "shot": 29, "goal": 3, "espalda": 20, "adelanto": 72, "receptor_centro": 41, "enlace": 84, "amplitud": 20, "high_speed": 44, "dist_mean": 11.7, "xthreat_mean": 0.0267}, "E. Frimpong": {"pos": "LM", "matches": 23, "tot": 251, "rec": 50, "pelig": 88, "shot": 20, "goal": 2, "espalda": 7, "adelanto": 86, "receptor_centro": 25, "enlace": 102, "amplitud": 10, "high_speed": 69, "dist_mean": 14.5, "xthreat_mean": 0.0264}, "Mario Jorr\u00edn": {"pos": "RF", "matches": 12, "tot": 114, "rec": 35, "pelig": 22, "shot": 6, "goal": 0, "espalda": 5, "adelanto": 26, "receptor_centro": 1, "enlace": 36, "amplitud": 8, "high_speed": 38, "dist_mean": 14.2, "xthreat_mean": 0.0155}, "David And\u00fajar": {"pos": "CB", "matches": 14, "tot": 60, "rec": 21, "pelig": 11, "shot": 5, "goal": 0, "espalda": 5, "adelanto": 7, "receptor_centro": 9, "enlace": 9, "amplitud": 2, "high_speed": 5, "dist_mean": 9.5, "xthreat_mean": 0.0257}, "\u00c1ngel Jim\u00e9nez": {"pos": "GK", "matches": 1, "tot": 1, "rec": 1, "pelig": 0, "shot": 0, "goal": 0, "espalda": 0, "adelanto": 0, "receptor_centro": 0, "enlace": 0, "amplitud": 0, "high_speed": 0, "dist_mean": 9.4, "xthreat_mean": null}, "Eneko Aguilar": {"pos": "RM", "matches": 10, "tot": 127, "rec": 25, "pelig": 64, "shot": 19, "goal": 4, "espalda": 7, "adelanto": 46, "receptor_centro": 25, "enlace": 36, "amplitud": 4, "high_speed": 28, "dist_mean": 15.1, "xthreat_mean": 0.0274}, "\u00c1lex Mula": {"pos": "RW", "matches": 9, "tot": 111, "rec": 26, "pelig": 32, "shot": 19, "goal": 3, "espalda": 6, "adelanto": 35, "receptor_centro": 13, "enlace": 34, "amplitud": 10, "high_speed": 31, "dist_mean": 13.7, "xthreat_mean": 0.0235}, "Sergio Benito": {"pos": "CF", "matches": 6, "tot": 47, "rec": 12, "pelig": 25, "shot": 8, "goal": 1, "espalda": 15, "adelanto": 14, "receptor_centro": 9, "enlace": 4, "amplitud": 4, "high_speed": 10, "dist_mean": 13.5, "xthreat_mean": 0.0333}, "Fede San Emeterio": {"pos": "RM", "matches": 12, "tot": 92, "rec": 22, "pelig": 8, "shot": 6, "goal": 1, "espalda": 0, "adelanto": 9, "receptor_centro": 3, "enlace": 67, "amplitud": 1, "high_speed": 4, "dist_mean": 9.8, "xthreat_mean": 0.0066}, "Lian": {"pos": "RW", "matches": 1, "tot": 3, "rec": 0, "pelig": 1, "shot": 0, "goal": 0, "espalda": 0, "adelanto": 0, "receptor_centro": 1, "enlace": 1, "amplitud": 1, "high_speed": 0, "dist_mean": 12.1, "xthreat_mean": 0.0239}, "Andr\u00e9s Prieto": {"pos": "GK", "matches": 5, "tot": 5, "rec": 2, "pelig": 0, "shot": 0, "goal": 0, "espalda": 0, "adelanto": 0, "receptor_centro": 0, "enlace": 1, "amplitud": 0, "high_speed": 0, "dist_mean": 6.3, "xthreat_mean": 0.0002}, "Vasco Sousa": {"pos": "LB", "matches": 5, "tot": 32, "rec": 5, "pelig": 12, "shot": 3, "goal": 0, "espalda": 3, "adelanto": 12, "receptor_centro": 2, "enlace": 9, "amplitud": 1, "high_speed": 7, "dist_mean": 13.7, "xthreat_mean": 0.019}, "Erik Mor\u00e1n": {"pos": "LM", "matches": 4, "tot": 11, "rec": 3, "pelig": 0, "shot": 0, "goal": 0, "espalda": 0, "adelanto": 1, "receptor_centro": 0, "enlace": 7, "amplitud": 0, "high_speed": 0, "dist_mean": 9.4, "xthreat_mean": 0.0021}, "Vicente Esquerdo": {"pos": "LM", "matches": 13, "tot": 108, "rec": 41, "pelig": 8, "shot": 14, "goal": 0, "espalda": 0, "adelanto": 16, "receptor_centro": 1, "enlace": 74, "amplitud": 7, "high_speed": 9, "dist_mean": 11.9, "xthreat_mean": 0.007}, "Carlos Calder\u00f3n": {"pos": "RW", "matches": 13, "tot": 168, "rec": 44, "pelig": 57, "shot": 24, "goal": 4, "espalda": 23, "adelanto": 65, "receptor_centro": 12, "enlace": 28, "amplitud": 16, "high_speed": 65, "dist_mean": 16.3, "xthreat_mean": 0.0263}, "Koke": {"pos": "RB", "matches": 12, "tot": 144, "rec": 25, "pelig": 22, "shot": 17, "goal": 2, "espalda": 0, "adelanto": 25, "receptor_centro": 5, "enlace": 52, "amplitud": 8, "high_speed": 42, "dist_mean": 15.4, "xthreat_mean": 0.0119}, "S. Petkov": {"pos": "CF", "matches": 3, "tot": 19, "rec": 4, "pelig": 13, "shot": 3, "goal": 0, "espalda": 2, "adelanto": 8, "receptor_centro": 5, "enlace": 3, "amplitud": 0, "high_speed": 5, "dist_mean": 16.6, "xthreat_mean": 0.0456}, "Borislav Ivanov Stankov": {"pos": "CF", "matches": 9, "tot": 112, "rec": 8, "pelig": 76, "shot": 19, "goal": 2, "espalda": 14, "adelanto": 32, "receptor_centro": 48, "enlace": 15, "amplitud": 0, "high_speed": 36, "dist_mean": 18.1, "xthreat_mean": 0.075}, "V. Kisil": {"pos": "RM", "matches": 3, "tot": 15, "rec": 3, "pelig": 1, "shot": 0, "goal": 0, "espalda": 1, "adelanto": 0, "receptor_centro": 0, "enlace": 12, "amplitud": 0, "high_speed": 0, "dist_mean": 8.8, "xthreat_mean": 0.0038}}
+{
+  "Borja Vázquez": {
+    "pos": "CF",
+    "matches": 31,
+    "minutes": 2640,
+    "tot": 488,
+    "buscadas": 182,
+    "recibidas": 134,
+    "peligrosas": 102,
+    "pelig_busc": 27,
+    "pelig_recib": 13,
+    "tiro": 55,
+    "gol": 3,
+    "area": 45,
+    "alta_vel": 128,
+    "build_up": 23,
+    "create": 145,
+    "finish": 139,
+    "transition": 78,
+    "quick_break": 14,
+    "tot_p30": 5.55,
+    "buscadas_p30": 2.07,
+    "recibidas_p30": 1.52,
+    "peligrosas_p30": 1.16,
+    "alta_vel_pct": 26.2,
+    "st": {
+      "espalda": {
+        "tot": 28,
+        "buscadas": 15,
+        "recibidas": 8,
+        "peligrosas": 8,
+        "pelig_recib": 0,
+        "dist_media": 17.58,
+        "p30": 0.32
+      },
+      "viene_corto": {
+        "tot": 30,
+        "buscadas": 11,
+        "recibidas": 8,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 7.9,
+        "p30": 0.34
+      },
+      "receptor_centro": {
+        "tot": 40,
+        "buscadas": 7,
+        "recibidas": 3,
+        "peligrosas": 36,
+        "pelig_recib": 3,
+        "dist_media": 19.42,
+        "p30": 0.45
+      },
+      "caida_espacio": {
+        "tot": 9,
+        "buscadas": 4,
+        "recibidas": 3,
+        "peligrosas": 1,
+        "pelig_recib": 0,
+        "dist_media": 9.87,
+        "p30": 0.1
+      },
+      "medio_espacio": {
+        "tot": 13,
+        "buscadas": 4,
+        "recibidas": 3,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 12.43,
+        "p30": 0.15
+      },
+      "tirar_ancho": {
+        "tot": 74,
+        "buscadas": 32,
+        "recibidas": 25,
+        "peligrosas": 1,
+        "pelig_recib": 1,
+        "dist_media": 13.07,
+        "p30": 0.84
+      },
+      "adelanto": {
+        "tot": 200,
+        "buscadas": 81,
+        "recibidas": 61,
+        "peligrosas": 31,
+        "pelig_recib": 4,
+        "dist_media": 14.0,
+        "p30": 2.27
+      },
+      "apoyo": {
+        "tot": 66,
+        "buscadas": 12,
+        "recibidas": 9,
+        "peligrosas": 16,
+        "pelig_recib": 2,
+        "dist_media": 15.54,
+        "p30": 0.75
+      },
+      "overlap": {
+        "tot": 13,
+        "buscadas": 9,
+        "recibidas": 8,
+        "peligrosas": 4,
+        "pelig_recib": 1,
+        "dist_media": 24.49,
+        "p30": 0.15
+      },
+      "underlap": {
+        "tot": 15,
+        "buscadas": 7,
+        "recibidas": 6,
+        "peligrosas": 5,
+        "pelig_recib": 2,
+        "dist_media": 22.3,
+        "p30": 0.17
+      }
+    }
+  },
+  "José Luis Cortés": {
+    "pos": "LW",
+    "matches": 29,
+    "minutes": 2292,
+    "tot": 436,
+    "buscadas": 177,
+    "recibidas": 104,
+    "peligrosas": 212,
+    "pelig_busc": 76,
+    "pelig_recib": 38,
+    "tiro": 60,
+    "gol": 8,
+    "area": 90,
+    "alta_vel": 126,
+    "build_up": 10,
+    "create": 127,
+    "finish": 142,
+    "transition": 82,
+    "quick_break": 12,
+    "tot_p30": 5.71,
+    "buscadas_p30": 2.32,
+    "recibidas_p30": 1.36,
+    "peligrosas_p30": 2.78,
+    "alta_vel_pct": 28.9,
+    "st": {
+      "espalda": {
+        "tot": 67,
+        "buscadas": 35,
+        "recibidas": 22,
+        "peligrosas": 49,
+        "pelig_recib": 16,
+        "dist_media": 15.73,
+        "p30": 0.88
+      },
+      "viene_corto": {
+        "tot": 14,
+        "buscadas": 9,
+        "recibidas": 8,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 10.52,
+        "p30": 0.18
+      },
+      "receptor_centro": {
+        "tot": 82,
+        "buscadas": 31,
+        "recibidas": 9,
+        "peligrosas": 82,
+        "pelig_recib": 9,
+        "dist_media": 17.79,
+        "p30": 1.07
+      },
+      "caida_espacio": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "medio_espacio": {
+        "tot": 28,
+        "buscadas": 9,
+        "recibidas": 5,
+        "peligrosas": 3,
+        "pelig_recib": 0,
+        "dist_media": 8.98,
+        "p30": 0.37
+      },
+      "tirar_ancho": {
+        "tot": 37,
+        "buscadas": 19,
+        "recibidas": 13,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 12.66,
+        "p30": 0.48
+      },
+      "adelanto": {
+        "tot": 171,
+        "buscadas": 61,
+        "recibidas": 37,
+        "peligrosas": 59,
+        "pelig_recib": 9,
+        "dist_media": 13.34,
+        "p30": 2.24
+      },
+      "apoyo": {
+        "tot": 27,
+        "buscadas": 9,
+        "recibidas": 7,
+        "peligrosas": 14,
+        "pelig_recib": 3,
+        "dist_media": 17.86,
+        "p30": 0.35
+      },
+      "overlap": {
+        "tot": 5,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 3,
+        "pelig_recib": 1,
+        "dist_media": 20.65,
+        "p30": 0.07
+      },
+      "underlap": {
+        "tot": 5,
+        "buscadas": 2,
+        "recibidas": 1,
+        "peligrosas": 2,
+        "pelig_recib": 0,
+        "dist_media": 17.83,
+        "p30": 0.07
+      }
+    }
+  },
+  "Xemi Fernández": {
+    "pos": "AM",
+    "matches": 27,
+    "minutes": 2260,
+    "tot": 435,
+    "buscadas": 128,
+    "recibidas": 66,
+    "peligrosas": 203,
+    "pelig_busc": 56,
+    "pelig_recib": 21,
+    "tiro": 51,
+    "gol": 4,
+    "area": 94,
+    "alta_vel": 113,
+    "build_up": 16,
+    "create": 130,
+    "finish": 144,
+    "transition": 63,
+    "quick_break": 17,
+    "tot_p30": 5.77,
+    "buscadas_p30": 1.7,
+    "recibidas_p30": 0.88,
+    "peligrosas_p30": 2.69,
+    "alta_vel_pct": 26.0,
+    "st": {
+      "espalda": {
+        "tot": 34,
+        "buscadas": 9,
+        "recibidas": 2,
+        "peligrosas": 27,
+        "pelig_recib": 1,
+        "dist_media": 17.69,
+        "p30": 0.45
+      },
+      "viene_corto": {
+        "tot": 36,
+        "buscadas": 12,
+        "recibidas": 9,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 8.12,
+        "p30": 0.48
+      },
+      "receptor_centro": {
+        "tot": 84,
+        "buscadas": 34,
+        "recibidas": 11,
+        "peligrosas": 84,
+        "pelig_recib": 11,
+        "dist_media": 23.68,
+        "p30": 1.11
+      },
+      "caida_espacio": {
+        "tot": 6,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 6.82,
+        "p30": 0.08
+      },
+      "medio_espacio": {
+        "tot": 8,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 10.92,
+        "p30": 0.11
+      },
+      "tirar_ancho": {
+        "tot": 13,
+        "buscadas": 5,
+        "recibidas": 4,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 9.23,
+        "p30": 0.17
+      },
+      "adelanto": {
+        "tot": 146,
+        "buscadas": 42,
+        "recibidas": 23,
+        "peligrosas": 42,
+        "pelig_recib": 3,
+        "dist_media": 11.42,
+        "p30": 1.94
+      },
+      "apoyo": {
+        "tot": 99,
+        "buscadas": 20,
+        "recibidas": 12,
+        "peligrosas": 46,
+        "pelig_recib": 4,
+        "dist_media": 15.28,
+        "p30": 1.31
+      },
+      "overlap": {
+        "tot": 3,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 1,
+        "pelig_recib": 1,
+        "dist_media": 22.31,
+        "p30": 0.04
+      },
+      "underlap": {
+        "tot": 6,
+        "buscadas": 2,
+        "recibidas": 1,
+        "peligrosas": 3,
+        "pelig_recib": 1,
+        "dist_media": 10.93,
+        "p30": 0.08
+      }
+    }
+  },
+  "Borja Valle": {
+    "pos": "LW",
+    "matches": 27,
+    "minutes": 2304,
+    "tot": 329,
+    "buscadas": 117,
+    "recibidas": 94,
+    "peligrosas": 100,
+    "pelig_busc": 31,
+    "pelig_recib": 20,
+    "tiro": 40,
+    "gol": 6,
+    "area": 51,
+    "alta_vel": 55,
+    "build_up": 15,
+    "create": 122,
+    "finish": 92,
+    "transition": 37,
+    "quick_break": 9,
+    "tot_p30": 4.28,
+    "buscadas_p30": 1.52,
+    "recibidas_p30": 1.22,
+    "peligrosas_p30": 1.3,
+    "alta_vel_pct": 16.7,
+    "st": {
+      "espalda": {
+        "tot": 21,
+        "buscadas": 7,
+        "recibidas": 6,
+        "peligrosas": 14,
+        "pelig_recib": 4,
+        "dist_media": 12.69,
+        "p30": 0.27
+      },
+      "viene_corto": {
+        "tot": 46,
+        "buscadas": 23,
+        "recibidas": 22,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 8.34,
+        "p30": 0.6
+      },
+      "receptor_centro": {
+        "tot": 49,
+        "buscadas": 17,
+        "recibidas": 10,
+        "peligrosas": 47,
+        "pelig_recib": 8,
+        "dist_media": 16.72,
+        "p30": 0.64
+      },
+      "caida_espacio": {
+        "tot": 10,
+        "buscadas": 3,
+        "recibidas": 3,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 6.92,
+        "p30": 0.13
+      },
+      "medio_espacio": {
+        "tot": 15,
+        "buscadas": 7,
+        "recibidas": 2,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 9.37,
+        "p30": 0.2
+      },
+      "tirar_ancho": {
+        "tot": 23,
+        "buscadas": 5,
+        "recibidas": 4,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 11.92,
+        "p30": 0.3
+      },
+      "adelanto": {
+        "tot": 91,
+        "buscadas": 35,
+        "recibidas": 30,
+        "peligrosas": 21,
+        "pelig_recib": 5,
+        "dist_media": 11.6,
+        "p30": 1.18
+      },
+      "apoyo": {
+        "tot": 64,
+        "buscadas": 17,
+        "recibidas": 14,
+        "peligrosas": 14,
+        "pelig_recib": 0,
+        "dist_media": 10.73,
+        "p30": 0.83
+      },
+      "overlap": {
+        "tot": 6,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 2,
+        "pelig_recib": 2,
+        "dist_media": 13.4,
+        "p30": 0.08
+      },
+      "underlap": {
+        "tot": 4,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 2,
+        "pelig_recib": 1,
+        "dist_media": 9.49,
+        "p30": 0.05
+      }
+    }
+  },
+  "A. Keita": {
+    "pos": "RDM",
+    "matches": 30,
+    "minutes": 2503,
+    "tot": 312,
+    "buscadas": 111,
+    "recibidas": 68,
+    "peligrosas": 121,
+    "pelig_busc": 34,
+    "pelig_recib": 13,
+    "tiro": 41,
+    "gol": 8,
+    "area": 55,
+    "alta_vel": 99,
+    "build_up": 10,
+    "create": 87,
+    "finish": 107,
+    "transition": 42,
+    "quick_break": 12,
+    "tot_p30": 3.74,
+    "buscadas_p30": 1.33,
+    "recibidas_p30": 0.82,
+    "peligrosas_p30": 1.45,
+    "alta_vel_pct": 31.7,
+    "st": {
+      "espalda": {
+        "tot": 22,
+        "buscadas": 11,
+        "recibidas": 6,
+        "peligrosas": 17,
+        "pelig_recib": 2,
+        "dist_media": 16.49,
+        "p30": 0.26
+      },
+      "viene_corto": {
+        "tot": 18,
+        "buscadas": 10,
+        "recibidas": 9,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 11.04,
+        "p30": 0.22
+      },
+      "receptor_centro": {
+        "tot": 47,
+        "buscadas": 15,
+        "recibidas": 2,
+        "peligrosas": 47,
+        "pelig_recib": 2,
+        "dist_media": 18.58,
+        "p30": 0.56
+      },
+      "caida_espacio": {
+        "tot": 2,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 18.2,
+        "p30": 0.02
+      },
+      "medio_espacio": {
+        "tot": 16,
+        "buscadas": 5,
+        "recibidas": 4,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 13.6,
+        "p30": 0.19
+      },
+      "tirar_ancho": {
+        "tot": 28,
+        "buscadas": 12,
+        "recibidas": 10,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 13.08,
+        "p30": 0.34
+      },
+      "adelanto": {
+        "tot": 122,
+        "buscadas": 39,
+        "recibidas": 21,
+        "peligrosas": 32,
+        "pelig_recib": 4,
+        "dist_media": 14.75,
+        "p30": 1.46
+      },
+      "apoyo": {
+        "tot": 47,
+        "buscadas": 13,
+        "recibidas": 11,
+        "peligrosas": 21,
+        "pelig_recib": 3,
+        "dist_media": 15.34,
+        "p30": 0.56
+      },
+      "overlap": {
+        "tot": 4,
+        "buscadas": 4,
+        "recibidas": 4,
+        "peligrosas": 2,
+        "pelig_recib": 2,
+        "dist_media": 14.4,
+        "p30": 0.05
+      },
+      "underlap": {
+        "tot": 6,
+        "buscadas": 2,
+        "recibidas": 1,
+        "peligrosas": 2,
+        "pelig_recib": 0,
+        "dist_media": 17.25,
+        "p30": 0.07
+      }
+    }
+  },
+  "Andoni López": {
+    "pos": "LB",
+    "matches": 27,
+    "minutes": 2382,
+    "tot": 311,
+    "buscadas": 117,
+    "recibidas": 100,
+    "peligrosas": 48,
+    "pelig_busc": 14,
+    "pelig_recib": 10,
+    "tiro": 21,
+    "gol": 4,
+    "area": 13,
+    "alta_vel": 103,
+    "build_up": 20,
+    "create": 124,
+    "finish": 95,
+    "transition": 28,
+    "quick_break": 3,
+    "tot_p30": 3.92,
+    "buscadas_p30": 1.47,
+    "recibidas_p30": 1.26,
+    "peligrosas_p30": 0.6,
+    "alta_vel_pct": 33.1,
+    "st": {
+      "espalda": {
+        "tot": 8,
+        "buscadas": 3,
+        "recibidas": 2,
+        "peligrosas": 6,
+        "pelig_recib": 1,
+        "dist_media": 29.44,
+        "p30": 0.1
+      },
+      "viene_corto": {
+        "tot": 3,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 14.43,
+        "p30": 0.04
+      },
+      "receptor_centro": {
+        "tot": 8,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 8,
+        "pelig_recib": 2,
+        "dist_media": 32.56,
+        "p30": 0.1
+      },
+      "caida_espacio": {
+        "tot": 32,
+        "buscadas": 12,
+        "recibidas": 12,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 10.22,
+        "p30": 0.4
+      },
+      "medio_espacio": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "tirar_ancho": {
+        "tot": 30,
+        "buscadas": 12,
+        "recibidas": 11,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 11.23,
+        "p30": 0.38
+      },
+      "adelanto": {
+        "tot": 75,
+        "buscadas": 31,
+        "recibidas": 26,
+        "peligrosas": 12,
+        "pelig_recib": 1,
+        "dist_media": 15.33,
+        "p30": 0.94
+      },
+      "apoyo": {
+        "tot": 94,
+        "buscadas": 39,
+        "recibidas": 33,
+        "peligrosas": 11,
+        "pelig_recib": 3,
+        "dist_media": 14.83,
+        "p30": 1.18
+      },
+      "overlap": {
+        "tot": 39,
+        "buscadas": 12,
+        "recibidas": 9,
+        "peligrosas": 4,
+        "pelig_recib": 1,
+        "dist_media": 24.17,
+        "p30": 0.49
+      },
+      "underlap": {
+        "tot": 22,
+        "buscadas": 6,
+        "recibidas": 5,
+        "peligrosas": 7,
+        "pelig_recib": 2,
+        "dist_media": 24.32,
+        "p30": 0.28
+      }
+    }
+  },
+  "E. Frimpong": {
+    "pos": "RM",
+    "matches": 26,
+    "minutes": 2203,
+    "tot": 281,
+    "buscadas": 75,
+    "recibidas": 54,
+    "peligrosas": 95,
+    "pelig_busc": 21,
+    "pelig_recib": 11,
+    "tiro": 22,
+    "gol": 2,
+    "area": 24,
+    "alta_vel": 78,
+    "build_up": 15,
+    "create": 132,
+    "finish": 65,
+    "transition": 33,
+    "quick_break": 6,
+    "tot_p30": 3.83,
+    "buscadas_p30": 1.02,
+    "recibidas_p30": 0.74,
+    "peligrosas_p30": 1.29,
+    "alta_vel_pct": 27.8,
+    "st": {
+      "espalda": {
+        "tot": 8,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 7,
+        "pelig_recib": 1,
+        "dist_media": 19.85,
+        "p30": 0.11
+      },
+      "viene_corto": {
+        "tot": 38,
+        "buscadas": 12,
+        "recibidas": 11,
+        "peligrosas": 1,
+        "pelig_recib": 0,
+        "dist_media": 9.5,
+        "p30": 0.52
+      },
+      "receptor_centro": {
+        "tot": 28,
+        "buscadas": 9,
+        "recibidas": 2,
+        "peligrosas": 28,
+        "pelig_recib": 2,
+        "dist_media": 20.91,
+        "p30": 0.38
+      },
+      "caida_espacio": {
+        "tot": 9,
+        "buscadas": 4,
+        "recibidas": 4,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 9.85,
+        "p30": 0.12
+      },
+      "medio_espacio": {
+        "tot": 16,
+        "buscadas": 5,
+        "recibidas": 4,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 14.05,
+        "p30": 0.22
+      },
+      "tirar_ancho": {
+        "tot": 11,
+        "buscadas": 4,
+        "recibidas": 3,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 19.74,
+        "p30": 0.15
+      },
+      "adelanto": {
+        "tot": 96,
+        "buscadas": 21,
+        "recibidas": 12,
+        "peligrosas": 33,
+        "pelig_recib": 3,
+        "dist_media": 15.36,
+        "p30": 1.31
+      },
+      "apoyo": {
+        "tot": 73,
+        "buscadas": 17,
+        "recibidas": 15,
+        "peligrosas": 26,
+        "pelig_recib": 5,
+        "dist_media": 12.21,
+        "p30": 0.99
+      },
+      "overlap": {
+        "tot": 2,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 22.16,
+        "p30": 0.03
+      },
+      "underlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      }
+    }
+  },
+  "P. Ferrer": {
+    "pos": "RW",
+    "matches": 22,
+    "minutes": 1794,
+    "tot": 280,
+    "buscadas": 78,
+    "recibidas": 31,
+    "peligrosas": 172,
+    "pelig_busc": 41,
+    "pelig_recib": 13,
+    "tiro": 38,
+    "gol": 7,
+    "area": 86,
+    "alta_vel": 80,
+    "build_up": 5,
+    "create": 81,
+    "finish": 109,
+    "transition": 36,
+    "quick_break": 12,
+    "tot_p30": 4.68,
+    "buscadas_p30": 1.3,
+    "recibidas_p30": 0.52,
+    "peligrosas_p30": 2.88,
+    "alta_vel_pct": 28.6,
+    "st": {
+      "espalda": {
+        "tot": 49,
+        "buscadas": 16,
+        "recibidas": 9,
+        "peligrosas": 34,
+        "pelig_recib": 5,
+        "dist_media": 14.62,
+        "p30": 0.82
+      },
+      "viene_corto": {
+        "tot": 24,
+        "buscadas": 6,
+        "recibidas": 5,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 10.47,
+        "p30": 0.4
+      },
+      "receptor_centro": {
+        "tot": 94,
+        "buscadas": 28,
+        "recibidas": 5,
+        "peligrosas": 93,
+        "pelig_recib": 5,
+        "dist_media": 17.32,
+        "p30": 1.57
+      },
+      "caida_espacio": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "medio_espacio": {
+        "tot": 12,
+        "buscadas": 5,
+        "recibidas": 3,
+        "peligrosas": 1,
+        "pelig_recib": 1,
+        "dist_media": 9.07,
+        "p30": 0.2
+      },
+      "tirar_ancho": {
+        "tot": 6,
+        "buscadas": 4,
+        "recibidas": 3,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 11.74,
+        "p30": 0.1
+      },
+      "adelanto": {
+        "tot": 71,
+        "buscadas": 15,
+        "recibidas": 5,
+        "peligrosas": 32,
+        "pelig_recib": 2,
+        "dist_media": 11.8,
+        "p30": 1.19
+      },
+      "apoyo": {
+        "tot": 24,
+        "buscadas": 4,
+        "recibidas": 1,
+        "peligrosas": 12,
+        "pelig_recib": 0,
+        "dist_media": 15.53,
+        "p30": 0.4
+      },
+      "overlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "underlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      }
+    }
+  },
+  "Eneko Undabarrena": {
+    "pos": "RDM",
+    "matches": 27,
+    "minutes": 2482,
+    "tot": 243,
+    "buscadas": 78,
+    "recibidas": 71,
+    "peligrosas": 8,
+    "pelig_busc": 1,
+    "pelig_recib": 0,
+    "tiro": 9,
+    "gol": 1,
+    "area": 3,
+    "alta_vel": 21,
+    "build_up": 50,
+    "create": 116,
+    "finish": 32,
+    "transition": 8,
+    "quick_break": 2,
+    "tot_p30": 2.94,
+    "buscadas_p30": 0.94,
+    "recibidas_p30": 0.86,
+    "peligrosas_p30": 0.1,
+    "alta_vel_pct": 8.6,
+    "st": {
+      "espalda": {
+        "tot": 1,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 1,
+        "pelig_recib": 0,
+        "dist_media": 21.42,
+        "p30": 0.01
+      },
+      "viene_corto": {
+        "tot": 58,
+        "buscadas": 19,
+        "recibidas": 16,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 10.41,
+        "p30": 0.7
+      },
+      "receptor_centro": {
+        "tot": 4,
+        "buscadas": 1,
+        "recibidas": 0,
+        "peligrosas": 3,
+        "pelig_recib": 0,
+        "dist_media": 15.39,
+        "p30": 0.05
+      },
+      "caida_espacio": {
+        "tot": 111,
+        "buscadas": 36,
+        "recibidas": 36,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 11.02,
+        "p30": 1.34
+      },
+      "medio_espacio": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "tirar_ancho": {
+        "tot": 5,
+        "buscadas": 3,
+        "recibidas": 2,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 12.67,
+        "p30": 0.06
+      },
+      "adelanto": {
+        "tot": 13,
+        "buscadas": 3,
+        "recibidas": 2,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 13.72,
+        "p30": 0.16
+      },
+      "apoyo": {
+        "tot": 49,
+        "buscadas": 15,
+        "recibidas": 14,
+        "peligrosas": 4,
+        "pelig_recib": 0,
+        "dist_media": 13.56,
+        "p30": 0.59
+      },
+      "overlap": {
+        "tot": 1,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 6.18,
+        "p30": 0.01
+      },
+      "underlap": {
+        "tot": 1,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 17.86,
+        "p30": 0.01
+      }
+    }
+  },
+  "Germán Novoa": {
+    "pos": "LCB",
+    "matches": 28,
+    "minutes": 2606,
+    "tot": 231,
+    "buscadas": 73,
+    "recibidas": 67,
+    "peligrosas": 30,
+    "pelig_busc": 4,
+    "pelig_recib": 2,
+    "tiro": 17,
+    "gol": 3,
+    "area": 18,
+    "alta_vel": 51,
+    "build_up": 39,
+    "create": 92,
+    "finish": 50,
+    "transition": 7,
+    "quick_break": 2,
+    "tot_p30": 2.66,
+    "buscadas_p30": 0.84,
+    "recibidas_p30": 0.77,
+    "peligrosas_p30": 0.35,
+    "alta_vel_pct": 22.1,
+    "st": {
+      "espalda": {
+        "tot": 7,
+        "buscadas": 1,
+        "recibidas": 0,
+        "peligrosas": 6,
+        "pelig_recib": 0,
+        "dist_media": 17.31,
+        "p30": 0.08
+      },
+      "viene_corto": {
+        "tot": 8,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 15.05,
+        "p30": 0.09
+      },
+      "receptor_centro": {
+        "tot": 7,
+        "buscadas": 1,
+        "recibidas": 0,
+        "peligrosas": 7,
+        "pelig_recib": 0,
+        "dist_media": 11.1,
+        "p30": 0.08
+      },
+      "caida_espacio": {
+        "tot": 105,
+        "buscadas": 41,
+        "recibidas": 41,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 10.93,
+        "p30": 1.21
+      },
+      "medio_espacio": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "tirar_ancho": {
+        "tot": 7,
+        "buscadas": 3,
+        "recibidas": 2,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 13.99,
+        "p30": 0.08
+      },
+      "adelanto": {
+        "tot": 45,
+        "buscadas": 14,
+        "recibidas": 13,
+        "peligrosas": 8,
+        "pelig_recib": 1,
+        "dist_media": 13.63,
+        "p30": 0.52
+      },
+      "apoyo": {
+        "tot": 41,
+        "buscadas": 9,
+        "recibidas": 8,
+        "peligrosas": 5,
+        "pelig_recib": 0,
+        "dist_media": 10.06,
+        "p30": 0.47
+      },
+      "overlap": {
+        "tot": 6,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 1,
+        "pelig_recib": 1,
+        "dist_media": 14.2,
+        "p30": 0.07
+      },
+      "underlap": {
+        "tot": 5,
+        "buscadas": 2,
+        "recibidas": 1,
+        "peligrosas": 3,
+        "pelig_recib": 0,
+        "dist_media": 21.02,
+        "p30": 0.06
+      }
+    }
+  },
+  "Diego Moreno": {
+    "pos": "RB",
+    "matches": 12,
+    "minutes": 1075,
+    "tot": 185,
+    "buscadas": 66,
+    "recibidas": 58,
+    "peligrosas": 28,
+    "pelig_busc": 10,
+    "pelig_recib": 7,
+    "tiro": 22,
+    "gol": 4,
+    "area": 11,
+    "alta_vel": 62,
+    "build_up": 6,
+    "create": 89,
+    "finish": 50,
+    "transition": 12,
+    "quick_break": 8,
+    "tot_p30": 5.16,
+    "buscadas_p30": 1.84,
+    "recibidas_p30": 1.62,
+    "peligrosas_p30": 0.78,
+    "alta_vel_pct": 33.5,
+    "st": {
+      "espalda": {
+        "tot": 2,
+        "buscadas": 1,
+        "recibidas": 0,
+        "peligrosas": 2,
+        "pelig_recib": 0,
+        "dist_media": 31.7,
+        "p30": 0.06
+      },
+      "viene_corto": {
+        "tot": 3,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 7.92,
+        "p30": 0.08
+      },
+      "receptor_centro": {
+        "tot": 11,
+        "buscadas": 3,
+        "recibidas": 1,
+        "peligrosas": 9,
+        "pelig_recib": 1,
+        "dist_media": 15.34,
+        "p30": 0.31
+      },
+      "caida_espacio": {
+        "tot": 14,
+        "buscadas": 6,
+        "recibidas": 6,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 9.8,
+        "p30": 0.39
+      },
+      "medio_espacio": {
+        "tot": 1,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 17.09,
+        "p30": 0.03
+      },
+      "tirar_ancho": {
+        "tot": 23,
+        "buscadas": 12,
+        "recibidas": 12,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 14.83,
+        "p30": 0.64
+      },
+      "adelanto": {
+        "tot": 62,
+        "buscadas": 23,
+        "recibidas": 21,
+        "peligrosas": 7,
+        "pelig_recib": 3,
+        "dist_media": 13.22,
+        "p30": 1.73
+      },
+      "apoyo": {
+        "tot": 56,
+        "buscadas": 15,
+        "recibidas": 13,
+        "peligrosas": 10,
+        "pelig_recib": 3,
+        "dist_media": 15.39,
+        "p30": 1.56
+      },
+      "overlap": {
+        "tot": 11,
+        "buscadas": 6,
+        "recibidas": 5,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 30.83,
+        "p30": 0.31
+      },
+      "underlap": {
+        "tot": 2,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 23.26,
+        "p30": 0.06
+      }
+    }
+  },
+  "Eneko Aguilar": {
+    "pos": "LDM",
+    "matches": 13,
+    "minutes": 1105,
+    "tot": 177,
+    "buscadas": 53,
+    "recibidas": 40,
+    "peligrosas": 74,
+    "pelig_busc": 20,
+    "pelig_recib": 12,
+    "tiro": 23,
+    "gol": 4,
+    "area": 25,
+    "alta_vel": 35,
+    "build_up": 13,
+    "create": 65,
+    "finish": 59,
+    "transition": 15,
+    "quick_break": 1,
+    "tot_p30": 4.81,
+    "buscadas_p30": 1.44,
+    "recibidas_p30": 1.09,
+    "peligrosas_p30": 2.01,
+    "alta_vel_pct": 19.8,
+    "st": {
+      "espalda": {
+        "tot": 9,
+        "buscadas": 5,
+        "recibidas": 3,
+        "peligrosas": 6,
+        "pelig_recib": 2,
+        "dist_media": 13.04,
+        "p30": 0.24
+      },
+      "viene_corto": {
+        "tot": 20,
+        "buscadas": 5,
+        "recibidas": 5,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 9.87,
+        "p30": 0.54
+      },
+      "receptor_centro": {
+        "tot": 28,
+        "buscadas": 11,
+        "recibidas": 5,
+        "peligrosas": 27,
+        "pelig_recib": 5,
+        "dist_media": 19.55,
+        "p30": 0.76
+      },
+      "caida_espacio": {
+        "tot": 12,
+        "buscadas": 4,
+        "recibidas": 4,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 12.7,
+        "p30": 0.33
+      },
+      "medio_espacio": {
+        "tot": 3,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 17.34,
+        "p30": 0.08
+      },
+      "tirar_ancho": {
+        "tot": 8,
+        "buscadas": 6,
+        "recibidas": 5,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 14.65,
+        "p30": 0.22
+      },
+      "adelanto": {
+        "tot": 60,
+        "buscadas": 12,
+        "recibidas": 8,
+        "peligrosas": 29,
+        "pelig_recib": 3,
+        "dist_media": 14.41,
+        "p30": 1.63
+      },
+      "apoyo": {
+        "tot": 33,
+        "buscadas": 9,
+        "recibidas": 9,
+        "peligrosas": 9,
+        "pelig_recib": 2,
+        "dist_media": 13.69,
+        "p30": 0.9
+      },
+      "overlap": {
+        "tot": 2,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 1,
+        "pelig_recib": 0,
+        "dist_media": 41.09,
+        "p30": 0.05
+      },
+      "underlap": {
+        "tot": 2,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 2,
+        "pelig_recib": 0,
+        "dist_media": 15.06,
+        "p30": 0.05
+      }
+    }
+  },
+  "Carlos Calderón": {
+    "pos": "RW",
+    "matches": 14,
+    "minutes": 1261,
+    "tot": 176,
+    "buscadas": 68,
+    "recibidas": 48,
+    "peligrosas": 60,
+    "pelig_busc": 23,
+    "pelig_recib": 11,
+    "tiro": 24,
+    "gol": 4,
+    "area": 24,
+    "alta_vel": 67,
+    "build_up": 6,
+    "create": 47,
+    "finish": 58,
+    "transition": 23,
+    "quick_break": 12,
+    "tot_p30": 4.19,
+    "buscadas_p30": 1.62,
+    "recibidas_p30": 1.14,
+    "peligrosas_p30": 1.43,
+    "alta_vel_pct": 38.1,
+    "st": {
+      "espalda": {
+        "tot": 23,
+        "buscadas": 12,
+        "recibidas": 5,
+        "peligrosas": 18,
+        "pelig_recib": 4,
+        "dist_media": 18.28,
+        "p30": 0.55
+      },
+      "viene_corto": {
+        "tot": 2,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 5.05,
+        "p30": 0.05
+      },
+      "receptor_centro": {
+        "tot": 13,
+        "buscadas": 4,
+        "recibidas": 0,
+        "peligrosas": 13,
+        "pelig_recib": 0,
+        "dist_media": 26.6,
+        "p30": 0.31
+      },
+      "caida_espacio": {
+        "tot": 3,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 8.94,
+        "p30": 0.07
+      },
+      "medio_espacio": {
+        "tot": 5,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 2,
+        "pelig_recib": 0,
+        "dist_media": 7.95,
+        "p30": 0.12
+      },
+      "tirar_ancho": {
+        "tot": 18,
+        "buscadas": 10,
+        "recibidas": 10,
+        "peligrosas": 1,
+        "pelig_recib": 0,
+        "dist_media": 12.89,
+        "p30": 0.43
+      },
+      "adelanto": {
+        "tot": 66,
+        "buscadas": 23,
+        "recibidas": 18,
+        "peligrosas": 17,
+        "pelig_recib": 4,
+        "dist_media": 14.35,
+        "p30": 1.57
+      },
+      "apoyo": {
+        "tot": 28,
+        "buscadas": 7,
+        "recibidas": 6,
+        "peligrosas": 7,
+        "pelig_recib": 2,
+        "dist_media": 17.83,
+        "p30": 0.67
+      },
+      "overlap": {
+        "tot": 13,
+        "buscadas": 6,
+        "recibidas": 4,
+        "peligrosas": 1,
+        "pelig_recib": 1,
+        "dist_media": 18.06,
+        "p30": 0.31
+      },
+      "underlap": {
+        "tot": 5,
+        "buscadas": 2,
+        "recibidas": 1,
+        "peligrosas": 1,
+        "pelig_recib": 0,
+        "dist_media": 19.16,
+        "p30": 0.12
+      }
+    }
+  },
+  "Koke": {
+    "pos": "RB",
+    "matches": 13,
+    "minutes": 1101,
+    "tot": 150,
+    "buscadas": 39,
+    "recibidas": 27,
+    "peligrosas": 23,
+    "pelig_busc": 4,
+    "pelig_recib": 1,
+    "tiro": 17,
+    "gol": 2,
+    "area": 12,
+    "alta_vel": 44,
+    "build_up": 7,
+    "create": 49,
+    "finish": 54,
+    "transition": 7,
+    "quick_break": 7,
+    "tot_p30": 4.09,
+    "buscadas_p30": 1.06,
+    "recibidas_p30": 0.74,
+    "peligrosas_p30": 0.63,
+    "alta_vel_pct": 29.3,
+    "st": {
+      "espalda": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "viene_corto": {
+        "tot": 2,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 12.41,
+        "p30": 0.05
+      },
+      "receptor_centro": {
+        "tot": 5,
+        "buscadas": 1,
+        "recibidas": 0,
+        "peligrosas": 4,
+        "pelig_recib": 0,
+        "dist_media": 38.52,
+        "p30": 0.14
+      },
+      "caida_espacio": {
+        "tot": 20,
+        "buscadas": 5,
+        "recibidas": 4,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 10.08,
+        "p30": 0.54
+      },
+      "medio_espacio": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "tirar_ancho": {
+        "tot": 8,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 13.95,
+        "p30": 0.22
+      },
+      "adelanto": {
+        "tot": 25,
+        "buscadas": 8,
+        "recibidas": 3,
+        "peligrosas": 3,
+        "pelig_recib": 0,
+        "dist_media": 12.48,
+        "p30": 0.68
+      },
+      "apoyo": {
+        "tot": 53,
+        "buscadas": 13,
+        "recibidas": 12,
+        "peligrosas": 9,
+        "pelig_recib": 1,
+        "dist_media": 12.39,
+        "p30": 1.44
+      },
+      "overlap": {
+        "tot": 24,
+        "buscadas": 8,
+        "recibidas": 5,
+        "peligrosas": 5,
+        "pelig_recib": 0,
+        "dist_media": 23.37,
+        "p30": 0.65
+      },
+      "underlap": {
+        "tot": 13,
+        "buscadas": 2,
+        "recibidas": 1,
+        "peligrosas": 2,
+        "pelig_recib": 0,
+        "dist_media": 18.07,
+        "p30": 0.35
+      }
+    }
+  },
+  "Mario Jorrín": {
+    "pos": "LCB",
+    "matches": 14,
+    "minutes": 1225,
+    "tot": 131,
+    "buscadas": 47,
+    "recibidas": 41,
+    "peligrosas": 25,
+    "pelig_busc": 5,
+    "pelig_recib": 5,
+    "tiro": 7,
+    "gol": 1,
+    "area": 4,
+    "alta_vel": 43,
+    "build_up": 13,
+    "create": 51,
+    "finish": 45,
+    "transition": 6,
+    "quick_break": 1,
+    "tot_p30": 3.21,
+    "buscadas_p30": 1.15,
+    "recibidas_p30": 1.0,
+    "peligrosas_p30": 0.61,
+    "alta_vel_pct": 32.8,
+    "st": {
+      "espalda": {
+        "tot": 5,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 5,
+        "pelig_recib": 1,
+        "dist_media": 15.21,
+        "p30": 0.12
+      },
+      "viene_corto": {
+        "tot": 2,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 17.52,
+        "p30": 0.05
+      },
+      "receptor_centro": {
+        "tot": 3,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 2,
+        "pelig_recib": 0,
+        "dist_media": 16.68,
+        "p30": 0.07
+      },
+      "caida_espacio": {
+        "tot": 29,
+        "buscadas": 11,
+        "recibidas": 10,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 9.43,
+        "p30": 0.71
+      },
+      "medio_espacio": {
+        "tot": 1,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 15.56,
+        "p30": 0.02
+      },
+      "tirar_ancho": {
+        "tot": 11,
+        "buscadas": 8,
+        "recibidas": 8,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 12.14,
+        "p30": 0.27
+      },
+      "adelanto": {
+        "tot": 29,
+        "buscadas": 12,
+        "recibidas": 10,
+        "peligrosas": 7,
+        "pelig_recib": 3,
+        "dist_media": 16.96,
+        "p30": 0.71
+      },
+      "apoyo": {
+        "tot": 38,
+        "buscadas": 8,
+        "recibidas": 6,
+        "peligrosas": 9,
+        "pelig_recib": 0,
+        "dist_media": 13.8,
+        "p30": 0.93
+      },
+      "overlap": {
+        "tot": 4,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 16.23,
+        "p30": 0.1
+      },
+      "underlap": {
+        "tot": 9,
+        "buscadas": 6,
+        "recibidas": 5,
+        "peligrosas": 2,
+        "pelig_recib": 1,
+        "dist_media": 20.45,
+        "p30": 0.22
+      }
+    }
+  },
+  "Borislav Ivanov Stankov": {
+    "pos": "CF",
+    "matches": 10,
+    "minutes": 799,
+    "tot": 127,
+    "buscadas": 33,
+    "recibidas": 8,
+    "peligrosas": 84,
+    "pelig_busc": 19,
+    "pelig_recib": 4,
+    "tiro": 21,
+    "gol": 2,
+    "area": 50,
+    "alta_vel": 40,
+    "build_up": 3,
+    "create": 29,
+    "finish": 48,
+    "transition": 21,
+    "quick_break": 5,
+    "tot_p30": 4.77,
+    "buscadas_p30": 1.24,
+    "recibidas_p30": 0.3,
+    "peligrosas_p30": 3.15,
+    "alta_vel_pct": 31.5,
+    "st": {
+      "espalda": {
+        "tot": 15,
+        "buscadas": 1,
+        "recibidas": 0,
+        "peligrosas": 13,
+        "pelig_recib": 0,
+        "dist_media": 17.19,
+        "p30": 0.56
+      },
+      "viene_corto": {
+        "tot": 10,
+        "buscadas": 6,
+        "recibidas": 3,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 8.21,
+        "p30": 0.38
+      },
+      "receptor_centro": {
+        "tot": 50,
+        "buscadas": 17,
+        "recibidas": 3,
+        "peligrosas": 49,
+        "pelig_recib": 3,
+        "dist_media": 23.26,
+        "p30": 1.88
+      },
+      "caida_espacio": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "medio_espacio": {
+        "tot": 4,
+        "buscadas": 1,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 9.84,
+        "p30": 0.15
+      },
+      "tirar_ancho": {
+        "tot": 3,
+        "buscadas": 1,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 10.66,
+        "p30": 0.11
+      },
+      "adelanto": {
+        "tot": 38,
+        "buscadas": 6,
+        "recibidas": 2,
+        "peligrosas": 19,
+        "pelig_recib": 1,
+        "dist_media": 14.58,
+        "p30": 1.43
+      },
+      "apoyo": {
+        "tot": 7,
+        "buscadas": 1,
+        "recibidas": 0,
+        "peligrosas": 3,
+        "pelig_recib": 0,
+        "dist_media": 12.85,
+        "p30": 0.26
+      },
+      "overlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "underlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      }
+    }
+  },
+  "Vicente Esquerdo": {
+    "pos": "LM",
+    "matches": 14,
+    "minutes": 1136,
+    "tot": 123,
+    "buscadas": 49,
+    "recibidas": 48,
+    "peligrosas": 8,
+    "pelig_busc": 0,
+    "pelig_recib": 0,
+    "tiro": 14,
+    "gol": 0,
+    "area": 3,
+    "alta_vel": 10,
+    "build_up": 15,
+    "create": 64,
+    "finish": 24,
+    "transition": 6,
+    "quick_break": 2,
+    "tot_p30": 3.25,
+    "buscadas_p30": 1.29,
+    "recibidas_p30": 1.27,
+    "peligrosas_p30": 0.21,
+    "alta_vel_pct": 8.1,
+    "st": {
+      "espalda": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "viene_corto": {
+        "tot": 58,
+        "buscadas": 26,
+        "recibidas": 26,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 9.68,
+        "p30": 1.53
+      },
+      "receptor_centro": {
+        "tot": 1,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 1,
+        "pelig_recib": 0,
+        "dist_media": 21.12,
+        "p30": 0.03
+      },
+      "caida_espacio": {
+        "tot": 7,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 17.38,
+        "p30": 0.18
+      },
+      "medio_espacio": {
+        "tot": 3,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 10.4,
+        "p30": 0.08
+      },
+      "tirar_ancho": {
+        "tot": 9,
+        "buscadas": 8,
+        "recibidas": 7,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 12.26,
+        "p30": 0.24
+      },
+      "adelanto": {
+        "tot": 18,
+        "buscadas": 5,
+        "recibidas": 5,
+        "peligrosas": 2,
+        "pelig_recib": 0,
+        "dist_media": 9.61,
+        "p30": 0.48
+      },
+      "apoyo": {
+        "tot": 24,
+        "buscadas": 7,
+        "recibidas": 7,
+        "peligrosas": 5,
+        "pelig_recib": 0,
+        "dist_media": 14.53,
+        "p30": 0.63
+      },
+      "overlap": {
+        "tot": 2,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 10.86,
+        "p30": 0.05
+      },
+      "underlap": {
+        "tot": 1,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 39.96,
+        "p30": 0.03
+      }
+    }
+  },
+  "Fede San Emeterio": {
+    "pos": "AM",
+    "matches": 16,
+    "minutes": 1334,
+    "tot": 122,
+    "buscadas": 37,
+    "recibidas": 34,
+    "peligrosas": 10,
+    "pelig_busc": 2,
+    "pelig_recib": 1,
+    "tiro": 8,
+    "gol": 1,
+    "area": 5,
+    "alta_vel": 6,
+    "build_up": 15,
+    "create": 60,
+    "finish": 22,
+    "transition": 9,
+    "quick_break": 1,
+    "tot_p30": 2.74,
+    "buscadas_p30": 0.83,
+    "recibidas_p30": 0.76,
+    "peligrosas_p30": 0.22,
+    "alta_vel_pct": 4.9,
+    "st": {
+      "espalda": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "viene_corto": {
+        "tot": 63,
+        "buscadas": 16,
+        "recibidas": 14,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 9.54,
+        "p30": 1.42
+      },
+      "receptor_centro": {
+        "tot": 3,
+        "buscadas": 2,
+        "recibidas": 1,
+        "peligrosas": 3,
+        "pelig_recib": 1,
+        "dist_media": 7.2,
+        "p30": 0.07
+      },
+      "caida_espacio": {
+        "tot": 15,
+        "buscadas": 8,
+        "recibidas": 8,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 12.35,
+        "p30": 0.34
+      },
+      "medio_espacio": {
+        "tot": 3,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 11.46,
+        "p30": 0.07
+      },
+      "tirar_ancho": {
+        "tot": 2,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 12.48,
+        "p30": 0.04
+      },
+      "adelanto": {
+        "tot": 12,
+        "buscadas": 3,
+        "recibidas": 3,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 12.25,
+        "p30": 0.27
+      },
+      "apoyo": {
+        "tot": 22,
+        "buscadas": 6,
+        "recibidas": 6,
+        "peligrosas": 6,
+        "pelig_recib": 0,
+        "dist_media": 9.62,
+        "p30": 0.49
+      },
+      "overlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "underlap": {
+        "tot": 2,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 1,
+        "pelig_recib": 0,
+        "dist_media": 8.71,
+        "p30": 0.04
+      }
+    }
+  },
+  "Álex Mula": {
+    "pos": "CF",
+    "matches": 10,
+    "minutes": 907,
+    "tot": 116,
+    "buscadas": 38,
+    "recibidas": 27,
+    "peligrosas": 36,
+    "pelig_busc": 9,
+    "pelig_recib": 4,
+    "tiro": 20,
+    "gol": 3,
+    "area": 17,
+    "alta_vel": 34,
+    "build_up": 6,
+    "create": 46,
+    "finish": 39,
+    "transition": 8,
+    "quick_break": 1,
+    "tot_p30": 3.84,
+    "buscadas_p30": 1.26,
+    "recibidas_p30": 0.89,
+    "peligrosas_p30": 1.19,
+    "alta_vel_pct": 29.3,
+    "st": {
+      "espalda": {
+        "tot": 8,
+        "buscadas": 4,
+        "recibidas": 1,
+        "peligrosas": 5,
+        "pelig_recib": 0,
+        "dist_media": 25.55,
+        "p30": 0.26
+      },
+      "viene_corto": {
+        "tot": 13,
+        "buscadas": 8,
+        "recibidas": 8,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 9.4,
+        "p30": 0.43
+      },
+      "receptor_centro": {
+        "tot": 13,
+        "buscadas": 2,
+        "recibidas": 0,
+        "peligrosas": 13,
+        "pelig_recib": 0,
+        "dist_media": 16.28,
+        "p30": 0.43
+      },
+      "caida_espacio": {
+        "tot": 3,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 5.12,
+        "p30": 0.1
+      },
+      "medio_espacio": {
+        "tot": 4,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 15.66,
+        "p30": 0.13
+      },
+      "tirar_ancho": {
+        "tot": 10,
+        "buscadas": 4,
+        "recibidas": 4,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 15.46,
+        "p30": 0.33
+      },
+      "adelanto": {
+        "tot": 37,
+        "buscadas": 8,
+        "recibidas": 4,
+        "peligrosas": 10,
+        "pelig_recib": 1,
+        "dist_media": 15.08,
+        "p30": 1.22
+      },
+      "apoyo": {
+        "tot": 22,
+        "buscadas": 8,
+        "recibidas": 7,
+        "peligrosas": 4,
+        "pelig_recib": 2,
+        "dist_media": 9.72,
+        "p30": 0.73
+      },
+      "overlap": {
+        "tot": 3,
+        "buscadas": 1,
+        "recibidas": 0,
+        "peligrosas": 2,
+        "pelig_recib": 0,
+        "dist_media": 9.82,
+        "p30": 0.1
+      },
+      "underlap": {
+        "tot": 3,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 2,
+        "pelig_recib": 1,
+        "dist_media": 17.28,
+        "p30": 0.1
+      }
+    }
+  },
+  "B. Moltenis": {
+    "pos": "RCB",
+    "matches": 14,
+    "minutes": 1318,
+    "tot": 84,
+    "buscadas": 33,
+    "recibidas": 27,
+    "peligrosas": 15,
+    "pelig_busc": 4,
+    "pelig_recib": 1,
+    "tiro": 3,
+    "gol": 0,
+    "area": 9,
+    "alta_vel": 15,
+    "build_up": 20,
+    "create": 39,
+    "finish": 11,
+    "transition": 3,
+    "quick_break": 0,
+    "tot_p30": 1.91,
+    "buscadas_p30": 0.75,
+    "recibidas_p30": 0.61,
+    "peligrosas_p30": 0.34,
+    "alta_vel_pct": 17.9,
+    "st": {
+      "espalda": {
+        "tot": 3,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 3,
+        "pelig_recib": 1,
+        "dist_media": 23.24,
+        "p30": 0.07
+      },
+      "viene_corto": {
+        "tot": 2,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 9.14,
+        "p30": 0.05
+      },
+      "receptor_centro": {
+        "tot": 9,
+        "buscadas": 3,
+        "recibidas": 0,
+        "peligrosas": 9,
+        "pelig_recib": 0,
+        "dist_media": 12.98,
+        "p30": 0.2
+      },
+      "caida_espacio": {
+        "tot": 49,
+        "buscadas": 22,
+        "recibidas": 19,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 10.41,
+        "p30": 1.12
+      },
+      "medio_espacio": {
+        "tot": 1,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 27.97,
+        "p30": 0.02
+      },
+      "tirar_ancho": {
+        "tot": 1,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 7.03,
+        "p30": 0.02
+      },
+      "adelanto": {
+        "tot": 9,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 1,
+        "pelig_recib": 0,
+        "dist_media": 16.54,
+        "p30": 0.2
+      },
+      "apoyo": {
+        "tot": 10,
+        "buscadas": 5,
+        "recibidas": 5,
+        "peligrosas": 2,
+        "pelig_recib": 0,
+        "dist_media": 13.76,
+        "p30": 0.23
+      },
+      "overlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "underlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      }
+    }
+  },
+  "David Andújar": {
+    "pos": "LCB",
+    "matches": 15,
+    "minutes": 1289,
+    "tot": 67,
+    "buscadas": 28,
+    "recibidas": 24,
+    "peligrosas": 11,
+    "pelig_busc": 3,
+    "pelig_recib": 3,
+    "tiro": 5,
+    "gol": 0,
+    "area": 11,
+    "alta_vel": 6,
+    "build_up": 8,
+    "create": 32,
+    "finish": 12,
+    "transition": 1,
+    "quick_break": 2,
+    "tot_p30": 1.56,
+    "buscadas_p30": 0.65,
+    "recibidas_p30": 0.56,
+    "peligrosas_p30": 0.26,
+    "alta_vel_pct": 9.0,
+    "st": {
+      "espalda": {
+        "tot": 5,
+        "buscadas": 3,
+        "recibidas": 2,
+        "peligrosas": 2,
+        "pelig_recib": 1,
+        "dist_media": 10.82,
+        "p30": 0.12
+      },
+      "viene_corto": {
+        "tot": 6,
+        "buscadas": 3,
+        "recibidas": 3,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 8.28,
+        "p30": 0.14
+      },
+      "receptor_centro": {
+        "tot": 9,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 9,
+        "pelig_recib": 2,
+        "dist_media": 12.19,
+        "p30": 0.21
+      },
+      "caida_espacio": {
+        "tot": 32,
+        "buscadas": 13,
+        "recibidas": 12,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 7.36,
+        "p30": 0.74
+      },
+      "medio_espacio": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "tirar_ancho": {
+        "tot": 2,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 11.62,
+        "p30": 0.05
+      },
+      "adelanto": {
+        "tot": 8,
+        "buscadas": 3,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 10.16,
+        "p30": 0.19
+      },
+      "apoyo": {
+        "tot": 5,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 14.27,
+        "p30": 0.12
+      },
+      "overlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "underlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      }
+    }
+  },
+  "Sergio Benito": {
+    "pos": "RW",
+    "matches": 8,
+    "minutes": 726,
+    "tot": 61,
+    "buscadas": 26,
+    "recibidas": 17,
+    "peligrosas": 31,
+    "pelig_busc": 13,
+    "pelig_recib": 8,
+    "tiro": 9,
+    "gol": 1,
+    "area": 12,
+    "alta_vel": 10,
+    "build_up": 0,
+    "create": 15,
+    "finish": 28,
+    "transition": 8,
+    "quick_break": 0,
+    "tot_p30": 2.52,
+    "buscadas_p30": 1.07,
+    "recibidas_p30": 0.7,
+    "peligrosas_p30": 1.28,
+    "alta_vel_pct": 16.4,
+    "st": {
+      "espalda": {
+        "tot": 15,
+        "buscadas": 9,
+        "recibidas": 7,
+        "peligrosas": 10,
+        "pelig_recib": 4,
+        "dist_media": 14.13,
+        "p30": 0.62
+      },
+      "viene_corto": {
+        "tot": 3,
+        "buscadas": 3,
+        "recibidas": 3,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 7.03,
+        "p30": 0.12
+      },
+      "receptor_centro": {
+        "tot": 13,
+        "buscadas": 4,
+        "recibidas": 2,
+        "peligrosas": 13,
+        "pelig_recib": 2,
+        "dist_media": 15.41,
+        "p30": 0.54
+      },
+      "caida_espacio": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "medio_espacio": {
+        "tot": 1,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 1,
+        "pelig_recib": 1,
+        "dist_media": 4.9,
+        "p30": 0.04
+      },
+      "tirar_ancho": {
+        "tot": 6,
+        "buscadas": 3,
+        "recibidas": 2,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 16.79,
+        "p30": 0.25
+      },
+      "adelanto": {
+        "tot": 17,
+        "buscadas": 6,
+        "recibidas": 2,
+        "peligrosas": 6,
+        "pelig_recib": 1,
+        "dist_media": 11.08,
+        "p30": 0.7
+      },
+      "apoyo": {
+        "tot": 6,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 1,
+        "pelig_recib": 0,
+        "dist_media": 9.77,
+        "p30": 0.25
+      },
+      "overlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "underlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      }
+    }
+  },
+  "Vasco Sousa": {
+    "pos": "LB",
+    "matches": 7,
+    "minutes": 588,
+    "tot": 45,
+    "buscadas": 14,
+    "recibidas": 9,
+    "peligrosas": 12,
+    "pelig_busc": 1,
+    "pelig_recib": 0,
+    "tiro": 4,
+    "gol": 0,
+    "area": 4,
+    "alta_vel": 9,
+    "build_up": 1,
+    "create": 22,
+    "finish": 14,
+    "transition": 2,
+    "quick_break": 0,
+    "tot_p30": 2.29,
+    "buscadas_p30": 0.71,
+    "recibidas_p30": 0.46,
+    "peligrosas_p30": 0.61,
+    "alta_vel_pct": 20.0,
+    "st": {
+      "espalda": {
+        "tot": 3,
+        "buscadas": 1,
+        "recibidas": 0,
+        "peligrosas": 2,
+        "pelig_recib": 0,
+        "dist_media": 8.06,
+        "p30": 0.15
+      },
+      "viene_corto": {
+        "tot": 2,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 1,
+        "pelig_recib": 0,
+        "dist_media": 8.92,
+        "p30": 0.1
+      },
+      "receptor_centro": {
+        "tot": 2,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 2,
+        "pelig_recib": 0,
+        "dist_media": 33.7,
+        "p30": 0.1
+      },
+      "caida_espacio": {
+        "tot": 4,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 9.57,
+        "p30": 0.2
+      },
+      "medio_espacio": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "tirar_ancho": {
+        "tot": 3,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 10.67,
+        "p30": 0.15
+      },
+      "adelanto": {
+        "tot": 17,
+        "buscadas": 7,
+        "recibidas": 4,
+        "peligrosas": 4,
+        "pelig_recib": 0,
+        "dist_media": 10.8,
+        "p30": 0.87
+      },
+      "apoyo": {
+        "tot": 12,
+        "buscadas": 4,
+        "recibidas": 3,
+        "peligrosas": 1,
+        "pelig_recib": 0,
+        "dist_media": 12.11,
+        "p30": 0.61
+      },
+      "overlap": {
+        "tot": 2,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 2,
+        "pelig_recib": 0,
+        "dist_media": 21.05,
+        "p30": 0.1
+      },
+      "underlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      }
+    }
+  },
+  "S. Petkov": {
+    "pos": "CF",
+    "matches": 3,
+    "minutes": 285,
+    "tot": 19,
+    "buscadas": 7,
+    "recibidas": 4,
+    "peligrosas": 13,
+    "pelig_busc": 3,
+    "pelig_recib": 1,
+    "tiro": 3,
+    "gol": 0,
+    "area": 6,
+    "alta_vel": 5,
+    "build_up": 0,
+    "create": 7,
+    "finish": 8,
+    "transition": 2,
+    "quick_break": 0,
+    "tot_p30": 2.0,
+    "buscadas_p30": 0.74,
+    "recibidas_p30": 0.42,
+    "peligrosas_p30": 1.37,
+    "alta_vel_pct": 26.3,
+    "st": {
+      "espalda": {
+        "tot": 2,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 2,
+        "pelig_recib": 0,
+        "dist_media": 19.69,
+        "p30": 0.21
+      },
+      "viene_corto": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "receptor_centro": {
+        "tot": 5,
+        "buscadas": 1,
+        "recibidas": 0,
+        "peligrosas": 5,
+        "pelig_recib": 0,
+        "dist_media": 17.05,
+        "p30": 0.53
+      },
+      "caida_espacio": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "medio_espacio": {
+        "tot": 1,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 4.59,
+        "p30": 0.11
+      },
+      "tirar_ancho": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "adelanto": {
+        "tot": 8,
+        "buscadas": 4,
+        "recibidas": 3,
+        "peligrosas": 5,
+        "pelig_recib": 1,
+        "dist_media": 18.71,
+        "p30": 0.84
+      },
+      "apoyo": {
+        "tot": 3,
+        "buscadas": 1,
+        "recibidas": 0,
+        "peligrosas": 1,
+        "pelig_recib": 0,
+        "dist_media": 12.18,
+        "p30": 0.32
+      },
+      "overlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "underlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      }
+    }
+  },
+  "Erik Morán": {
+    "pos": "CF",
+    "matches": 5,
+    "minutes": 394,
+    "tot": 15,
+    "buscadas": 5,
+    "recibidas": 4,
+    "peligrosas": 1,
+    "pelig_busc": 1,
+    "pelig_recib": 0,
+    "tiro": 1,
+    "gol": 0,
+    "area": 1,
+    "alta_vel": 1,
+    "build_up": 1,
+    "create": 11,
+    "finish": 1,
+    "transition": 0,
+    "quick_break": 0,
+    "tot_p30": 1.14,
+    "buscadas_p30": 0.38,
+    "recibidas_p30": 0.3,
+    "peligrosas_p30": 0.08,
+    "alta_vel_pct": 6.7,
+    "st": {
+      "espalda": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "viene_corto": {
+        "tot": 7,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 10.22,
+        "p30": 0.53
+      },
+      "receptor_centro": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "caida_espacio": {
+        "tot": 2,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 6.67,
+        "p30": 0.15
+      },
+      "medio_espacio": {
+        "tot": 1,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 8.16,
+        "p30": 0.08
+      },
+      "tirar_ancho": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "adelanto": {
+        "tot": 2,
+        "buscadas": 2,
+        "recibidas": 1,
+        "peligrosas": 1,
+        "pelig_recib": 0,
+        "dist_media": 10.41,
+        "p30": 0.15
+      },
+      "apoyo": {
+        "tot": 3,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 7.47,
+        "p30": 0.23
+      },
+      "overlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "underlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      }
+    }
+  },
+  "V. Kisil": {
+    "pos": "RM",
+    "matches": 3,
+    "minutes": 212,
+    "tot": 15,
+    "buscadas": 3,
+    "recibidas": 3,
+    "peligrosas": 1,
+    "pelig_busc": 0,
+    "pelig_recib": 0,
+    "tiro": 0,
+    "gol": 0,
+    "area": 1,
+    "alta_vel": 0,
+    "build_up": 5,
+    "create": 6,
+    "finish": 1,
+    "transition": 1,
+    "quick_break": 0,
+    "tot_p30": 2.13,
+    "buscadas_p30": 0.43,
+    "recibidas_p30": 0.43,
+    "peligrosas_p30": 0.14,
+    "alta_vel_pct": 0.0,
+    "st": {
+      "espalda": {
+        "tot": 1,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 1,
+        "pelig_recib": 0,
+        "dist_media": 9.11,
+        "p30": 0.14
+      },
+      "viene_corto": {
+        "tot": 10,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 7.36,
+        "p30": 1.42
+      },
+      "receptor_centro": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "caida_espacio": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "medio_espacio": {
+        "tot": 2,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 8.2,
+        "p30": 0.28
+      },
+      "tirar_ancho": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "adelanto": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "apoyo": {
+        "tot": 2,
+        "buscadas": 1,
+        "recibidas": 1,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 16.44,
+        "p30": 0.28
+      },
+      "overlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "underlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      }
+    }
+  },
+  "Andrés Prieto": {
+    "pos": "GK",
+    "matches": 6,
+    "minutes": 562,
+    "tot": 6,
+    "buscadas": 2,
+    "recibidas": 2,
+    "peligrosas": 0,
+    "pelig_busc": 0,
+    "pelig_recib": 0,
+    "tiro": 0,
+    "gol": 0,
+    "area": 0,
+    "alta_vel": 0,
+    "build_up": 3,
+    "create": 3,
+    "finish": 0,
+    "transition": 0,
+    "quick_break": 0,
+    "tot_p30": 0.32,
+    "buscadas_p30": 0.11,
+    "recibidas_p30": 0.11,
+    "peligrosas_p30": 0.0,
+    "alta_vel_pct": 0.0,
+    "st": {
+      "espalda": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "viene_corto": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "receptor_centro": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "caida_espacio": {
+        "tot": 5,
+        "buscadas": 2,
+        "recibidas": 2,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 5.86,
+        "p30": 0.27
+      },
+      "medio_espacio": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "tirar_ancho": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "adelanto": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "apoyo": {
+        "tot": 1,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 6.01,
+        "p30": 0.05
+      },
+      "overlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      },
+      "underlap": {
+        "tot": 0,
+        "buscadas": 0,
+        "recibidas": 0,
+        "peligrosas": 0,
+        "pelig_recib": 0,
+        "dist_media": 0,
+        "p30": 0.0
+      }
+    }
+  }
+}

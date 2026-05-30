@@ -8025,44 +8025,70 @@
   function _runGrid(season) {
     if(!season||Object.keys(season).length===0) return '';
 
-    // True attackers: CF / LW / RW / LM / RM / AM — exclude wingbacks (LWB/RWB)
-    function isAtk(pos){
+    // Position helpers
+    function posGroup(pos){
       const p=(pos||'').toUpperCase();
-      if(p.includes('LWB')||p.includes('RWB')) return false;
-      return ['CF','LW','RW','LM','RM','AM','CAM','SS','FW','EXT'].some(t=>p.includes(t));
+      if(p.includes('LWB')||p.includes('RWB')) return 'LAT';
+      if(['CF','SS','FW','DC','ST'].some(t=>p.includes(t))) return 'DEL';
+      if(['LW','RW','LM','RM','AM','CAM','EXT'].some(t=>p.includes(t))) return 'EXT';
+      if(['CM','MF','DM','CDM','MC'].some(t=>p.includes(t))) return 'MC';
+      return 'OTR';
     }
-    function posLabel(pos){
-      const p=(pos||'').toUpperCase();
-      if(['CF','SS','FW'].some(t=>p.includes(t))) return 'DEL';
-      return 'EXT';
-    }
+    const POS_ORDER = {DEL:0, EXT:1, MC:2, LAT:3, OTR:4};
 
-    // Filter: ≥5 matches, attacking positions, order DEL first then EXT
+    // Filter: ≥5 matches, order by position group then by tot
     let players = Object.entries(season)
-      .filter(([,d]) => d.matches >= 5 && isAtk(d.pos))
+      .filter(([,d]) => d.matches >= 5 && d.tot >= 30)
       .sort((a,b) => {
-        const pa = posLabel(a[1].pos)==='DEL'?0:1;
-        const pb = posLabel(b[1].pos)==='DEL'?0:1;
-        if(pa!==pb) return pa-pb;
+        const ga=POS_ORDER[posGroup(a[1].pos)]??5, gb=POS_ORDER[posGroup(b[1].pos)]??5;
+        if(ga!==gb) return ga-gb;
         return b[1].tot - a[1].tot;
       })
-      .slice(0,8);
+      .slice(0, 9);
 
     if(players.length < 2) return '';
     const N = players.length;
     const isLiga = runGridMode === 'liga';
 
-    // Metrics — ligaKey maps to _LIGA_RUNS entry key
+    // ── Metric definitions ────────────────────────────────────────────────────
+    const st = sk => d => (d.st?.[sk]?.tot || 0);
     const METRICS = [
-      {type:'group', label:'Perfil de carreras (por partido)'},
-      {type:'metric', label:'Carreras a la espalda\nde la defensa',   fn: d=>d.matches?d.espalda/d.matches:0,         ligaKey:'espalda'},
-      {type:'metric', label:'Carreras delante\nde línea de balón',    fn: d=>d.matches?d.adelanto/d.matches:0,         ligaKey:'adelanto'},
-      {type:'metric', label:'Carreras para rematar centro',           fn: d=>d.matches?d.receptor_centro/d.matches:0,  ligaKey:'receptor'},
-      {type:'metric', label:'Carreras para enlazar el juego',         fn: d=>d.matches?d.enlace/d.matches:0,           ligaKey:'enlace'},
-      {type:'group', label:'Características de las carreras'},
-      {type:'metric', label:'Porcentaje de carreras\na alta velocidad', fn: d=>d.tot?d.high_speed/d.tot*100:0},
-      {type:'metric', label:'Distancia media\nrecorrida por carrera',  fn: d=>d.dist_mean||0},
-      {type:'metric', label:'Amenaza media por carrera',               fn: d=>d.xthreat_mean!=null?d.xthreat_mean*1000:0},
+      {type:'group', label:'Volumen (por 30 min)'},
+      {type:'metric', label:'Total carreras\np30',         fn: d => d.tot_p30||0,                              fmt: v=>`${v.toFixed(1)}`},
+      {type:'metric', label:'Buscadas\n(targeted) p30',    fn: d => d.buscadas_p30||0,                         fmt: v=>`${v.toFixed(1)}`},
+      {type:'metric', label:'Recibidas\np30',              fn: d => d.recibidas_p30||0,                        fmt: v=>`${v.toFixed(1)}`},
+      {type:'metric', label:'Peligrosas\np30',             fn: d => d.peligrosas_p30||0,                       fmt: v=>`${v.toFixed(1)}`},
+
+      {type:'group', label:'Eficacia'},
+      {type:'metric', label:'% Recibidas\n(sobre buscadas)', fn: d => d.buscadas?d.recibidas/d.buscadas*100:0, fmt: v=>`${v.toFixed(0)}%`},
+      {type:'metric', label:'% Peligrosas\n(sobre total)',   fn: d => d.tot?d.peligrosas/d.tot*100:0,          fmt: v=>`${v.toFixed(0)}%`},
+      {type:'metric', label:'% Alta velocidad',              fn: d => d.alta_vel_pct||0,                       fmt: v=>`${v.toFixed(0)}%`},
+      {type:'metric', label:'→ Tiro / partido',              fn: d => d.matches?d.tiro/d.matches:0,            fmt: v=>`${v.toFixed(2)}`},
+      {type:'metric', label:'⚽ Gol / 10 partidos',          fn: d => d.matches?d.gol/d.matches*10:0,          fmt: v=>`${v.toFixed(1)}`, ligaKey:'espalda'}, // placeholder
+
+      {type:'group', label:'Perfil por tipo (p30 min)', color:'#58a6ff'},
+      {type:'metric', label:'🏃 A la espalda',               fn: d => d.st?.espalda?.p30||0,          fmt: v=>`${v.toFixed(2)}`, ligaKey:'espalda', stCol:'#f85149'},
+      {type:'metric', label:'↗ Receptor centro',             fn: d => d.st?.receptor_centro?.p30||0,  fmt: v=>`${v.toFixed(2)}`, ligaKey:'receptor', stCol:'#f0883e'},
+      {type:'metric', label:'→ Delante del balón',           fn: d => d.st?.adelanto?.p30||0,         fmt: v=>`${v.toFixed(2)}`, ligaKey:'adelanto', stCol:'#3fb950'},
+      {type:'metric', label:'← Venir corto',                 fn: d => d.st?.viene_corto?.p30||0,      fmt: v=>`${v.toFixed(2)}`, stCol:'#a5d6ff'},
+      {type:'metric', label:'↔ Tirar ancho',                 fn: d => d.st?.tirar_ancho?.p30||0,      fmt: v=>`${v.toFixed(2)}`, stCol:'#d2a8ff'},
+      {type:'metric', label:'🤝 Apoyo',                      fn: d => d.st?.apoyo?.p30||0,            fmt: v=>`${v.toFixed(2)}`, stCol:'#58a6ff'},
+      {type:'metric', label:'↙ Caída espacio',               fn: d => d.st?.caida_espacio?.p30||0,    fmt: v=>`${v.toFixed(2)}`, stCol:'#ffa657'},
+      {type:'metric', label:'◇ Medio espacio',               fn: d => d.st?.medio_espacio?.p30||0,    fmt: v=>`${v.toFixed(2)}`, stCol:'#ffa657'},
+      {type:'metric', label:'↗ Overlap',                     fn: d => d.st?.overlap?.p30||0,          fmt: v=>`${v.toFixed(2)}`, stCol:'#39d353'},
+      {type:'metric', label:'↗ Underlap',                    fn: d => d.st?.underlap?.p30||0,         fmt: v=>`${v.toFixed(2)}`, stCol:'#1f6feb'},
+
+      {type:'group', label:'Recibidas por tipo (sobre buscadas %)'},
+      {type:'metric', label:'A la espalda\nrecibidas %',      fn: d => { const s=d.st?.espalda; return s?.buscadas?s.recibidas/s.buscadas*100:0; }, fmt: v=>`${v.toFixed(0)}%`, stCol:'#f85149'},
+      {type:'metric', label:'Receptor centro\nrecibidas %',   fn: d => { const s=d.st?.receptor_centro; return s?.buscadas?s.recibidas/s.buscadas*100:0; }, fmt: v=>`${v.toFixed(0)}%`, stCol:'#f0883e'},
+      {type:'metric', label:'Delante balón\nrecibidas %',     fn: d => { const s=d.st?.adelanto; return s?.buscadas?s.recibidas/s.buscadas*100:0; }, fmt: v=>`${v.toFixed(0)}%`, stCol:'#3fb950'},
+
+      {type:'group', label:'Fase de juego (% de carreras)'},
+      {type:'metric', label:'🟥 Finalización',               fn: d => d.tot?d.finish/d.tot*100:0,     fmt: v=>`${v.toFixed(0)}%`},
+      {type:'metric', label:'🟧 Creación',                   fn: d => d.tot?d.create/d.tot*100:0,     fmt: v=>`${v.toFixed(0)}%`},
+      {type:'metric', label:'🟦 Construcción',               fn: d => d.tot?d.build_up/d.tot*100:0,   fmt: v=>`${v.toFixed(0)}%`},
+      {type:'metric', label:'⚡ Transición',                 fn: d => d.tot?d.transition/d.tot*100:0, fmt: v=>`${v.toFixed(0)}%`},
+      {type:'metric', label:'💨 Contragolpe',                fn: d => d.tot?d.quick_break/d.tot*100:0,fmt: v=>`${v.toFixed(0)}%`},
     ];
 
     function rankColor(pct) {
@@ -8072,130 +8098,115 @@
       return '#f85149';
     }
 
-    // Pre-compute cells for each metric row
+    // ── Pre-compute cells ─────────────────────────────────────────────────────
     const metricRows = METRICS.map(m => {
       if(m.type==='group') return m;
 
-      // Always compute within-team ranking (used in equipo mode and as fallback)
       const vals = players.map(([,d])=>m.fn(d));
       const asc  = [...vals].sort((a,b)=>a-b);
-      const teamCells = players.map(([,d],i)=>{
+      const teamCells = players.map(([,d]) => {
         const v   = m.fn(d);
+        const vFmt = m.fmt ? m.fmt(v) : v.toFixed(2);
         const rank = N - asc.lastIndexOf(v);
         const pct  = N>1 ? 1-(rank-1)/(N-1) : 1;
-        const barW = Math.max(5, Math.round(pct*100));
+        const barW = Math.max(4, Math.round(pct*100));
         const perc = Math.round(pct*100);
-        return {rank, total:N, pct, barW, perc, col:rankColor(pct), noData:false, teamOnly:true};
+        return {rank, total:N, pct, barW, perc, col:m.stCol||rankColor(pct), vFmt, noData:false, teamOnly:true};
       });
 
       if(isLiga && m.ligaKey) {
-        // Liga mode: use _LIGA_RUNS rank data, fall back to team cell if no data
         const cells = players.map(([name],i)=>{
           const ld = _LIGA_RUNS[name]?.[m.ligaKey];
-          if(!ld) return {noData:true};
+          if(!ld) return {...teamCells[i], teamOnly:true};
           const pct = ld.n > 1 ? Math.max(0, 1 - (ld.r - 1) / (ld.n - 1)) : 1;
-          const barW = Math.max(5, Math.round(pct * 100));
+          const barW = Math.max(4, Math.round(pct * 100));
           const perc = Math.round(pct * 100);
-          return {pct, barW, col:rankColor(pct), rank:ld.r, total:ld.n, perc, noData:false, teamOnly:false};
+          return {pct, barW, col:rankColor(pct), rank:ld.r, total:ld.n, perc, vFmt:teamCells[i].vFmt, noData:false, teamOnly:false};
         });
         return {...m, cells, isLiga:true};
-      } else if(isLiga) {
-        // Liga mode but no ligaKey — show within-team percentile in same P-format
-        return {...m, cells:teamCells, isLiga:true};
-      } else {
-        // Equipo mode: plain % bars
-        return {...m, cells:teamCells.map(c=>({...c, teamOnly:false})), isLiga:false};
       }
+      return {...m, cells: teamCells.map(c=>({...c})), isLiga};
     });
 
-    // Column widths
-    const CW=84, LW=162;
-
+    // ── Header columns ────────────────────────────────────────────────────────
+    const CW=80, LW=168;
     const headerCols = players.map(([name,d])=>{
-      const sn = name.split(' ').slice(-1)[0];
-      const pl = posLabel(d.pos);
-      const ligaGrp = isLiga ? (_LIGA_RUNS[name]?.grp||'') : '';
+      const sn   = name.split(' ').slice(-1)[0];
+      const grp  = posGroup(d.pos);
+      const ligaG = isLiga ? (_LIGA_RUNS[name]?.grp||grp) : grp;
       return `<th style="padding:8px 3px;text-align:center;width:${CW}px;min-width:${CW}px;vertical-align:bottom;border-left:1px solid var(--border)">
         <div style="font-size:12px;font-weight:700;color:var(--text1)">${sn}</div>
-        <div style="font-size:9px;color:var(--text3);margin-top:2px">${isLiga && ligaGrp ? ligaGrp : pl}</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:2px">${isLiga && ligaG ? ligaG : grp}${d.matches?`<span style="color:var(--text3);font-weight:400"> · ${d.matches}p</span>`:''}</div>
       </th>`;
     }).join('');
 
+    // ── Rows ──────────────────────────────────────────────────────────────────
     let rowHtml='', rowIdx=0;
     metricRows.forEach(row=>{
       if(row.type==='group'){
-        rowHtml+=`<tr><td colspan="${N+1}" style="padding:10px 10px 5px;font-size:11px;font-weight:800;color:var(--text1);background:rgba(255,255,255,0.03);border-top:2px solid var(--border);border-bottom:1px solid var(--border)">${row.label}</td></tr>`;
+        rowHtml+=`<tr><td colspan="${N+1}" style="padding:9px 10px 4px;font-size:10px;font-weight:800;color:var(--text1);background:rgba(255,255,255,0.025);border-top:2px solid var(--border);border-bottom:1px solid var(--border);letter-spacing:0.3px">${row.label}</td></tr>`;
         return;
       }
-      const bg=rowIdx%2===0?'transparent':'rgba(255,255,255,0.015)';
+      const bg=rowIdx%2===0?'transparent':'rgba(255,255,255,0.012)';
       rowIdx++;
       const lblHtml = row.label.replace(/\n/g,'<br>');
-      const cells=row.cells.map(c=>{
-        if(c.noData) return `<td style="padding:6px 3px;text-align:center;border-left:1px solid rgba(255,255,255,0.05)"><div style="display:flex;align-items:center;justify-content:center;height:42px;font-size:12px;color:var(--text3)">—</div></td>`;
+      const cells = row.cells.map(c => {
+        const barCol = c.col || rankColor(c.pct);
         if(row.isLiga) {
-          // Liga cell: bar + percentile + rank (teamOnly = within-team fallback)
-          const subLabel = c.teamOnly ? `#${c.rank}/${c.total} eq.` : `#${c.rank}/${c.total}`;
-          return `<td style="padding:6px 3px;text-align:center;border-left:1px solid rgba(255,255,255,0.05)">
-            <div style="position:relative;background:rgba(255,255,255,0.06);border-radius:3px;height:28px;overflow:hidden;margin:0 2px">
-              <div style="position:absolute;left:0;top:0;width:${c.barW}%;height:100%;background:${c.col};opacity:${c.teamOnly?0.7:1};border-radius:3px;transition:width .3s"></div>
-              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.7)">P${c.perc}</div>
+          const subLbl = c.teamOnly ? `#${c.rank}/${c.total}eq` : `#${c.rank}/${c.total}`;
+          return `<td style="padding:5px 3px;text-align:center;border-left:1px solid rgba(255,255,255,0.04)">
+            <div style="position:relative;background:rgba(255,255,255,0.06);border-radius:3px;height:26px;overflow:hidden;margin:0 2px">
+              <div style="position:absolute;left:0;top:0;width:${c.barW}%;height:100%;background:${barCol};opacity:${c.teamOnly?0.6:1};border-radius:3px"></div>
+              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)">P${c.perc}</div>
             </div>
-            <div style="font-size:9px;color:var(--text3);margin-top:3px">${subLabel}</div>
-          </td>`;
-        } else {
-          return `<td style="padding:6px 3px;text-align:center;border-left:1px solid rgba(255,255,255,0.05)">
-            <div style="position:relative;background:rgba(255,255,255,0.06);border-radius:3px;height:32px;overflow:hidden;margin:0 2px">
-              <div style="position:absolute;left:0;top:0;width:${c.barW}%;height:100%;background:${c.col};border-radius:3px;transition:width .3s"></div>
-              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.7)">${Math.round(c.pct*100)}%</div>
-            </div>
+            <div style="font-size:8px;color:var(--text3);margin-top:2px">${subLbl}</div>
           </td>`;
         }
+        return `<td style="padding:5px 3px;text-align:center;border-left:1px solid rgba(255,255,255,0.04)">
+          <div style="position:relative;background:rgba(255,255,255,0.06);border-radius:3px;height:30px;overflow:hidden;margin:0 2px">
+            <div style="position:absolute;left:0;top:0;width:${c.barW}%;height:100%;background:${barCol};border-radius:3px;opacity:0.85"></div>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)">${c.vFmt}</div>
+          </div>
+        </td>`;
       }).join('');
-      rowHtml+=`<tr style="background:${bg};border-bottom:1px solid rgba(255,255,255,0.04)">
-        <td style="padding:7px 10px;font-size:11px;color:var(--text2);line-height:1.4;width:${LW}px;min-width:${LW}px">${lblHtml}</td>
+      rowHtml+=`<tr style="background:${bg};border-bottom:1px solid rgba(255,255,255,0.035)">
+        <td style="padding:6px 10px;font-size:10.5px;color:var(--text2);line-height:1.35;width:${LW}px;min-width:${LW}px">${lblHtml}</td>
         ${cells}
       </tr>`;
     });
 
-    // Mode toggle buttons
+    // ── Toggles + legend ──────────────────────────────────────────────────────
     const modeBtn=(id,lbl)=>{
       const act = runGridMode===id;
       return `<button onclick="runGridMode='${id}';renderTransiciones()" style="padding:5px 16px;border-radius:16px;border:1px solid ${act?'var(--accent)':'var(--border)'};background:${act?'rgba(200,169,110,0.15)':'transparent'};color:${act?'var(--accent)':'var(--text2)'};font-size:11px;font-weight:${act?700:400};cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif">${lbl}</button>`;
     };
-    const modeToggle=`<div style="display:flex;gap:6px;margin-bottom:10px;align-items:center">
+    const modeToggle=`<div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
       ${modeBtn('equipo','⚽ Equipo')}
       ${modeBtn('liga','🏆 vs Liga')}
-      ${isLiga?`<span style="font-size:9px;color:var(--text3);margin-left:4px">· P = Percentil · #rank/total en grupo posicional · 1ª Div RFEF 2025/26</span>`:''}
+      ${isLiga?`<span style="font-size:9px;color:var(--text3);margin-left:4px">· A la espalda / Adelanto / Receptor: percentil vs liga · resto: ranking interno</span>`:''}
     </div>`;
 
-    const legendEquipo=`<div style="padding:6px 10px 8px;display:flex;gap:10px;font-size:9px;color:var(--text3)">
-      <span><span style="display:inline-block;width:12px;height:8px;background:#2ea043;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Mejor</span>
-      <span><span style="display:inline-block;width:12px;height:8px;background:#6fcf97;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Top 50%</span>
-      <span><span style="display:inline-block;width:12px;height:8px;background:#f2a5a5;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Bot 50%</span>
-      <span><span style="display:inline-block;width:12px;height:8px;background:#f85149;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Último</span>
-      <span style="margin-left:4px">· % relativo dentro del equipo (100% = mejor)</span>
-    </div>`;
-    const legendLiga=`<div style="padding:6px 10px 8px;display:flex;gap:10px;font-size:9px;color:var(--text3);flex-wrap:wrap">
-      <span><span style="display:inline-block;width:12px;height:8px;background:#2ea043;border-radius:2px;vertical-align:middle;margin-right:3px"></span>P≥75 · Top 25%</span>
-      <span><span style="display:inline-block;width:12px;height:8px;background:#6fcf97;border-radius:2px;vertical-align:middle;margin-right:3px"></span>P50–74</span>
-      <span><span style="display:inline-block;width:12px;height:8px;background:#f2a5a5;border-radius:2px;vertical-align:middle;margin-right:3px"></span>P25–49</span>
-      <span><span style="display:inline-block;width:12px;height:8px;background:#f85149;border-radius:2px;vertical-align:middle;margin-right:3px"></span>P&lt;25 · Bot 25%</span>
-      <span style="margin-left:4px">· Perfil de carreras: vs liga · Características (#eq.): ranking interno del equipo</span>
+    const legend=`<div style="padding:6px 10px 8px;display:flex;gap:10px;font-size:9px;color:var(--text3);flex-wrap:wrap">
+      <span><span style="display:inline-block;width:12px;height:8px;background:#2ea043;border-radius:2px;vertical-align:middle;margin-right:3px"></span>${isLiga?'P≥75':'Mejor'}</span>
+      <span><span style="display:inline-block;width:12px;height:8px;background:#6fcf97;border-radius:2px;vertical-align:middle;margin-right:3px"></span>${isLiga?'P50–74':'Top 50%'}</span>
+      <span><span style="display:inline-block;width:12px;height:8px;background:#f2a5a5;border-radius:2px;vertical-align:middle;margin-right:3px"></span>${isLiga?'P25–49':'Bot 50%'}</span>
+      <span><span style="display:inline-block;width:12px;height:8px;background:#f85149;border-radius:2px;vertical-align:middle;margin-right:3px"></span>${isLiga?'P<25':'Último'}</span>
+      <span style="margin-left:4px">· Jugadores con ≥5 partidos y ≥30 carreras · valor real mostrado en cada celda</span>
     </div>`;
 
     return `${modeToggle}<div style="flex:1;min-width:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden">
-      <div style="overflow-x:auto">
+      <div style="overflow-x:auto;overflow-y:auto;max-height:70vh">
         <table style="border-collapse:collapse;width:100%;min-width:${LW+CW*N+2}px">
-          <thead>
+          <thead style="position:sticky;top:0;z-index:2;background:var(--bg2)">
             <tr style="border-bottom:2px solid var(--border)">
-              <th style="padding:8px 10px;text-align:left;width:${LW}px;min-width:${LW}px;font-size:9px;font-weight:700;color:var(--text3);letter-spacing:0.5px">Temporada 25–26 · Atacantes${isLiga?' · vs Liga':''}</th>
+              <th style="padding:8px 10px;text-align:left;width:${LW}px;min-width:${LW}px;font-size:9px;font-weight:700;color:var(--text3);letter-spacing:0.5px;background:var(--bg2)">Temporada 25–26${isLiga?' · vs Liga':' · ranking interno'}</th>
               ${headerCols}
             </tr>
           </thead>
           <tbody>${rowHtml}</tbody>
         </table>
       </div>
-      ${isLiga ? legendLiga : legendEquipo}
+      ${legend}
     </div>`;
   }
 
