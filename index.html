@@ -10513,15 +10513,18 @@
                             'Lateral izq.':'LAT','Lateral der.':'LAT',
                             'Mediocentro':'MC','MC ofensivo':'MC','Def. central':'DC'};
                 const _posGrpLbl={DEL:'delanteros',EXT:'extremos',MC:'centrocampistas',LAT:'laterales',DC:'defensas centrales'};
-                const _pGrp = _P2G[p.pos]||'MC';
+                const _pGrp = _P2G[p.pos]||null;
+                if (!_pGrp) return _pTogBar + `<div style="padding:30px;text-align:center;color:var(--text3);font-size:12px;line-height:1.8">
+                  Sin comparativa de liga disponible para porteros</div>`;
                 const _curPM = _PM.find(m=>m.k===_profilePasesMetric)||_PM[0];
                 const _ligaArr = (_LIGA_PASES[_pGrp]||{})[_curPM.k]||[];
                 const _nPL = _ligaArr.length;
-                const _selV = (_pd.vol[_curPM.k]??_pd.dir[_curPM.k]??_pd.dist[_curPM.k]??_pd.lines[_curPM.k]??_pd.quality[_curPM.k]??_pd.context[_curPM.k]??0);
-                // Use flat lookup helper
+                // Key aliases: _LIGA_PASES metric key → pases_season.json section key
                 const _pGet = (d, k) => {
+                  const km = {'passes_p90':'p90','pct_ok':'pct','high_press_pct':'high_pressure_pct'};
+                  const rk = km[k]||k;
                   for(const sec of [d.vol,d.dir,d.dist,d.lines,d.quality,d.context])
-                    if(sec&&k in sec) return sec[k];
+                    if(sec&&rk in sec) return sec[rk];
                   return 0;
                 };
                 const _selPV = _pGet(_pd, _curPM.k);
