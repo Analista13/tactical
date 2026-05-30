@@ -10795,28 +10795,75 @@
                   <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#58a6ff;margin-right:3px;vertical-align:middle"></span>${p.name}</span>
                 </div>`;
               }
-              return _obeTog + `
-              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start">
-                <span style="font-size:15px;flex-shrink:0">ℹ️</span>
-                <div>
-                  <p style="font-size:11px;color:var(--text2);margin:0 0 4px;line-height:1.5">${tabDesc}</p>
-                  <p style="font-size:10px;color:var(--text3);margin:0;line-height:1.4">
-                    El percentil (P) y el ranking (#) se calculan comparando con los
-                    <strong style="color:var(--text2)">${_OBE_POS_DESC[obeData.pos] || obeData.pos}</strong>
-                    de la Primera División RFEF temporada 2025/26.
-                    Rango 1 = mejor valor de la liga.
-                  </p>
-                </div>
-              </div>
-              <table style="width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
-                <tbody>${rows}</tbody>
-              </table>
-              <div style="display:flex;gap:14px;margin-top:10px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
-                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#3fb950;margin-right:3px;vertical-align:middle"></span>P75–100 Élite</span>
-                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#c8a96e;margin-right:3px;vertical-align:middle"></span>P50–74 Por encima media</span>
-                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f0883e;margin-right:3px;vertical-align:middle"></span>P25–49 Por debajo media</span>
-                <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f85149;margin-right:3px;vertical-align:middle"></span>P0–24 Bajo</span>
+              // ── TABLA VISUAL ────────────────────────────────────────────────────
+              const _ochip = (lbl,val,c,sub) => `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:center;min-width:68px;flex:1">
+                <div style="font-size:18px;font-weight:800;color:${c};font-family:'Bebas Neue',sans-serif">${val}</div>
+                <div style="font-size:9px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.3px">${lbl}</div>
+                ${sub?`<div style="font-size:9px;color:var(--text3);margin-top:1px">${sub}</div>`:''}
               </div>`;
+              const _osec = (title,content) => `<div style="margin-bottom:14px">
+                <div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)">${title}</div>
+                ${content}</div>`;
+              const _obar = (lbl,val,refMax,c) => {
+                const w = Math.min(100, refMax > 0 ? val/refMax*100 : 0);
+                return `<div style="margin-bottom:7px">
+                  <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px">
+                    <span style="color:var(--text2)">${lbl}</span>
+                    <span style="color:${c};font-weight:700">${typeof val==='number'?val.toFixed(2):val}</span>
+                  </div>
+                  <div style="height:5px;background:rgba(255,255,255,0.06);border-radius:3px">
+                    <div style="height:100%;width:${w.toFixed(1)}%;background:${c};border-radius:3px"></div></div></div>`;
+              };
+              const _g = k => obeData[k]?.v ?? 0;
+
+              if (_profileTab === 'defensiva') {
+                const total = _g('Total OBE');
+                const resMax = Math.max(_g('Disrup. directa'),_g('Recuper. directa'),_g('Forzado atrás'),_g('Línea afectada'),0.01);
+                const supMax = Math.max(_g('Superado mov.'),_g('Superado posesión'),0.01);
+                return _obeTog +
+                  _osec('📦 Volumen defensivo /90', `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+                    ${_ochip('Total OBE',total.toFixed(2),'#58a6ff','p90')}
+                    ${_ochip('Bloque alto',_g('Bloque alto').toFixed(2),'#3fb950')}
+                    ${_ochip('Bloque medio',_g('Bloque medio').toFixed(2),'#c8a96e')}
+                    ${_ochip('Bloque bajo',_g('Bloque bajo').toFixed(2),'#f0883e')}
+                    ${_ochip('Transición',_g('Transición').toFixed(2),'#d2a8ff')}
+                  </div>`) +
+                  _osec('📍 Zona de intervención (relativo a total OBE)',
+                    _obar('Bloque alto',_g('Bloque alto'),total,'#3fb950')+
+                    _obar('Bloque medio',_g('Bloque medio'),total,'#c8a96e')+
+                    _obar('Bloque bajo',_g('Bloque bajo'),total,'#f0883e')+
+                    _obar('Transición',_g('Transición'),total,'#d2a8ff')) +
+                  _osec('✅ Resultados defensivos /90',
+                    _obar('Disrupción directa',_g('Disrup. directa'),resMax,'#3fb950')+
+                    _obar('Recuperación directa',_g('Recuper. directa'),resMax,'#58a6ff')+
+                    _obar('Forzado hacia atrás',_g('Forzado atrás'),resMax,'#c8a96e')+
+                    _obar('Línea afectada',_g('Línea afectada'),resMax,'#e3b341')) +
+                  _osec('⚠️ Vulnerabilidades /90',
+                    _obar('Superado por movimiento',_g('Superado mov.'),supMax,'#f85149')+
+                    _obar('Superado en posesión',_g('Superado posesión'),supMax,'#ff7b72')+
+                    `<div style="font-size:9px;color:var(--text3);margin-top:6px">Valores por 90 min · ${_OBE_POS_DESC[obeData.pos]||obeData.pos} · 1ª RFEF 25/26</div>`);
+              }
+
+              // ── PRESIÓN ──────────────────────────────────────────────────────────
+              const pressTotal = _g('Presión directa')+_g('Presión cadena')+_g('Contrapresión')+_g('Presión atrás');
+              const pressMax = Math.max(pressTotal, 0.01);
+              return _obeTog +
+                _osec('📦 Volumen de pressing /90', `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+                  ${_ochip('Total pressing',pressTotal.toFixed(2),'#58a6ff','p90')}
+                  ${_ochip('Directa',_g('Presión directa').toFixed(2),'#3fb950')}
+                  ${_ochip('Cadena',_g('Presión cadena').toFixed(2),'#c8a96e')}
+                  ${_ochip('Contrapress.',_g('Contrapresión').toFixed(2),'#f0883e')}
+                  ${_ochip('Atrás',_g('Presión atrás').toFixed(2),'#d2a8ff')}
+                </div>`) +
+                _osec('📊 Distribución por tipo (% sobre total pressing)',
+                  _obar('Presión directa',_g('Presión directa'),pressMax,'#3fb950')+
+                  _obar('Presión en cadena',_g('Presión cadena'),pressMax,'#c8a96e')+
+                  _obar('Contrapresión',_g('Contrapresión'),pressMax,'#f0883e')+
+                  _obar('Presión hacia atrás',_g('Presión atrás'),pressMax,'#d2a8ff')) +
+                _osec('↗ Agresividad', `<div style="display:flex;gap:6px;flex-wrap:wrap">
+                  ${_ochip('Tray. adelante',_g('Tray. adelante').toFixed(1)+'%','#58a6ff','trayectoria en avance')}
+                </div>
+                <div style="font-size:9px;color:var(--text3);margin-top:8px">Valores por 90 min · ${_OBE_POS_DESC[obeData.pos]||obeData.pos} · 1ª RFEF 25/26</div>`);
             })()}
 
           </div>
