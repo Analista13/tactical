@@ -9927,10 +9927,12 @@
   //  PLAYER PROFILE PAGE
   // ═══════════════════════════════════════════════════════════════════
   let __hmData = null;           // lazy-loaded player_heatmap.json cache
-  let _profileTab = 'heatmap';  // 'heatmap' | 'defensiva' | 'presion'
+  let _profileTab = 'heatmap';  // 'heatmap' | 'defensiva' | 'presion' | 'carreras'
   let _profileDorsal = null;
   let _profileObeView = 'tabla';  // 'tabla' | 'dist'
   let _profileObeDistMetric = 'Total OBE';
+  let _profileRunView   = 'tabla';   // 'tabla' | 'dist'  (carreras sin balón subtab)
+  let _profileRunMetric = 'tot_p30'; // metric key for carreras beeswarm
 
   // Mapeo nombre plantilla → clave _OBE_DATA (solo si difieren)
   const _OBE_KEY_MAP = {
@@ -9965,6 +9967,10 @@
 
     const obeKey  = _OBE_KEY_MAP[p.name] || p.name;
     const obeData = _OBE_DATA[obeKey] || null;
+    // Carreras sin balón season data
+    const _runKey  = p.csvName || p.name;
+    const _runData = window._runSeasonCache ? (window._runSeasonCache[_runKey] || null) : undefined;
+    // _runData === undefined → cache not loaded yet; null → loaded, player not found
     // Si se llama desde un click de tab, respetar _profileTab; si es nuevo jugador, reset
     // (se resetea desde el card click)
 
@@ -10032,12 +10038,14 @@
             <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:18px;gap:0">
               ${[
                 ['heatmap',   'Posicionamiento'],
-                ...(obeData ? [['defensiva','Acciones defensivas'],['presion','Presión']] : [])
+                ...(obeData ? [['defensiva','Acciones defensivas'],['presion','Presión']] : []),
+                ...(_runData !== null ? [['carreras','🏃 Carreras']] : []),
               ].map(([id,lbl]) => {
                 const act = _profileTab === id;
-                return `<button onclick="_profileTab='${id}';_profileObeView='tabla';openPlayerProfile(${p.d})"
-                  style="background:transparent;border:none;border-bottom:2px solid ${act?'var(--accent)':'transparent'};
-                         color:${act?'var(--accent)':'var(--text2)'};padding:8px 18px;
+                const tabCol = id==='carreras' ? '#f0883e' : 'var(--accent)';
+                return `<button onclick="_profileTab='${id}';_profileObeView='tabla';_profileRunView='tabla';openPlayerProfile(${p.d})"
+                  style="background:transparent;border:none;border-bottom:2px solid ${act?tabCol:'transparent'};
+                         color:${act?tabCol:'var(--text2)'};padding:8px 18px;
                          font-family:'DM Sans',sans-serif;font-size:13px;font-weight:${act?700:500};
                          cursor:pointer;transition:all .15s;white-space:nowrap">${lbl}</button>`;
               }).join('')}
@@ -10072,7 +10080,236 @@
                 <div style="height:7px;width:160px;border-radius:3px;background:linear-gradient(to right,#0000c8,#00c8c8,#ffdc00,#ff6400,#ff0000);flex-shrink:0"></div>
                 <span style="font-size:10px;color:var(--text3)">Alta</span>
               </div>
-            ` : (() => {
+            ` : _profileTab === 'carreras' ? (() => {
+              // ── CARRERAS SIN BALÓN TAB ──────────────────────────────────────────
+              // Load cache on demand if not yet available
+              if (window._runSeasonCache === undefined || window._runSeasonCache === null) {
+                fetch('data/carrerasSB_season.json').then(r=>r.json()).then(d=>{
+                  window._runSeasonCache=d;
+                  if(_profileTab==='carreras'&&_profileDorsal===p.d) openPlayerProfile(p.d);
+                });
+                return `<div style="display:flex;flex-direction:column;align-items:center;padding:50px 0;color:var(--text3)">
+                  <div class="spinner" style="width:22px;height:22px;border-width:3px"></div>
+                  <div style="margin-top:14px;font-size:12px">Cargando datos de temporada...</div>
+                </div>`;
+              }
+
+              const _rd = window._runSeasonCache[_runKey] || null;
+              if (!_rd) return `<div style="padding:30px;text-align:center;color:var(--text3);font-size:12px">Sin datos de carreras sin balón para este jugador</div>`;
+
+              // ── Subtab toggle ──────────────────────────────────────────────────
+              const _rTog = (vk,lbl,col) => {
+                const act = _profileRunView===vk;
+                return `<button onclick="_profileRunView='${vk}';openPlayerProfile(${p.d})"
+                  style="padding:5px 16px;border-radius:6px;border:1px solid ${act?col:'var(--border)'};
+                         background:${act?col+'22':'var(--bg2)'};color:${act?col:'var(--text2)'};
+                         font-size:12px;cursor:pointer;font-weight:${act?700:500};transition:all .15s">${lbl}</button>`;
+              };
+              const _rTogBar = `<div style="display:flex;gap:8px;margin-bottom:16px">
+                ${_rTog('tabla','📋 Tabla','var(--accent)')}
+                ${_rTog('dist','📊 Distribución','#58a6ff')}
+              </div>`;
+
+              // ── Metrics for beeswarm ───────────────────────────────────────────
+              const _RM = [
+                {k:'tot_p30',                lbl:'Total p30',           col:'#e6edf3'},
+                {k:'buscadas_p30',           lbl:'Buscadas p30',        col:'#c8a96e'},
+                {k:'recibidas_p30',          lbl:'Recibidas p30',       col:'#3fb950'},
+                {k:'peligrosas_p30',         lbl:'Peligrosas p30',      col:'#f85149'},
+                {k:'alta_vel_pct',           lbl:'% Alta velocidad',    col:'#58a6ff'},
+                {k:'st.espalda.p30',         lbl:'Espalda p30',         col:'#f85149'},
+                {k:'st.adelanto.p30',        lbl:'Delante p30',         col:'#3fb950'},
+                {k:'st.receptor_centro.p30', lbl:'Receptor p30',        col:'#f0883e'},
+                {k:'st.viene_corto.p30',     lbl:'Venir corto p30',     col:'#a5d6ff'},
+                {k:'st.apoyo.p30',           lbl:'Apoyo p30',           col:'#58a6ff'},
+                {k:'st.tirar_ancho.p30',     lbl:'Tirar ancho p30',     col:'#d2a8ff'},
+                {k:'st.caida_espacio.p30',   lbl:'Caída espacio p30',   col:'#ffa657'},
+                {k:'st.medio_espacio.p30',   lbl:'Medio espacio p30',   col:'#ffa657'},
+                {k:'st.overlap.p30',         lbl:'Overlap p30',         col:'#39d353'},
+                {k:'st.underlap.p30',        lbl:'Underlap p30',        col:'#1f6feb'},
+              ];
+              const _getRM = (d, k) => {
+                if (k.startsWith('st.')) { const [,sk,f]=k.split('.'); return d.st?.[sk]?.[f]||0; }
+                return d[k]||0;
+              };
+
+              // ── DISTRIBUCIÓN VIEW ──────────────────────────────────────────────
+              if (_profileRunView === 'dist') {
+                const _curMet = _RM.find(m=>m.k===_profileRunMetric)||_RM[0];
+                // All players in cache as beeswarm pool
+                const _pool = Object.entries(window._runSeasonCache||{})
+                  .filter(([,d])=>d.matches>=3)
+                  .map(([nm,d])=>({nm, v:_getRM(d,_curMet.k)}))
+                  .sort((a,b)=>a.v-b.v);
+                const _selV  = _getRM(_rd, _curMet.k);
+                const _selIdx = _pool.findIndex(x=>x.nm===_runKey);
+                const _selP  = _selIdx>=0 ? Math.round(_selIdx/(_pool.length-1)*100) : 50;
+                const _nP    = _pool.length;
+
+                // Geometry
+                const _W=640,_H=220,_PL=12,_PR=12,_PT=36,_PB=26;
+                const _pW=_W-_PL-_PR, _pHp=_H-_PT-_PB, _midY=_PT+_pHp/2, _R=5;
+                const _allVs = _pool.map(x=>x.v);
+                let _mn=_allVs[0]||0, _mx=_allVs[_allVs.length-1]||1;
+                const _sp=_mx-_mn||1; _mn-=_sp*0.05; _mx+=_sp*0.05;
+                const _xs = v=>_PL+(v-_mn)/(_mx-_mn)*_pW;
+                const _pCol = q=>q>=75?'#3fb950':q>=50?'#c8a96e':q>=25?'#f0883e':'#f85149';
+
+                // Beeswarm placement
+                const _pl=[];
+                _pool.forEach((pt,i)=>{
+                  const x=_xs(pt.v);
+                  const isSel=pt.nm===_runKey;
+                  const qi=_nP>1?Math.round(i/(_nP-1)*100):50;
+                  const col=isSel?_curMet.col:_pCol(qi);
+                  let yOff=0;
+                  for(let step=0;step<=_pHp/2;step+=_R*2.1){
+                    const cands=step===0?[0]:[step,-step];let oy=null;
+                    for(const off of cands){
+                      let ok=true;
+                      for(const placed of _pl){if((x-placed.x)**2+(_midY+off-placed.y)**2<(_R*2.1)**2){ok=false;break;}}
+                      if(ok){oy=off;break;}
+                    }
+                    if(oy!==null){yOff=oy;break;}
+                  }
+                  _pl.push({x,y:_midY+yOff,col,nm:pt.nm,v:pt.v,isSel,qi});
+                });
+
+                const _dots=_pl.filter(pt=>!pt.isSel).map(pt=>`<circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${_R}" fill="${pt.col}" fill-opacity="0.75" style="cursor:pointer"
+                  onmouseover="_obeTipShow(event,'<strong>${pt.nm.replace(/'/g,"\\'")}</strong><br>${_curMet.lbl.replace(/'/g,"\'")} · ${pt.v.toFixed(2)}')"
+                  onmouseout="_obeTipHide()"/>`).join('');
+                let _selDot='';
+                if(_selIdx>=0){
+                  const sx=_xs(_selV).toFixed(1),sc=_curMet.col;
+                  _selDot=`<defs><filter id="rsgd" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                    <line x1="${sx}" y1="${_PT}" x2="${sx}" y2="${_PT+_pHp}" stroke="${sc}" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
+                    <circle cx="${sx}" cy="${_midY}" r="${_R+4}" fill="none" stroke="${sc}" stroke-width="2.5" filter="url(#rsgd)"/>
+                    <circle cx="${sx}" cy="${_midY}" r="${_R+1}" fill="${sc}" filter="url(#rsgd)"/>
+                    <rect x="${(parseFloat(sx)-72).toFixed(1)}" y="${(_PT+1).toFixed(1)}" width="144" height="16" rx="4" fill="rgba(13,17,23,0.92)" stroke="${sc}" stroke-width="0.8"/>
+                    <text x="${sx}" y="${(_PT+13).toFixed(1)}" text-anchor="middle" font-size="10" fill="${sc}" font-weight="700">${p.name.split(' ').slice(-1)[0]} · P${_selP} · ${_selV.toFixed(2)}</text>`;
+                }
+                let _ticks='';
+                for(let i=0;i<=5;i++){const v=_mn+(_mx-_mn)*i/5,x=_xs(v).toFixed(1);_ticks+=`<line x1="${x}" y1="${_PT+_pHp}" x2="${x}" y2="${_PT+_pHp+4}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/><text x="${x}" y="${_PT+_pHp+15}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)">${v.toFixed(v>10?0:2)}</text>`;}
+                const _svg=`<svg viewBox="0 0 ${_W} ${_H}" width="100%" style="display:block;overflow:visible">
+                  <line x1="${_PL}" y1="${_midY}" x2="${_W-_PR}" y2="${_midY}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="4,4"/>
+                  ${_dots}${_selDot}
+                  <line x1="${_PL}" y1="${_PT+_pHp}" x2="${_W-_PR}" y2="${_PT+_pHp}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+                  ${_ticks}
+                </svg>`;
+
+                const _pills=_RM.map(m=>{
+                  const act=_profileRunMetric===m.k;
+                  return `<button onclick="_profileRunMetric='${m.k}';openPlayerProfile(${p.d})"
+                    style="padding:4px 11px;border-radius:16px;border:1px solid ${act?m.col:'var(--border)'};
+                           background:${act?m.col+'22':'var(--bg2)'};color:${act?m.col:'var(--text2)'};
+                           font-size:11px;font-weight:${act?700:400};cursor:pointer;white-space:nowrap;transition:all .15s">${m.lbl}</button>`;
+                }).join('');
+
+                return _rTogBar +
+                  `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">${_pills}</div>
+                  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 6px 4px">${_svg}</div>
+                  <div style="display:flex;gap:10px;margin-top:8px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
+                    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3fb950;margin-right:3px;vertical-align:middle"></span>P75–100</span>
+                    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#c8a96e;margin-right:3px;vertical-align:middle"></span>P50–74</span>
+                    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f0883e;margin-right:3px;vertical-align:middle"></span>P25–49</span>
+                    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f85149;margin-right:3px;vertical-align:middle"></span>P0–24</span>
+                    <span style="color:${_curMet.col}">▶ ${p.name.split(' ').slice(-1)[0]}</span>
+                    <span style="margin-left:4px">· ${_nP} jugadores · comparativa de equipo</span>
+                  </div>`;
+              }
+
+              // ── TABLA VIEW ─────────────────────────────────────────────────────
+              const _chip = (lbl,val,col,sub) => `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:center;min-width:68px">
+                <div style="font-size:19px;font-weight:800;color:${col};font-family:'Bebas Neue',sans-serif">${val}</div>
+                <div style="font-size:9px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.3px">${lbl}</div>
+                ${sub?`<div style="font-size:9px;color:var(--text3);margin-top:1px">${sub}</div>`:''}
+              </div>`;
+              const _pm = n => `${(_rd.matches?n/_rd.matches:0).toFixed(2)}/p`;
+
+              const _chips = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
+                ${_chip('Total',_rd.tot,'var(--text)',_pm(_rd.tot))}
+                ${_chip('Buscadas',_rd.buscadas,'#c8a96e',_pm(_rd.buscadas))}
+                ${_chip('Recibidas',_rd.recibidas,'#3fb950',_pm(_rd.recibidas))}
+                ${_chip('Peligrosas',_rd.peligrosas,'#f85149',_pm(_rd.peligrosas))}
+                ${_chip('→ Tiro',_rd.tiro,'#f0883e',_pm(_rd.tiro))}
+                ${_chip('⚽ Gol',_rd.gol,'#ffd700',_pm(_rd.gol))}
+                ${_chip('% Recib.',_rd.buscadas?Math.round(_rd.recibidas/_rd.buscadas*100)+'%':'—','#3fb950','')}
+                ${_chip('% Pelig.',_rd.tot?Math.round(_rd.peligrosas/_rd.tot*100)+'%':'—','#f85149','')}
+                ${_chip('% Alt.vel.',_rd.alta_vel_pct+'%','#58a6ff','')}
+              </div>`;
+
+              // Phase breakdown
+              const _phases=[['🟥 Finalización','finish','#f85149'],['🟧 Creación','create','#f0883e'],['🟦 Construcción','build_up','#58a6ff'],['⚡ Transición','transition','#c8a96e'],['💨 Contragolpe','quick_break','#3fb950']];
+              const _phMax=Math.max(1,..._phases.map(([,k])=>_rd[k]||0));
+              const _phBars=_phases.map(([lbl,k,col])=>{
+                const v=_rd[k]||0,pct=_rd.tot?Math.round(v/_rd.tot*100):0,bw=Math.round(v/_phMax*100);
+                return `<div style="display:flex;align-items:center;gap:8px;font-size:11px;margin-bottom:5px">
+                  <span style="color:var(--text2);width:110px;flex-shrink:0">${lbl}</span>
+                  <div style="flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">
+                    <div style="width:${bw}%;height:100%;background:${col};border-radius:3px"></div>
+                  </div>
+                  <span style="color:${col};font-weight:700;min-width:22px;text-align:right">${v}</span>
+                  <span style="color:var(--text3);min-width:28px">${pct}%</span>
+                </div>`;
+              }).join('');
+              const _phPanel=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px">
+                <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px">Fase de juego</div>
+                ${_phBars}
+              </div>`;
+
+              // Per-subtype table
+              const _ST=[
+                {k:'espalda',col:'#f85149',lbl:'🏃 A la espalda'},
+                {k:'adelanto',col:'#3fb950',lbl:'→ Delante del balón'},
+                {k:'receptor_centro',col:'#f0883e',lbl:'↗ Receptor centro'},
+                {k:'apoyo',col:'#58a6ff',lbl:'🤝 Apoyo'},
+                {k:'viene_corto',col:'#a5d6ff',lbl:'← Venir corto'},
+                {k:'tirar_ancho',col:'#d2a8ff',lbl:'↔ Tirar ancho'},
+                {k:'caida_espacio',col:'#ffa657',lbl:'↙ Caída espacio'},
+                {k:'medio_espacio',col:'#ffa657',lbl:'◇ Medio espacio'},
+                {k:'overlap',col:'#39d353',lbl:'↗ Overlap'},
+                {k:'underlap',col:'#1f6feb',lbl:'↗ Underlap'},
+              ];
+              const _stRows=_ST.map(({k,col,lbl})=>{
+                const sd=_rd.st?.[k]||{};
+                if(!sd.tot) return '';
+                const recPct=sd.buscadas?Math.round(sd.recibidas/sd.buscadas*100):0;
+                const peligPct=sd.tot?Math.round(sd.peligrosas/sd.tot*100):0;
+                return `<tr onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background=''">
+                  <td style="padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.04)">
+                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col};margin-right:6px;vertical-align:middle"></span>
+                    <span style="font-size:11px;color:var(--text2)">${lbl}</span>
+                  </td>
+                  <td style="padding:7px 8px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.04)">
+                    <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${col}">${sd.tot}</span>
+                  </td>
+                  <td style="padding:7px 8px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.04);font-size:11px;color:var(--text3)">${sd.buscadas||0}</td>
+                  <td style="padding:7px 8px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.04);font-size:11px;color:#3fb950">${sd.recibidas||0} <span style="color:var(--text3);font-size:9px">(${recPct}%)</span></td>
+                  <td style="padding:7px 8px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.04);font-size:11px;color:#f85149">${sd.peligrosas||0} <span style="color:var(--text3);font-size:9px">(${peligPct}%)</span></td>
+                  <td style="padding:7px 8px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.04);font-size:11px;color:var(--accent)">${sd.p30?.toFixed(2)||'—'}</td>
+                  <td style="padding:7px 10px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.04);font-size:10px;color:var(--text3)">${sd.dist_media?sd.dist_media+'m':'—'}</td>
+                </tr>`;
+              }).join('');
+
+              return _rTogBar + _chips + _phPanel +
+                `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+                  <table style="width:100%;border-collapse:collapse">
+                    <thead><tr style="border-bottom:1px solid var(--border);background:var(--bg3)">
+                      <th style="padding:7px 10px;font-size:9px;color:var(--text3);text-align:left;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Tipo</th>
+                      <th style="padding:7px 8px;font-size:9px;color:var(--text3);text-align:center;font-weight:700;text-transform:uppercase">Total</th>
+                      <th style="padding:7px 8px;font-size:9px;color:var(--text3);text-align:center;font-weight:700;text-transform:uppercase">Busc.</th>
+                      <th style="padding:7px 8px;font-size:9px;color:#3fb950;text-align:center;font-weight:700;text-transform:uppercase">Recib.</th>
+                      <th style="padding:7px 8px;font-size:9px;color:#f85149;text-align:center;font-weight:700;text-transform:uppercase">Pelig.</th>
+                      <th style="padding:7px 8px;font-size:9px;color:var(--accent);text-align:center;font-weight:700;text-transform:uppercase">p30</th>
+                      <th style="padding:7px 10px;font-size:9px;color:var(--text3);text-align:right;font-weight:700;text-transform:uppercase">Dist.media</th>
+                    </tr></thead>
+                    <tbody>${_stRows||'<tr><td colspan="7" style="padding:14px;text-align:center;color:var(--text3)">Sin datos</td></tr>'}</tbody>
+                  </table>
+                  <div style="padding:8px 10px;font-size:9px;color:var(--text3);border-top:1px solid var(--border)">
+                    ${_rd.matches} partidos · ${Math.round(_rd.minutes)} min. · p30 = cada 30 min de juego
+                  </div>
+                </div>`;
+            })() : (() => {
               const keys   = _OBE_TAB[_profileTab] || [];
               const pCol   = p => p >= 75 ? '#3fb950' : p >= 50 ? '#c8a96e' : p >= 25 ? '#f0883e' : '#f85149';
               const rows   = keys.map(key => {
