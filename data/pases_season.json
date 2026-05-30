@@ -1,0 +1,3446 @@
+{
+  "Germán Novoa": {
+    "matches": 29,
+    "minutes": 2556,
+    "vol": {
+      "tot": 781,
+      "ok": 657,
+      "fail": 124,
+      "pct": 84.12,
+      "p90": 27.5
+    },
+    "dir": {
+      "forward": 182,
+      "sideway": 409,
+      "backward": 66,
+      "ahead": 444,
+      "forward_pct": 23.3,
+      "sideway_pct": 52.37,
+      "backward_pct": 8.45,
+      "one_touch": 160,
+      "one_touch_pct": 20.49,
+      "quick_pass": 187,
+      "carry_pct": 53.39
+    },
+    "dist": {
+      "short": 271,
+      "medium": 312,
+      "long": 74,
+      "short_pct": 34.7,
+      "medium_pct": 39.95,
+      "long_pct": 9.48,
+      "avg_m": 18.44
+    },
+    "lines": {
+      "first_break": 84,
+      "first_break_pct": 10.76,
+      "furthest_second_last": 53,
+      "furthest_last": 5,
+      "bypassed_avg": 1.5
+    },
+    "quality": {
+      "xT_total": 2.93,
+      "xT_p90": 0.1,
+      "xpass_avg": 0.9,
+      "dangerous": 18,
+      "dangerous_pct": 2.3,
+      "difficult": 99,
+      "difficult_pct": 12.68
+    },
+    "context": {
+      "opts_avg": 2.6,
+      "opts_lb_avg": 0.48,
+      "pressure_none": 381,
+      "pressure_low": 157,
+      "pressure_medium": 88,
+      "pressure_high": 42,
+      "pressure_very_high": 10,
+      "high_pressure_pct": 6.66
+    },
+    "phase": {
+      "build_up": 117,
+      "create": 432,
+      "finish": 85,
+      "transition": 9,
+      "quick_break": 3,
+      "direct": 26,
+      "chaotic": 95,
+      "set_play": 11,
+      "build_up_pct": 14.98,
+      "create_pct": 55.31,
+      "finish_pct": 10.88,
+      "transition_pct": 1.54
+    },
+    "receptor": [
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RM",
+        "cnt": 106,
+        "ok_pct": 95.28
+      },
+      {
+        "n": "Andoni López",
+        "pos": "LB",
+        "cnt": 82,
+        "ok_pct": 90.24
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "RM",
+        "cnt": 71,
+        "ok_pct": 84.51
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "CF",
+        "cnt": 52,
+        "ok_pct": 71.15
+      },
+      {
+        "n": "B. Moltenis",
+        "pos": "LCB",
+        "cnt": 44,
+        "ok_pct": 93.18
+      },
+      {
+        "n": "Andrés Prieto",
+        "pos": "GK",
+        "cnt": 43,
+        "ok_pct": 97.67
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "AM",
+        "cnt": 42,
+        "ok_pct": 61.9
+      },
+      {
+        "n": "E. Frimpong",
+        "pos": "LM",
+        "cnt": 42,
+        "ok_pct": 90.48
+      }
+    ]
+  },
+  "B. Moltenis": {
+    "matches": 15,
+    "minutes": 1371,
+    "vol": {
+      "tot": 377,
+      "ok": 300,
+      "fail": 77,
+      "pct": 79.58,
+      "p90": 24.75
+    },
+    "dir": {
+      "forward": 99,
+      "sideway": 175,
+      "backward": 26,
+      "ahead": 225,
+      "forward_pct": 26.26,
+      "sideway_pct": 46.42,
+      "backward_pct": 6.9,
+      "one_touch": 69,
+      "one_touch_pct": 18.3,
+      "quick_pass": 86,
+      "carry_pct": 52.79
+    },
+    "dist": {
+      "short": 127,
+      "medium": 149,
+      "long": 24,
+      "short_pct": 33.69,
+      "medium_pct": 39.52,
+      "long_pct": 6.37,
+      "avg_m": 17.77
+    },
+    "lines": {
+      "first_break": 51,
+      "first_break_pct": 13.53,
+      "furthest_second_last": 29,
+      "furthest_last": 12,
+      "bypassed_avg": 1.6
+    },
+    "quality": {
+      "xT_total": 1.06,
+      "xT_p90": 0.07,
+      "xpass_avg": 0.89,
+      "dangerous": 8,
+      "dangerous_pct": 2.12,
+      "difficult": 54,
+      "difficult_pct": 14.32
+    },
+    "context": {
+      "opts_avg": 2.86,
+      "opts_lb_avg": 0.63,
+      "pressure_none": 188,
+      "pressure_low": 68,
+      "pressure_medium": 24,
+      "pressure_high": 24,
+      "pressure_very_high": 3,
+      "high_pressure_pct": 7.16
+    },
+    "phase": {
+      "build_up": 53,
+      "create": 234,
+      "finish": 13,
+      "transition": 6,
+      "quick_break": 0,
+      "direct": 15,
+      "chaotic": 50,
+      "set_play": 3,
+      "build_up_pct": 14.06,
+      "create_pct": 62.07,
+      "finish_pct": 3.45,
+      "transition_pct": 1.59
+    },
+    "receptor": [
+      {
+        "n": "Andoni López",
+        "pos": "LWB",
+        "cnt": 48,
+        "ok_pct": 93.75
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "RCB",
+        "cnt": 39,
+        "ok_pct": 92.31
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RM",
+        "cnt": 37,
+        "ok_pct": 91.89
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "RM",
+        "cnt": 26,
+        "ok_pct": 80.77
+      },
+      {
+        "n": "José Luis Cortés",
+        "pos": "CF",
+        "cnt": 25,
+        "ok_pct": 36.0
+      },
+      {
+        "n": "David Andújar",
+        "pos": "CB",
+        "cnt": 24,
+        "ok_pct": 95.83
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "CF",
+        "cnt": 22,
+        "ok_pct": 40.91
+      },
+      {
+        "n": "Ángel Jiménez",
+        "pos": "GK",
+        "cnt": 21,
+        "ok_pct": 100.0
+      }
+    ]
+  },
+  "Diego Moreno": {
+    "matches": 12,
+    "minutes": 1045,
+    "vol": {
+      "tot": 323,
+      "ok": 231,
+      "fail": 92,
+      "pct": 71.52,
+      "p90": 27.82
+    },
+    "dir": {
+      "forward": 63,
+      "sideway": 102,
+      "backward": 66,
+      "ahead": 167,
+      "forward_pct": 19.5,
+      "sideway_pct": 31.58,
+      "backward_pct": 20.43,
+      "one_touch": 62,
+      "one_touch_pct": 19.2,
+      "quick_pass": 69,
+      "carry_pct": 53.56
+    },
+    "dist": {
+      "short": 104,
+      "medium": 98,
+      "long": 29,
+      "short_pct": 32.2,
+      "medium_pct": 30.34,
+      "long_pct": 8.98,
+      "avg_m": 18.18
+    },
+    "lines": {
+      "first_break": 14,
+      "first_break_pct": 4.33,
+      "furthest_second_last": 30,
+      "furthest_last": 10,
+      "bypassed_avg": 1.68
+    },
+    "quality": {
+      "xT_total": 4.11,
+      "xT_p90": 0.35,
+      "xpass_avg": 0.78,
+      "dangerous": 42,
+      "dangerous_pct": 13.0,
+      "difficult": 103,
+      "difficult_pct": 31.89
+    },
+    "context": {
+      "opts_avg": 2.84,
+      "opts_lb_avg": 0.44,
+      "pressure_none": 45,
+      "pressure_low": 86,
+      "pressure_medium": 103,
+      "pressure_high": 36,
+      "pressure_very_high": 4,
+      "high_pressure_pct": 12.38
+    },
+    "phase": {
+      "build_up": 21,
+      "create": 126,
+      "finish": 97,
+      "transition": 12,
+      "quick_break": 3,
+      "direct": 12,
+      "chaotic": 42,
+      "set_play": 9,
+      "build_up_pct": 6.5,
+      "create_pct": 39.01,
+      "finish_pct": 30.03,
+      "transition_pct": 4.64
+    },
+    "receptor": [
+      {
+        "n": "A. Keita",
+        "pos": "CF",
+        "cnt": 39,
+        "ok_pct": 74.36
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "LM",
+        "cnt": 29,
+        "ok_pct": 68.97
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "RDM",
+        "cnt": 29,
+        "ok_pct": 65.52
+      },
+      {
+        "n": "José Luis Cortés",
+        "pos": "CF",
+        "cnt": 28,
+        "ok_pct": 50.0
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "RCB",
+        "cnt": 26,
+        "ok_pct": 92.31
+      },
+      {
+        "n": "P. Ferrer",
+        "pos": "CF",
+        "cnt": 21,
+        "ok_pct": 42.86
+      },
+      {
+        "n": "Sergio Benito",
+        "pos": "RDM",
+        "cnt": 20,
+        "ok_pct": 45.0
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RM",
+        "cnt": 19,
+        "ok_pct": 68.42
+      }
+    ]
+  },
+  "Ángel Jiménez": {
+    "matches": 11,
+    "minutes": 956,
+    "vol": {
+      "tot": 169,
+      "ok": 114,
+      "fail": 55,
+      "pct": 67.46,
+      "p90": 15.91
+    },
+    "dir": {
+      "forward": 62,
+      "sideway": 52,
+      "backward": 0,
+      "ahead": 143,
+      "forward_pct": 36.69,
+      "sideway_pct": 30.77,
+      "backward_pct": 0.0,
+      "one_touch": 33,
+      "one_touch_pct": 19.53,
+      "quick_pass": 15,
+      "carry_pct": 60.95
+    },
+    "dist": {
+      "short": 17,
+      "medium": 50,
+      "long": 47,
+      "short_pct": 10.06,
+      "medium_pct": 29.59,
+      "long_pct": 27.81,
+      "avg_m": 29.07
+    },
+    "lines": {
+      "first_break": 39,
+      "first_break_pct": 23.08,
+      "furthest_second_last": 50,
+      "furthest_last": 9,
+      "bypassed_avg": 3.67
+    },
+    "quality": {
+      "xT_total": 0.17,
+      "xT_p90": 0.02,
+      "xpass_avg": 0.8,
+      "dangerous": 0,
+      "dangerous_pct": 0.0,
+      "difficult": 30,
+      "difficult_pct": 17.75
+    },
+    "context": {
+      "opts_avg": 3.18,
+      "opts_lb_avg": 1.36,
+      "pressure_none": 37,
+      "pressure_low": 22,
+      "pressure_medium": 14,
+      "pressure_high": 3,
+      "pressure_very_high": 0,
+      "high_pressure_pct": 1.78
+    },
+    "phase": {
+      "build_up": 83,
+      "create": 19,
+      "finish": 0,
+      "transition": 1,
+      "quick_break": 0,
+      "direct": 61,
+      "chaotic": 3,
+      "set_play": 0,
+      "build_up_pct": 49.11,
+      "create_pct": 11.24,
+      "finish_pct": 0.0,
+      "transition_pct": 0.59
+    },
+    "receptor": [
+      {
+        "n": "Borja Valle",
+        "pos": "RDM",
+        "cnt": 24,
+        "ok_pct": 50.0
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "RCB",
+        "cnt": 15,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "B. Moltenis",
+        "pos": "LCB",
+        "cnt": 15,
+        "ok_pct": 86.67
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RM",
+        "cnt": 14,
+        "ok_pct": 78.57
+      },
+      {
+        "n": "Andoni López",
+        "pos": "LWB",
+        "cnt": 14,
+        "ok_pct": 85.71
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "LM",
+        "cnt": 12,
+        "ok_pct": 58.33
+      },
+      {
+        "n": "José Luis Cortés",
+        "pos": "CF",
+        "cnt": 12,
+        "ok_pct": 25.0
+      },
+      {
+        "n": "David Andújar",
+        "pos": "LCB",
+        "cnt": 11,
+        "ok_pct": 90.91
+      }
+    ]
+  },
+  "Borja Valle": {
+    "matches": 26,
+    "minutes": 2188,
+    "vol": {
+      "tot": 724,
+      "ok": 595,
+      "fail": 129,
+      "pct": 82.18,
+      "p90": 29.78
+    },
+    "dir": {
+      "forward": 83,
+      "sideway": 310,
+      "backward": 202,
+      "ahead": 190,
+      "forward_pct": 11.46,
+      "sideway_pct": 42.82,
+      "backward_pct": 27.9,
+      "one_touch": 201,
+      "one_touch_pct": 27.76,
+      "quick_pass": 121,
+      "carry_pct": 53.18
+    },
+    "dist": {
+      "short": 323,
+      "medium": 211,
+      "long": 61,
+      "short_pct": 44.61,
+      "medium_pct": 29.14,
+      "long_pct": 8.43,
+      "avg_m": 16.83
+    },
+    "lines": {
+      "first_break": 21,
+      "first_break_pct": 2.9,
+      "furthest_second_last": 14,
+      "furthest_last": 5,
+      "bypassed_avg": -0.07
+    },
+    "quality": {
+      "xT_total": 5.05,
+      "xT_p90": 0.21,
+      "xpass_avg": 0.87,
+      "dangerous": 54,
+      "dangerous_pct": 7.46,
+      "difficult": 103,
+      "difficult_pct": 14.23
+    },
+    "context": {
+      "opts_avg": 2.81,
+      "opts_lb_avg": 0.22,
+      "pressure_none": 124,
+      "pressure_low": 156,
+      "pressure_medium": 167,
+      "pressure_high": 150,
+      "pressure_very_high": 23,
+      "high_pressure_pct": 23.9
+    },
+    "phase": {
+      "build_up": 36,
+      "create": 356,
+      "finish": 181,
+      "transition": 33,
+      "quick_break": 7,
+      "direct": 9,
+      "chaotic": 75,
+      "set_play": 17,
+      "build_up_pct": 4.97,
+      "create_pct": 49.17,
+      "finish_pct": 25.0,
+      "transition_pct": 5.52
+    },
+    "receptor": [
+      {
+        "n": "Andoni López",
+        "pos": "LWB",
+        "cnt": 116,
+        "ok_pct": 90.52
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RM",
+        "cnt": 76,
+        "ok_pct": 93.42
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "CF",
+        "cnt": 73,
+        "ok_pct": 75.34
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "RCB",
+        "cnt": 68,
+        "ok_pct": 97.06
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "LM",
+        "cnt": 44,
+        "ok_pct": 61.36
+      },
+      {
+        "n": "José Luis Cortés",
+        "pos": "CF",
+        "cnt": 37,
+        "ok_pct": 51.35
+      },
+      {
+        "n": "B. Moltenis",
+        "pos": "LCB",
+        "cnt": 29,
+        "ok_pct": 93.1
+      },
+      {
+        "n": "Vicente Esquerdo",
+        "pos": "LM",
+        "cnt": 28,
+        "ok_pct": 92.86
+      }
+    ]
+  },
+  "Borja Vázquez": {
+    "matches": 31,
+    "minutes": 2563,
+    "vol": {
+      "tot": 560,
+      "ok": 373,
+      "fail": 187,
+      "pct": 66.61,
+      "p90": 19.66
+    },
+    "dir": {
+      "forward": 75,
+      "sideway": 193,
+      "backward": 105,
+      "ahead": 188,
+      "forward_pct": 13.39,
+      "sideway_pct": 34.46,
+      "backward_pct": 18.75,
+      "one_touch": 174,
+      "one_touch_pct": 31.07,
+      "quick_pass": 82,
+      "carry_pct": 50.36
+    },
+    "dist": {
+      "short": 238,
+      "medium": 115,
+      "long": 20,
+      "short_pct": 42.5,
+      "medium_pct": 20.54,
+      "long_pct": 3.57,
+      "avg_m": 14.43
+    },
+    "lines": {
+      "first_break": 3,
+      "first_break_pct": 0.54,
+      "furthest_second_last": 27,
+      "furthest_last": 14,
+      "bypassed_avg": 0.26
+    },
+    "quality": {
+      "xT_total": 11.21,
+      "xT_p90": 0.39,
+      "xpass_avg": 0.72,
+      "dangerous": 131,
+      "dangerous_pct": 23.39,
+      "difficult": 211,
+      "difficult_pct": 37.68
+    },
+    "context": {
+      "opts_avg": 2.69,
+      "opts_lb_avg": 0.19,
+      "pressure_none": 21,
+      "pressure_low": 109,
+      "pressure_medium": 204,
+      "pressure_high": 151,
+      "pressure_very_high": 14,
+      "high_pressure_pct": 29.46
+    },
+    "phase": {
+      "build_up": 7,
+      "create": 186,
+      "finish": 195,
+      "transition": 43,
+      "quick_break": 16,
+      "direct": 7,
+      "chaotic": 70,
+      "set_play": 24,
+      "build_up_pct": 1.25,
+      "create_pct": 33.21,
+      "finish_pct": 34.82,
+      "transition_pct": 10.54
+    },
+    "receptor": [
+      {
+        "n": "José Luis Cortés",
+        "pos": "CF",
+        "cnt": 66,
+        "ok_pct": 59.09
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "RM",
+        "cnt": 59,
+        "ok_pct": 74.58
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "LM",
+        "cnt": 55,
+        "ok_pct": 41.82
+      },
+      {
+        "n": "E. Frimpong",
+        "pos": "LM",
+        "cnt": 38,
+        "ok_pct": 63.16
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RM",
+        "cnt": 35,
+        "ok_pct": 88.57
+      },
+      {
+        "n": "Andoni López",
+        "pos": "LWB",
+        "cnt": 34,
+        "ok_pct": 91.18
+      },
+      {
+        "n": "Vicente Esquerdo",
+        "pos": "LM",
+        "cnt": 32,
+        "ok_pct": 84.38
+      },
+      {
+        "n": "P. Ferrer",
+        "pos": "CF",
+        "cnt": 30,
+        "ok_pct": 43.33
+      }
+    ]
+  },
+  "Andoni López": {
+    "matches": 27,
+    "minutes": 2275,
+    "vol": {
+      "tot": 733,
+      "ok": 480,
+      "fail": 253,
+      "pct": 65.48,
+      "p90": 29.0
+    },
+    "dir": {
+      "forward": 183,
+      "sideway": 181,
+      "backward": 116,
+      "ahead": 434,
+      "forward_pct": 24.97,
+      "sideway_pct": 24.69,
+      "backward_pct": 15.83,
+      "one_touch": 229,
+      "one_touch_pct": 31.24,
+      "quick_pass": 134,
+      "carry_pct": 44.47
+    },
+    "dist": {
+      "short": 209,
+      "medium": 201,
+      "long": 70,
+      "short_pct": 28.51,
+      "medium_pct": 27.42,
+      "long_pct": 9.55,
+      "avg_m": 18.66
+    },
+    "lines": {
+      "first_break": 64,
+      "first_break_pct": 8.73,
+      "furthest_second_last": 92,
+      "furthest_last": 35,
+      "bypassed_avg": 2.45
+    },
+    "quality": {
+      "xT_total": 7.83,
+      "xT_p90": 0.31,
+      "xpass_avg": 0.73,
+      "dangerous": 116,
+      "dangerous_pct": 15.83,
+      "difficult": 297,
+      "difficult_pct": 40.52
+    },
+    "context": {
+      "opts_avg": 2.79,
+      "opts_lb_avg": 0.59,
+      "pressure_none": 155,
+      "pressure_low": 197,
+      "pressure_medium": 169,
+      "pressure_high": 93,
+      "pressure_very_high": 6,
+      "high_pressure_pct": 13.51
+    },
+    "phase": {
+      "build_up": 38,
+      "create": 272,
+      "finish": 209,
+      "transition": 35,
+      "quick_break": 3,
+      "direct": 43,
+      "chaotic": 97,
+      "set_play": 30,
+      "build_up_pct": 5.18,
+      "create_pct": 37.11,
+      "finish_pct": 28.51,
+      "transition_pct": 5.18
+    },
+    "receptor": [
+      {
+        "n": "Borja Valle",
+        "pos": "RM",
+        "cnt": 98,
+        "ok_pct": 66.33
+      },
+      {
+        "n": "José Luis Cortés",
+        "pos": "CF",
+        "cnt": 90,
+        "ok_pct": 54.44
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "CF",
+        "cnt": 89,
+        "ok_pct": 62.92
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "LM",
+        "cnt": 68,
+        "ok_pct": 57.35
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "LCB",
+        "cnt": 55,
+        "ok_pct": 98.18
+      },
+      {
+        "n": "P. Ferrer",
+        "pos": "CF",
+        "cnt": 45,
+        "ok_pct": 31.11
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RM",
+        "cnt": 43,
+        "ok_pct": 93.02
+      },
+      {
+        "n": "E. Frimpong",
+        "pos": "CF",
+        "cnt": 39,
+        "ok_pct": 79.49
+      }
+    ]
+  },
+  "Eneko Aguilar": {
+    "matches": 13,
+    "minutes": 1068,
+    "vol": {
+      "tot": 217,
+      "ok": 169,
+      "fail": 48,
+      "pct": 77.88,
+      "p90": 18.29
+    },
+    "dir": {
+      "forward": 57,
+      "sideway": 76,
+      "backward": 36,
+      "ahead": 85,
+      "forward_pct": 26.27,
+      "sideway_pct": 35.02,
+      "backward_pct": 16.59,
+      "one_touch": 79,
+      "one_touch_pct": 36.41,
+      "quick_pass": 40,
+      "carry_pct": 43.32
+    },
+    "dist": {
+      "short": 96,
+      "medium": 64,
+      "long": 9,
+      "short_pct": 44.24,
+      "medium_pct": 29.49,
+      "long_pct": 4.15,
+      "avg_m": 14.96
+    },
+    "lines": {
+      "first_break": 7,
+      "first_break_pct": 3.23,
+      "furthest_second_last": 13,
+      "furthest_last": 4,
+      "bypassed_avg": 0.84
+    },
+    "quality": {
+      "xT_total": 1.95,
+      "xT_p90": 0.16,
+      "xpass_avg": 0.82,
+      "dangerous": 26,
+      "dangerous_pct": 11.98,
+      "difficult": 51,
+      "difficult_pct": 23.5
+    },
+    "context": {
+      "opts_avg": 2.52,
+      "opts_lb_avg": 0.39,
+      "pressure_none": 43,
+      "pressure_low": 37,
+      "pressure_medium": 57,
+      "pressure_high": 42,
+      "pressure_very_high": 5,
+      "high_pressure_pct": 21.66
+    },
+    "phase": {
+      "build_up": 7,
+      "create": 104,
+      "finish": 45,
+      "transition": 12,
+      "quick_break": 1,
+      "direct": 5,
+      "chaotic": 35,
+      "set_play": 6,
+      "build_up_pct": 3.23,
+      "create_pct": 47.93,
+      "finish_pct": 20.74,
+      "transition_pct": 5.99
+    },
+    "receptor": [
+      {
+        "n": "Andoni López",
+        "pos": "LB",
+        "cnt": 26,
+        "ok_pct": 92.31
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "CF",
+        "cnt": 23,
+        "ok_pct": 60.87
+      },
+      {
+        "n": "José Luis Cortés",
+        "pos": "CF",
+        "cnt": 23,
+        "ok_pct": 47.83
+      },
+      {
+        "n": "B. Moltenis",
+        "pos": "RCB",
+        "cnt": 22,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "LCB",
+        "cnt": 20,
+        "ok_pct": 95.0
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "CF",
+        "cnt": 15,
+        "ok_pct": 86.67
+      },
+      {
+        "n": "Diego Moreno",
+        "pos": "RB",
+        "cnt": 12,
+        "ok_pct": 66.67
+      },
+      {
+        "n": "P. Ferrer",
+        "pos": "RDM",
+        "cnt": 10,
+        "ok_pct": 30.0
+      }
+    ]
+  },
+  "Eneko Undabarrena": {
+    "matches": 27,
+    "minutes": 2420,
+    "vol": {
+      "tot": 883,
+      "ok": 752,
+      "fail": 131,
+      "pct": 85.16,
+      "p90": 32.84
+    },
+    "dir": {
+      "forward": 175,
+      "sideway": 474,
+      "backward": 103,
+      "ahead": 473,
+      "forward_pct": 19.82,
+      "sideway_pct": 53.68,
+      "backward_pct": 11.66,
+      "one_touch": 229,
+      "one_touch_pct": 25.93,
+      "quick_pass": 176,
+      "carry_pct": 51.42
+    },
+    "dist": {
+      "short": 268,
+      "medium": 413,
+      "long": 71,
+      "short_pct": 30.35,
+      "medium_pct": 46.77,
+      "long_pct": 8.04,
+      "avg_m": 18.96
+    },
+    "lines": {
+      "first_break": 77,
+      "first_break_pct": 8.72,
+      "furthest_second_last": 58,
+      "furthest_last": 9,
+      "bypassed_avg": 1.33
+    },
+    "quality": {
+      "xT_total": 2.15,
+      "xT_p90": 0.08,
+      "xpass_avg": 0.9,
+      "dangerous": 12,
+      "dangerous_pct": 1.36,
+      "difficult": 111,
+      "difficult_pct": 12.57
+    },
+    "context": {
+      "opts_avg": 2.58,
+      "opts_lb_avg": 0.48,
+      "pressure_none": 408,
+      "pressure_low": 151,
+      "pressure_medium": 122,
+      "pressure_high": 58,
+      "pressure_very_high": 7,
+      "high_pressure_pct": 7.36
+    },
+    "phase": {
+      "build_up": 126,
+      "create": 522,
+      "finish": 59,
+      "transition": 9,
+      "quick_break": 3,
+      "direct": 34,
+      "chaotic": 113,
+      "set_play": 5,
+      "build_up_pct": 14.27,
+      "create_pct": 59.12,
+      "finish_pct": 6.68,
+      "transition_pct": 1.36
+    },
+    "receptor": [
+      {
+        "n": "Germán Novoa",
+        "pos": "RCB",
+        "cnt": 126,
+        "ok_pct": 96.83
+      },
+      {
+        "n": "Andoni López",
+        "pos": "LWB",
+        "cnt": 75,
+        "ok_pct": 90.67
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "RM",
+        "cnt": 72,
+        "ok_pct": 81.94
+      },
+      {
+        "n": "David Andújar",
+        "pos": "CB",
+        "cnt": 64,
+        "ok_pct": 95.31
+      },
+      {
+        "n": "Koke",
+        "pos": "RB",
+        "cnt": 62,
+        "ok_pct": 95.16
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "CF",
+        "cnt": 49,
+        "ok_pct": 69.39
+      },
+      {
+        "n": "B. Moltenis",
+        "pos": "LCB",
+        "cnt": 47,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Andrés Prieto",
+        "pos": "GK",
+        "cnt": 47,
+        "ok_pct": 100.0
+      }
+    ]
+  },
+  "Xemi Fernández": {
+    "matches": 26,
+    "minutes": 2066,
+    "vol": {
+      "tot": 351,
+      "ok": 264,
+      "fail": 87,
+      "pct": 75.21,
+      "p90": 15.29
+    },
+    "dir": {
+      "forward": 23,
+      "sideway": 144,
+      "backward": 97,
+      "ahead": 80,
+      "forward_pct": 6.55,
+      "sideway_pct": 41.03,
+      "backward_pct": 27.64,
+      "one_touch": 123,
+      "one_touch_pct": 35.04,
+      "quick_pass": 69,
+      "carry_pct": 45.3
+    },
+    "dist": {
+      "short": 198,
+      "medium": 54,
+      "long": 12,
+      "short_pct": 56.41,
+      "medium_pct": 15.38,
+      "long_pct": 3.42,
+      "avg_m": 12.13
+    },
+    "lines": {
+      "first_break": 5,
+      "first_break_pct": 1.42,
+      "furthest_second_last": 6,
+      "furthest_last": 2,
+      "bypassed_avg": -0.56
+    },
+    "quality": {
+      "xT_total": 3.75,
+      "xT_p90": 0.16,
+      "xpass_avg": 0.81,
+      "dangerous": 46,
+      "dangerous_pct": 13.11,
+      "difficult": 74,
+      "difficult_pct": 21.08
+    },
+    "context": {
+      "opts_avg": 2.67,
+      "opts_lb_avg": 0.11,
+      "pressure_none": 22,
+      "pressure_low": 32,
+      "pressure_medium": 86,
+      "pressure_high": 111,
+      "pressure_very_high": 32,
+      "high_pressure_pct": 40.74
+    },
+    "phase": {
+      "build_up": 17,
+      "create": 166,
+      "finish": 77,
+      "transition": 13,
+      "quick_break": 5,
+      "direct": 6,
+      "chaotic": 60,
+      "set_play": 4,
+      "build_up_pct": 4.84,
+      "create_pct": 47.29,
+      "finish_pct": 21.94,
+      "transition_pct": 5.13
+    },
+    "receptor": [
+      {
+        "n": "José Luis Cortés",
+        "pos": "CF",
+        "cnt": 44,
+        "ok_pct": 47.73
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "RDM",
+        "cnt": 39,
+        "ok_pct": 74.36
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "CF",
+        "cnt": 35,
+        "ok_pct": 77.14
+      },
+      {
+        "n": "Andoni López",
+        "pos": "LWB",
+        "cnt": 34,
+        "ok_pct": 85.29
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RM",
+        "cnt": 30,
+        "ok_pct": 93.33
+      },
+      {
+        "n": "Diego Moreno",
+        "pos": "RWB",
+        "cnt": 26,
+        "ok_pct": 88.46
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "RCB",
+        "cnt": 19,
+        "ok_pct": 84.21
+      },
+      {
+        "n": "A. Keita",
+        "pos": "CF",
+        "cnt": 19,
+        "ok_pct": 73.68
+      }
+    ]
+  },
+  "P. Ferrer": {
+    "matches": 20,
+    "minutes": 1488,
+    "vol": {
+      "tot": 135,
+      "ok": 92,
+      "fail": 43,
+      "pct": 68.15,
+      "p90": 8.17
+    },
+    "dir": {
+      "forward": 9,
+      "sideway": 57,
+      "backward": 26,
+      "ahead": 21,
+      "forward_pct": 6.67,
+      "sideway_pct": 42.22,
+      "backward_pct": 19.26,
+      "one_touch": 56,
+      "one_touch_pct": 41.48,
+      "quick_pass": 18,
+      "carry_pct": 42.96
+    },
+    "dist": {
+      "short": 73,
+      "medium": 14,
+      "long": 5,
+      "short_pct": 54.07,
+      "medium_pct": 10.37,
+      "long_pct": 3.7,
+      "avg_m": 12.65
+    },
+    "lines": {
+      "first_break": 0,
+      "first_break_pct": 0.0,
+      "furthest_second_last": 0,
+      "furthest_last": 0,
+      "bypassed_avg": -1.09
+    },
+    "quality": {
+      "xT_total": 1.59,
+      "xT_p90": 0.1,
+      "xpass_avg": 0.78,
+      "dangerous": 23,
+      "dangerous_pct": 17.04,
+      "difficult": 35,
+      "difficult_pct": 25.93
+    },
+    "context": {
+      "opts_avg": 2.56,
+      "opts_lb_avg": 0.09,
+      "pressure_none": 2,
+      "pressure_low": 11,
+      "pressure_medium": 35,
+      "pressure_high": 43,
+      "pressure_very_high": 20,
+      "high_pressure_pct": 46.67
+    },
+    "phase": {
+      "build_up": 5,
+      "create": 51,
+      "finish": 31,
+      "transition": 9,
+      "quick_break": 1,
+      "direct": 3,
+      "chaotic": 29,
+      "set_play": 2,
+      "build_up_pct": 3.7,
+      "create_pct": 37.78,
+      "finish_pct": 22.96,
+      "transition_pct": 7.41
+    },
+    "receptor": [
+      {
+        "n": "Borja Vázquez",
+        "pos": "CF",
+        "cnt": 19,
+        "ok_pct": 31.58
+      },
+      {
+        "n": "E. Frimpong",
+        "pos": "LM",
+        "cnt": 14,
+        "ok_pct": 92.86
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "RM",
+        "cnt": 11,
+        "ok_pct": 54.55
+      },
+      {
+        "n": "A. Keita",
+        "pos": "CF",
+        "cnt": 10,
+        "ok_pct": 70.0
+      },
+      {
+        "n": "Fede San Emeterio",
+        "pos": "DM",
+        "cnt": 9,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Andoni López",
+        "pos": "LB",
+        "cnt": 9,
+        "ok_pct": 77.78
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "LM",
+        "cnt": 7,
+        "ok_pct": 57.14
+      },
+      {
+        "n": "Álex Mula",
+        "pos": "RM",
+        "cnt": 7,
+        "ok_pct": 85.71
+      }
+    ]
+  },
+  "Fede San Emeterio": {
+    "matches": 17,
+    "minutes": 1296,
+    "vol": {
+      "tot": 307,
+      "ok": 246,
+      "fail": 61,
+      "pct": 80.13,
+      "p90": 21.32
+    },
+    "dir": {
+      "forward": 67,
+      "sideway": 141,
+      "backward": 38,
+      "ahead": 141,
+      "forward_pct": 21.82,
+      "sideway_pct": 45.93,
+      "backward_pct": 12.38,
+      "one_touch": 114,
+      "one_touch_pct": 37.13,
+      "quick_pass": 62,
+      "carry_pct": 42.35
+    },
+    "dist": {
+      "short": 136,
+      "medium": 84,
+      "long": 26,
+      "short_pct": 44.3,
+      "medium_pct": 27.36,
+      "long_pct": 8.47,
+      "avg_m": 16.66
+    },
+    "lines": {
+      "first_break": 13,
+      "first_break_pct": 4.23,
+      "furthest_second_last": 21,
+      "furthest_last": 6,
+      "bypassed_avg": 1.43
+    },
+    "quality": {
+      "xT_total": 1.67,
+      "xT_p90": 0.12,
+      "xpass_avg": 0.86,
+      "dangerous": 23,
+      "dangerous_pct": 7.49,
+      "difficult": 55,
+      "difficult_pct": 17.92
+    },
+    "context": {
+      "opts_avg": 2.79,
+      "opts_lb_avg": 0.38,
+      "pressure_none": 79,
+      "pressure_low": 61,
+      "pressure_medium": 74,
+      "pressure_high": 32,
+      "pressure_very_high": 4,
+      "high_pressure_pct": 11.73
+    },
+    "phase": {
+      "build_up": 19,
+      "create": 137,
+      "finish": 67,
+      "transition": 10,
+      "quick_break": 3,
+      "direct": 10,
+      "chaotic": 49,
+      "set_play": 6,
+      "build_up_pct": 6.19,
+      "create_pct": 44.63,
+      "finish_pct": 21.82,
+      "transition_pct": 4.23
+    },
+    "receptor": [
+      {
+        "n": "José Luis Cortés",
+        "pos": "CF",
+        "cnt": 30,
+        "ok_pct": 43.33
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RM",
+        "cnt": 29,
+        "ok_pct": 96.55
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "LW",
+        "cnt": 25,
+        "ok_pct": 76.0
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "RCB",
+        "cnt": 22,
+        "ok_pct": 95.45
+      },
+      {
+        "n": "Diego Moreno",
+        "pos": "RWB",
+        "cnt": 20,
+        "ok_pct": 85.0
+      },
+      {
+        "n": "P. Ferrer",
+        "pos": "CF",
+        "cnt": 19,
+        "ok_pct": 57.89
+      },
+      {
+        "n": "David Andújar",
+        "pos": "CB",
+        "cnt": 19,
+        "ok_pct": 84.21
+      },
+      {
+        "n": "A. Keita",
+        "pos": "CF",
+        "cnt": 17,
+        "ok_pct": 70.59
+      }
+    ]
+  },
+  "A. Keita": {
+    "matches": 30,
+    "minutes": 2394,
+    "vol": {
+      "tot": 244,
+      "ok": 154,
+      "fail": 90,
+      "pct": 63.11,
+      "p90": 9.17
+    },
+    "dir": {
+      "forward": 31,
+      "sideway": 83,
+      "backward": 40,
+      "ahead": 84,
+      "forward_pct": 12.7,
+      "sideway_pct": 34.02,
+      "backward_pct": 16.39,
+      "one_touch": 69,
+      "one_touch_pct": 28.28,
+      "quick_pass": 46,
+      "carry_pct": 56.56
+    },
+    "dist": {
+      "short": 93,
+      "medium": 40,
+      "long": 21,
+      "short_pct": 38.11,
+      "medium_pct": 16.39,
+      "long_pct": 8.61,
+      "avg_m": 15.64
+    },
+    "lines": {
+      "first_break": 2,
+      "first_break_pct": 0.82,
+      "furthest_second_last": 7,
+      "furthest_last": 5,
+      "bypassed_avg": 0.34
+    },
+    "quality": {
+      "xT_total": 5.58,
+      "xT_p90": 0.21,
+      "xpass_avg": 0.7,
+      "dangerous": 69,
+      "dangerous_pct": 28.28,
+      "difficult": 88,
+      "difficult_pct": 36.07
+    },
+    "context": {
+      "opts_avg": 2.56,
+      "opts_lb_avg": 0.13,
+      "pressure_none": 10,
+      "pressure_low": 18,
+      "pressure_medium": 70,
+      "pressure_high": 84,
+      "pressure_very_high": 16,
+      "high_pressure_pct": 40.98
+    },
+    "phase": {
+      "build_up": 4,
+      "create": 70,
+      "finish": 82,
+      "transition": 16,
+      "quick_break": 6,
+      "direct": 9,
+      "chaotic": 47,
+      "set_play": 6,
+      "build_up_pct": 1.64,
+      "create_pct": 28.69,
+      "finish_pct": 33.61,
+      "transition_pct": 9.02
+    },
+    "receptor": [
+      {
+        "n": "Diego Moreno",
+        "pos": "RWB",
+        "cnt": 35,
+        "ok_pct": 80.0
+      },
+      {
+        "n": "José Luis Cortés",
+        "pos": "CF",
+        "cnt": 31,
+        "ok_pct": 58.06
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "LW",
+        "cnt": 23,
+        "ok_pct": 60.87
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "AM",
+        "cnt": 22,
+        "ok_pct": 54.55
+      },
+      {
+        "n": "E. Frimpong",
+        "pos": "CF",
+        "cnt": 14,
+        "ok_pct": 71.43
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "RDM",
+        "cnt": 14,
+        "ok_pct": 78.57
+      },
+      {
+        "n": "Eneko Aguilar",
+        "pos": "LW",
+        "cnt": 11,
+        "ok_pct": 63.64
+      },
+      {
+        "n": "Carlos Calderón",
+        "pos": "RW",
+        "cnt": 11,
+        "ok_pct": 54.55
+      }
+    ]
+  },
+  "Álex Mula": {
+    "matches": 10,
+    "minutes": 894,
+    "vol": {
+      "tot": 104,
+      "ok": 79,
+      "fail": 25,
+      "pct": 75.96,
+      "p90": 10.47
+    },
+    "dir": {
+      "forward": 13,
+      "sideway": 41,
+      "backward": 25,
+      "ahead": 44,
+      "forward_pct": 12.5,
+      "sideway_pct": 39.42,
+      "backward_pct": 24.04,
+      "one_touch": 33,
+      "one_touch_pct": 31.73,
+      "quick_pass": 14,
+      "carry_pct": 54.81
+    },
+    "dist": {
+      "short": 42,
+      "medium": 29,
+      "long": 8,
+      "short_pct": 40.38,
+      "medium_pct": 27.88,
+      "long_pct": 7.69,
+      "avg_m": 16.92
+    },
+    "lines": {
+      "first_break": 4,
+      "first_break_pct": 3.85,
+      "furthest_second_last": 6,
+      "furthest_last": 3,
+      "bypassed_avg": 0.62
+    },
+    "quality": {
+      "xT_total": 1.3,
+      "xT_p90": 0.13,
+      "xpass_avg": 0.81,
+      "dangerous": 18,
+      "dangerous_pct": 17.31,
+      "difficult": 20,
+      "difficult_pct": 19.23
+    },
+    "context": {
+      "opts_avg": 3.16,
+      "opts_lb_avg": 0.35,
+      "pressure_none": 11,
+      "pressure_low": 19,
+      "pressure_medium": 42,
+      "pressure_high": 24,
+      "pressure_very_high": 2,
+      "high_pressure_pct": 25.0
+    },
+    "phase": {
+      "build_up": 4,
+      "create": 39,
+      "finish": 34,
+      "transition": 10,
+      "quick_break": 0,
+      "direct": 2,
+      "chaotic": 12,
+      "set_play": 3,
+      "build_up_pct": 3.85,
+      "create_pct": 37.5,
+      "finish_pct": 32.69,
+      "transition_pct": 9.62
+    },
+    "receptor": [
+      {
+        "n": "Andoni López",
+        "pos": "LB",
+        "cnt": 15,
+        "ok_pct": 93.33
+      },
+      {
+        "n": "P. Ferrer",
+        "pos": "RDM",
+        "cnt": 10,
+        "ok_pct": 30.0
+      },
+      {
+        "n": "David Andújar",
+        "pos": "RCB",
+        "cnt": 10,
+        "ok_pct": 80.0
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RDM",
+        "cnt": 8,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "B. Moltenis",
+        "pos": "LCB",
+        "cnt": 7,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "LCB",
+        "cnt": 7,
+        "ok_pct": 57.14
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "RW",
+        "cnt": 7,
+        "ok_pct": 71.43
+      },
+      {
+        "n": "Diego Moreno",
+        "pos": "RB",
+        "cnt": 7,
+        "ok_pct": 71.43
+      }
+    ]
+  },
+  "Sergio Benito": {
+    "matches": 8,
+    "minutes": 691,
+    "vol": {
+      "tot": 42,
+      "ok": 33,
+      "fail": 9,
+      "pct": 78.57,
+      "p90": 5.47
+    },
+    "dir": {
+      "forward": 3,
+      "sideway": 20,
+      "backward": 10,
+      "ahead": 10,
+      "forward_pct": 7.14,
+      "sideway_pct": 47.62,
+      "backward_pct": 23.81,
+      "one_touch": 15,
+      "one_touch_pct": 35.71,
+      "quick_pass": 7,
+      "carry_pct": 42.86
+    },
+    "dist": {
+      "short": 20,
+      "medium": 11,
+      "long": 2,
+      "short_pct": 47.62,
+      "medium_pct": 26.19,
+      "long_pct": 4.76,
+      "avg_m": 14.19
+    },
+    "lines": {
+      "first_break": 0,
+      "first_break_pct": 0.0,
+      "furthest_second_last": 1,
+      "furthest_last": 0,
+      "bypassed_avg": -0.48
+    },
+    "quality": {
+      "xT_total": 0.88,
+      "xT_p90": 0.12,
+      "xpass_avg": 0.74,
+      "dangerous": 11,
+      "dangerous_pct": 26.19,
+      "difficult": 12,
+      "difficult_pct": 28.57
+    },
+    "context": {
+      "opts_avg": 2.55,
+      "opts_lb_avg": 0.07,
+      "pressure_none": 0,
+      "pressure_low": 4,
+      "pressure_medium": 13,
+      "pressure_high": 9,
+      "pressure_very_high": 3,
+      "high_pressure_pct": 28.57
+    },
+    "phase": {
+      "build_up": 0,
+      "create": 12,
+      "finish": 14,
+      "transition": 6,
+      "quick_break": 0,
+      "direct": 0,
+      "chaotic": 9,
+      "set_play": 1,
+      "build_up_pct": 0.0,
+      "create_pct": 28.57,
+      "finish_pct": 33.33,
+      "transition_pct": 14.29
+    },
+    "receptor": [
+      {
+        "n": "P. Ferrer",
+        "pos": "CF",
+        "cnt": 7,
+        "ok_pct": 57.14
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "LW",
+        "cnt": 6,
+        "ok_pct": 83.33
+      },
+      {
+        "n": "José Luis Cortés",
+        "pos": "CF",
+        "cnt": 6,
+        "ok_pct": 83.33
+      },
+      {
+        "n": "Álex Mula",
+        "pos": "RM",
+        "cnt": 3,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "LM",
+        "cnt": 3,
+        "ok_pct": 66.67
+      },
+      {
+        "n": "E. Frimpong",
+        "pos": "RDM",
+        "cnt": 3,
+        "ok_pct": 0.0
+      },
+      {
+        "n": "Eneko Aguilar",
+        "pos": "LDM",
+        "cnt": 3,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "LDM",
+        "cnt": 2,
+        "ok_pct": 100.0
+      }
+    ]
+  },
+  "José Luis Cortés": {
+    "matches": 27,
+    "minutes": 1986,
+    "vol": {
+      "tot": 245,
+      "ok": 169,
+      "fail": 76,
+      "pct": 68.98,
+      "p90": 11.1
+    },
+    "dir": {
+      "forward": 16,
+      "sideway": 80,
+      "backward": 73,
+      "ahead": 35,
+      "forward_pct": 6.53,
+      "sideway_pct": 32.65,
+      "backward_pct": 29.8,
+      "one_touch": 73,
+      "one_touch_pct": 29.8,
+      "quick_pass": 33,
+      "carry_pct": 61.22
+    },
+    "dist": {
+      "short": 125,
+      "medium": 39,
+      "long": 5,
+      "short_pct": 51.02,
+      "medium_pct": 15.92,
+      "long_pct": 2.04,
+      "avg_m": 12.36
+    },
+    "lines": {
+      "first_break": 0,
+      "first_break_pct": 0.0,
+      "furthest_second_last": 0,
+      "furthest_last": 5,
+      "bypassed_avg": -1.15
+    },
+    "quality": {
+      "xT_total": 5.34,
+      "xT_p90": 0.24,
+      "xpass_avg": 0.72,
+      "dangerous": 66,
+      "dangerous_pct": 26.94,
+      "difficult": 84,
+      "difficult_pct": 34.29
+    },
+    "context": {
+      "opts_avg": 2.44,
+      "opts_lb_avg": 0.07,
+      "pressure_none": 3,
+      "pressure_low": 11,
+      "pressure_medium": 76,
+      "pressure_high": 77,
+      "pressure_very_high": 19,
+      "high_pressure_pct": 39.18
+    },
+    "phase": {
+      "build_up": 7,
+      "create": 85,
+      "finish": 74,
+      "transition": 36,
+      "quick_break": 3,
+      "direct": 2,
+      "chaotic": 26,
+      "set_play": 9,
+      "build_up_pct": 2.86,
+      "create_pct": 34.69,
+      "finish_pct": 30.2,
+      "transition_pct": 15.92
+    },
+    "receptor": [
+      {
+        "n": "Borja Valle",
+        "pos": "RM",
+        "cnt": 35,
+        "ok_pct": 68.57
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "AM",
+        "cnt": 35,
+        "ok_pct": 54.29
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "CF",
+        "cnt": 35,
+        "ok_pct": 65.71
+      },
+      {
+        "n": "Andoni López",
+        "pos": "RB",
+        "cnt": 21,
+        "ok_pct": 80.95
+      },
+      {
+        "n": "A. Keita",
+        "pos": "RW",
+        "cnt": 19,
+        "ok_pct": 57.89
+      },
+      {
+        "n": "E. Frimpong",
+        "pos": "LM",
+        "cnt": 11,
+        "ok_pct": 90.91
+      },
+      {
+        "n": "Eneko Aguilar",
+        "pos": "RDM",
+        "cnt": 8,
+        "ok_pct": 87.5
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "LDM",
+        "cnt": 8,
+        "ok_pct": 100.0
+      }
+    ]
+  },
+  "David Andújar": {
+    "matches": 15,
+    "minutes": 1256,
+    "vol": {
+      "tot": 384,
+      "ok": 329,
+      "fail": 55,
+      "pct": 85.68,
+      "p90": 27.52
+    },
+    "dir": {
+      "forward": 98,
+      "sideway": 213,
+      "backward": 18,
+      "ahead": 243,
+      "forward_pct": 25.52,
+      "sideway_pct": 55.47,
+      "backward_pct": 4.69,
+      "one_touch": 95,
+      "one_touch_pct": 24.74,
+      "quick_pass": 57,
+      "carry_pct": 56.51
+    },
+    "dist": {
+      "short": 90,
+      "medium": 187,
+      "long": 52,
+      "short_pct": 23.44,
+      "medium_pct": 48.7,
+      "long_pct": 13.54,
+      "avg_m": 21.45
+    },
+    "lines": {
+      "first_break": 69,
+      "first_break_pct": 17.97,
+      "furthest_second_last": 40,
+      "furthest_last": 8,
+      "bypassed_avg": 1.84
+    },
+    "quality": {
+      "xT_total": 0.77,
+      "xT_p90": 0.06,
+      "xpass_avg": 0.89,
+      "dangerous": 4,
+      "dangerous_pct": 1.04,
+      "difficult": 48,
+      "difficult_pct": 12.5
+    },
+    "context": {
+      "opts_avg": 2.41,
+      "opts_lb_avg": 0.62,
+      "pressure_none": 190,
+      "pressure_low": 65,
+      "pressure_medium": 29,
+      "pressure_high": 25,
+      "pressure_very_high": 3,
+      "high_pressure_pct": 7.29
+    },
+    "phase": {
+      "build_up": 74,
+      "create": 205,
+      "finish": 20,
+      "transition": 5,
+      "quick_break": 0,
+      "direct": 23,
+      "chaotic": 52,
+      "set_play": 2,
+      "build_up_pct": 19.27,
+      "create_pct": 53.39,
+      "finish_pct": 5.21,
+      "transition_pct": 1.3
+    },
+    "receptor": [
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RM",
+        "cnt": 51,
+        "ok_pct": 98.04
+      },
+      {
+        "n": "B. Moltenis",
+        "pos": "LCB",
+        "cnt": 43,
+        "ok_pct": 95.35
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "RCB",
+        "cnt": 32,
+        "ok_pct": 90.62
+      },
+      {
+        "n": "Andoni López",
+        "pos": "LWB",
+        "cnt": 27,
+        "ok_pct": 88.89
+      },
+      {
+        "n": "Diego Moreno",
+        "pos": "RWB",
+        "cnt": 27,
+        "ok_pct": 92.59
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "RM",
+        "cnt": 24,
+        "ok_pct": 91.67
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "RB",
+        "cnt": 23,
+        "ok_pct": 73.91
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "LM",
+        "cnt": 20,
+        "ok_pct": 65.0
+      }
+    ]
+  },
+  "E. Frimpong": {
+    "matches": 26,
+    "minutes": 2015,
+    "vol": {
+      "tot": 424,
+      "ok": 357,
+      "fail": 67,
+      "pct": 84.2,
+      "p90": 18.94
+    },
+    "dir": {
+      "forward": 75,
+      "sideway": 217,
+      "backward": 65,
+      "ahead": 180,
+      "forward_pct": 17.69,
+      "sideway_pct": 51.18,
+      "backward_pct": 15.33,
+      "one_touch": 112,
+      "one_touch_pct": 26.42,
+      "quick_pass": 93,
+      "carry_pct": 53.54
+    },
+    "dist": {
+      "short": 200,
+      "medium": 135,
+      "long": 22,
+      "short_pct": 47.17,
+      "medium_pct": 31.84,
+      "long_pct": 5.19,
+      "avg_m": 15.93
+    },
+    "lines": {
+      "first_break": 12,
+      "first_break_pct": 2.83,
+      "furthest_second_last": 16,
+      "furthest_last": 7,
+      "bypassed_avg": 0.63
+    },
+    "quality": {
+      "xT_total": 3.17,
+      "xT_p90": 0.14,
+      "xpass_avg": 0.87,
+      "dangerous": 32,
+      "dangerous_pct": 7.55,
+      "difficult": 62,
+      "difficult_pct": 14.62
+    },
+    "context": {
+      "opts_avg": 2.94,
+      "opts_lb_avg": 0.28,
+      "pressure_none": 60,
+      "pressure_low": 106,
+      "pressure_medium": 120,
+      "pressure_high": 96,
+      "pressure_very_high": 9,
+      "high_pressure_pct": 24.76
+    },
+    "phase": {
+      "build_up": 23,
+      "create": 219,
+      "finish": 73,
+      "transition": 24,
+      "quick_break": 5,
+      "direct": 11,
+      "chaotic": 53,
+      "set_play": 9,
+      "build_up_pct": 5.42,
+      "create_pct": 51.65,
+      "finish_pct": 17.22,
+      "transition_pct": 6.84
+    },
+    "receptor": [
+      {
+        "n": "Andoni López",
+        "pos": "LWB",
+        "cnt": 52,
+        "ok_pct": 88.46
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "LW",
+        "cnt": 46,
+        "ok_pct": 78.26
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "RM",
+        "cnt": 43,
+        "ok_pct": 88.37
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "LCB",
+        "cnt": 35,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "LW",
+        "cnt": 27,
+        "ok_pct": 66.67
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "RCB",
+        "cnt": 25,
+        "ok_pct": 96.0
+      },
+      {
+        "n": "A. Keita",
+        "pos": "RW",
+        "cnt": 24,
+        "ok_pct": 75.0
+      },
+      {
+        "n": "José Luis Cortés",
+        "pos": "CF",
+        "cnt": 22,
+        "ok_pct": 59.09
+      }
+    ]
+  },
+  "Mario Jorrín": {
+    "matches": 14,
+    "minutes": 1194,
+    "vol": {
+      "tot": 205,
+      "ok": 143,
+      "fail": 62,
+      "pct": 69.76,
+      "p90": 15.45
+    },
+    "dir": {
+      "forward": 56,
+      "sideway": 67,
+      "backward": 20,
+      "ahead": 110,
+      "forward_pct": 27.32,
+      "sideway_pct": 32.68,
+      "backward_pct": 9.76,
+      "one_touch": 55,
+      "one_touch_pct": 26.83,
+      "quick_pass": 51,
+      "carry_pct": 49.76
+    },
+    "dist": {
+      "short": 64,
+      "medium": 68,
+      "long": 11,
+      "short_pct": 31.22,
+      "medium_pct": 33.17,
+      "long_pct": 5.37,
+      "avg_m": 16.93
+    },
+    "lines": {
+      "first_break": 18,
+      "first_break_pct": 8.78,
+      "furthest_second_last": 23,
+      "furthest_last": 5,
+      "bypassed_avg": 1.86
+    },
+    "quality": {
+      "xT_total": 1.53,
+      "xT_p90": 0.12,
+      "xpass_avg": 0.8,
+      "dangerous": 14,
+      "dangerous_pct": 6.83,
+      "difficult": 54,
+      "difficult_pct": 26.34
+    },
+    "context": {
+      "opts_avg": 2.44,
+      "opts_lb_avg": 0.48,
+      "pressure_none": 48,
+      "pressure_low": 52,
+      "pressure_medium": 42,
+      "pressure_high": 31,
+      "pressure_very_high": 3,
+      "high_pressure_pct": 16.59
+    },
+    "phase": {
+      "build_up": 19,
+      "create": 84,
+      "finish": 47,
+      "transition": 5,
+      "quick_break": 1,
+      "direct": 14,
+      "chaotic": 30,
+      "set_play": 1,
+      "build_up_pct": 9.27,
+      "create_pct": 40.98,
+      "finish_pct": 22.93,
+      "transition_pct": 2.93
+    },
+    "receptor": [
+      {
+        "n": "Borja Vázquez",
+        "pos": "CF",
+        "cnt": 46,
+        "ok_pct": 71.74
+      },
+      {
+        "n": "A. Keita",
+        "pos": "RW",
+        "cnt": 24,
+        "ok_pct": 54.17
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RM",
+        "cnt": 24,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Carlos Calderón",
+        "pos": "CF",
+        "cnt": 16,
+        "ok_pct": 62.5
+      },
+      {
+        "n": "José Luis Cortés",
+        "pos": "CF",
+        "cnt": 14,
+        "ok_pct": 50.0
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "RM",
+        "cnt": 13,
+        "ok_pct": 53.85
+      },
+      {
+        "n": "David Andújar",
+        "pos": "RCB",
+        "cnt": 9,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "AM",
+        "cnt": 8,
+        "ok_pct": 50.0
+      }
+    ]
+  },
+  "Vasco Sousa": {
+    "matches": 7,
+    "minutes": 573,
+    "vol": {
+      "tot": 106,
+      "ok": 73,
+      "fail": 33,
+      "pct": 68.87,
+      "p90": 16.65
+    },
+    "dir": {
+      "forward": 24,
+      "sideway": 26,
+      "backward": 23,
+      "ahead": 53,
+      "forward_pct": 22.64,
+      "sideway_pct": 24.53,
+      "backward_pct": 21.7,
+      "one_touch": 33,
+      "one_touch_pct": 31.13,
+      "quick_pass": 24,
+      "carry_pct": 37.74
+    },
+    "dist": {
+      "short": 40,
+      "medium": 18,
+      "long": 15,
+      "short_pct": 37.74,
+      "medium_pct": 16.98,
+      "long_pct": 14.15,
+      "avg_m": 19.05
+    },
+    "lines": {
+      "first_break": 4,
+      "first_break_pct": 3.77,
+      "furthest_second_last": 9,
+      "furthest_last": 4,
+      "bypassed_avg": 1.66
+    },
+    "quality": {
+      "xT_total": 0.86,
+      "xT_p90": 0.14,
+      "xpass_avg": 0.75,
+      "dangerous": 12,
+      "dangerous_pct": 11.32,
+      "difficult": 39,
+      "difficult_pct": 36.79
+    },
+    "context": {
+      "opts_avg": 2.69,
+      "opts_lb_avg": 0.45,
+      "pressure_none": 19,
+      "pressure_low": 23,
+      "pressure_medium": 26,
+      "pressure_high": 13,
+      "pressure_very_high": 1,
+      "high_pressure_pct": 13.21
+    },
+    "phase": {
+      "build_up": 11,
+      "create": 44,
+      "finish": 17,
+      "transition": 1,
+      "quick_break": 0,
+      "direct": 11,
+      "chaotic": 16,
+      "set_play": 5,
+      "build_up_pct": 10.38,
+      "create_pct": 41.51,
+      "finish_pct": 16.04,
+      "transition_pct": 0.94
+    },
+    "receptor": [
+      {
+        "n": "Borja Vázquez",
+        "pos": "CF",
+        "cnt": 17,
+        "ok_pct": 64.71
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "LCB",
+        "cnt": 16,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "RDM",
+        "cnt": 12,
+        "ok_pct": 83.33
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "AM",
+        "cnt": 10,
+        "ok_pct": 30.0
+      },
+      {
+        "n": "José Luis Cortés",
+        "pos": "AM",
+        "cnt": 8,
+        "ok_pct": 37.5
+      },
+      {
+        "n": "E. Frimpong",
+        "pos": "RM",
+        "cnt": 7,
+        "ok_pct": 85.71
+      },
+      {
+        "n": "A. Keita",
+        "pos": "RW",
+        "cnt": 5,
+        "ok_pct": 60.0
+      },
+      {
+        "n": "S. Petkov",
+        "pos": "AM",
+        "cnt": 5,
+        "ok_pct": 40.0
+      }
+    ]
+  },
+  "Andrés Prieto": {
+    "matches": 20,
+    "minutes": 1709,
+    "vol": {
+      "tot": 285,
+      "ok": 189,
+      "fail": 96,
+      "pct": 66.32,
+      "p90": 15.01
+    },
+    "dir": {
+      "forward": 117,
+      "sideway": 70,
+      "backward": 0,
+      "ahead": 243,
+      "forward_pct": 41.05,
+      "sideway_pct": 24.56,
+      "backward_pct": 0.0,
+      "one_touch": 52,
+      "one_touch_pct": 18.25,
+      "quick_pass": 25,
+      "carry_pct": 60.7
+    },
+    "dist": {
+      "short": 26,
+      "medium": 62,
+      "long": 99,
+      "short_pct": 9.12,
+      "medium_pct": 21.75,
+      "long_pct": 34.74,
+      "avg_m": 33.4
+    },
+    "lines": {
+      "first_break": 89,
+      "first_break_pct": 31.23,
+      "furthest_second_last": 102,
+      "furthest_last": 21,
+      "bypassed_avg": 3.94
+    },
+    "quality": {
+      "xT_total": 0.29,
+      "xT_p90": 0.02,
+      "xpass_avg": 0.79,
+      "dangerous": 0,
+      "dangerous_pct": 0.0,
+      "difficult": 39,
+      "difficult_pct": 13.68
+    },
+    "context": {
+      "opts_avg": 3.35,
+      "opts_lb_avg": 1.69,
+      "pressure_none": 73,
+      "pressure_low": 27,
+      "pressure_medium": 25,
+      "pressure_high": 6,
+      "pressure_very_high": 0,
+      "high_pressure_pct": 2.11
+    },
+    "phase": {
+      "build_up": 101,
+      "create": 31,
+      "finish": 1,
+      "transition": 7,
+      "quick_break": 0,
+      "direct": 123,
+      "chaotic": 21,
+      "set_play": 0,
+      "build_up_pct": 35.44,
+      "create_pct": 10.88,
+      "finish_pct": 0.35,
+      "transition_pct": 2.46
+    },
+    "receptor": [
+      {
+        "n": "José Luis Cortés",
+        "pos": "CF",
+        "cnt": 32,
+        "ok_pct": 40.62
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "CF",
+        "cnt": 31,
+        "ok_pct": 61.29
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "LCB",
+        "cnt": 25,
+        "ok_pct": 96.0
+      },
+      {
+        "n": "A. Keita",
+        "pos": "RW",
+        "cnt": 25,
+        "ok_pct": 48.0
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "LM",
+        "cnt": 21,
+        "ok_pct": 66.67
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "LCB",
+        "cnt": 19,
+        "ok_pct": 94.74
+      },
+      {
+        "n": "Andoni López",
+        "pos": "LB",
+        "cnt": 18,
+        "ok_pct": 72.22
+      },
+      {
+        "n": "P. Ferrer",
+        "pos": "CF",
+        "cnt": 15,
+        "ok_pct": 53.33
+      }
+    ]
+  },
+  "Erik Morán": {
+    "matches": 5,
+    "minutes": 384,
+    "vol": {
+      "tot": 72,
+      "ok": 55,
+      "fail": 17,
+      "pct": 76.39,
+      "p90": 16.88
+    },
+    "dir": {
+      "forward": 15,
+      "sideway": 30,
+      "backward": 9,
+      "ahead": 38,
+      "forward_pct": 20.83,
+      "sideway_pct": 41.67,
+      "backward_pct": 12.5,
+      "one_touch": 23,
+      "one_touch_pct": 31.94,
+      "quick_pass": 17,
+      "carry_pct": 38.89
+    },
+    "dist": {
+      "short": 27,
+      "medium": 24,
+      "long": 3,
+      "short_pct": 37.5,
+      "medium_pct": 33.33,
+      "long_pct": 4.17,
+      "avg_m": 15.33
+    },
+    "lines": {
+      "first_break": 3,
+      "first_break_pct": 4.17,
+      "furthest_second_last": 7,
+      "furthest_last": 1,
+      "bypassed_avg": 1.56
+    },
+    "quality": {
+      "xT_total": 0.32,
+      "xT_p90": 0.08,
+      "xpass_avg": 0.86,
+      "dangerous": 1,
+      "dangerous_pct": 1.39,
+      "difficult": 11,
+      "difficult_pct": 15.28
+    },
+    "context": {
+      "opts_avg": 2.88,
+      "opts_lb_avg": 0.24,
+      "pressure_none": 13,
+      "pressure_low": 23,
+      "pressure_medium": 16,
+      "pressure_high": 14,
+      "pressure_very_high": 0,
+      "high_pressure_pct": 19.44
+    },
+    "phase": {
+      "build_up": 3,
+      "create": 38,
+      "finish": 9,
+      "transition": 4,
+      "quick_break": 0,
+      "direct": 2,
+      "chaotic": 15,
+      "set_play": 1,
+      "build_up_pct": 4.17,
+      "create_pct": 52.78,
+      "finish_pct": 12.5,
+      "transition_pct": 5.56
+    },
+    "receptor": [
+      {
+        "n": "Borja Valle",
+        "pos": "LW",
+        "cnt": 14,
+        "ok_pct": 78.57
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "CF",
+        "cnt": 12,
+        "ok_pct": 66.67
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "RB",
+        "cnt": 7,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "José Luis Cortés",
+        "pos": "AM",
+        "cnt": 7,
+        "ok_pct": 14.29
+      },
+      {
+        "n": "Fede San Emeterio",
+        "pos": "RDM",
+        "cnt": 6,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "RW",
+        "cnt": 4,
+        "ok_pct": 50.0
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RCB",
+        "cnt": 4,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "E. Frimpong",
+        "pos": "LDM",
+        "cnt": 3,
+        "ok_pct": 66.67
+      }
+    ]
+  },
+  "Vicente Esquerdo": {
+    "matches": 15,
+    "minutes": 1178,
+    "vol": {
+      "tot": 330,
+      "ok": 276,
+      "fail": 54,
+      "pct": 83.64,
+      "p90": 25.21
+    },
+    "dir": {
+      "forward": 66,
+      "sideway": 171,
+      "backward": 39,
+      "ahead": 137,
+      "forward_pct": 20.0,
+      "sideway_pct": 51.82,
+      "backward_pct": 11.82,
+      "one_touch": 104,
+      "one_touch_pct": 31.52,
+      "quick_pass": 86,
+      "carry_pct": 38.48
+    },
+    "dist": {
+      "short": 138,
+      "medium": 118,
+      "long": 20,
+      "short_pct": 41.82,
+      "medium_pct": 35.76,
+      "long_pct": 6.06,
+      "avg_m": 16.48
+    },
+    "lines": {
+      "first_break": 16,
+      "first_break_pct": 4.85,
+      "furthest_second_last": 32,
+      "furthest_last": 7,
+      "bypassed_avg": 1.09
+    },
+    "quality": {
+      "xT_total": 1.68,
+      "xT_p90": 0.13,
+      "xpass_avg": 0.86,
+      "dangerous": 13,
+      "dangerous_pct": 3.94,
+      "difficult": 50,
+      "difficult_pct": 15.15
+    },
+    "context": {
+      "opts_avg": 2.78,
+      "opts_lb_avg": 0.34,
+      "pressure_none": 46,
+      "pressure_low": 80,
+      "pressure_medium": 111,
+      "pressure_high": 53,
+      "pressure_very_high": 5,
+      "high_pressure_pct": 17.58
+    },
+    "phase": {
+      "build_up": 25,
+      "create": 160,
+      "finish": 67,
+      "transition": 14,
+      "quick_break": 7,
+      "direct": 7,
+      "chaotic": 40,
+      "set_play": 6,
+      "build_up_pct": 7.58,
+      "create_pct": 48.48,
+      "finish_pct": 20.3,
+      "transition_pct": 6.36
+    },
+    "receptor": [
+      {
+        "n": "Koke",
+        "pos": "RB",
+        "cnt": 45,
+        "ok_pct": 88.89
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "LW",
+        "cnt": 43,
+        "ok_pct": 76.74
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "CF",
+        "cnt": 32,
+        "ok_pct": 96.88
+      },
+      {
+        "n": "E. Frimpong",
+        "pos": "LM",
+        "cnt": 29,
+        "ok_pct": 86.21
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "LCB",
+        "cnt": 28,
+        "ok_pct": 96.43
+      },
+      {
+        "n": "Carlos Calderón",
+        "pos": "RW",
+        "cnt": 26,
+        "ok_pct": 88.46
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RCB",
+        "cnt": 19,
+        "ok_pct": 94.74
+      },
+      {
+        "n": "Andoni López",
+        "pos": "LB",
+        "cnt": 19,
+        "ok_pct": 89.47
+      }
+    ]
+  },
+  "Carlos Calderón": {
+    "matches": 14,
+    "minutes": 1223,
+    "vol": {
+      "tot": 188,
+      "ok": 132,
+      "fail": 56,
+      "pct": 70.21,
+      "p90": 13.83
+    },
+    "dir": {
+      "forward": 35,
+      "sideway": 49,
+      "backward": 48,
+      "ahead": 58,
+      "forward_pct": 18.62,
+      "sideway_pct": 26.06,
+      "backward_pct": 25.53,
+      "one_touch": 39,
+      "one_touch_pct": 20.74,
+      "quick_pass": 30,
+      "carry_pct": 59.04
+    },
+    "dist": {
+      "short": 75,
+      "medium": 48,
+      "long": 9,
+      "short_pct": 39.89,
+      "medium_pct": 25.53,
+      "long_pct": 4.79,
+      "avg_m": 15.19
+    },
+    "lines": {
+      "first_break": 2,
+      "first_break_pct": 1.06,
+      "furthest_second_last": 6,
+      "furthest_last": 7,
+      "bypassed_avg": 0.23
+    },
+    "quality": {
+      "xT_total": 3.33,
+      "xT_p90": 0.25,
+      "xpass_avg": 0.76,
+      "dangerous": 38,
+      "dangerous_pct": 20.21,
+      "difficult": 62,
+      "difficult_pct": 32.98
+    },
+    "context": {
+      "opts_avg": 2.55,
+      "opts_lb_avg": 0.16,
+      "pressure_none": 8,
+      "pressure_low": 33,
+      "pressure_medium": 76,
+      "pressure_high": 46,
+      "pressure_very_high": 6,
+      "high_pressure_pct": 27.66
+    },
+    "phase": {
+      "build_up": 5,
+      "create": 57,
+      "finish": 68,
+      "transition": 12,
+      "quick_break": 8,
+      "direct": 7,
+      "chaotic": 24,
+      "set_play": 5,
+      "build_up_pct": 2.66,
+      "create_pct": 30.32,
+      "finish_pct": 36.17,
+      "transition_pct": 10.64
+    },
+    "receptor": [
+      {
+        "n": "Borja Vázquez",
+        "pos": "LW",
+        "cnt": 45,
+        "ok_pct": 64.44
+      },
+      {
+        "n": "Koke",
+        "pos": "RB",
+        "cnt": 28,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "LW",
+        "cnt": 19,
+        "ok_pct": 73.68
+      },
+      {
+        "n": "A. Keita",
+        "pos": "CF",
+        "cnt": 17,
+        "ok_pct": 58.82
+      },
+      {
+        "n": "Borislav Ivanov Stankov",
+        "pos": "CF",
+        "cnt": 15,
+        "ok_pct": 33.33
+      },
+      {
+        "n": "Vicente Esquerdo",
+        "pos": "LM",
+        "cnt": 12,
+        "ok_pct": 83.33
+      },
+      {
+        "n": "Mario Jorrín",
+        "pos": "RB",
+        "cnt": 11,
+        "ok_pct": 72.73
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RCB",
+        "cnt": 10,
+        "ok_pct": 100.0
+      }
+    ]
+  },
+  "V. Kisil": {
+    "matches": 4,
+    "minutes": 297,
+    "vol": {
+      "tot": 19,
+      "ok": 15,
+      "fail": 4,
+      "pct": 78.95,
+      "p90": 5.76
+    },
+    "dir": {
+      "forward": 4,
+      "sideway": 9,
+      "backward": 2,
+      "ahead": 8,
+      "forward_pct": 21.05,
+      "sideway_pct": 47.37,
+      "backward_pct": 10.53,
+      "one_touch": 12,
+      "one_touch_pct": 63.16,
+      "quick_pass": 2,
+      "carry_pct": 26.32
+    },
+    "dist": {
+      "short": 12,
+      "medium": 2,
+      "long": 1,
+      "short_pct": 63.16,
+      "medium_pct": 10.53,
+      "long_pct": 5.26,
+      "avg_m": 13.24
+    },
+    "lines": {
+      "first_break": 0,
+      "first_break_pct": 0.0,
+      "furthest_second_last": 2,
+      "furthest_last": 0,
+      "bypassed_avg": 1.16
+    },
+    "quality": {
+      "xT_total": 0.05,
+      "xT_p90": 0.02,
+      "xpass_avg": 0.86,
+      "dangerous": 0,
+      "dangerous_pct": 0.0,
+      "difficult": 2,
+      "difficult_pct": 10.53
+    },
+    "context": {
+      "opts_avg": 2.47,
+      "opts_lb_avg": 0.21,
+      "pressure_none": 1,
+      "pressure_low": 5,
+      "pressure_medium": 6,
+      "pressure_high": 4,
+      "pressure_very_high": 0,
+      "high_pressure_pct": 21.05
+    },
+    "phase": {
+      "build_up": 3,
+      "create": 6,
+      "finish": 3,
+      "transition": 2,
+      "quick_break": 0,
+      "direct": 2,
+      "chaotic": 3,
+      "set_play": 0,
+      "build_up_pct": 15.79,
+      "create_pct": 31.58,
+      "finish_pct": 15.79,
+      "transition_pct": 10.53
+    },
+    "receptor": [
+      {
+        "n": "A. Keita",
+        "pos": "CF",
+        "cnt": 4,
+        "ok_pct": 50.0
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "LW",
+        "cnt": 3,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "RW",
+        "cnt": 3,
+        "ok_pct": 66.67
+      },
+      {
+        "n": "E. Frimpong",
+        "pos": "CM",
+        "cnt": 2,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "LCB",
+        "cnt": 2,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Borislav Ivanov Stankov",
+        "pos": "CF",
+        "cnt": 1,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Koke",
+        "pos": "RB",
+        "cnt": 1,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Mario Jorrín",
+        "pos": "RB",
+        "cnt": 1,
+        "ok_pct": 100.0
+      }
+    ]
+  },
+  "Koke": {
+    "matches": 12,
+    "minutes": 972,
+    "vol": {
+      "tot": 305,
+      "ok": 239,
+      "fail": 66,
+      "pct": 78.36,
+      "p90": 28.24
+    },
+    "dir": {
+      "forward": 102,
+      "sideway": 117,
+      "backward": 20,
+      "ahead": 195,
+      "forward_pct": 33.44,
+      "sideway_pct": 38.36,
+      "backward_pct": 6.56,
+      "one_touch": 69,
+      "one_touch_pct": 22.62,
+      "quick_pass": 79,
+      "carry_pct": 45.57
+    },
+    "dist": {
+      "short": 126,
+      "medium": 84,
+      "long": 29,
+      "short_pct": 41.31,
+      "medium_pct": 27.54,
+      "long_pct": 9.51,
+      "avg_m": 17.26
+    },
+    "lines": {
+      "first_break": 48,
+      "first_break_pct": 15.74,
+      "furthest_second_last": 40,
+      "furthest_last": 18,
+      "bypassed_avg": 2.42
+    },
+    "quality": {
+      "xT_total": 1.45,
+      "xT_p90": 0.13,
+      "xpass_avg": 0.82,
+      "dangerous": 15,
+      "dangerous_pct": 4.92,
+      "difficult": 74,
+      "difficult_pct": 24.26
+    },
+    "context": {
+      "opts_avg": 2.47,
+      "opts_lb_avg": 0.6,
+      "pressure_none": 95,
+      "pressure_low": 83,
+      "pressure_medium": 64,
+      "pressure_high": 31,
+      "pressure_very_high": 6,
+      "high_pressure_pct": 12.13
+    },
+    "phase": {
+      "build_up": 27,
+      "create": 163,
+      "finish": 47,
+      "transition": 6,
+      "quick_break": 4,
+      "direct": 16,
+      "chaotic": 34,
+      "set_play": 6,
+      "build_up_pct": 8.85,
+      "create_pct": 53.44,
+      "finish_pct": 15.41,
+      "transition_pct": 3.28
+    },
+    "receptor": [
+      {
+        "n": "Borja Vázquez",
+        "pos": "LW",
+        "cnt": 49,
+        "ok_pct": 77.55
+      },
+      {
+        "n": "Carlos Calderón",
+        "pos": "RW",
+        "cnt": 46,
+        "ok_pct": 82.61
+      },
+      {
+        "n": "Vicente Esquerdo",
+        "pos": "LM",
+        "cnt": 37,
+        "ok_pct": 91.89
+      },
+      {
+        "n": "Eneko Undabarrena",
+        "pos": "RCB",
+        "cnt": 36,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "José Luis Cortés",
+        "pos": "LF",
+        "cnt": 29,
+        "ok_pct": 62.07
+      },
+      {
+        "n": "Xemi Fernández",
+        "pos": "RW",
+        "cnt": 18,
+        "ok_pct": 50.0
+      },
+      {
+        "n": "A. Keita",
+        "pos": "LF",
+        "cnt": 16,
+        "ok_pct": 56.25
+      },
+      {
+        "n": "E. Frimpong",
+        "pos": "LM",
+        "cnt": 13,
+        "ok_pct": 69.23
+      }
+    ]
+  },
+  "S. Petkov": {
+    "matches": 3,
+    "minutes": 261,
+    "vol": {
+      "tot": 13,
+      "ok": 8,
+      "fail": 5,
+      "pct": 61.54,
+      "p90": 4.48
+    },
+    "dir": {
+      "forward": 2,
+      "sideway": 4,
+      "backward": 2,
+      "ahead": 1,
+      "forward_pct": 15.38,
+      "sideway_pct": 30.77,
+      "backward_pct": 15.38,
+      "one_touch": 7,
+      "one_touch_pct": 53.85,
+      "quick_pass": 2,
+      "carry_pct": 38.46
+    },
+    "dist": {
+      "short": 7,
+      "medium": 1,
+      "long": 0,
+      "short_pct": 53.85,
+      "medium_pct": 7.69,
+      "long_pct": 0.0,
+      "avg_m": 11.78
+    },
+    "lines": {
+      "first_break": 0,
+      "first_break_pct": 0.0,
+      "furthest_second_last": 0,
+      "furthest_last": 1,
+      "bypassed_avg": -0.77
+    },
+    "quality": {
+      "xT_total": 0.12,
+      "xT_p90": 0.04,
+      "xpass_avg": 0.76,
+      "dangerous": 2,
+      "dangerous_pct": 15.38,
+      "difficult": 4,
+      "difficult_pct": 30.77
+    },
+    "context": {
+      "opts_avg": 2.38,
+      "opts_lb_avg": 0.08,
+      "pressure_none": 0,
+      "pressure_low": 3,
+      "pressure_medium": 2,
+      "pressure_high": 4,
+      "pressure_very_high": 1,
+      "high_pressure_pct": 38.46
+    },
+    "phase": {
+      "build_up": 1,
+      "create": 4,
+      "finish": 2,
+      "transition": 1,
+      "quick_break": 0,
+      "direct": 0,
+      "chaotic": 4,
+      "set_play": 1,
+      "build_up_pct": 7.69,
+      "create_pct": 30.77,
+      "finish_pct": 15.38,
+      "transition_pct": 7.69
+    },
+    "receptor": [
+      {
+        "n": "Borja Vázquez",
+        "pos": "RW",
+        "cnt": 2,
+        "ok_pct": 0.0
+      },
+      {
+        "n": "Vasco Sousa",
+        "pos": "LCB",
+        "cnt": 2,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "E. Frimpong",
+        "pos": "RDM",
+        "cnt": 2,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "A. Keita",
+        "pos": "LW",
+        "cnt": 2,
+        "ok_pct": 50.0
+      },
+      {
+        "n": "Andoni López",
+        "pos": "LB",
+        "cnt": 2,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "LW",
+        "cnt": 1,
+        "ok_pct": 0.0
+      },
+      {
+        "n": "Carlos Calderón",
+        "pos": "CF",
+        "cnt": 1,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Vicente Esquerdo",
+        "pos": "LDM",
+        "cnt": 1,
+        "ok_pct": 0.0
+      }
+    ]
+  },
+  "Borislav Ivanov Stankov": {
+    "matches": 10,
+    "minutes": 718,
+    "vol": {
+      "tot": 46,
+      "ok": 30,
+      "fail": 16,
+      "pct": 65.22,
+      "p90": 5.77
+    },
+    "dir": {
+      "forward": 6,
+      "sideway": 16,
+      "backward": 8,
+      "ahead": 11,
+      "forward_pct": 13.04,
+      "sideway_pct": 34.78,
+      "backward_pct": 17.39,
+      "one_touch": 17,
+      "one_touch_pct": 36.96,
+      "quick_pass": 4,
+      "carry_pct": 56.52
+    },
+    "dist": {
+      "short": 14,
+      "medium": 11,
+      "long": 5,
+      "short_pct": 30.43,
+      "medium_pct": 23.91,
+      "long_pct": 10.87,
+      "avg_m": 17.05
+    },
+    "lines": {
+      "first_break": 0,
+      "first_break_pct": 0.0,
+      "furthest_second_last": 0,
+      "furthest_last": 0,
+      "bypassed_avg": -0.54
+    },
+    "quality": {
+      "xT_total": 0.52,
+      "xT_p90": 0.07,
+      "xpass_avg": 0.78,
+      "dangerous": 8,
+      "dangerous_pct": 17.39,
+      "difficult": 12,
+      "difficult_pct": 26.09
+    },
+    "context": {
+      "opts_avg": 2.8,
+      "opts_lb_avg": 0.11,
+      "pressure_none": 1,
+      "pressure_low": 4,
+      "pressure_medium": 14,
+      "pressure_high": 11,
+      "pressure_very_high": 4,
+      "high_pressure_pct": 32.61
+    },
+    "phase": {
+      "build_up": 0,
+      "create": 20,
+      "finish": 5,
+      "transition": 1,
+      "quick_break": 2,
+      "direct": 1,
+      "chaotic": 12,
+      "set_play": 3,
+      "build_up_pct": 0.0,
+      "create_pct": 43.48,
+      "finish_pct": 10.87,
+      "transition_pct": 6.52
+    },
+    "receptor": [
+      {
+        "n": "Andoni López",
+        "pos": "LB",
+        "cnt": 7,
+        "ok_pct": 71.43
+      },
+      {
+        "n": "Borja Valle",
+        "pos": "LW",
+        "cnt": 7,
+        "ok_pct": 42.86
+      },
+      {
+        "n": "Borja Vázquez",
+        "pos": "LW",
+        "cnt": 6,
+        "ok_pct": 50.0
+      },
+      {
+        "n": "Carlos Calderón",
+        "pos": "RW",
+        "cnt": 6,
+        "ok_pct": 50.0
+      },
+      {
+        "n": "E. Frimpong",
+        "pos": "RM",
+        "cnt": 5,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "Germán Novoa",
+        "pos": "LCB",
+        "cnt": 4,
+        "ok_pct": 75.0
+      },
+      {
+        "n": "A. Keita",
+        "pos": "CF",
+        "cnt": 3,
+        "ok_pct": 100.0
+      },
+      {
+        "n": "José Luis Cortés",
+        "pos": "LF",
+        "cnt": 3,
+        "ok_pct": 66.67
+      }
+    ]
+  }
+}
