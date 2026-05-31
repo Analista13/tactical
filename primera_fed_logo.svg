@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 480" width="330" height="480">
+  <defs>
+    <radialGradient id="rfefGrad" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#FF8C00"/>
+      <stop offset="50%" stop-color="#FF3D00"/>
+      <stop offset="100%" stop-color="#CC0000"/>
+    </radialGradient>
+    <clipPath id="circleClip">
+      <circle cx="165" cy="160" r="148"/>
+    </clipPath>
+  </defs>
+
+  <!-- Outer circle -->
+  <circle cx="165" cy="160" r="153" fill="url(#rfefGrad)"/>
+
+  <!-- White curved segments (ball texture) -->
+  <!-- Top arc -->
+  <path d="M 80 60 Q 165 10 250 60 Q 220 100 165 110 Q 110 100 80 60 Z"
+        fill="white" opacity="0.92" clip-path="url(#circleClip)"/>
+  <!-- Bottom arc -->
+  <path d="M 55 240 Q 165 290 275 240 Q 245 200 165 192 Q 85 200 55 240 Z"
+        fill="white" opacity="0.92" clip-path="url(#circleClip)"/>
+  <!-- Left arc -->
+  <path d="M 22 90 Q 10 160 30 230 Q 70 205 80 160 Q 68 115 22 90 Z"
+        fill="white" opacity="0.92" clip-path="url(#circleClip)"/>
+  <!-- Right arc -->
+  <path d="M 308 90 Q 320 160 300 230 Q 260 205 250 160 Q 262 115 308 90 Z"
+        fill="white" opacity="0.92" clip-path="url(#circleClip)"/>
+
+  <!-- RF / EF letters -->
+  <text x="165" y="155" text-anchor="middle" font-family="'Arial Black', Arial, sans-serif"
+        font-weight="900" font-size="44" fill="#1a1a2e" letter-spacing="3">RF</text>
+  <text x="165" y="200" text-anchor="middle" font-family="'Arial Black', Arial, sans-serif"
+        font-weight="900" font-size="44" fill="#1a1a2e" letter-spacing="3">EF</text>
+
+  <!-- "PRIMERA" text -->
+  <text x="165" y="355" text-anchor="middle" font-family="'Arial Black', Arial, sans-serif"
+        font-weight="900" font-size="72" fill="#1a1a2e" letter-spacing="2">PRIMERA</text>
+
+  <!-- "FEDERACIÓN" text -->
+  <text x="165" y="415" text-anchor="middle" font-family="'Arial Black', Arial, sans-serif"
+        font-weight="900" font-size="38" fill="#1a1a2e" letter-spacing="4">FEDERACIÓN</text>
+</svg>
