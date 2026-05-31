@@ -13872,7 +13872,7 @@
             +'</div>'
             +'<div style="padding:6px 8px">'
             +'<div style="font-size:11px;font-weight:700;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+name+'</div>'
-            +'<div style="font-size:10px;color:#94a3b8">'+shots.length+' tiros · <span style="color:#f1f5f9;font-weight:600">'+goals+' goles</span></div>'
+            +'<div style="font-size:10px;color:#94a3b8">'+shots.length+' '+(shots.length===1?'tiro':'tiros')+' · <span style="color:#f1f5f9;font-weight:600">'+goals+' '+(goals===1?'gol':'goles')+'</span></div>'
             +'<div style="font-size:10px;color:'+diffCol+';font-weight:600">xG diff: '+diffStr+'</div>'
             +'</div></div>';
         }).join('');
@@ -13911,7 +13911,7 @@
           +'</div>'
           +'<div style="padding:6px 8px">'
           +'<div style="font-size:11px;font-weight:700;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+name+'</div>'
-          +'<div style="font-size:10px;color:#94a3b8">'+shots.length+' tiros · <span style="color:#f1f5f9;font-weight:600">'+goals+' goles</span></div>'
+          +'<div style="font-size:10px;color:#94a3b8">'+shots.length+' '+(shots.length===1?'tiro':'tiros')+' · <span style="color:#f1f5f9;font-weight:600">'+goals+' '+(goals===1?'gol':'goles')+'</span></div>'
           +'<div style="font-size:10px;color:'+dc+';font-weight:600">xG diff: '+(diff>=0?'+':'')+diff.toFixed(2)+'</div>'
           +'</div></div>';
       }).join('');
