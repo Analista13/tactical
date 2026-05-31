@@ -319,6 +319,8 @@
   let aliMainTab    = 'alineacion'; // 'alineacion' | 'plantilla' | 'sistemas'
   let posesionPeriodo = 't'; // 't' | '1' | '2'
   let bloqueMatchId = null;
+  let bloqueView    = 'partido';     // 'partido' | 'casa' | 'fuera'
+  let bloqueDropOpen = false;
   let bloquePhase   = 'ataque';      // 'ataque' | 'defensa' | 'estado'
   let bloqueEstadoPhase = 'ataque';  // fase interna de Por Estado: 'ataque' | 'defensa'
   let bloqueSubTab      = 'general'; // 'general' | 'zona1' | 'zona2' | 'zona3'
@@ -4972,52 +4974,317 @@
     document.getElementById('bst-'+tab)?.classList.add('active');
     const cont=document.getElementById('bloqueCont');
     if(cont) cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando...</span></div>`;
+    const isAgg=bloqueView==='casa'||bloqueView==='fuera';
+    if(isAgg){ renderBloqueAgregado(bloqueView==='casa'); return; }
     // Para zonas sin partido seleccionado → auto-seleccionar el último
     if(['zona1','zona2','zona3'].includes(tab) && !bloqueMatchId){
       const ps = getPartidos();
-      if(ps.length){ bloqueMatchId = ps[ps.length-1].id; const s=document.getElementById('bloqueSel'); if(s) s.value=bloqueMatchId; }
+      if(ps.length){ bloqueMatchId = ps[ps.length-1].id; }
     }
-    // General siempre renderiza (muestra la barra de sub-tabs)
     if(tab==='general'||bloqueMatchId) renderBloque();
   }
 
+  function buildBloqueHeader(ps) {
+    if (!bloqueMatchId) { const last=ps[ps.length-1]; if(last) bloqueMatchId=last.id; }
+    const partido=ps.find(p=>p.id===bloqueMatchId)||ps[ps.length-1];
+    if(!partido) return '';
+    bloqueMatchId=partido.id;
+    const rival=partido.local===currentTeam.name?partido.vis:partido.local;
+    const isHome=partido.local===currentTeam.name;
+    const[gl,gv]=(partido.s||'0-0').split('-').map(Number);
+    const resCol=isHome?(gl>gv?'var(--green)':gl<gv?'var(--red)':'var(--text3)'):(gv>gl?'var(--green)':gv<gl?'var(--red)':'var(--text3)');
+    const isEstado=bloquePhase==='estado';
+    const onElegir=`bloqueDropOpen=!bloqueDropOpen;loadBloque()`;
+    const elegirBtn=`<button onclick="${onElegir}"
+      style="background:${bloqueDropOpen?'rgba(88,166,255,0.12)':'var(--bg2)'};border:1px solid ${bloqueDropOpen?'rgba(88,166,255,0.45)':'var(--border)'};color:${bloqueDropOpen?'var(--blue)':'var(--text2)'};padding:5px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap">✈ Elegir</button>`;
+    const onPick=`bloqueMatchId=MATCHID;bloqueDropOpen=false;${isEstado?'renderBloqueEstado()':'renderBloque()'}`;
+    const matchChips=bloqueDropOpen?(()=>{
+      const chips=ps.map(p=>{
+        const rv=p.local===currentTeam.name?p.vis:p.local;
+        const ih=p.local===currentTeam.name;
+        const sel=p.id===bloqueMatchId;
+        const fn=onPick.replace('MATCHID',p.id);
+        return `<button onclick="${fn}"
+          style="background:${sel?'rgba(88,166,255,0.1)':'var(--bg3)'};border:1px solid ${sel?'rgba(88,166,255,0.5)':'var(--border)'};color:${sel?'var(--blue)':'var(--text2)'};padding:6px 10px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all 0.15s;text-align:left;display:flex;flex-direction:column;gap:1px;min-width:90px">
+          <span style="font-weight:700;font-size:10px;color:${sel?'var(--blue)':'var(--accent)'}">${p.j}</span>
+          <span>${ih?'🏠':'✈️'} ${rv.length>13?rv.substring(0,11)+'…':rv}</span>
+          <span style="color:var(--text3);font-size:10px">${p.s||''}</span>
+        </button>`;
+      }).join('');
+      return `<div style="background:var(--bg2);border:1px solid rgba(88,166,255,0.2);border-radius:var(--radius);padding:12px 14px;margin-top:8px">
+        <div style="font-size:10px;color:var(--blue);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:10px">Selecciona un partido · <span style="color:var(--text2)">${currentTeam.name} (${partido.j})</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">${chips}</div>
+      </div>`;
+    })():'';
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--accent)">${partido.j}</span>
+        <span style="font-size:13px;color:var(--text);font-weight:500">${isHome?'🏠':'✈️'} ${rival}</span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${resCol}">${partido.s||''}</span>
+        <span style="font-size:11px;color:var(--text3)">${partido.f||''}</span>
+        <span style="margin-left:auto">${elegirBtn}</span>
+      </div>
+      ${matchChips}
+    </div>`;
+  }
+
+  // ── BLOQUE AGREGADO CASA / FUERA ─────────────────────────────────────────────
+
+  // Aggregate attack shape across multiple matches with optional filters
+  async function computeAggBloqueShape(matches, period, thirdFilter, blockFilter) {
+    const allData = await Promise.all(matches.map(p => getMatchData(p.id)));
+    const GKS = ['GK','PT','POR','PORTERO','P','GOALKEEPER'];
+    const isGK = pos => GKS.includes((pos||'').toUpperCase().trim());
+
+    // Position lookup from all lineups
+    const posLookup = {};
+    Object.values(PONF_LINEUPS).forEach(lup =>
+      lup.forEach(r => { if(r[1]&&r[2]&&!posLookup[r[1]]) posLookup[r[1]] = r[2]; })
+    );
+
+    const acc = {};
+    matches.forEach((partido, gi) => {
+      const data = allData[gi];
+      let rows = data.filter(e => e.x_start!=null && e.y_start!=null && e.player_name);
+      if (period) rows = rows.filter(e => e.period === period);
+      if (blockFilter) rows = rows.filter(e => e.team_out_of_possession_phase_type === blockFilter);
+      else if (thirdFilter) rows = rows.filter(e => e.third_start === thirdFilter);
+      else if (bloquePhase === 'ataque') rows = rows.filter(e => e.third_start === 'attacking_third');
+      else rows = rows.filter(e => e.third_start === 'defensive_third');
+
+      rows.forEach(e => {
+        if (!acc[e.player_name]) acc[e.player_name] = {xs:[], ys:[]};
+        acc[e.player_name].xs.push(e.x_start);
+        acc[e.player_name].ys.push(e.y_start);
+      });
+    });
+
+    const MIN_P = 15;
+    const allPlayers = Object.entries(acc)
+      .filter(([,v]) => v.xs.length >= MIN_P)
+      .map(([name,v]) => ({
+        name, n: v.xs.length,
+        position: resolvePlayerPosition({id:0, position: posLookup[name]||'CM'}),
+        x: v.xs.reduce((a,b)=>a+b,0)/v.xs.length,
+        y: v.ys.reduce((a,b)=>a+b,0)/v.ys.length,
+        fromLineup: false,
+      }));
+
+    if (allPlayers.length < 4) return null;
+
+    const gk = allPlayers.filter(p => isGK(p));
+    const outfield = allPlayers.filter(p => !isGK(p));
+    const hull = convexHull(outfield.map(p => ({x:p.x,y:p.y})));
+    const area = hullArea(hull);
+    const sorted = outfield.slice().sort((a,b) => a.x - b.x);
+    const n = sorted.length;
+    const nDef = Math.min(4,n), nFwd = n > nDef ? Math.min(3,n-nDef) : 0;
+    const defs = sorted.slice(0,nDef);
+    const fwds = sorted.slice(n-nFwd);
+    const mids = sorted.slice(nDef, n-nFwd);
+    const avgX = arr => arr.length ? arr.reduce((s,p)=>s+p.x,0)/arr.length : null;
+    const spreadY = arr => arr.length>=2 ? Math.max(...arr.map(p=>p.y))-Math.min(...arr.map(p=>p.y)) : null;
+    const defLine=avgX(defs), midLine=avgX(mids), fwdLine=avgX(fwds);
+    const teamWidth = n>=2 ? Math.max(...outfield.map(p=>p.y))-Math.min(...outfield.map(p=>p.y)) : null;
+    const teamDepth = n>=2 ? Math.max(...outfield.map(p=>p.x))-Math.min(...outfield.map(p=>p.x)) : null;
+    const centroidX = n ? outfield.reduce((s,p)=>s+p.x,0)/n : null;
+    const centroidY = n ? outfield.reduce((s,p)=>s+p.y,0)/n : null;
+    let blockType = null;
+    if (defLine!=null) {
+      blockType = defLine>0?'high':defLine>-17.5?'mid':'low';
+    }
+    return {
+      players:outfield, gk, hull, area,
+      defLine, midLine, fwdLine,
+      defFwdGap: defLine!=null&&fwdLine!=null?fwdLine-defLine:null,
+      defMidGap: defLine!=null&&midLine!=null?midLine-defLine:null,
+      midFwdGap: midLine!=null&&fwdLine!=null?fwdLine-midLine:null,
+      teamWidth, teamDepth, defWidth:spreadY(defs), fwdWidth:spreadY(fwds),
+      centroidX, centroidY, blockType,
+    };
+  }
+
+  // Aggregate defensive OOP shape across matches (home or away)
+  // blockType: 'high_block'|'medium_block'|'low_block'|null (null = all blocks)
+  async function computeAggDefShape(matches, blockType, period) {
+    const oopArrays = await Promise.all(matches.map(p => getOopData(p.id)));
+    const combined = [].concat(...oopArrays);
+    if (!blockType) {
+      // For General view: use all blocks, but still need at least 5 events
+      let data = combined;
+      if (period) data = data.filter(e => e.p === period);
+      if (data.length < 5) return null;
+      // Use computeDefensiveShape with the most common block type, or high as default
+      const counts = {};
+      data.forEach(e => { counts[e.b] = (counts[e.b]||0)+1; });
+      const dominant = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+      const btype = dominant ? dominant[0] : 'high_block';
+      return computeDefensiveShape(combined, btype, period, null);
+    }
+    return computeDefensiveShape(combined, blockType, period, null);
+  }
+
+  async function renderBloqueAgregado(isHome) {
+    const cont = document.getElementById('bloqueCont');
+    if (!cont) return;
+    const label = isHome ? '🏠 Casa' : '✈️ Fuera';
+    const matches = getAggMatches(isHome);
+    cont.innerHTML = `<div class="loading"><div class="spinner"></div><span>Calculando ${label} (${matches.length} partidos)...</span></div>`;
+    try {
+      const isAtq = bloquePhase === 'ataque';
+      const ZONA_MAP_ATQ   = {zona1:'defensive_third', zona2:'middle_third', zona3:'attacking_third'};
+      const ZONA_BLOCK_DEF = {zona1:'high_block', zona2:'medium_block', zona3:'low_block'};
+      const ZONA_META_ATQ  = {
+        zona1:{col:'#58a6ff',lbl:'Zona 1 — Tercio propio',   sub:'Organización en posesión desde el tercio defensivo'},
+        zona2:{col:'#e3b341',lbl:'Zona 2 — Tercio central',  sub:'Organización en posesión en el centro del campo'},
+        zona3:{col:'#f85149',lbl:'Zona 3 — Tercio rival',    sub:'Organización en posesión en el tercio de ataque'},
+      };
+      const ZONA_META_DEF  = {
+        zona1:{col:'#f85149',lbl:'Zona 1 — HIGH BLOCK',   sub:'Posicionamiento defensivo cuando el rival construye desde atrás'},
+        zona2:{col:'#e3b341',lbl:'Zona 2 — MEDIUM BLOCK', sub:'Posicionamiento defensivo cuando el rival progresa'},
+        zona3:{col:'#58a6ff',lbl:'Zona 3 — LOW BLOCK',    sub:'Posicionamiento defensivo cuando el rival ataca cerca del área'},
+      };
+
+      if (bloqueSubTab === 'general') {
+        // General: show secondary sub-tabs (Todo / 1ª Parte / 2ª Parte / Comparativa)
+        const secTabs = [
+          {id:'all',lbl:'Todo'},
+          {id:'1parte',lbl:'1ª Parte'},
+          {id:'2parte',lbl:'2ª Parte'},
+          {id:'comparativa',lbl:'Comparativa'},
+        ];
+        const secBar = `<div id="bloqueGenSubTabs" style="overflow-x:auto;margin-bottom:16px">
+          <div style="display:flex;gap:4px;background:var(--bg3,var(--bg2));border:1px solid var(--border);border-radius:6px;padding:3px;width:fit-content">
+            ${secTabs.map(t=>`<button id="bgst-${t.id}" class="subtab ${bloqueGeneralSubTab===t.id?'active':''}"
+              onclick="bloqueGeneralSubTab='${t.id}';renderBloqueAgregado(${isHome})"
+              style="font-size:12px;padding:5px 14px">${t.lbl}</button>`).join('')}
+          </div>
+        </div>
+        <div id="bloqueAggContent"></div>`;
+        cont.innerHTML = secBar;
+        const aggCont = document.getElementById('bloqueAggContent');
+
+        if (bloqueGeneralSubTab === 'comparativa') {
+          aggCont.innerHTML = `<div class="loading"><div class="spinner"></div><span>Calculando...</span></div>`;
+          const period1 = isAtq ? 1 : 0;
+          const period2 = isAtq ? 2 : 0;
+          const [s1, s2] = await Promise.all([
+            computeAggBloqueShape(matches,1,null,null),
+            computeAggBloqueShape(matches,2,null,null)
+          ]);
+          if (!s1||!s2) { aggCont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3)">Sin datos suficientes</div>`; return; }
+          renderBloqueComp(aggCont,s1,s2,bloquePhase);
+          return;
+        }
+
+        const period = bloqueGeneralSubTab==='1parte'?1:bloqueGeneralSubTab==='2parte'?2:0;
+        aggCont.innerHTML = `<div class="loading"><div class="spinner"></div><span>Calculando...</span></div>`;
+        // General: for both ataque and defensa use computeAggBloqueShape
+        // (filters by attacking_third or defensive_third automatically via bloquePhase)
+        const shape = await computeAggBloqueShape(matches, period, null, null);
+        if (!shape||(!shape.players.length&&!shape.gk.length)) {
+          aggCont.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3)">Sin posesiones suficientes</div>`; return;
+        }
+        const phCol = isAtq?'#f0883e':'#58a6ff';
+        const phBg  = isAtq?'rgba(240,136,62,0.08)':'rgba(88,166,255,0.08)';
+        const phLbl = isAtq?'ATAQUE':'DEFENSA';
+        const {cards,table,legend} = buildBloqueMetrics(shape, bloquePhase);
+        aggCont.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;padding:10px 16px">
+          <span style="font-size:11px;font-weight:700;color:${phCol};background:${phBg};padding:3px 12px;border-radius:20px;letter-spacing:1px">${phLbl}</span>
+          <span style="font-size:12px;color:var(--text3);margin-left:12px">${label} · ${matches.length} partidos · media temporada</span>
+        </div>
+        <div style="display:grid;gap:20px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+            ${buildBloqueSVG(shape,bloquePhase,null)}
+          </div>
+          ${cards}${table}${legend}
+        </div>`;
+        return;
+      }
+
+      // Zona1 / Zona2 / Zona3 tabs
+      let shape;
+      if (isAtq) {
+        const thirdFilter = ZONA_MAP_ATQ[bloqueSubTab];
+        shape = await computeAggBloqueShape(matches, 0, thirdFilter, null);
+        if (!shape||(!shape.players.length&&!shape.gk.length)) {
+          cont.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3)">Sin posesiones suficientes en esta zona (${label})</div>`; return;
+        }
+        const meta = ZONA_META_ATQ[bloqueSubTab];
+        const {cards,table,legend} = buildBloqueMetrics(shape,bloquePhase);
+        cont.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;padding:10px 16px">
+          <span style="font-size:12px;font-weight:700;color:${meta.col}">${meta.lbl}</span>
+          <span style="font-size:11px;color:var(--text3);margin-left:12px">${label} · ${matches.length} partidos · media</span>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">${meta.sub}</div>
+        </div>
+        <div style="display:grid;gap:20px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+            ${buildBloqueSVG(shape,bloquePhase,meta.col)}
+          </div>
+          ${cards}${table}${legend}
+        </div>`;
+      } else {
+        const blockFilter = ZONA_BLOCK_DEF[bloqueSubTab];
+        shape = await computeAggDefShape(matches, blockFilter, 0);
+        if (!shape||(!shape.players.length&&!shape.gk.length)) {
+          cont.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3)">Sin datos defensivos suficientes para esta zona (${label})</div>`; return;
+        }
+        const meta = ZONA_META_DEF[bloqueSubTab];
+        const {cards,table,legend} = buildBloqueMetrics(shape,bloquePhase);
+        cont.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;padding:10px 16px">
+          <span style="font-size:12px;font-weight:700;color:${meta.col}">${meta.lbl}</span>
+          <span style="font-size:11px;color:var(--text3);margin-left:12px">${label} · ${matches.length} partidos · media</span>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">${meta.sub}</div>
+        </div>
+        <div style="display:grid;gap:20px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+            ${buildBloqueSVG(shape,bloquePhase,meta.col)}
+          </div>
+          ${cards}${table}${legend}
+        </div>`;
+      }
+    } catch(e) {
+      cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">Error: ${e.message}</div>`;
+    }
+  }
+
   function loadBloque(){
-    const matchOpts=getPartidos().map(p=>{
-      const rival=p.local===currentTeam.name?p.vis:p.local;
-      const s=p.local===currentTeam.name?'🏠':'✈️';
-      return `<option value="${p.id}" ${p.id==bloqueMatchId?'selected':''}>${s} ${p.j} · ${rival} · ${p.s} · ${p.f}</option>`;
-    }).join('');
+    const ps=getPartidos();
     const phBtn=(id,label)=>{
       const active=bloquePhase===id;
-      return `<button onclick="setBloquePhase('${id}')" style="background:transparent;border:none;border-bottom:2px solid ${active?'var(--accent)':'transparent'};color:${active?'var(--accent)':'var(--text2)'};padding:10px 22px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${label}</button>`;
+      return `<button onclick="setBloquePhase('${id}')" style="background:transparent;border:none;border-bottom:2px solid ${active?'var(--accent)':'transparent'};color:${active?'var(--accent)':'var(--text2)'};padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${label}</button>`;
     };
-    const isEstado = bloquePhase==='estado';
-    document.getElementById('content').innerHTML=`<div class="anim">${head()}
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-        <select id="bloqueSel" onchange="bloqueMatchId=parseInt(this.value);${isEstado?'renderBloqueEstado()':'renderBloque()'}"
-          style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;flex:1;min-width:280px">
-          <option value="">— Selecciona un partido —</option>${matchOpts}
-        </select>
-      </div>
-      <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">
-        ${phBtn('ataque','Ataque')}
-        ${phBtn('defensa','Defensa')}
-        ${phBtn('estado','Por Estado')}
-      </div>
-      ${isEstado ? '' : `
+    const vBtn=(id,label)=>{
+      const active=bloqueView===id;
+      return `<button onclick="bloqueView='${id}';bloqueDropOpen=false;loadBloque()" style="background:transparent;border:none;border-bottom:2px solid ${active?'var(--accent)':'transparent'};color:${active?'var(--accent)':'var(--text2)'};padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${label}</button>`;
+    };
+    const isEstado=bloquePhase==='estado';
+    const isAgg=bloqueView==='casa'||bloqueView==='fuera';
+    const showSubTabs=!isEstado;
+    const subTabsHTML=showSubTabs?`
       <div id="bloqueSubTabs" style="overflow-x:auto;margin-bottom:20px;padding-bottom:2px">
         <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content;min-width:100%">
           <button id="bst-general" class="subtab ${bloqueSubTab==='general'?'active':''}" onclick="setBloqueSubTab('general')">General</button>
-          <button id="bst-zona1"   class="subtab ${bloqueSubTab==='zona1'?'active':''}"   onclick="setBloqueSubTab('zona1')">${bloquePhase==='defensa'?'Bloque Alto':'Zona 1'}</button>
-          <button id="bst-zona2"   class="subtab ${bloqueSubTab==='zona2'?'active':''}"   onclick="setBloqueSubTab('zona2')">${bloquePhase==='defensa'?'Bloque Medio':'Zona 2'}</button>
-          <button id="bst-zona3"   class="subtab ${bloqueSubTab==='zona3'?'active':''}"   onclick="setBloqueSubTab('zona3')">${bloquePhase==='defensa'?'Bloque Bajo':'Zona 3'}</button>
+          <button id="bst-zona1" class="subtab ${bloqueSubTab==='zona1'?'active':''}" onclick="setBloqueSubTab('zona1')">${bloquePhase==='defensa'?'Bloque Alto':'Zona 1'}</button>
+          <button id="bst-zona2" class="subtab ${bloqueSubTab==='zona2'?'active':''}" onclick="setBloqueSubTab('zona2')">${bloquePhase==='defensa'?'Bloque Medio':'Zona 2'}</button>
+          <button id="bst-zona3" class="subtab ${bloqueSubTab==='zona3'?'active':''}" onclick="setBloqueSubTab('zona3')">${bloquePhase==='defensa'?'Bloque Bajo':'Zona 3'}</button>
         </div>
-      </div>`}
+      </div>`:'';
+    document.getElementById('content').innerHTML=`<div class="anim">${head()}
+      ${!isAgg?buildBloqueHeader(ps):''}
+      <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:8px">
+        ${vBtn('partido','Partido')}${vBtn('casa','🏠 Casa')}${vBtn('fuera','✈️ Fuera')}
+      </div>
+      <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">
+        ${phBtn('ataque','Ataque')}${phBtn('defensa','Defensa')}${isAgg?'':phBtn('estado','Por Estado')}
+      </div>
+      ${showSubTabs?subTabsHTML:''}
       <div id="bloqueCont">
-        <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>
+        <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">${isAgg?'Calculando...':'Selecciona un partido'}</div>
       </div>
     </div>`;
     if(isEstado){renderBloqueEstado();return;}
+    if(isAgg){renderBloqueAgregado(bloqueView==='casa');return;}
     if(bloqueSubTab==='general'||bloqueMatchId) renderBloque();
   }
 
