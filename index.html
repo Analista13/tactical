@@ -13782,6 +13782,12 @@
       'X. Fernández':   'img/jugadores/14_xemi.png',
     };
 
+    const TIPO_ES  = {goal:'⚽ Gol',miss:'Fuera',save:'Parado',block:'Bloqueado'};
+    const BODY_ES  = {'right-foot':'Pie derecho','left-foot':'Pie izquierdo',head:'Cabeza'};
+    const SITU_ES  = {regular:'Jugada',corner:'Córner','from-corner':'Córner',penalty:'Penalti',
+                      'set-piece':'Balón parado','throw-in-set-piece':'Saque lateral',
+                      'fast-break':'Contragolpe',other:'Otro'};
+
     function miniPitch(shots) {
       const W=100, H=68;
       // dy=0 → gol (arriba), dy=100 → portería propia (abajo)
@@ -13791,7 +13797,8 @@
         const cy  = (s.dy * 0.68).toFixed(1);
         const col = s.t==='goal' ? '#22c55e' : '#ef4444';
         const op  = s.t==='goal' ? 0.95 : 0.65;
-        return '<circle cx="'+cx+'" cy="'+cy+'" r="2.4" fill="'+col+'" opacity="'+op+'"/>';
+        const tip = (TIPO_ES[s.t]||s.t)+' · '+(BODY_ES[s.b]||s.b)+' · '+(SITU_ES[s.s]||s.s)+' · xG '+s.xg.toFixed(2);
+        return '<circle cx="'+cx+'" cy="'+cy+'" r="2.8" fill="'+col+'" opacity="'+op+'" style="cursor:pointer"><title>'+tip+'</title></circle>';
       }).join('');
       const lc='rgba(255,255,255,0.22)', lw='0.55';
       return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block">'
@@ -13867,14 +13874,14 @@
           const diffStr = (diffVal>=0?'+':'')+diffVal.toFixed(2);
           const diffCol = diffVal>=0?'#22c55e':'#ef4444';
           return '<div style="background:#111827;border-radius:8px;overflow:hidden;border:1px solid '+(goals>0?'rgba(34,197,94,0.2)':'#1e293b')+'">'
-            +'<div style="position:relative">'+miniPitch(shots)
-            +'<div style="position:absolute;bottom:5px;left:6px">'+avatar+'</div>'
-            +'</div>'
-            +'<div style="padding:6px 8px">'
+            +miniPitch(shots)
+            +'<div style="padding:6px 8px;display:flex;align-items:center;gap:8px">'
+            +avatar
+            +'<div style="min-width:0">'
             +'<div style="font-size:11px;font-weight:700;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+name+'</div>'
             +'<div style="font-size:10px;color:#94a3b8">'+shots.length+' '+(shots.length===1?'tiro':'tiros')+' · <span style="color:#f1f5f9;font-weight:600">'+goals+' '+(goals===1?'gol':'goles')+'</span></div>'
             +'<div style="font-size:10px;color:'+diffCol+';font-weight:600">xG diff: '+diffStr+'</div>'
-            +'</div></div>';
+            +'</div></div></div>';
         }).join('');
 
       cont.innerHTML = '<div style="padding:16px 20px">'+header
@@ -13906,14 +13913,14 @@
           ? '<img src="'+imgSrc+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #1e293b"/>'
           : '<div style="width:32px;height:32px;border-radius:50%;background:#1e293b;border:2px solid #334155;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#94a3b8">'+ini+'</div>';
         return '<div style="background:#111827;border-radius:8px;overflow:hidden;border:1px solid #1e293b">'
-          +'<div style="position:relative">'+miniPitch(shots)
-          +'<div style="position:absolute;bottom:5px;left:6px">'+avatar+'</div>'
-          +'</div>'
-          +'<div style="padding:6px 8px">'
+          +miniPitch(shots)
+          +'<div style="padding:6px 8px;display:flex;align-items:center;gap:8px">'
+          +avatar
+          +'<div style="min-width:0">'
           +'<div style="font-size:11px;font-weight:700;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+name+'</div>'
           +'<div style="font-size:10px;color:#94a3b8">'+shots.length+' '+(shots.length===1?'tiro':'tiros')+' · <span style="color:#f1f5f9;font-weight:600">'+goals+' '+(goals===1?'gol':'goles')+'</span></div>'
           +'<div style="font-size:10px;color:'+dc+';font-weight:600">xG diff: '+(diff>=0?'+':'')+diff.toFixed(2)+'</div>'
-          +'</div></div>';
+          +'</div></div></div>';
       }).join('');
 
       const tableRows = players.map(([name, shots], i) => {
