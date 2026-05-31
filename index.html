@@ -13738,127 +13738,153 @@
 ];
 
   function loadTiros() {
-    const mc = document.getElementById('content');
-    if (!window._tirosF) window._tirosF = {tipo:'todos', loc:'todos'};
-    const F = window._tirosF;
+    const cont = document.getElementById('content');
+    if (!window._tirosVista) window._tirosVista = 'jornadas';
+    const vista = window._tirosVista;
 
-    let shots = TIROS_DATA;
-    if (F.tipo === 'goles') shots = shots.filter(s => s.t === 'goal');
-    if (F.loc  === 'local') shots = shots.filter(s => s.loc === 'L');
-    if (F.loc  === 'fuera') shots = shots.filter(s => s.loc === 'V');
-
-    const goals    = shots.filter(s => s.t === 'goal');
-    const onTarget = shots.filter(s => s.t === 'goal' || s.t === 'save');
-    const totalXG  = shots.reduce((a,s) => a + s.xg, 0);
-
-    const COL   = {goal:'#f97316', save:'#3b82f6', miss:'#94a3b8', block:'#a78bfa', post:'#fbbf24'};
-    const LABEL = {goal:'Gol', save:'A puerta', miss:'Fuera', block:'Bloqueado', post:'Poste'};
-
-    const PW=400, PH=250, SX=4, SY=5;
-    const pitchDots = shots.map(s => {
-      if (s.dx==null||s.dy==null) return '';
-      const cx = (s.dx * SX).toFixed(1);
-      const cy = (Math.min(s.dy, 50) * SY).toFixed(1);
-      const r  = Math.max(2.5, Math.min(10, 2 + s.xg * 8)).toFixed(1);
-      const col = COL[s.t] || '#999';
-      const op  = s.t === 'goal' ? 0.92 : 0.52;
-      const sw  = s.t === 'goal' ? '2' : '0.5';
-      const tip = s.p + ' J' + s.j + '|' + (LABEL[s.t]||s.t) + ' · xG ' + s.xg;
-      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" opacity="${op}" stroke="${col}" stroke-width="${sw}" class="tiro-dot" data-tip="${tip}" onmouseenter="tiroTip(event,this)" onmouseleave="tiroTipHide()"/>`;
-    }).join('');
-
-    const GM_X=20, GM_W=360, GM_TOP=30, GM_BOT=150, GM_H=120;
-    const goalDots = shots.filter(s => s.t !== 'block' && s.gy != null && s.gz != null).map(s => {
-      const gx   = (GM_X + (s.gy/100)*GM_W).toFixed(1);
-      const gyS  = (GM_BOT - (Math.min(s.gz/35, 1.5)*GM_H)).toFixed(1);
-      const col  = COL[s.t] || '#999';
-      const op   = s.t === 'goal' ? 0.92 : 0.45;
-      const sw   = s.t === 'goal' ? '2' : '0.8';
-      const stk  = s.t === 'goal' ? 'white' : col;
-      const tip  = s.p + ' J' + s.j + '|' + (LABEL[s.t]||s.t);
-      return `<circle cx="${gx}" cy="${gyS}" r="5" fill="${col}" opacity="${op}" stroke="${stk}" stroke-width="${sw}" class="tiro-dot" data-tip="${tip}" onmouseenter="tiroTip(event,this)" onmouseleave="tiroTipHide()"/>`;
-    }).join('');
-
-    const byP = {};
-    shots.forEach(s => {
-      if (!byP[s.p]) byP[s.p] = {g:0, t:0, xg:0};
-      byP[s.p].t++; byP[s.p].xg += s.xg;
-      if (s.t === 'goal') byP[s.p].g++;
-    });
-    const playerRows = Object.entries(byP)
-      .filter(([,v]) => v.t >= 2)
-      .sort((a,b) => b[1].g - a[1].g || b[1].t - a[1].t)
-      .map(([nm,v]) => `<div style="background:#1e1e2e;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:#ddd">${nm}</span><span style="font-size:12px;color:#f97316;font-weight:700">${v.g}G / ${v.t}T / xG ${v.xg.toFixed(2)}</span></div>`)
-      .join('');
-
-    const btn = (key, val, lbl) => {
-      const active = F[key] === val;
-      return `<button style="padding:4px 12px;border-radius:20px;border:1px solid ${active?'#f97316':'#444'};background:${active?'#f97316':'transparent'};color:${active?'white':'#bbb'};cursor:pointer;font-size:12px" onclick="window._tirosF.${key}='${val}';loadTiros()">${lbl}</button>`;
+    const MATCH_INFO = {
+      1:{opp:'Avilés',home:false},2:{opp:'Pontevedra',home:true},3:{opp:'R.Ferrol',home:false},
+      4:{opp:'Guadalajara',home:true},5:{opp:'Osasuna B',home:false},6:{opp:'R.Madrid B',home:true},
+      7:{opp:'Talavera',home:false},8:{opp:'Zamora',home:true},9:{opp:'Mérida',home:false},
+      10:{opp:'Cacereño',home:true},11:{opp:'Barakaldo',home:false},12:{opp:'CD Lugo',home:true},
+      13:{opp:'Celta B',home:false},14:{opp:'Arenas',home:true},15:{opp:'Unionistas',home:false},
+      16:{opp:'Arenteiro',home:true},17:{opp:'Tenerife',home:false},18:{opp:'Athletic B',home:false},
+      19:{opp:'Ourense',home:true},20:{opp:'R.Ferrol',home:true},21:{opp:'Guadalajara',home:false},
+      22:{opp:'CD Lugo',home:false},23:{opp:'Celta B',home:true},24:{opp:'Arenas',home:false},
+      25:{opp:'Talavera',home:true},26:{opp:'R.Madrid B',home:false},27:{opp:'Osasuna B',home:true},
+      28:{opp:'Cacereño',home:false},29:{opp:'Unionistas',home:true}
     };
 
-    mc.innerHTML = `
-    <div style="padding:16px 20px">
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
-        <div style="background:#1e1e2e;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:#f97316">${shots.length}</div><div style="font-size:11px;color:#888;margin-top:2px">Tiros</div></div>
-        <div style="background:#1e1e2e;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:#f97316">${goals.length}</div><div style="font-size:11px;color:#888;margin-top:2px">Goles</div></div>
-        <div style="background:#1e1e2e;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:#f97316">${shots.length?((goals.length/shots.length)*100).toFixed(1):0}%</div><div style="font-size:11px;color:#888;margin-top:2px">% Conversión</div></div>
-        <div style="background:#1e1e2e;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:#f97316">${totalXG.toFixed(2)}</div><div style="font-size:11px;color:#888;margin-top:2px">xG Total</div></div>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;align-items:center">
-        <span style="color:#777;font-size:12px">Tipo:</span>
-        ${btn('tipo','todos','Todos')}${btn('tipo','goles','Solo Goles')}
-        <span style="color:#333;margin:0 6px">|</span>
-        <span style="color:#777;font-size:12px">Localía:</span>
-        ${btn('loc','todos','Todos')}${btn('loc','local','Local')}${btn('loc','fuera','Fuera')}
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        <div style="background:#16213e;border-radius:12px;padding:14px">
-          <div style="font-size:13px;font-weight:700;color:#ccc;margin-bottom:10px">🗺️ Mapa de Tiros</div>
-          <svg viewBox="0 0 ${PW} ${PH}" style="width:100%;display:block;border-radius:6px">
-            <rect x="0" y="0" width="${PW}" height="${PH}" rx="4" fill="#1a4a1a"/>
-            <rect x="${(20.35*SX).toFixed(1)}" y="0" width="${(59.3*SX).toFixed(1)}" height="${(16.5*SY).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
-            <rect x="${(36.55*SX).toFixed(1)}" y="0" width="${(26.9*SX).toFixed(1)}" height="${(5.5*SY).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
-            <rect x="${(44.62*SX).toFixed(1)}" y="-6" width="${(10.76*SX).toFixed(1)}" height="6" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
-            <circle cx="${(50*SX).toFixed(1)}" cy="${(11*SY).toFixed(1)}" r="2.5" fill="rgba(255,255,255,0.55)"/>
-            <line x1="0" y1="${PH-1}" x2="${PW}" y2="${PH-1}" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
-            ${pitchDots}
-          </svg>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
-            ${Object.entries(COL).map(([t,c]) => `<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:#888"><span style="width:8px;height:8px;border-radius:50%;background:${c};display:inline-block"></span>${LABEL[t]}</span>`).join('')}
+    function miniPitch(shots) {
+      const W=100, H=65;
+      const dots = shots.map(s => {
+        if (s.dx==null||s.dy==null) return '';
+        const cx = s.dx.toFixed(1);
+        const cy = (H - s.dy*0.65).toFixed(1);
+        const r  = Math.max(1.8, Math.min(5.5, 1.5 + s.xg*7)).toFixed(1);
+        const col = s.t==='goal' ? '#f97316' : (s.t==='save' ? '#60a5fa' : '#475569');
+        const op  = s.t==='goal' ? 0.92 : 0.45;
+        return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" opacity="${op}"/>`;
+      }).join('');
+      return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+        <rect x="0" y="0" width="${W}" height="${H}" rx="2" fill="#1a3d1a"/>
+        <line x1="0" y1="32.5" x2="${W}" y2="32.5" stroke="rgba(255,255,255,0.22)" stroke-width="0.6"/>
+        <circle cx="50" cy="32.5" r="9" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.6"/>
+        <circle cx="50" cy="32.5" r="0.8" fill="rgba(255,255,255,0.3)"/>
+        <rect x="20" y="54.3" width="60" height="10.7" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.6"/>
+        <rect x="36" y="61.5" width="28" height="3.5" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.6"/>
+        <circle cx="50" cy="57.9" r="0.8" fill="rgba(255,255,255,0.3)"/>
+        <rect x="44.5" y="63.5" width="11" height="2" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.4)" stroke-width="0.6"/>
+        <rect x="20" y="0" width="60" height="10.7" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.6"/>
+        <rect x="36" y="0" width="28" height="3.5" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.6"/>
+        ${dots}
+      </svg>`;
+    }
+
+    const btn = (key, val, lbl) => {
+      const active = window._tirosVista === val;
+      return `<button onclick="window._tirosVista='${val}';loadTiros()" style="padding:6px 18px;border-radius:20px;border:1px solid ${active?'#f97316':'#334155'};background:${active?'#f97316':'transparent'};color:${active?'white':'#94a3b8'};cursor:pointer;font-size:13px;font-weight:${active?'700':'400'}">${lbl}</button>`;
+    };
+
+    const header = `<div style="display:flex;gap:8px;margin-bottom:20px;align-items:center">
+      <span style="font-size:13px;color:#64748b;margin-right:4px">Vista:</span>
+      ${btn('vista','jornadas','Por Jornadas')}${btn('vista','temporada','Temporada')}
+    </div>`;
+
+    if (vista === 'jornadas') {
+      const byJ = {};
+      TIROS_DATA.forEach(s => { if(!byJ[s.j]) byJ[s.j]=[]; byJ[s.j].push(s); });
+
+      const cards = Array.from({length:29},(_,i)=>i+1).map(j => {
+        const shots = byJ[j] || [];
+        const mi    = MATCH_INFO[j] || {};
+        const goals = shots.filter(s=>s.t==='goal').length;
+        const xg    = shots.reduce((a,s)=>a+s.xg,0).toFixed(2);
+        const loc   = mi.home ? '🏠' : '✈️';
+        const bg    = goals >= 3 ? '#1a2e1a' : goals >= 1 ? '#1e2a1e' : '#16213e';
+        return `<div style="background:${bg};border-radius:10px;overflow:hidden;border:1px solid ${goals>=3?'rgba(249,115,22,0.3)':'#1e293b'}">
+          ${miniPitch(shots)}
+          <div style="padding:7px 10px">
+            <div style="font-size:11px;font-weight:700;color:#e2e8f0">${loc} J${j} · ${mi.opp||'–'}</div>
+            <div style="display:flex;justify-content:space-between;margin-top:3px">
+              <span style="font-size:10px;color:#64748b">${shots.length} tiros</span>
+              <span style="font-size:10px;color:#f97316;font-weight:700">${goals} ⚽</span>
+              <span style="font-size:10px;color:#64748b">xG ${xg}</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+
+      cont.innerHTML = `<div style="padding:16px 20px">${header}
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px">${cards}</div>
+      </div>`;
+
+    } else { // temporada
+      const byP = {};
+      TIROS_DATA.forEach(s => { if(!byP[s.p]) byP[s.p]=[]; byP[s.p].push(s); });
+
+      const players = Object.entries(byP).sort((a,b)=>b[1].length-a[1].length);
+
+      const playerCards = players.map(([name, shots]) => {
+        const goals  = shots.filter(s=>s.t==='goal').length;
+        const xg     = shots.reduce((a,s)=>a+s.xg,0);
+        const diff   = goals - xg;
+        const diffStr = (diff>=0?'+':'')+diff.toFixed(2);
+        const diffCol = diff>=0 ? '#22c55e' : '#ef4444';
+        const initials = name.replace(/[^A-Za-záéíóúÁÉÍÓÚñÑ\s]/g,'').split(/\s+/).filter(Boolean).map(w=>w[0].toUpperCase()).join('').slice(0,2);
+        return `<div style="background:#16213e;border-radius:10px;overflow:hidden;border:1px solid #1e293b">
+          <div style="position:relative">
+            ${miniPitch(shots)}
+            <div style="position:absolute;bottom:5px;left:5px;width:26px;height:26px;border-radius:50%;background:#0f172a;border:1.5px solid #334155;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#cbd5e1">${initials}</div>
+          </div>
+          <div style="padding:7px 10px">
+            <div style="font-size:11px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
+            <div style="font-size:10px;color:#94a3b8">${shots.length} tiros · <span style="color:#f97316">${goals} goles</span></div>
+            <div style="font-size:10px;color:${diffCol}">xG diff: ${diffStr}</div>
+          </div>
+        </div>`;
+      }).join('');
+
+      const tableRows = players.map(([name, shots], i) => {
+        const goals  = shots.filter(s=>s.t==='goal').length;
+        const xg     = shots.reduce((a,s)=>a+s.xg,0);
+        const xgSh   = (xg/shots.length).toFixed(2);
+        const diff   = goals - xg;
+        const diffCol = diff>=0 ? '#22c55e' : '#ef4444';
+        return `<tr style="border-bottom:1px solid #1e293b">
+          <td style="padding:5px 8px;color:#64748b;font-size:11px">${i+1}</td>
+          <td style="padding:5px 8px;font-size:12px;color:#e2e8f0;font-weight:600">${name}</td>
+          <td style="padding:5px 8px;text-align:center;font-size:12px;color:#94a3b8">${shots.length}</td>
+          <td style="padding:5px 8px;text-align:center;font-size:12px;color:#f97316;font-weight:700">${goals}</td>
+          <td style="padding:5px 8px;text-align:center;font-size:12px;color:#94a3b8">${xg.toFixed(2)}</td>
+          <td style="padding:5px 8px;text-align:center;font-size:12px;color:#94a3b8">${xgSh}</td>
+          <td style="padding:5px 8px;text-align:center;font-size:12px;font-weight:700;color:${diffCol}">${diff>=0?'+':''}${diff.toFixed(2)}</td>
+        </tr>`;
+      }).join('');
+
+      cont.innerHTML = `<div style="padding:16px 20px">${header}
+        <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px">${playerCards}</div>
+          <div style="background:#16213e;border-radius:12px;overflow:hidden;border:1px solid #1e293b;position:sticky;top:16px">
+            <div style="padding:10px 12px;background:#0f172a;font-size:12px;font-weight:700;color:#94a3b8;letter-spacing:0.05em">RANKING TIROS</div>
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr style="background:#0f172a">
+                <th style="padding:6px 8px;text-align:left;font-size:10px;color:#475569">#</th>
+                <th style="padding:6px 8px;text-align:left;font-size:10px;color:#475569">Jugador</th>
+                <th style="padding:6px 8px;text-align:center;font-size:10px;color:#475569" title="Tiros">T</th>
+                <th style="padding:6px 8px;text-align:center;font-size:10px;color:#475569" title="Goles">G</th>
+                <th style="padding:6px 8px;text-align:center;font-size:10px;color:#475569">xG</th>
+                <th style="padding:6px 8px;text-align:center;font-size:10px;color:#475569">xG/T</th>
+                <th style="padding:6px 8px;text-align:center;font-size:10px;color:#475569">Diff</th>
+              </tr></thead>
+              <tbody>${tableRows}</tbody>
+            </table>
           </div>
         </div>
-        <div style="background:#16213e;border-radius:12px;padding:14px">
-          <div style="font-size:13px;font-weight:700;color:#ccc;margin-bottom:10px">🥅 Portería · ${onTarget.length} a puerta</div>
-          <svg viewBox="0 0 400 180" style="width:100%;display:block;border-radius:6px">
-            <rect x="0" y="0" width="400" height="180" fill="#0f172a"/>
-            <rect x="${GM_X}" y="${GM_TOP}" width="${GM_W}" height="${GM_H}" fill="rgba(255,255,255,0.04)" stroke="white" stroke-width="2.5" rx="1"/>
-            <line x1="${GM_X}" y1="90" x2="${GM_X+GM_W}" y2="90" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="4,4"/>
-            <line x1="200" y1="${GM_TOP}" x2="200" y2="${GM_BOT}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="4,4"/>
-            <text x="200" y="${GM_TOP-10}" text-anchor="middle" fill="rgba(255,255,255,0.22)" font-size="8" font-family="sans-serif">⬆ Fuera alto</text>
-            <text x="${GM_X+4}" y="${GM_BOT+14}" fill="rgba(255,255,255,0.25)" font-size="8" font-family="sans-serif">◀ izq</text>
-            <text x="${GM_X+GM_W-4}" y="${GM_BOT+14}" text-anchor="end" fill="rgba(255,255,255,0.25)" font-size="8" font-family="sans-serif">der ▶</text>
-            ${goalDots}
-          </svg>
-        </div>
-      </div>
-      <div style="margin-top:16px;background:#16213e;border-radius:12px;padding:14px">
-        <div style="font-size:13px;font-weight:700;color:#ccc;margin-bottom:10px">👤 Por Jugador (≥ 2 tiros)</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">${playerRows}</div>
-      </div>
-    </div>`;
+      </div>`;
+    }
   }
 
-  function tiroTip(e, el) {
-    const tip = document.getElementById('pos-tip');
-    const raw = (el.dataset.tip || '').replace(/\|/g, '<br><span style="font-size:11px;color:#bbb">');
-    tip.innerHTML = raw;
-    tip.style.display = 'block';
-    tip.style.left = (e.clientX + 14) + 'px';
-    tip.style.top  = (e.clientY - 10) + 'px';
-  }
-  function tiroTipHide() {
-    document.getElementById('pos-tip').style.display = 'none';
-  }
 
   // INIT
   renderAside();
