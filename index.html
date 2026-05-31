@@ -164,7 +164,7 @@
 <div id="pos-tip" style="display:none;position:fixed;background:#1c2128;border:1px solid rgba(255,255,255,0.13);border-radius:8px;padding:9px 13px;font-family:'DM Sans',sans-serif;pointer-events:none;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.55);min-width:130px"></div>
 
 <header>
-  <img class="header-logo" id="headerLogo" src="primera_fed_logo.svg" onerror="this.style.display='none'" alt="">
+  <img class="header-logo" id="headerLogo" src="primera_fed_logo.png" onerror="this.style.display='none'" alt="">
   <div><div class="header-title" id="headerTitle">Tactical</div></div>
   <div class="header-sub" id="headerSub">Primera Federación · Playoff 25/26</div>
   <div class="header-badge" id="headerBadge" style="display:none">⚽ 51.036 eventos</div>
@@ -200,7 +200,7 @@
       id: 'primera_rfef_playoff',
       name: 'Primera Federación',
       shortName: 'Playoff 25/26',
-      logo: 'primera_fed_logo.svg',
+      logo: 'primera_fed_logo.png',
       season: '2025/26',
       teams: [
         { id:923, name:'SD Ponferradina', escudo:'https://tmssl.akamaized.net/images/wappen/head/4032.png', partidos:31, active:true },
@@ -286,7 +286,7 @@
     const cont = document.getElementById('content');
     // Header: logo competición, sin equipo
     const hLogo = document.getElementById('headerLogo');
-    if (hLogo) { hLogo.src = 'primera_fed_logo.svg'; hLogo.style.display = ''; }
+    if (hLogo) { hLogo.src = 'primera_fed_logo.png'; hLogo.style.display = ''; }
     const hTitle = document.getElementById('headerTitle');
     if (hTitle) hTitle.textContent = 'Tactical';
     const hSub = document.getElementById('headerSub');
