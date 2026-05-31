@@ -780,16 +780,11 @@
 
     const ptBtn=(id,label)=>{
       const active=redPrimaryTab===id;
-      return `<button onclick="setPrimaryTab('${id}')" style="background:transparent;border:none;border-bottom:2px solid ${active?'var(--accent)':'transparent'};color:${active?'var(--accent)':'var(--text2)'};padding:10px 22px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${label}</button>`;
+      return `<button onclick="setPrimaryTab('${id}')" style="background:transparent;border:none;border-bottom:2px solid ${active?'var(--accent)':'transparent'};color:${active?'var(--accent)':'var(--text2)'};padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${label}</button>`;
     };
 
-    document.getElementById('content').innerHTML = `<div class="anim">${head()}
-      ${buildRedHeader(ps)}
-      <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">
-        ${ptBtn('equipo','Equipo')}
-        ${ptBtn('jugadores','Jugadores')}
-      </div>
-      ${redPrimaryTab==='equipo'?`
+    const showSubTabs = redPrimaryTab==='equipo'||redPrimaryTab==='casa'||redPrimaryTab==='fuera';
+    const subTabsHTML = showSubTabs ? `
       <div style="overflow-x:auto;margin-bottom:20px;padding-bottom:2px">
         <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content;min-width:100%">
           <button id="st-1parte" class="subtab ${redSubTab==='1parte'?'active':''}" onclick="setSubTab('1parte')">1ª Parte</button>
@@ -798,12 +793,22 @@
           <button id="st-tendencia" class="subtab ${redSubTab==='tendencia'?'active':''}" onclick="setSubTab('tendencia')">Tendencia</button>
           <button id="st-comparativa" class="subtab ${redSubTab==='comparativa'?'active':''}" onclick="setSubTab('comparativa')">Comparativa</button>
         </div>
-      </div>`:''}
+      </div>` : '';
+
+    document.getElementById('content').innerHTML = `<div class="anim">${head()}
+      ${redPrimaryTab==='equipo'||redPrimaryTab==='jugadores' ? buildRedHeader(ps) : ''}
+      <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">
+        ${ptBtn('equipo','Equipo')}
+        ${ptBtn('jugadores','Jugadores')}
+        ${ptBtn('casa','🏠 Casa')}
+        ${ptBtn('fuera','✈️ Fuera')}
+      </div>
+      ${subTabsHTML}
       <div id="redCont">
-        <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>
+        <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">${redPrimaryTab==='casa'||redPrimaryTab==='fuera'?'Calculando...':'Selecciona un partido'}</div>
       </div></div>`;
 
-    if(redMatchId) renderRedTab();
+    if(redMatchId || redPrimaryTab==='casa' || redPrimaryTab==='fuera') renderRedTab();
   }
 
   function setPrimaryTab(tab) {
@@ -861,6 +866,16 @@
 
   function renderRedTab() {
     if(redPrimaryTab==='jugadores') { renderJugadores(); return; }
+    const isAgg = redPrimaryTab==='casa' || redPrimaryTab==='fuera';
+    const isHome = redPrimaryTab==='casa';
+    if(isAgg){
+      if(redSubTab==='1parte') renderRedAgregado(isHome,1);
+      else if(redSubTab==='2parte') renderRedAgregado(isHome,2);
+      else if(redSubTab==='tendencia') renderTendenciaAgregado(isHome);
+      else if(redSubTab==='comparativa') renderComparativaAgregado(isHome);
+      else renderMatrizAgregado(isHome);
+      return;
+    }
     if(redSubTab==='1parte') renderRed(1);
     else if(redSubTab==='2parte') renderRed(2);
     else if(redSubTab==='tendencia') renderTendencia();
@@ -1985,6 +2000,581 @@
               <th style="padding:10px 16px;text-align:right;font-size:12px;color:var(--accent);font-weight:700;width:35%">1ª Parte</th>
               <th style="padding:10px 16px;text-align:center;font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;border-left:1px solid var(--border);border-right:1px solid var(--border)">MÉTRICA</th>
               <th style="padding:10px 16px;text-align:left;font-size:12px;color:var(--blue);font-weight:700;width:35%">2ª Parte</th>
+            </tr></thead>
+            <tbody>${cmpHTML}</tbody>
+          </table>
+        </div>`;
+    } catch(e){
+      if(_redRenderSeq===seq) cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
+    }
+  }
+
+  // ── AGREGADO CASA / FUERA ────────────────────────────────────────────────────
+
+  function getAggMatches(isHome) {
+    return PARTIDOS.filter(p => isHome ? p.local===currentTeam.name : p.vis===currentTeam.name);
+  }
+
+  async function computeAggRed(matches, periodo) {
+    // Returns {posM, titMap, pases, progP, totP, maxP, maxT, bcScores, maxBC,
+    //          totPasesAll, totProgAll, gamesUsed, appearCount}
+    const GK_POS=['GK','PT','PORTERO','POR','P','GOALKEEPER'];
+    const posAcc={}, pasesAcc={}, progAcc={}, appearCount={};
+
+    const allData = await Promise.all(matches.map(p => getMatchData(p.id)));
+
+    matches.forEach((partido, gi) => {
+      const lineup = getLineup(partido.id, currentTeam.id);
+      const data = allData[gi];
+      const periodoData = data.filter(e => e.period === periodo);
+      const succData = periodoData.filter(e => e.pass_outcome==='successful');
+
+      let periodPlayers;
+      if(periodo===1){
+        periodPlayers = lineup.filter(p => timeToMin(p.start_time)<45);
+      } else {
+        periodPlayers = lineup.filter(p => {
+          const en=timeToMin(p.start_time), sa=p.end_time?timeToMin(p.end_time):999;
+          return en<90 && sa>45;
+        });
+      }
+      const playerMap={};
+      periodPlayers.forEach(p => { playerMap[p.name]=p.position; });
+      const tits=Object.keys(playerMap);
+
+      // Aggregate positions from events
+      const posA={}, posC={};
+      periodoData.forEach(e=>{
+        if(e.x_start==null||e.y_start==null) return;
+        if(!tits.includes(e.player_name)) return;
+        if(!posA[e.player_name]){posA[e.player_name]={x:0,y:0};posC[e.player_name]=0;}
+        posA[e.player_name].x+=e.x_start; posA[e.player_name].y+=e.y_start; posC[e.player_name]++;
+      });
+
+      tits.forEach(n=>{
+        const pos=(playerMap[n]||'').toUpperCase().trim();
+        let ax, ay;
+        if(posC[n]>0){ ax=posA[n].x/posC[n]; ay=posA[n].y/posC[n]; }
+        else if(GK_POS.includes(pos)){ ax=-47; ay=0; }
+        else return;
+        if(!posAcc[n]){posAcc[n]={xS:0,yS:0,cnt:0,pos:playerMap[n]};}
+        posAcc[n].xS+=ax; posAcc[n].yS+=ay; posAcc[n].cnt++;
+        appearCount[n]=(appearCount[n]||0)+1;
+      });
+
+      // Aggregate passes & progressive passes
+      succData.forEach(e=>{
+        if(!tits.includes(e.player_name)||!tits.includes(e.player_targeted_name)||e.player_name===e.player_targeted_name) return;
+        const k=`${e.player_name}|${e.player_targeted_name}`;
+        pasesAcc[k]=(pasesAcc[k]||0)+1;
+        if(e.x_end!=null&&e.x_start!=null&&(e.x_end-e.x_start)>9)
+          progAcc[e.player_name]=(progAcc[e.player_name]||0)+1;
+      });
+    });
+
+    const total=matches.length;
+    const prefThr=Math.round(total*0.40), fallThr=Math.max(Math.round(total*0.25),1);
+    let active=Object.keys(posAcc).filter(n=>posAcc[n].cnt>=prefThr);
+    if(active.length<8) active=Object.keys(posAcc).filter(n=>posAcc[n].cnt>=fallThr);
+
+    const posM={}, titMap={};
+    active.forEach(n=>{
+      posM[n]={x:posAcc[n].xS/posAcc[n].cnt, y:posAcc[n].yS/posAcc[n].cnt};
+      titMap[n]=posAcc[n].pos;
+    });
+
+    const pases={};
+    Object.entries(pasesAcc).forEach(([k,v])=>{
+      const[fr,to]=k.split('|');
+      if(!active.includes(fr)||!active.includes(to)) return;
+      pases[k]=v/total; // avg per game
+    });
+
+    const totP={};
+    active.forEach(n=>{totP[n]=0;});
+    Object.entries(pases).forEach(([k,n])=>{const[f]=k.split('|');totP[f]=(totP[f]||0)+n;});
+    const maxP=Math.max(1,...Object.values(pases));
+    const maxT=Math.max(1,...Object.values(totP));
+
+    const progP={};
+    active.forEach(n=>{progP[n]=(progAcc[n]||0)/total;});
+    const totPasesAll=Object.values(pases).reduce((a,b)=>a+b,0);
+    const totProgAll=Object.values(progP).reduce((a,b)=>a+b,0);
+    const bcScores=calcBetweenness(active,pases);
+    const maxBC=Math.max(1,...Object.values(bcScores));
+
+    return {posM,titMap,pases,progP,totP,maxP,maxT,bcScores,maxBC,
+            totPasesAll,totProgAll,gamesUsed:total,appearCount,active};
+  }
+
+  async function renderRedAgregado(isHome, periodo) {
+    const seq=++_redRenderSeq;
+    const cont=document.getElementById('redCont');
+    if(!cont) return;
+    const label=isHome?'🏠 Casa':'✈️ Fuera';
+    cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando red ${label}...</span></div>`;
+    try {
+      const matches=getAggMatches(isHome);
+      const d=await computeAggRed(matches,periodo);
+      if(_redRenderSeq!==seq) return;
+
+      const {posM,titMap,pases,progP,totP,maxP,maxT,bcScores,maxBC,totPasesAll,totProgAll,gamesUsed,active}=d;
+      const pctProg=totPasesAll>0?Math.round((totProgAll/totPasesAll)*100):0;
+
+      const W=820,H=540,MX=50,MY=40,PW=W-MX*2,PH=H-MY*2;
+      const sv=(x,y)=>({sx:MX+((x+52.5)/105)*PW, sy:MY+((34-y)/68)*PH});
+
+      let lin='';
+      Object.entries(pases).forEach(([k,n])=>{
+        const[fr,to]=k.split('|');
+        if(!posM[fr]||!posM[to]) return;
+        const{sx:x1,sy:y1}=sv(posM[fr].x,posM[fr].y);
+        const{sx:x2,sy:y2}=sv(posM[to].x,posM[to].y);
+        const g=1+(n/maxP)*7, op=0.25+(n/maxP)*0.65;
+        const angle=Math.atan2(y2-y1,x2-x1);
+        const ax2=x1+0.60*(x2-x1),ay2=y1+0.60*(y2-y1),as=6+(n/maxP)*6;
+        const a1=`${(ax2+as*Math.cos(angle)).toFixed(1)},${(ay2+as*Math.sin(angle)).toFixed(1)}`;
+        const a2=`${(ax2+as*0.5*Math.cos(angle+2.0)).toFixed(1)},${(ay2+as*0.5*Math.sin(angle+2.0)).toFixed(1)}`;
+        const a3=`${(ax2+as*0.5*Math.cos(angle-2.0)).toFixed(1)},${(ay2+as*0.5*Math.sin(angle-2.0)).toFixed(1)}`;
+        lin+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#c8a96e" stroke-width="${g.toFixed(1)}" stroke-opacity="${op.toFixed(2)}" stroke-linecap="round"/>
+        <polygon points="${a1} ${a2} ${a3}" fill="#e8c98e" fill-opacity="0.9"/>
+        <text x="${((x1+x2)/2).toFixed(1)}" y="${((y1+y2)/2-2).toFixed(1)}" text-anchor="middle" font-size="9" fill="#c8a96e" opacity="${Math.min(op+0.2,1).toFixed(2)}">${n.toFixed(1)}</text>`;
+      });
+
+      let nod='';
+      active.forEach(n=>{
+        if(!posM[n]) return;
+        const{sx,sy}=sv(posM[n].x,posM[n].y);
+        const r=18+(totP[n]/maxT)*10;
+        const pos=titMap[n]||'';
+        const bcNorm=maxBC>0?(bcScores[n]||0)/maxBC:0;
+        const glow=bcNorm>0.25?`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${(r+7).toFixed(1)}" fill="none" stroke="#f0883e" stroke-width="2.5" stroke-opacity="${(bcNorm*0.85).toFixed(2)}" stroke-dasharray="4,3"/>`:'' ;
+        // SIN nombre en el campo, solo posición
+        nod+=`<g>${glow}<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${r.toFixed(1)}" fill="#1c2333" stroke="#c8a96e" stroke-width="2.5"/>
+          <text x="${sx.toFixed(1)}" y="${(sy+5).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#e8c98e">${pos}</text></g>`;
+      });
+
+      const topConn=Object.entries(pases).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      const topConnHTML=topConn.map(([k,n],i)=>{
+        const[fr,to]=k.split('|');
+        const apFr=fr.split(' ').slice(-1)[0].substring(0,10);
+        const apTo=to.split(' ').slice(-1)[0].substring(0,10);
+        const barW=Math.round((n/topConn[0][1])*100);
+        const prog=posM[fr]&&posM[to]&&posM[to].x>posM[fr].x;
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:11px;color:var(--text3);width:16px;text-align:right;flex-shrink:0">${i+1}</span>
+          <span style="font-size:12px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${apFr} <span style="color:var(--text3)">→</span> ${apTo}${prog?'<span style="color:var(--green);margin-left:4px;font-size:10px">↑</span>':''}</span>
+          <div style="width:60px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;flex-shrink:0"><div style="width:${barW}%;height:100%;background:var(--accent);border-radius:3px"></div></div>
+          <span style="font-size:12px;font-weight:700;color:var(--accent);width:28px;text-align:right;flex-shrink:0">${n.toFixed(1)}</span>
+        </div>`;
+      }).join('');
+
+      const centHTML=active.filter(n=>posM[n]).sort((a,b)=>(bcScores[b]||0)-(bcScores[a]||0)).slice(0,5).map((n,i)=>{
+        const bcN=maxBC>0?(bcScores[n]||0)/maxBC:0;
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:11px;color:var(--text3);width:16px;text-align:right;flex-shrink:0">${i+1}</span>
+          <span style="font-size:12px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n.split(' ').slice(-1)[0].substring(0,11)}</span>
+          <span style="font-size:9px;color:var(--accent);flex-shrink:0">${titMap[n]||''}</span>
+          <div style="width:60px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;flex-shrink:0"><div style="width:${Math.round(bcN*100)}%;height:100%;background:#f0883e;border-radius:3px"></div></div>
+        </div>`;
+      }).join('');
+
+      const leyenda=`<rect x="${MX+4}" y="${MY+4}" width="155" height="50" rx="4" fill="#0d1117" fill-opacity="0.85"/>
+        <circle cx="${MX+16}" cy="${MY+16}" r="5" fill="#1c2333" stroke="#c8a96e" stroke-width="1.5"/>
+        <text x="${MX+26}" y="${MY+20}" font-family="DM Sans,sans-serif" font-size="9" fill="#8b949e">Nodo = posición media</text>
+        <circle cx="${MX+16}" cy="${MY+36}" r="6" fill="none" stroke="#f0883e" stroke-width="2" stroke-dasharray="3,2"/>
+        <text x="${MX+26}" y="${MY+40}" font-family="DM Sans,sans-serif" font-size="9" fill="#8b949e">Alta centralidad</text>`;
+
+      // Tabla jugadores con nombres
+      const jugTabla=active.filter(n=>posM[n]).map(n=>{
+        const pct=totP[n]>0?Math.round((progP[n]/totP[n])*100):0;
+        return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;display:flex;gap:6px;align-items:center">
+          <span style="color:var(--accent);font-size:10px;font-weight:700">${titMap[n]}</span>
+          <span>${n.split(' ').slice(-1)[0]}</span>
+          <span style="color:var(--text3);font-size:11px">${totP[n].toFixed(1)}</span>
+          <span style="color:var(--green);font-size:10px;font-weight:600">↑${pct}%</span>
+        </div>`;
+      }).join('');
+
+      cont.innerHTML=`
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+          <div>
+            <div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${label} · ${periodo===1?'1ª Parte':'2ª Parte'} · Media temporada</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">${currentTeam.name}</div>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:20px;align-items:center">
+            <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent)">${totPasesAll.toFixed(1)}</div><div style="font-size:10px;color:var(--text3);letter-spacing:1px">PASES/PARTIDO</div></div>
+            <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green)">${pctProg}%</div><div style="font-size:10px;color:var(--text3);letter-spacing:1px">PROGRESIVOS</div></div>
+            <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#58a6ff">${gamesUsed}</div><div style="font-size:10px;color:var(--text3);letter-spacing:1px">PARTIDOS</div></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 220px;gap:14px;margin-bottom:16px;align-items:start">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+            <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+              <rect x="${MX}" y="${MY}" width="${PW}" height="${PH}" fill="#0d1a0d" stroke="#1e3a1e" stroke-width="1.5"/>
+              <line x1="${W/2}" y1="${MY}" x2="${W/2}" y2="${H-MY}" stroke="#1e3a1e" stroke-width="1"/>
+              <circle cx="${W/2}" cy="${H/2}" r="${(PH*9.15/68).toFixed(0)}" fill="none" stroke="#1e3a1e" stroke-width="1"/>
+              <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
+              <rect x="${MX}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
+              <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
+              <rect x="${(W-MX-PW*5.5/105).toFixed(1)}" y="${(MY+PH*(68-18.32)/2/68).toFixed(1)}" width="${(PW*5.5/105).toFixed(1)}" height="${(PH*18.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e"/>
+              <text x="${MX+8}" y="${H-MY+22}" font-size="10" fill="rgba(255,255,255,0.2)">← Portería propia</text>
+              <text x="${W-MX-8}" y="${H-MY+22}" text-anchor="end" font-size="10" fill="rgba(255,255,255,0.2)">Portería rival →</text>
+              <text x="${W-MX-4}" y="${MY-8}" text-anchor="end" font-size="10" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="1">ATAQUE →</text>
+              <polygon points="${W-MX+10},${H/2} ${W-MX},${H/2-6} ${W-MX},${H/2+6}" fill="rgba(255,255,255,0.18)"/>
+              ${lin}${nod}${leyenda}
+            </svg>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px">
+              <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Top conexiones (media/partido)</div>
+              ${topConnHTML}
+            </div>
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px">
+              <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Centralidad de red</div>
+              ${centHTML}
+            </div>
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px">
+          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">${active.length} jugadores habituales · media ${gamesUsed} partidos</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">${jugTabla}</div>
+        </div>`;
+    } catch(e){
+      if(_redRenderSeq===seq) cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
+    }
+  }
+
+  async function renderMatrizAgregado(isHome) {
+    const seq=++_redRenderSeq;
+    const cont=document.getElementById('redCont');
+    if(!cont) return;
+    const label=isHome?'🏠 Casa':'✈️ Fuera';
+    cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando matriz ${label}...</span></div>`;
+    try {
+      const matches=getAggMatches(isHome);
+      const allData=await Promise.all(matches.map(p=>getMatchData(p.id)));
+      if(_redRenderSeq!==seq) return;
+
+      const mat={}, jugPos={}, totD={}, totR={};
+      matches.forEach((partido,gi)=>{
+        const lineup=getLineup(partido.id,currentTeam.id);
+        lineup.forEach(p=>{if(!jugPos[p.name]) jugPos[p.name]=p.position;});
+        const data=allData[gi].filter(e=>e.pass_outcome==='successful');
+        data.forEach(e=>{
+          if(!e.player_name||!e.player_targeted_name) return;
+          const k=`${e.player_name}|${e.player_targeted_name}`;
+          mat[k]=(mat[k]||0)+1;
+        });
+      });
+
+      const jugsSet=new Set();
+      Object.keys(mat).forEach(k=>{const[f,t]=k.split('|');jugsSet.add(f);jugsSet.add(t);});
+      // Only show players who appear in lineup data
+      const jugsAll=[...jugsSet].filter(j=>jugPos[j]);
+      jugsAll.forEach(j=>{totD[j]=0;totR[j]=0;});
+      Object.entries(mat).forEach(([k,n])=>{
+        const[f,t]=k.split('|');
+        if(totD[f]!==undefined) totD[f]+=n;
+        if(totR[t]!==undefined) totR[t]+=n;
+      });
+      const jugs=jugsAll.sort((a,b)=>(totD[b]||0)-(totD[a]||0)).slice(0,16);
+      const maxV=Math.max(1,...jugs.flatMap(fr=>jugs.map(to=>mat[`${fr}|${to}`]||0)));
+
+      const thC=jugs.map(j=>`<th style="padding:6px 4px;font-size:9px;color:var(--text3);text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);min-width:28px">${j.split(' ').slice(-1)[0].substring(0,8)}<br><span style='font-size:8px;color:var(--accent)'>${jugPos[j]||''}</span></th>`).join('');
+      const filas=jugs.map(fr=>{
+        const pos=jugPos[fr]?`<span style='color:var(--accent);font-size:10px;font-weight:700;margin-right:4px'>${jugPos[fr]}</span>`:'';
+        const cels=jugs.map(to=>{
+          if(fr===to) return `<td style="background:var(--bg4);border:1px solid var(--border)"></td>`;
+          const n=mat[`${fr}|${to}`]||0;
+          if(!n) return `<td style="border:1px solid var(--border);text-align:center;font-size:10px;color:var(--text3)">—</td>`;
+          const iv=n/maxV;
+          const bg=`rgba(200,169,110,${(iv*0.6+0.08).toFixed(2)})`;
+          const col=iv>0.4?'#0d1117':'#e8c98e';
+          return `<td style="background:${bg};border:1px solid var(--border);text-align:center;font-size:11px;font-weight:600;color:${col}">${n}</td>`;
+        }).join('');
+        return `<tr><td style="padding:4px 10px;font-size:11px;border:1px solid var(--border);font-weight:500;white-space:nowrap">${pos}${fr.split(' ').slice(-1)[0].substring(0,10)}</td>${cels}<td style="padding:4px 8px;font-size:11px;color:var(--accent);font-weight:700;border:1px solid var(--border);text-align:center">${totD[fr]||0}</td></tr>`;
+      }).join('');
+      const recRow=jugs.map(j=>`<td style="padding:4px;font-size:11px;color:var(--blue);font-weight:700;border:1px solid var(--border);text-align:center">${totR[j]||0}</td>`).join('');
+      const totalPases=Object.values(mat).reduce((a,b)=>a+b,0);
+
+      cont.innerHTML=`
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+          <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;margin-bottom:3px">${label} · ${matches.length} partidos · Ambas partes</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">${currentTeam.name}</div></div>
+          <div style="margin-left:auto;font-size:12px;color:var(--text2)">${totalPases} pases completados en total</div>
+        </div>
+        <div style="display:flex;gap:16px;font-size:11px;color:var(--text3);margin-bottom:12px">
+          <span>Filas = <span style="color:var(--accent)">Pasador</span></span>
+          <span>Columnas = <span style="color:var(--blue)">Receptor</span></span>
+          <span style="color:var(--text3)">Top 16 por volumen · acumulado temporada</span>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:auto">
+          <table style="border-collapse:collapse;min-width:100%">
+            <thead><tr><th style="padding:6px 10px;font-size:10px;color:var(--text3);border:1px solid var(--border);min-width:80px">↓ Pasa \\ Recibe →</th>${thC}<th style="padding:6px 8px;font-size:10px;color:var(--accent);border:1px solid var(--border);text-align:center">TOTAL</th></tr></thead>
+            <tbody>${filas}<tr style="border-top:2px solid var(--border)"><td style="padding:4px 10px;font-size:10px;color:var(--blue);font-weight:700;border:1px solid var(--border)">RECIBIDOS</td>${recRow}<td style="border:1px solid var(--border)"></td></tr></tbody>
+          </table>
+        </div>`;
+    } catch(e){
+      if(_redRenderSeq===seq) cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
+    }
+  }
+
+  async function renderTendenciaAgregado(isHome) {
+    const seq=++_redRenderSeq;
+    const cont=document.getElementById('redCont');
+    if(!cont) return;
+    const label=isHome?'🏠 Casa':'✈️ Fuera';
+    cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando tendencia ${label}...</span></div>`;
+    try {
+      const matches=getAggMatches(isHome);
+      const allData=await Promise.all(matches.map(p=>getMatchData(p.id)));
+      if(_redRenderSeq!==seq) return;
+
+      // Aggregate all events from all games, separate by period
+      const all1=[], all2=[];
+      allData.forEach(data=>{
+        data.filter(e=>e.pass_outcome==='successful'&&e.x_start!=null).forEach(e=>{
+          if(e.period===1) all1.push(e);
+          else if(e.period===2) all2.push(e);
+        });
+      });
+
+      const buildZones=(rows)=>{
+        const z=Array.from({length:3},()=>Array(5).fill(0));
+        rows.forEach(e=>{
+          const col=e.x_start<-17.5?0:e.x_start<17.5?1:2;
+          const lane=e.y_start<-20.4?0:e.y_start<-6.8?1:e.y_start<6.8?2:e.y_start<20.4?3:4;
+          z[col][lane]++;
+        });
+        return z;
+      };
+      const zones1=buildZones(all1), zones2=buildZones(all2);
+      const t1=all1.length, t2=all2.length;
+
+      const W=500,H=340,MX=38,MY=30,PW=W-MX*2,PH=H-MY*2;
+      const sv=(x,y)=>({sx:MX+((x+52.5)/105)*PW,sy:MY+((34-y)/68)*PH});
+      const xR=[[-52.5,-17.5],[-17.5,17.5],[17.5,52.5]];
+      const yR=[[34,20.4],[20.4,6.8],[6.8,-6.8],[-6.8,-20.4],[-20.4,-34]];
+      const xMids=[MX+PW*0.167,MX+PW*0.5,MX+PW*0.833];
+      const yMids=[MY+PH*0.1,MY+PH*0.3,MY+PH*0.5,MY+PH*0.7,MY+PH*0.9];
+      const xLabels=['Z1','Z2','Z3'];
+
+      const buildFieldSVG=(zones,tot)=>{
+        const maxZ=Math.max(1,...zones.flat());
+        let z='';
+        for(let c=0;c<3;c++) for(let vr=0;vr<5;vr++){
+          const count=zones[c][4-vr];
+          const{sx:sx1,sy:sy1}=sv(xR[c][0],yR[vr][0]);
+          const{sx:sx2,sy:sy2}=sv(xR[c][1],yR[vr][1]);
+          const zw=sx2-sx1,zh=sy2-sy1,cx=sx1+zw/2,cy=sy1+zh/2;
+          const pct=tot>0?((count/tot)*100).toFixed(1):'0.0';
+          const op=count>0?Math.max(0.06,(count/maxZ)*0.78):0;
+          const dark=op>0.35;
+          z+=`<rect x="${sx1.toFixed(1)}" y="${sy1.toFixed(1)}" width="${zw.toFixed(1)}" height="${zh.toFixed(1)}" fill="#c8a96e" fill-opacity="${op.toFixed(3)}" stroke="#1e3a1e" stroke-width="0.5"/>
+          <text x="${cx.toFixed(1)}" y="${(cy+1).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-family="'Bebas Neue',sans-serif" font-size="13" fill="${dark?'#0d1117':'#e8c98e'}">${pct}%</text>
+          <text x="${cx.toFixed(1)}" y="${(cy+13).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="${dark?'#1c2333':'#8b949e'}">${Math.round(count/matches.length)}/p</text>`;
+        }
+        const ax=xLabels.map((l,i)=>`<text x="${xMids[i].toFixed(1)}" y="${(MY-8).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="600" fill="#484f58" font-family="'DM Mono',monospace">${l}</text>`).join('');
+        return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+          <rect x="0" y="0" width="${W}" height="${H}" fill="#0b150b"/>
+          <rect x="${MX}" y="${MY}" width="${PW}" height="${PH}" fill="#0d1a0d" stroke="#1e3a1e" stroke-width="1.2"/>
+          ${z}
+          <line x1="${W/2}" y1="${MY}" x2="${W/2}" y2="${H-MY}" stroke="#1e3a1e" stroke-width="0.8" stroke-dasharray="3,3"/>
+          <circle cx="${W/2}" cy="${H/2}" r="${(PH*9.15/68).toFixed(0)}" fill="none" stroke="#1e3a1e" stroke-width="0.7"/>
+          <rect x="${MX}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.6"/>
+          <rect x="${(W-MX-PW*16.5/105).toFixed(1)}" y="${(MY+PH*(68-40.32)/2/68).toFixed(1)}" width="${(PW*16.5/105).toFixed(1)}" height="${(PH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.6"/>
+          ${ax}
+          <text x="${W-MX-4}" y="${MY-6}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="rgba(255,255,255,0.28)" letter-spacing="0.8">ATAQUE →</text>
+          <polygon points="${W-MX+7},${H/2} ${W-MX},${H/2-4} ${W-MX},${H/2+4}" fill="rgba(255,255,255,0.18)"/>
+        </svg>`;
+      };
+
+      const CORR_LABELS=['C1 · Banda Izq','C2 · Semi Izq','C3 · Centro','C4 · Semi Dch','C5 · Banda Dch'];
+      const TERCIO_LABELS=['Zona 1 (Defensiva)','Zona 2 (Medio)','Zona 3 (Ataque)'];
+      const corrRows=CORR_LABELS.map((lbl,i)=>{
+        const li=4-i;
+        const n1=zones1[0][li]+zones1[1][li]+zones1[2][li];
+        const n2=zones2[0][li]+zones2[1][li]+zones2[2][li];
+        const p1=t1>0?((n1/t1)*100).toFixed(1):'0.0';
+        const p2=t2>0?((n2/t2)*100).toFixed(1):'0.0';
+        return `<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:7px 10px;font-size:11px;color:var(--text2);white-space:nowrap">${lbl}</td>
+          <td style="padding:7px 14px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--accent)">${p1}%</td>
+          <td style="padding:7px 14px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:16px;color:#58a6ff">${p2}%</td>
+          <td style="padding:7px 10px;width:100px">
+            <div style="height:4px;background:var(--bg4);border-radius:2px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:4px;width:${p1}%;background:var(--accent);border-radius:2px;opacity:0.8"></div></div>
+            <div style="height:4px;background:var(--bg4);border-radius:2px;margin-top:2px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:4px;width:${p2}%;background:#58a6ff;border-radius:2px;opacity:0.8"></div></div>
+          </td></tr>`;
+      }).join('');
+      const tercioRows=TERCIO_LABELS.map((lbl,i)=>{
+        const n1=zones1[i].reduce((a,b)=>a+b,0);
+        const n2=zones2[i].reduce((a,b)=>a+b,0);
+        const p1=t1>0?((n1/t1)*100).toFixed(1):'0.0';
+        const p2=t2>0?((n2/t2)*100).toFixed(1):'0.0';
+        return `<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:7px 10px;font-size:11px;color:var(--text2)">${lbl}</td>
+          <td style="padding:7px 14px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--accent)">${p1}%</td>
+          <td style="padding:7px 14px;text-align:right;font-family:'Bebas Neue',sans-serif;font-size:16px;color:#58a6ff">${p2}%</td>
+          <td style="padding:7px 10px;width:100px">
+            <div style="height:4px;background:var(--bg4);border-radius:2px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:4px;width:${p1}%;background:var(--accent);border-radius:2px;opacity:0.8"></div></div>
+            <div style="height:4px;background:var(--bg4);border-radius:2px;margin-top:2px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:4px;width:${p2}%;background:#58a6ff;border-radius:2px;opacity:0.8"></div></div>
+          </td></tr>`;
+      }).join('');
+
+      cont.innerHTML=`
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:18px">
+          <div><div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${label} · Tendencia de juego · ${matches.length} partidos</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">${currentTeam.name}</div></div>
+          <div style="margin-left:auto;display:flex;gap:16px;font-size:12px">
+            <span style="color:var(--accent)">● 1ª Parte <b>${Math.round(t1/matches.length)}</b> pases/partido</span>
+            <span style="color:#58a6ff">● 2ª Parte <b>${Math.round(t2/matches.length)}</b> pases/partido</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+          <div>
+            <div style="font-size:11px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;font-weight:700;margin-bottom:8px;padding-left:2px">1ª Parte (media)</div>
+            <div style="background:var(--bg2);border:1px solid rgba(200,169,110,0.25);border-radius:var(--radius);overflow:hidden">${buildFieldSVG(zones1,t1)}</div>
+          </div>
+          <div>
+            <div style="font-size:11px;letter-spacing:2px;color:#58a6ff;text-transform:uppercase;font-weight:700;margin-bottom:8px;padding-left:2px">2ª Parte (media)</div>
+            <div style="background:var(--bg2);border:1px solid rgba(88,166,255,0.25);border-radius:var(--radius);overflow:hidden">${buildFieldSVG(zones2,t2)}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase">Por corredor</div>
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr style="border-bottom:1px solid var(--border)">
+                <th style="padding:6px 10px;text-align:left;font-size:9px;color:var(--text3)"></th>
+                <th style="padding:6px 14px;text-align:right;font-size:9px;color:var(--accent)">1ª P</th>
+                <th style="padding:6px 14px;text-align:right;font-size:9px;color:#58a6ff">2ª P</th>
+                <th style="padding:6px 10px;width:100px"></th>
+              </tr></thead>
+              <tbody>${corrRows}</tbody>
+            </table>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase">Por tercio</div>
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr style="border-bottom:1px solid var(--border)">
+                <th style="padding:6px 10px;text-align:left;font-size:9px;color:var(--text3)"></th>
+                <th style="padding:6px 14px;text-align:right;font-size:9px;color:var(--accent)">1ª P</th>
+                <th style="padding:6px 14px;text-align:right;font-size:9px;color:#58a6ff">2ª P</th>
+                <th style="padding:6px 10px;width:100px"></th>
+              </tr></thead>
+              <tbody>${tercioRows}</tbody>
+            </table>
+          </div>
+        </div>`;
+    } catch(e){
+      if(_redRenderSeq===seq) cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">${e.message}</div>`;
+    }
+  }
+
+  async function renderComparativaAgregado(isHome) {
+    const seq=++_redRenderSeq;
+    const cont=document.getElementById('redCont');
+    if(!cont) return;
+    const label=isHome?'🏠 Casa':'✈️ Fuera';
+    cont.innerHTML=`<div class="loading"><div class="spinner"></div><span>Calculando comparativa ${label}...</span></div>`;
+    try {
+      const matches=getAggMatches(isHome);
+      const [d1,d2]=await Promise.all([computeAggRed(matches,1),computeAggRed(matches,2)]);
+      if(_redRenderSeq!==seq) return;
+
+      const MW=500,MH=330,MMX=38,MMY=28,MPW=MW-MMX*2,MPH=MH-MMY*2;
+      const msv=(x,y)=>({sx:MMX+((x+52.5)/105)*MPW,sy:MMY+((34-y)/68)*MPH});
+
+      function miniNetAgg(d,lbl,color){
+        let lin='';
+        Object.entries(d.pases).forEach(([k,n])=>{
+          const[fr,to]=k.split('|');if(!d.posM[fr]||!d.posM[to]) return;
+          const{sx:x1,sy:y1}=msv(d.posM[fr].x,d.posM[fr].y);
+          const{sx:x2,sy:y2}=msv(d.posM[to].x,d.posM[to].y);
+          const g=0.8+(n/d.maxP)*5,op=0.1+(n/d.maxP)*0.7;
+          const angle=Math.atan2(y2-y1,x2-x1);
+          const ax=x1+0.65*(x2-x1),ay=y1+0.65*(y2-y1),as=3+(n/d.maxP)*4;
+          const a1=`${(ax+as*Math.cos(angle)).toFixed(1)},${(ay+as*Math.sin(angle)).toFixed(1)}`;
+          const a2=`${(ax+as*0.45*Math.cos(angle+2.2)).toFixed(1)},${(ay+as*0.45*Math.sin(angle+2.2)).toFixed(1)}`;
+          const a3=`${(ax+as*0.45*Math.cos(angle-2.2)).toFixed(1)},${(ay+as*0.45*Math.sin(angle-2.2)).toFixed(1)}`;
+          lin+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${color}" stroke-width="${g.toFixed(1)}" stroke-opacity="${op.toFixed(2)}" stroke-linecap="round"/>
+            <polygon points="${a1} ${a2} ${a3}" fill="${color}" fill-opacity="${(op*0.9).toFixed(2)}"/>`;
+        });
+        let nod='';
+        d.active.forEach(n=>{
+          if(!d.posM[n]) return;
+          const{sx,sy}=msv(d.posM[n].x,d.posM[n].y);
+          const r=13+(d.totP[n]/d.maxT)*8;
+          const bcNorm=d.maxBC>0?(d.bcScores[n]||0)/d.maxBC:0;
+          const glow=bcNorm>0.25?`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${(r+5).toFixed(1)}" fill="none" stroke="#f0883e" stroke-width="2" stroke-opacity="${(bcNorm*0.85).toFixed(2)}" stroke-dasharray="3,2"/>`:'' ;
+          // SIN nombre en el campo, solo posición
+          nod+=`<g>${glow}<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${r.toFixed(1)}" fill="#1c2333" stroke="${color}" stroke-width="2"/>
+            <text x="${sx.toFixed(1)}" y="${(sy+4).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="700" fill="#e8c98e">${d.titMap[n]||''}</text></g>`;
+        });
+        const pctProg=d.totPasesAll>0?Math.round((d.totProgAll/d.totPasesAll)*100):0;
+        return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+            <span style="font-size:13px;font-weight:700;color:${color}">${lbl}</span>
+            <span style="font-size:12px;color:var(--text2)">${d.totPasesAll.toFixed(1)} pases/partido</span>
+            <span style="font-size:12px;color:var(--green)">↑${pctProg}%</span>
+          </div>
+          <svg viewBox="0 0 ${MW} ${MH}" style="width:100%;display:block">
+            <rect x="${MMX}" y="${MMY}" width="${MPW}" height="${MPH}" fill="#0d1a0d" stroke="#1e3a1e" stroke-width="1.5"/>
+            <line x1="${MW/2}" y1="${MMY}" x2="${MW/2}" y2="${MH-MMY}" stroke="#1e3a1e" stroke-width="0.8" stroke-dasharray="3,3"/>
+            <circle cx="${MW/2}" cy="${MH/2}" r="${(MPH*9.15/68).toFixed(0)}" fill="none" stroke="#1e3a1e" stroke-width="0.7"/>
+            <rect x="${MMX}" y="${(MMY+MPH*(68-40.32)/2/68).toFixed(1)}" width="${(MPW*16.5/105).toFixed(1)}" height="${(MPH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.6"/>
+            <rect x="${(MW-MMX-MPW*16.5/105).toFixed(1)}" y="${(MMY+MPH*(68-40.32)/2/68).toFixed(1)}" width="${(MPW*16.5/105).toFixed(1)}" height="${(MPH*40.32/68).toFixed(1)}" fill="none" stroke="#1e3a1e" stroke-width="0.6"/>
+            <text x="${MW-MMX-4}" y="${MMY-6}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="rgba(255,255,255,0.28)">ATAQUE →</text>
+            <polygon points="${MW-MMX+7},${MH/2} ${MW-MMX},${MH/2-4} ${MW-MMX},${MH/2+4}" fill="rgba(255,255,255,0.18)"/>
+            ${lin}${nod}
+          </svg>
+        </div>`;
+      }
+
+      const shortName=n=>n?n.split(' ').slice(-1)[0].substring(0,10):'-';
+      const shortConn=d=>{if(!d) return '-'; const[f,t]=d[0].split('|'); return `${shortName(f)}→${shortName(t)}`;};
+      const zoneLabel=x=>x<-17.5?'Zona 1':x<17.5?'Zona 2':'Zona 3';
+      const validPos=(d)=>d.active.filter(n=>d.posM[n]);
+      const avgX=(d)=>{const v=validPos(d);return v.length?v.reduce((s,n)=>s+(d.posM[n].x||0),0)/v.length:0;};
+      const topConn1=Object.entries(d1.pases).sort((a,b)=>b[1]-a[1])[0];
+      const topConn2=Object.entries(d2.pases).sort((a,b)=>b[1]-a[1])[0];
+      const topCentral1=d1.active.filter(n=>d1.posM[n]).sort((a,b)=>(d1.bcScores[b]||0)-(d1.bcScores[a]||0))[0];
+      const topCentral2=d2.active.filter(n=>d2.posM[n]).sort((a,b)=>(d2.bcScores[b]||0)-(d2.bcScores[a]||0))[0];
+
+      const cmpRows=[
+        {label:'Pases/partido',       v1:d1.totPasesAll.toFixed(1), v2:d2.totPasesAll.toFixed(1), num:true},
+        {label:'Pases progresivos/p', v1:d1.totProgAll.toFixed(1),  v2:d2.totProgAll.toFixed(1),  num:true},
+        {label:'% Progresivos',       v1:d1.totPasesAll?Math.round(d1.totProgAll/d1.totPasesAll*100):0, v2:d2.totPasesAll?Math.round(d2.totProgAll/d2.totPasesAll*100):0, num:true, suf:'%'},
+        {label:'Jugador más central', v1:shortName(topCentral1), v2:shortName(topCentral2), num:false},
+        {label:'Top conexión',        v1:shortConn(topConn1),    v2:shortConn(topConn2),    num:false},
+        {label:'Zona media de juego', v1:zoneLabel(avgX(d1)),    v2:zoneLabel(avgX(d2)),    num:false},
+      ];
+      const cmpHTML=cmpRows.map(({label:lbl,v1,v2,num,suf=''})=>{
+        const w1=num&&parseFloat(v1)>parseFloat(v2),w2=num&&parseFloat(v2)>parseFloat(v1);
+        const fmt=(v)=>num?`<span style="font-family:'Bebas Neue',sans-serif;font-size:20px">${v}${suf}</span>`:`<span style="font-size:12px">${v}</span>`;
+        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+          <td style="padding:10px 16px;text-align:right;color:${w1?'var(--accent)':'var(--text2)'}">${fmt(v1)}</td>
+          <td style="padding:10px 16px;text-align:center;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);border-left:1px solid var(--border);border-right:1px solid var(--border);white-space:nowrap">${lbl}</td>
+          <td style="padding:10px 16px;text-align:left;color:${w2?'var(--blue)':'var(--text2)'}">${fmt(v2)}</td>
+        </tr>`;
+      }).join('');
+
+      cont.innerHTML=`
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+          <div><div style="font-size:11px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px">${label} · 1ª vs 2ª Parte · ${matches.length} partidos</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">${currentTeam.name}</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+          ${miniNetAgg(d1,'1ª Parte','#c8a96e')}
+          ${miniNetAgg(d2,'2ª Parte','#58a6ff')}
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="border-bottom:2px solid var(--border)">
+              <th style="padding:10px 16px;text-align:right;font-size:12px;color:var(--accent);font-weight:700;width:35%">1ª Parte</th>
+              <th style="padding:10px 16px;text-align:center;font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;border-left:1px solid var(--border);border-right:1px solid var(--border)">MÉTRICA</th>
+              <th style="padding:10px 16px;text-align:left;font-size:12px;color:#58a6ff;font-weight:700;width:35%">2ª Parte</th>
             </tr></thead>
             <tbody>${cmpHTML}</tbody>
           </table>
