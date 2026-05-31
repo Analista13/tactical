@@ -13232,37 +13232,38 @@
 
   // ─── SANCIONES ───────────────────────────────────────────────────────────────
   // Fuente: Acuerdos del Juez Disciplinario — Primera Federación Grupo 1 — 2025/26
-  // Extraído de los PDFs oficiales de rfef.es (J1-J37)
+  // Extraído de los 37 PDFs oficiales de rfef.es — cada tarjeta incluye motivo
   const SANCIONES_DATA = [
-    {name:'Undabarrena', pos:'CB', amarillas:[1,5,12,13,22,23,31,36], acumulaciones:[20,32], rojas:[]},
-    {name:'Frimpong',    pos:'LM', amarillas:[15,17,24,28,33,35,36], acumulaciones:[20,29], rojas:[]},
-    {name:'A. López',    pos:'LB', amarillas:[2,4,11,14,26,30,32],   acumulaciones:[], rojas:[]},
-    {name:'Fede S.',     pos:'DM', amarillas:[4,6,7,8,21,36,37],      acumulaciones:[], rojas:[]},
-    {name:'Andújar',     pos:'CB', amarillas:[4,5,6,11,22],           acumulaciones:[], rojas:[14,19]},
-    {name:'Cortés',      pos:'CF', amarillas:[6,14,17,29,34,35],      acumulaciones:[], rojas:[]},
-    {name:'J. Fernández',pos:'DM', amarillas:[9,11,12,15,35,36],      acumulaciones:[], rojas:[]},
-    {name:'Keita',       pos:'RW', amarillas:[6,9,19,35],             acumulaciones:[21], rojas:[29]},
-    {name:'Borja Valle', pos:'LW', amarillas:[13,19,20,26,34],        acumulaciones:[], rojas:[]},
-    {name:'Calderón',    pos:'CM', amarillas:[26,29,34,35,37],        acumulaciones:[], rojas:[]},
-    {name:'Novoa',       pos:'CB', amarillas:[7,8,15,23,30],          acumulaciones:[], rojas:[]},
-    {name:'Borja Vázquez',pos:'CF',amarillas:[12,13,16,18],           acumulaciones:[], rojas:[]},
-    {name:'Moltenis',    pos:'CB', amarillas:[9,15,19],               acumulaciones:[21], rojas:[]},
-    {name:'Moreno',      pos:'RB', amarillas:[9,13,17],               acumulaciones:[], rojas:[]},
-    {name:'Iglesias',    pos:'CM', amarillas:[22,26],                 acumulaciones:[], rojas:[]},
-    {name:'Esquerdo',    pos:'CM', amarillas:[31,36],                 acumulaciones:[], rojas:[]},
-    {name:'Stankov',     pos:'CB', amarillas:[25,29],                 acumulaciones:[], rojas:[]},
-    {name:'Mula',        pos:'DEL',amarillas:[1,11],                  acumulaciones:[], rojas:[]},
-    {name:'Aguilar',     pos:'CM', amarillas:[11],                    acumulaciones:[], rojas:[18]},
-    {name:'Nafti',       pos:'CM', amarillas:[],                      acumulaciones:[], rojas:[31]},
-    {name:'P. Ferrer',   pos:'RW', amarillas:[36],                    acumulaciones:[], rojas:[]},
-    {name:'Prieto',      pos:'GK', amarillas:[25],                    acumulaciones:[], rojas:[]},
-    {name:'Barredo',     pos:'CB', amarillas:[26],                    acumulaciones:[], rojas:[]},
-    {name:'Kysil',       pos:'CM', amarillas:[28],                    acumulaciones:[], rojas:[]},
-    {name:'Estévez',     pos:'CM', amarillas:[8],                     acumulaciones:[], rojas:[]},
-    {name:'Borja Morán', pos:'LW', amarillas:[21],                    acumulaciones:[], rojas:[]},
-    {name:'Jorrín',      pos:'LW', amarillas:[18],                    acumulaciones:[], rojas:[]},
-    {name:'Juncker',     pos:'STAFF',amarillas:[9],                   acumulaciones:[], rojas:[]},
+    {name:'Andújar',      pos:'CB',  amarillas:[{j:4,m:'Juego peligroso'},{j:5,m:'Conducta antideportiva'},{j:6,m:'Salir terreno sin autorización'},{j:11,m:'Conducta antideportiva'},{j:22,m:'Conducta antideportiva'}], acumulaciones:[], rojas:[{j:14,m:'Acumulación de amarillas'},{j:19,m:'Doble amarilla'}]},
+    {name:'Undabarrena',  pos:'CB',  amarillas:[{j:1,m:'Conducta antideportiva'},{j:5,m:'Conducta antideportiva'},{j:12,m:'Infracción reglamentaria'},{j:13,m:'Juego peligroso'},{j:22,m:'Lenguaje ofensivo'},{j:23,m:'Conducta antideportiva'},{j:31,m:'Infracción reglamentaria'},{j:36,m:'Infracción reglamentaria'}], acumulaciones:[{j:20,m:'Suspensión: acumulación'},{j:32,m:'Suspensión: acumulación'}], rojas:[]},
+    {name:'Frimpong',     pos:'LM',  amarillas:[{j:15,m:'Conducta antideportiva'},{j:17,m:'Juego peligroso'},{j:24,m:'Infracción reglamentaria'},{j:28,m:'Juego peligroso'},{j:33,m:'Conducta antideportiva'},{j:35,m:'Juego peligroso'},{j:36,m:'Conducta antideportiva'}], acumulaciones:[{j:20,m:'Suspensión: acumulación'},{j:29,m:'Suspensión: acumulación'}], rojas:[]},
+    {name:'A. López',     pos:'LB',  amarillas:[{j:2,m:'Juego peligroso'},{j:4,m:'Juego peligroso'},{j:11,m:'Conducta antideportiva'},{j:14,m:'Juego peligroso'},{j:26,m:'Salir terreno sin autorización'},{j:30,m:'Conducta antideportiva'},{j:32,m:'Infracción reglamentaria'}], acumulaciones:[], rojas:[]},
+    {name:'Fede S.',      pos:'DM',  amarillas:[{j:4,m:'Infracción reglamentaria'},{j:6,m:'Infracción reglamentaria'},{j:7,m:'Juego peligroso'},{j:8,m:'Juego peligroso'},{j:21,m:'Juego peligroso'},{j:36,m:'Salir terreno sin autorización'},{j:37,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
+    {name:'Cortés',       pos:'CF',  amarillas:[{j:6,m:'Conducta antideportiva'},{j:14,m:'Juego peligroso'},{j:17,m:'Juego peligroso'},{j:29,m:'Juego peligroso'},{j:34,m:'Salir terreno sin autorización'},{j:35,m:'Conducta antideportiva'}], acumulaciones:[], rojas:[]},
+    {name:'J. Fernández', pos:'DM',  amarillas:[{j:9,m:'Infracción reglamentaria'},{j:11,m:'Juego peligroso'},{j:12,m:'Infracción reglamentaria'},{j:15,m:'Conducta antideportiva'},{j:35,m:'Juego peligroso'},{j:36,m:'Salir terreno sin autorización'}], acumulaciones:[], rojas:[]},
+    {name:'Keita',        pos:'RW',  amarillas:[{j:6,m:'Conducta antideportiva'},{j:9,m:'Infracción reglamentaria'},{j:19,m:'Juego peligroso'},{j:35,m:'Juego peligroso'}], acumulaciones:[{j:21,m:'Suspensión: acumulación'}], rojas:[{j:29,m:'Doble amarilla'}]},
+    {name:'Borja Valle',  pos:'LW',  amarillas:[{j:13,m:'Juego peligroso'},{j:19,m:'Juego peligroso'},{j:20,m:'Juego peligroso'},{j:26,m:'Conducta antideportiva'},{j:34,m:'Salir terreno sin autorización'}], acumulaciones:[], rojas:[]},
+    {name:'Calderón',     pos:'CM',  amarillas:[{j:29,m:'Infracción reglamentaria'},{j:34,m:'Infracción reglamentaria'},{j:35,m:'Conducta antideportiva'},{j:37,m:'Incumplir instrucciones'}], acumulaciones:[{j:26,m:'Suspensión: acumulación'}], rojas:[]},
+    {name:'Novoa',        pos:'CB',  amarillas:[{j:7,m:'Juego peligroso'},{j:8,m:'Juego peligroso'},{j:15,m:'Infracción reglamentaria'},{j:23,m:'Conducta antideportiva'},{j:30,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
+    {name:'Borja Vázquez',pos:'CF',  amarillas:[{j:12,m:'Conducta antideportiva'},{j:13,m:'Conducta antideportiva'},{j:16,m:'Infracción reglamentaria'},{j:18,m:'Lenguaje ofensivo'}], acumulaciones:[], rojas:[]},
+    {name:'Moltenis',     pos:'CB',  amarillas:[{j:9,m:'Infracción reglamentaria'},{j:15,m:'Conducta antideportiva'},{j:19,m:'Salir terreno sin autorización'}], acumulaciones:[{j:21,m:'Suspensión: acumulación'}], rojas:[]},
+    {name:'Moreno',       pos:'RB',  amarillas:[{j:9,m:'Infracción reglamentaria'},{j:13,m:'Conducta antideportiva'},{j:17,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
+    {name:'Iglesias',     pos:'CM',  amarillas:[{j:22,m:'Conducta antideportiva'},{j:26,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
+    {name:'Esquerdo',     pos:'CM',  amarillas:[{j:31,m:'Infracción reglamentaria'},{j:36,m:'Infracción reglamentaria'}], acumulaciones:[], rojas:[]},
+    {name:'Stankov',      pos:'CB',  amarillas:[{j:25,m:'Juego peligroso'},{j:29,m:'Conducta antideportiva'}], acumulaciones:[], rojas:[]},
+    {name:'Mula',         pos:'DEL', amarillas:[{j:1,m:'Juego peligroso'},{j:11,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
+    {name:'Aguilar',      pos:'CM',  amarillas:[{j:11,m:'Juego peligroso'}], acumulaciones:[], rojas:[{j:18,m:'Expulsión directa'}]},
+    {name:'Nafti',        pos:'CM',  amarillas:[], acumulaciones:[], rojas:[{j:31,m:'Doble amarilla'}]},
+    {name:'P. Ferrer',    pos:'RW',  amarillas:[{j:36,m:'Conducta antideportiva'}], acumulaciones:[], rojas:[]},
+    {name:'Prieto',       pos:'GK',  amarillas:[{j:25,m:'Conducta antideportiva'}], acumulaciones:[], rojas:[]},
+    {name:'Barredo',      pos:'CB',  amarillas:[{j:26,m:'Salir terreno sin autorización'}], acumulaciones:[], rojas:[]},
+    {name:'Kysil',        pos:'CM',  amarillas:[{j:28,m:'Infracción reglamentaria'}], acumulaciones:[], rojas:[]},
+    {name:'Estévez',      pos:'CM',  amarillas:[{j:8,m:'Conducta antideportiva'}], acumulaciones:[], rojas:[]},
+    {name:'Borja Morán',  pos:'LW',  amarillas:[{j:21,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
+    {name:'Jorrín',       pos:'LW',  amarillas:[{j:18,m:'Infracción reglamentaria'}], acumulaciones:[], rojas:[]},
   ];
+
+  let sancionesVista = 'total'; // 'total' | 'jornadas'
 
   function loadSanciones() {
     const cont = document.getElementById('content');
@@ -13271,35 +13272,106 @@
     const totalAc = SANCIONES_DATA.reduce((s,p) => s + p.acumulaciones.length, 0);
     const lastJ = 37;
 
-    // Ordenar: rojas primero, luego por total amarillas desc
-    const sorted = [...SANCIONES_DATA].sort((a,b) => {
-      const aScore = b.rojas.length*100 + b.amarillas.length + b.acumulaciones.length;
-      const bScore = a.rojas.length*100 + a.amarillas.length + a.acumulaciones.length;
-      return aScore - bScore;
-    });
+    const sorted = [...SANCIONES_DATA].sort((a,b) =>
+      (b.rojas.length*10 + b.amarillas.length + b.acumulaciones.length) -
+      (a.rojas.length*10 + a.amarillas.length + a.acumulaciones.length)
+    );
 
-    // Mini-timeline: 37 jornadas → puntos de color
-    const TOTAL_J = 38;
-    const timeline = (p) => {
-      const dots = [];
-      for (let j = 1; j <= lastJ; j++) {
-        if (p.rojas.includes(j)) dots.push(`<span title="J${j} 🔴 Roja" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin:0 1px"></span>`);
-        else if (p.acumulaciones.includes(j)) dots.push(`<span title="J${j} 🟠 Suspensión acum." style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--orange);margin:0 1px"></span>`);
-        else if (p.amarillas.includes(j)) dots.push(`<span title="J${j} 🟡 Amarilla" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f0c040;margin:0 1px"></span>`);
-        else dots.push(`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--bg4);margin:0 1px"></span>`);
-      }
-      return dots.join('');
+    const tip = document.getElementById('pos-tip');
+    const showTip = (e, html) => {
+      tip.innerHTML = html; tip.style.display = 'block';
+      tip.style.left = (e.clientX + 14) + 'px'; tip.style.top = (e.clientY - 10) + 'px';
+    };
+    const hideTip = () => { tip.style.display = 'none'; };
+
+    // ── Vista TOTAL ──────────────────────────────────────────────────────────
+    const renderTotal = () => `
+      <div class="table-wrap anim">
+        <table>
+          <thead>
+            <tr>
+              <th>Jugador</th><th>Pos</th>
+              <th style="text-align:center">🟡 Amarillas</th>
+              <th style="text-align:center">🟠 Acum.</th>
+              <th style="text-align:center">🔴 Rojas</th>
+              <th style="text-align:center">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sorted.map(p => {
+              const hasRed = p.rojas.length > 0;
+              const isRisk = p.amarillas.length >= 4 && !hasRed && p.acumulaciones.length === 0;
+              return `<tr style="${hasRed?'background:rgba(248,81,73,0.05)':''}">
+                <td style="font-weight:700">${p.name}
+                  ${hasRed?'<span class="pill pill-red" style="margin-left:6px;font-size:10px">Roja</span>':''}
+                  ${isRisk?'<span class="pill pill-accent" style="margin-left:6px;font-size:10px">⚠ Riesgo</span>':''}
+                </td>
+                <td><span class="pill pill-blue">${p.pos}</span></td>
+                <td style="text-align:center;color:#f0c040;font-weight:700">${p.amarillas.length||'—'}</td>
+                <td style="text-align:center;color:var(--orange);font-weight:700">${p.acumulaciones.length||'—'}</td>
+                <td style="text-align:center;color:var(--red);font-weight:700">${p.rojas.length||'—'}</td>
+                <td style="text-align:center;color:var(--text2);font-weight:600">${p.amarillas.length+p.acumulaciones.length+p.rojas.length}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>`;
+
+    // ── Vista POR JORNADAS ───────────────────────────────────────────────────
+    const renderJornadas = () => {
+      // Cabecera de jornadas
+      const jHeaders = Array.from({length:lastJ},(_,i)=>`<th style="text-align:center;font-size:10px;color:var(--text3);padding:6px 3px;min-width:18px">J${i+1}</th>`).join('');
+      const rows = sorted.map(p => {
+        // Mapa rápido jornada → {tipo, motivo}
+        const jmap = {};
+        p.amarillas.forEach(c => { jmap[c.j]={t:'am',m:c.m}; });
+        p.acumulaciones.forEach(c => { jmap[c.j]={t:'ac',m:c.m}; });
+        p.rojas.forEach(c => { jmap[c.j]={t:'ro',m:c.m}; });
+
+        const cells = Array.from({length:lastJ},(_,i)=>{
+          const j = i+1;
+          const ev = jmap[j];
+          if (!ev) return `<td style="padding:5px 2px;text-align:center"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--bg4)"></span></td>`;
+          const col = ev.t==='ro'?'var(--red)':ev.t==='ac'?'var(--orange)':'#f0c040';
+          const emoji = ev.t==='ro'?'🔴':ev.t==='ac'?'🟠':'🟡';
+          return `<td style="padding:5px 2px;text-align:center">
+            <span class="sanc-dot" data-tip="${emoji} J${j} · ${p.name}&lt;br&gt;${ev.m}"
+              style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${col};cursor:pointer;transition:transform .1s"
+              onmouseenter="sancionTip(event,this)" onmouseleave="sancionTipHide()"></span>
+          </td>`;
+        }).join('');
+
+        const hasRed = p.rojas.length > 0;
+        return `<tr style="${hasRed?'background:rgba(248,81,73,0.04)':''}">
+          <td style="font-weight:700;white-space:nowrap;padding:7px 14px">${p.name}</td>
+          <td style="padding:7px 8px"><span class="pill pill-blue">${p.pos}</span></td>
+          ${cells}
+        </tr>`;
+      }).join('');
+
+      return `
+        <div class="table-wrap anim" style="overflow-x:auto">
+          <table style="min-width:900px">
+            <thead>
+              <tr>
+                <th style="white-space:nowrap">Jugador</th>
+                <th>Pos</th>
+                ${jHeaders}
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
     };
 
     cont.innerHTML = `
       <div class="content-head anim">
-        <div>
-          <h2>SANCIONES</h2>
+        <div><h2>SANCIONES</h2>
           <p>Temporada 2025/26 · Fuente: Acuerdos Juez Disciplinario RFEF · J1–J${lastJ}</p>
         </div>
       </div>
 
-      <div class="cards anim" style="grid-template-columns:repeat(4,1fr)">
+      <div class="cards anim" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
         <div class="card">
           <div class="card-label">Total amarillas</div>
           <div class="card-value" style="color:#f0c040">${totalAm}</div>
@@ -13316,53 +13388,49 @@
           <div class="card-sub">directas o doble amarilla</div>
         </div>
         <div class="card">
-          <div class="card-label">Media amarillas/partido</div>
+          <div class="card-label">Media amarillas/J</div>
           <div class="card-value" style="color:var(--accent)">${(totalAm/lastJ).toFixed(1)}</div>
           <div class="card-sub">tarjetas por jornada</div>
         </div>
       </div>
 
-      <div class="table-wrap anim">
-        <table>
-          <thead>
-            <tr>
-              <th>Jugador</th>
-              <th>Pos</th>
-              <th style="text-align:center">🟡</th>
-              <th style="text-align:center">🟠 Acum.</th>
-              <th style="text-align:center">🔴</th>
-              <th>Distribución por jornada</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${sorted.filter(p => p.pos !== 'STAFF').map(p => {
-              const hasRed = p.rojas.length > 0;
-              const isRisk = p.amarillas.length >= 4 && p.acumulaciones.length === 0 && !hasRed;
-              return `
-              <tr style="${hasRed ? 'background:rgba(248,81,73,0.05)' : ''}">
-                <td style="font-weight:700">
-                  ${p.name}
-                  ${hasRed ? '<span class="pill pill-red" style="margin-left:6px">Roja</span>' : ''}
-                  ${isRisk ? '<span class="pill pill-accent" style="margin-left:6px;font-size:10px">⚠ Riesgo</span>' : ''}
-                </td>
-                <td><span class="pill pill-blue">${p.pos}</span></td>
-                <td style="text-align:center;font-family:var(--font-mono,monospace);color:#f0c040;font-weight:700">${p.amarillas.length || '—'}</td>
-                <td style="text-align:center;color:var(--orange);font-weight:700">${p.acumulaciones.length || '—'}</td>
-                <td style="text-align:center;color:var(--red);font-weight:700">${p.rojas.length || '—'}</td>
-                <td style="padding:8px 16px">${timeline(p)}</td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <div style="display:flex;background:var(--bg3);border-radius:8px;padding:3px;gap:2px">
+          <button onclick="sancionesVista='total';loadSanciones()"
+            style="background:${sancionesVista==='total'?'var(--bg2)':'transparent'};border:${sancionesVista==='total'?'1px solid var(--border)':'1px solid transparent'};color:${sancionesVista==='total'?'var(--accent)':'var(--text2)'};border-radius:6px;padding:5px 14px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">
+            Total
+          </button>
+          <button onclick="sancionesVista='jornadas';loadSanciones()"
+            style="background:${sancionesVista==='jornadas'?'var(--bg2)':'transparent'};border:${sancionesVista==='jornadas'?'1px solid var(--border)':'1px solid transparent'};color:${sancionesVista==='jornadas'?'var(--accent)':'var(--text2)'};border-radius:6px;padding:5px 14px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">
+            Por Jornadas
+          </button>
+        </div>
+        ${sancionesVista==='jornadas'?'<span style="font-size:11px;color:var(--text3)">Pasa el ratón sobre un punto para ver el motivo</span>':''}
       </div>
+
+      ${sancionesVista==='total' ? renderTotal() : renderJornadas()}
 
       <div style="margin-top:14px;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text3);display:flex;gap:20px;flex-wrap:wrap;align-items:center">
         <span style="font-weight:600;color:var(--text2)">Leyenda:</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f0c040;margin-right:4px"></span>🟡 Amarilla</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--orange);margin-right:4px"></span>🟠 Suspensión por acumulación</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:4px"></span>🔴 Roja directa / doble amarilla</span>
-        <span style="margin-left:auto">Datos: RFEF · acuerdos del Juez Disciplinario · J1–J${lastJ}</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f0c040;margin-right:4px"></span>Amarilla</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--orange);margin-right:4px"></span>Suspensión por acumulación</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:4px"></span>Roja / doble amarilla</span>
+        <span style="margin-left:auto">Datos: RFEF · Juez Disciplinario · J1–J${lastJ}</span>
       </div>`;
+  }
+
+  function sancionTip(e, el) {
+    const tip = document.getElementById('pos-tip');
+    const raw = el.dataset.tip || '';
+    tip.innerHTML = raw.replace(/&lt;br&gt;/g,'<br>');
+    tip.style.display = 'block';
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top  = (e.clientY - 10) + 'px';
+    el.style.transform = 'scale(1.6)';
+  }
+  function sancionTipHide() {
+    document.getElementById('pos-tip').style.display = 'none';
+    document.querySelectorAll('.sanc-dot').forEach(d => d.style.transform = '');
   }
 
   // INIT
