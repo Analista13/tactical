@@ -254,6 +254,7 @@
     renderHomeContent();
   }
   let redMatchId    = null;
+  let redDropOpen   = false;
   let redPrimaryTab = 'equipo';
   let redSubTab     = '1parte';
   let jugSubTab     = 'mapa';
@@ -729,12 +730,53 @@
   }
 
   // RED DE PASES
+  function buildRedHeader(ps) {
+    const partido = ps.find(p => p.id === redMatchId) || ps[ps.length-1];
+    if (!partido) return '';
+    redMatchId = partido.id;
+    const rival   = partido.local === currentTeam.name ? partido.vis : partido.local;
+    const isHome  = partido.local === currentTeam.name;
+    const [gl,gv] = (partido.s||'0-0').split('-').map(Number);
+    const resCol  = isHome ? (gl>gv?'var(--green)':gl<gv?'var(--red)':'var(--text3)') : (gv>gl?'var(--green)':gv<gl?'var(--red)':'var(--text3)');
+
+    const elegirBtn = `<button onclick="redDropOpen=!redDropOpen;loadRedPases()"
+      style="background:${redDropOpen?'rgba(88,166,255,0.12)':'var(--bg2)'};border:1px solid ${redDropOpen?'rgba(88,166,255,0.45)':'var(--border)'};color:${redDropOpen?'var(--blue)':'var(--text2)'};padding:5px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap">✈ Elegir</button>`;
+
+    const matchChips = redDropOpen ? (() => {
+      const chips = ps.map(p => {
+        const rv  = p.local === currentTeam.name ? p.vis : p.local;
+        const ih  = p.local === currentTeam.name;
+        const sel = p.id === redMatchId;
+        return `<button onclick="redMatchId=${p.id};redDropOpen=false;telaranaMode='todos';perdidasPart='total';jugCalorPlayer=null;loadRedPases()"
+          style="background:${sel?'rgba(88,166,255,0.1)':'var(--bg3)'};border:1px solid ${sel?'rgba(88,166,255,0.5)':'var(--border)'};color:${sel?'var(--blue)':'var(--text2)'};padding:6px 10px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all 0.15s;text-align:left;display:flex;flex-direction:column;gap:1px;min-width:90px">
+          <span style="font-weight:700;font-size:10px;color:${sel?'var(--blue)':'var(--accent)'}">${p.j}</span>
+          <span>${ih?'🏠':'✈️'} ${rv.length>13?rv.substring(0,11)+'…':rv}</span>
+          <span style="color:var(--text3);font-size:10px">${p.s||''}</span>
+        </button>`;
+      }).join('');
+      return `<div style="background:var(--bg2);border:1px solid rgba(88,166,255,0.2);border-radius:var(--radius);padding:12px 14px;margin-top:8px">
+        <div style="font-size:10px;color:var(--blue);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:10px">
+          Selecciona un partido · <span style="color:var(--text2)">${currentTeam.name} (${partido.j})</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">${chips}</div>
+      </div>`;
+    })() : '';
+
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--accent)">${partido.j}</span>
+        <span style="font-size:13px;color:var(--text);font-weight:500">${isHome?'🏠':'✈️'} ${rival}</span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${resCol}">${partido.s||''}</span>
+        <span style="font-size:11px;color:var(--text3)">${partido.f||''}</span>
+        <span style="margin-left:auto">${elegirBtn}</span>
+      </div>
+      ${matchChips}
+    </div>`;
+  }
+
   function loadRedPases() {
-    const matchOpts = getPartidos().map(p => {
-      const rival = p.local===currentTeam.name?p.vis:p.local;
-      const s = p.local===currentTeam.name?'🏠':'✈️';
-      return `<option value="${p.id}" ${p.id==redMatchId?'selected':''}>${s} ${p.j} · ${rival} · ${p.s} · ${p.f}</option>`;
-    }).join('');
+    const ps = getPartidos();
+    if (!redMatchId) { const last = ps[ps.length-1]; if(last) redMatchId=last.id; }
 
     const ptBtn=(id,label)=>{
       const active=redPrimaryTab===id;
@@ -742,12 +784,7 @@
     };
 
     document.getElementById('content').innerHTML = `<div class="anim">${head()}
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-        <select id="matchSel" onchange="redMatchId=parseInt(this.value);telaranaMode='todos';perdidasPart='total';jugCalorPlayer=null;renderRedTab()"
-          style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;flex:1;min-width:280px">
-          <option value="">— Selecciona un partido —</option>${matchOpts}
-        </select>
-      </div>
+      ${buildRedHeader(ps)}
       <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">
         ${ptBtn('equipo','Equipo')}
         ${ptBtn('jugadores','Jugadores')}
