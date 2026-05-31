@@ -221,6 +221,7 @@
     { tab:'centros',      label:'Centros' },
     { tab:'faltas',       label:'Faltas' },
     { tab:'sanciones',    label:'Sanciones' },
+    { tab:'tiros',        label:'Tiros' },
   ];
 
   // ── Render aside ─────────────────────────────────────────────────────────────
@@ -3443,6 +3444,7 @@
     else if(tab === 'centros')      loadCentros();
     else if(tab === 'faltas')       loadFaltas();
     else if(tab === 'sanciones')    loadSanciones();
+    else if(tab === 'tiros')        loadTiros();
     else if(tab === 'plantilla')    loadPlantillaTab();
   }
 
@@ -13431,6 +13433,431 @@
   function sancionTipHide() {
     document.getElementById('pos-tip').style.display = 'none';
     document.querySelectorAll('.sanc-dot').forEach(d => d.style.transform = '');
+  }
+
+
+  // ─── TIROS (Mapa de Tiros – datos SofaScore) ─────────────────────────────────
+  const TIROS_DATA = [
+  {j:1,p:"B. Moltenis",t:"miss",b:"head",s:"corner",xg:0.2129,dx:43,dy:3,gy:57.5,gz:23.3,loc:"V"},
+  {j:1,p:"Á. Mula",t:"block",b:"right-foot",s:"throw-in-set-piece",xg:0.0012,dx:52,dy:29,gy:50,gz:20,loc:"V"},
+  {j:1,p:"B. V. Balonga",t:"save",b:"right-foot",s:"regular",xg:0.0117,dx:88,dy:45,gy:50.4,gz:14,loc:"V"},
+  {j:1,p:"B. V. Balonga",t:"save",b:"head",s:"set-piece",xg:0.0922,dx:44,dy:11,gy:50.5,gz:19,loc:"V"},
+  {j:1,p:"B. Vázquez",t:"miss",b:"right-foot",s:"regular",xg:0.0597,dx:30,dy:18,gy:41.8,gz:49.6,loc:"V"},
+  {j:1,p:"P. Ferrer",t:"goal",b:"left-foot",s:"regular",xg:0.1193,dx:44,dy:15,gy:53.4,gz:20.3,loc:"V"},
+  {j:1,p:"B. V. Balonga",t:"goal",b:"right-foot",s:"regular",xg:0.2052,dx:65,dy:12,gy:51,gz:12.3,loc:"V"},
+  {j:1,p:"B. V. Balonga",t:"miss",b:"right-foot",s:"throw-in-set-piece",xg:0.0153,dx:25,dy:24,gy:42.9,gz:11.5,loc:"V"},
+  {j:1,p:"E. Undabarrena",t:"block",b:"right-foot",s:"regular",xg:0.0013,dx:43,dy:30,gy:50,gz:20,loc:"V"},
+  {j:1,p:"B. Vázquez",t:"goal",b:"head",s:"regular",xg:0.059,dx:38,dy:5,gy:54.7,gz:24.9,loc:"V"},
+  {j:2,p:"J. L. Cortés",t:"miss",b:"left-foot",s:"regular",xg:0.052,dx:41,dy:21,gy:59,gz:48.9,loc:"L"},
+  {j:2,p:"J. L. Cortés",t:"miss",b:"head",s:"regular",xg:0.0582,dx:52,dy:15,gy:41.6,gz:42.8,loc:"L"},
+  {j:2,p:"E. A. Frimpong",t:"miss",b:"left-foot",s:"regular",xg:0.3298,dx:45,dy:12,gy:58.5,gz:17.7,loc:"L"},
+  {j:2,p:"E. Aguilar",t:"block",b:"left-foot",s:"regular",xg:0.0015,dx:35,dy:21,gy:50,gz:20,loc:"L"},
+  {j:2,p:"S. Benito",t:"block",b:"head",s:"regular",xg:0.2697,dx:42,dy:6,gy:50,gz:20,loc:"L"},
+  {j:2,p:"B. V. Balonga",t:"save",b:"right-foot",s:"penalty",xg:0.76,dx:50,dy:10,gy:45.3,gz:7.9,loc:"L"},
+  {j:2,p:"B. Vázquez",t:"miss",b:"right-foot",s:"regular",xg:0.0062,dx:59,dy:25,gy:57.2,gz:32,loc:"L"},
+  {j:2,p:"D. Moreno",t:"miss",b:"right-foot",s:"corner",xg:0.0059,dx:65,dy:28,gy:58.5,gz:18.4,loc:"L"},
+  {j:2,p:"B. V. Balonga",t:"miss",b:"head",s:"regular",xg:0.1061,dx:46,dy:8,gy:58.8,gz:56.7,loc:"L"},
+  {j:2,p:"G. N. Enríquez",t:"save",b:"right-foot",s:"regular",xg:0.0408,dx:44,dy:14,gy:47.5,gz:9.3,loc:"L"},
+  {j:3,p:"E. Aguilar",t:"save",b:"right-foot",s:"regular",xg:0.1975,dx:38,dy:5,gy:53.8,gz:18.7,loc:"V"},
+  {j:3,p:"Á. Mula",t:"save",b:"right-foot",s:"regular",xg:0.0235,dx:23,dy:26,gy:48.3,gz:12.7,loc:"V"},
+  {j:3,p:"J. L. Cortés",t:"miss",b:"left-foot",s:"regular",xg:0.0293,dx:25,dy:10,gy:40.8,gz:17.8,loc:"V"},
+  {j:3,p:"A. Keita",t:"block",b:"left-foot",s:"regular",xg:0.0172,dx:58,dy:22,gy:50,gz:20,loc:"V"},
+  {j:3,p:"E. Aguilar",t:"miss",b:"right-foot",s:"regular",xg:0.2146,dx:45,dy:10,gy:43.7,gz:59.1,loc:"V"},
+  {j:3,p:"A. López",t:"goal",b:"left-foot",s:"throw-in-set-piece",xg:0.0905,dx:36,dy:11,gy:46.6,gz:11.7,loc:"V"},
+  {j:3,p:"J. L. Cortés",t:"save",b:"right-foot",s:"throw-in-set-piece",xg:0.0377,dx:48,dy:19,gy:45.7,gz:8.7,loc:"V"},
+  {j:3,p:"J. L. Cortés",t:"save",b:"right-foot",s:"throw-in-set-piece",xg:0.0235,dx:69,dy:7,gy:47.3,gz:19.6,loc:"V"},
+  {j:3,p:"E. Aguilar",t:"miss",b:"left-foot",s:"regular",xg:0.0142,dx:35,dy:20,gy:52.9,gz:49.9,loc:"V"},
+  {j:3,p:"A. Keita",t:"miss",b:"right-foot",s:"throw-in-set-piece",xg:0.0101,dx:58,dy:26,gy:41.1,gz:49.5,loc:"V"},
+  {j:4,p:"S. Benito",t:"block",b:"left-foot",s:"throw-in-set-piece",xg:0.0277,dx:69,dy:24,gy:50,gz:20,loc:"L"},
+  {j:4,p:"S. Benito",t:"goal",b:"left-foot",s:"regular",xg:0.4317,dx:37,dy:8,gy:52.9,gz:1.1,loc:"L"},
+  {j:4,p:"A. Keita",t:"save",b:"left-foot",s:"regular",xg:0.0219,dx:56,dy:24,gy:49.3,gz:1.6,loc:"L"},
+  {j:4,p:"B. V. Balonga",t:"miss",b:"head",s:"corner",xg:0.1984,dx:56,dy:5,gy:57.8,gz:31.3,loc:"L"},
+  {j:4,p:"B. Vázquez",t:"post",b:"head",s:"set-piece",xg:0.0968,dx:53,dy:13,gy:54.9,gz:38.6,loc:"L"},
+  {j:4,p:"B. V. Balonga",t:"miss",b:"head",s:"corner",xg:0.1881,dx:43,dy:8,gy:41.6,gz:1.2,loc:"L"},
+  {j:4,p:"E. Aguilar",t:"save",b:"left-foot",s:"regular",xg:0.0372,dx:66,dy:27,gy:51,gz:16.2,loc:"L"},
+  {j:4,p:"A. López",t:"block",b:"left-foot",s:"throw-in-set-piece",xg:0.0026,dx:32,dy:32,gy:50,gz:20,loc:"L"},
+  {j:4,p:"E. Aguilar",t:"miss",b:"left-foot",s:"corner",xg:0.007,dx:32,dy:19,gy:58.5,gz:53.7,loc:"L"},
+  {j:4,p:"B. V. Balonga",t:"save",b:"head",s:"corner",xg:0.1704,dx:55,dy:8,gy:51.2,gz:31.4,loc:"L"},
+  {j:4,p:"B. V. Balonga",t:"save",b:"right-foot",s:"regular",xg:0.4845,dx:47,dy:6,gy:52,gz:12.2,loc:"L"},
+  {j:4,p:"B. Vázquez",t:"miss",b:"right-foot",s:"free-kick",xg:0.0024,dx:29,dy:11,gy:51.2,gz:54.9,loc:"L"},
+  {j:4,p:"E. Aguilar",t:"miss",b:"head",s:"regular",xg:0.0619,dx:49,dy:15,gy:56.3,gz:38.1,loc:"L"},
+  {j:5,p:"P. Ferrer",t:"save",b:"right-foot",s:"regular",xg:0.0459,dx:73,dy:11,gy:46.7,gz:9.3,loc:"V"},
+  {j:5,p:"A. Keita",t:"block",b:"left-foot",s:"regular",xg:0.009,dx:76,dy:21,gy:50,gz:20,loc:"V"},
+  {j:5,p:"S. Benito",t:"miss",b:"head",s:"throw-in-set-piece",xg:0.0305,dx:59,dy:12,gy:53.5,gz:49.8,loc:"V"},
+  {j:5,p:"J. L. Cortés",t:"miss",b:"right-foot",s:"regular",xg:0.0555,dx:32,dy:15,gy:43.1,gz:51.4,loc:"V"},
+  {j:5,p:"S. Benito",t:"save",b:"left-foot",s:"regular",xg:0.045,dx:36,dy:23,gy:54.6,gz:10.5,loc:"V"},
+  {j:5,p:"X. Fernández",t:"miss",b:"right-foot",s:"regular",xg:0.0119,dx:28,dy:19,gy:43.7,gz:40.2,loc:"V"},
+  {j:5,p:"J. L. Cortés",t:"save",b:"right-foot",s:"set-piece",xg:0.2217,dx:67,dy:10,gy:51.1,gz:3.3,loc:"V"},
+  {j:5,p:"E. Aguilar",t:"block",b:"left-foot",s:"set-piece",xg:0.0039,dx:34,dy:22,gy:50,gz:20,loc:"V"},
+  {j:5,p:"A. López",t:"block",b:"left-foot",s:"regular",xg:0.0026,dx:27,dy:12,gy:50,gz:20,loc:"V"},
+  {j:5,p:"E. Aguilar",t:"miss",b:"left-foot",s:"regular",xg:0.0372,dx:34,dy:13,gy:46.4,gz:47.4,loc:"V"},
+  {j:5,p:"A. Keita",t:"miss",b:"head",s:"regular",xg:0.3407,dx:38,dy:12,gy:46.8,gz:50.1,loc:"V"},
+  {j:5,p:"S. Benito",t:"save",b:"right-foot",s:"regular",xg:0.0943,dx:61,dy:9,gy:49.3,gz:11.9,loc:"V"},
+  {j:5,p:"D. Andújar",t:"miss",b:"head",s:"corner",xg:0.0896,dx:60,dy:6,gy:43,gz:50.2,loc:"V"},
+  {j:5,p:"J. L. Cortés",t:"save",b:"right-foot",s:"regular",xg:0.0053,dx:29,dy:26,gy:53,gz:18,loc:"V"},
+  {j:5,p:"J. L. Cortés",t:"save",b:"left-foot",s:"regular",xg:0.067,dx:32,dy:18,gy:53.1,gz:3.2,loc:"V"},
+  {j:5,p:"E. Aguilar",t:"miss",b:"head",s:"regular",xg:0.109,dx:37,dy:8,gy:58.6,gz:24.9,loc:"V"},
+  {j:6,p:"B. Vázquez",t:"miss",b:"right-foot",s:"set-piece",xg:0.0028,dx:65,dy:28,gy:42.4,gz:42.2,loc:"L"},
+  {j:6,p:"X. Fernández",t:"block",b:"left-foot",s:"regular",xg:0.1073,dx:51,dy:14,gy:50,gz:20,loc:"L"},
+  {j:6,p:"B. Vázquez",t:"miss",b:"right-foot",s:"regular",xg:0.1811,dx:35,dy:8,gy:42.5,gz:7.7,loc:"L"},
+  {j:6,p:"J. L. Cortés",t:"miss",b:"left-foot",s:"regular",xg:0.1633,dx:36,dy:8,gy:43.1,gz:6.7,loc:"L"},
+  {j:6,p:"X. Fernández",t:"goal",b:"left-foot",s:"set-piece",xg:0.1371,dx:45,dy:13,gy:46.8,gz:7.8,loc:"L"},
+  {j:6,p:"B. V. Balonga",t:"goal",b:"right-foot",s:"regular",xg:0.1392,dx:52,dy:14,gy:47.2,gz:10.5,loc:"L"},
+  {j:6,p:"E. Aguilar",t:"miss",b:"left-foot",s:"regular",xg:0.0529,dx:31,dy:22,gy:42.5,gz:19.6,loc:"L"},
+  {j:6,p:"X. Fernández",t:"block",b:"right-foot",s:"corner",xg:0.0751,dx:34,dy:13,gy:50,gz:20,loc:"L"},
+  {j:6,p:"X. Fernández",t:"block",b:"head",s:"corner",xg:0.006,dx:33,dy:14,gy:50,gz:20,loc:"L"},
+  {j:6,p:"E. Aguilar",t:"block",b:"right-foot",s:"regular",xg:0.0443,dx:40,dy:15,gy:50,gz:20,loc:"L"},
+  {j:6,p:"A. Keita",t:"save",b:"right-foot",s:"throw-in-set-piece",xg:0.0666,dx:46,dy:25,gy:49.3,gz:2.7,loc:"L"},
+  {j:7,p:"J. L. Cortés",t:"miss",b:"right-foot",s:"set-piece",xg:0.0041,dx:51,dy:63,gy:41.7,gz:23.8,loc:"V"},
+  {j:7,p:"X. Fernández",t:"goal",b:"left-foot",s:"regular",xg:0.285,dx:51,dy:8,gy:47.4,gz:2.7,loc:"V"},
+  {j:7,p:"J. L. Cortés",t:"miss",b:"right-foot",s:"regular",xg:0.0367,dx:32,dy:25,gy:56.7,gz:20.3,loc:"V"},
+  {j:7,p:"D. Moreno",t:"block",b:"right-foot",s:"regular",xg:0.0332,dx:72,dy:15,gy:50,gz:20,loc:"V"},
+  {j:7,p:"D. Andújar",t:"block",b:"right-foot",s:"corner",xg:0.3874,dx:58,dy:3,gy:50,gz:20,loc:"V"},
+  {j:7,p:"J. L. Cortés",t:"miss",b:"left-foot",s:"regular",xg:0.0661,dx:32,dy:11,gy:56.1,gz:46.2,loc:"V"},
+  {j:7,p:"J. L. Cortés",t:"block",b:"right-foot",s:"regular",xg:0.0421,dx:34,dy:19,gy:50,gz:20,loc:"V"},
+  {j:7,p:"E. Undabarrena",t:"block",b:"left-foot",s:"regular",xg:0.0028,dx:36,dy:20,gy:50,gz:20,loc:"V"},
+  {j:7,p:"A. Keita",t:"miss",b:"right-foot",s:"throw-in-set-piece",xg:0.0358,dx:45,dy:25,gy:42.2,gz:48.1,loc:"V"},
+  {j:7,p:"A. Keita",t:"save",b:"right-foot",s:"free-kick",xg:0.0454,dx:15,dy:26,gy:50.6,gz:13.5,loc:"V"},
+  {j:7,p:"A. López",t:"miss",b:"left-foot",s:"regular",xg:0.0054,dx:15,dy:24,gy:56.9,gz:46.4,loc:"V"},
+  {j:7,p:"X. Fernández",t:"block",b:"right-foot",s:"regular",xg:0.0128,dx:40,dy:22,gy:50,gz:20,loc:"V"},
+  {j:8,p:"P. Ferrer",t:"save",b:"left-foot",s:"regular",xg:0.1157,dx:33,dy:13,gy:51.2,gz:6.8,loc:"L"},
+  {j:8,p:"X. Fernández",t:"miss",b:"right-foot",s:"regular",xg:0.0931,dx:44,dy:18,gy:41.6,gz:51.7,loc:"L"},
+  {j:8,p:"X. Fernández",t:"goal",b:"right-foot",s:"throw-in-set-piece",xg:0.6425,dx:51,dy:7,gy:47.1,gz:10.6,loc:"L"},
+  {j:8,p:"P. Ferrer",t:"post",b:"left-foot",s:"throw-in-set-piece",xg:0.3613,dx:46,dy:7,gy:55.4,gz:38.5,loc:"L"},
+  {j:8,p:"B. Vázquez",t:"block",b:"right-foot",s:"corner",xg:0.0424,dx:26,dy:6,gy:50,gz:20,loc:"L"},
+  {j:8,p:"P. Ferrer",t:"block",b:"left-foot",s:"regular",xg:0.0024,dx:45,dy:27,gy:50,gz:20,loc:"L"},
+  {j:8,p:"J. L. Cortés",t:"miss",b:"left-foot",s:"throw-in-set-piece",xg:0.0558,dx:62,dy:12,gy:42.9,gz:10.7,loc:"L"},
+  {j:8,p:"A. López",t:"goal",b:"head",s:"regular",xg:0.431,dx:50,dy:4,gy:48.5,gz:1.9,loc:"L"},
+  {j:8,p:"A. Keita",t:"miss",b:"right-foot",s:"regular",xg:0.0009,dx:71,dy:22,gy:41.9,gz:53.3,loc:"L"},
+  {j:9,p:"J. L. Cortés",t:"miss",b:"right-foot",s:"regular",xg:0.0578,dx:40,dy:21,gy:44,gz:50.5,loc:"V"},
+  {j:9,p:"P. Ferrer",t:"miss",b:"head",s:"set-piece",xg:0.0884,dx:61,dy:9,gy:41.8,gz:58.7,loc:"V"},
+  {j:9,p:"D. Moreno",t:"miss",b:"right-foot",s:"set-piece",xg:0.0273,dx:52,dy:26,gy:58.2,gz:53.6,loc:"V"},
+  {j:10,p:"A. Keita",t:"miss",b:"head",s:"regular",xg:0.1495,dx:48,dy:9,gy:55,gz:56.2,loc:"L"},
+  {j:10,p:"P. Ferrer",t:"miss",b:"left-foot",s:"regular",xg:0.0008,dx:57,dy:57,gy:41.9,gz:10,loc:"L"},
+  {j:10,p:"S. Benito",t:"goal",b:"left-foot",s:"throw-in-set-piece",xg:0.0805,dx:61,dy:10,gy:52.7,gz:9.1,loc:"L"},
+  {j:10,p:"D. Andújar",t:"goal",b:"right-foot",s:"corner",xg:0.6465,dx:50,dy:5,gy:49.4,gz:14,loc:"L"},
+  {j:10,p:"B. Moltenis",t:"block",b:"head",s:"corner",xg:0.1136,dx:41,dy:9,gy:50,gz:20,loc:"L"},
+  {j:10,p:"E. Aguilar",t:"miss",b:"right-foot",s:"regular",xg:0.1719,dx:58,dy:12,gy:43.8,gz:6.9,loc:"L"},
+  {j:10,p:"B. Vázquez",t:"save",b:"right-foot",s:"regular",xg:0.0403,dx:32,dy:24,gy:46.8,gz:25.7,loc:"L"},
+  {j:10,p:"X. Fernández",t:"block",b:"left-foot",s:"regular",xg:0.002,dx:56,dy:27,gy:50,gz:20,loc:"L"},
+  {j:10,p:"J. L. Cortés",t:"miss",b:"right-foot",s:"regular",xg:0.186,dx:56,dy:8,gy:44.1,gz:58.7,loc:"L"},
+  {j:10,p:"B. Vázquez",t:"block",b:"left-foot",s:"regular",xg:0.0007,dx:75,dy:17,gy:50,gz:20,loc:"L"},
+  {j:11,p:"A. López",t:"miss",b:"right-foot",s:"throw-in-set-piece",xg:0.1009,dx:45,dy:18,gy:43,gz:49.1,loc:"V"},
+  {j:11,p:"B. Vázquez",t:"miss",b:"left-foot",s:"corner",xg:0.0227,dx:61,dy:27,gy:42.1,gz:51,loc:"V"},
+  {j:11,p:"A. López",t:"miss",b:"left-foot",s:"corner",xg:0.0009,dx:26,dy:23,gy:59.2,gz:55,loc:"V"},
+  {j:11,p:"B. V. Balonga",t:"miss",b:"right-foot",s:"regular",xg:0.024,dx:30,dy:22,gy:43.2,gz:47.8,loc:"V"},
+  {j:11,p:"X. Fernández",t:"block",b:"left-foot",s:"throw-in-set-piece",xg:0.0131,dx:30,dy:7,gy:50,gz:20,loc:"V"},
+  {j:11,p:"J. L. Cortés",t:"save",b:"right-foot",s:"regular",xg:0.1317,dx:35,dy:13,gy:47.9,gz:9,loc:"V"},
+  {j:11,p:"A. López",t:"save",b:"left-foot",s:"regular",xg:0.0752,dx:16,dy:3,gy:51.9,gz:16.6,loc:"V"},
+  {j:11,p:"B. V. Balonga",t:"block",b:"right-foot",s:"regular",xg:0.0203,dx:39,dy:20,gy:50,gz:20,loc:"V"},
+  {j:11,p:"J. L. Cortés",t:"miss",b:"right-foot",s:"regular",xg:0.0132,dx:23,dy:29,gy:48.4,gz:59.3,loc:"V"},
+  {j:11,p:"J. L. Cortés",t:"miss",b:"right-foot",s:"corner",xg:0.0114,dx:42,dy:19,gy:53.7,gz:50,loc:"V"},
+  {j:11,p:"B. Vázquez",t:"save",b:"right-foot",s:"regular",xg:0.0434,dx:65,dy:21,gy:51.7,gz:10.2,loc:"V"},
+  {j:12,p:"B. Moltenis",t:"miss",b:"head",s:"set-piece",xg:0.0066,dx:69,dy:13,gy:43.3,gz:16.7,loc:"L"},
+  {j:12,p:"A. Keita",t:"miss",b:"right-foot",s:"free-kick",xg:0.0006,dx:60,dy:29,gy:57.4,gz:57,loc:"L"},
+  {j:12,p:"S. Benito",t:"miss",b:"right-foot",s:"regular",xg:0.0764,dx:33,dy:12,gy:41.6,gz:35.6,loc:"L"},
+  {j:12,p:"B. V. Balonga",t:"miss",b:"right-foot",s:"regular",xg:0.3058,dx:43,dy:11,gy:55.9,gz:2.6,loc:"L"},
+  {j:12,p:"X. Fernández",t:"miss",b:"right-foot",s:"corner",xg:0.1664,dx:40,dy:11,gy:41.6,gz:51.4,loc:"L"},
+  {j:12,p:"E. Undabarrena",t:"block",b:"right-foot",s:"throw-in-set-piece",xg:0.0653,dx:63,dy:11,gy:50,gz:20,loc:"L"},
+  {j:12,p:"B. Vázquez",t:"block",b:"right-foot",s:"throw-in-set-piece",xg:0.004,dx:74,dy:13,gy:50,gz:20,loc:"L"},
+  {j:12,p:"J. L. Cortés",t:"save",b:"left-foot",s:"regular",xg:0.4693,dx:55,dy:6,gy:51.4,gz:10.6,loc:"L"},
+  {j:12,p:"B. V. Balonga",t:"miss",b:"right-foot",s:"throw-in-set-piece",xg:0.0139,dx:93,dy:34,gy:58.5,gz:20.7,loc:"L"},
+  {j:12,p:"A. López",t:"goal",b:"left-foot",s:"regular",xg:0.1735,dx:37,dy:7,gy:50.8,gz:12.3,loc:"L"},
+  {j:12,p:"E. Aguilar",t:"save",b:"left-foot",s:"regular",xg:0.1247,dx:51,dy:16,gy:51.4,gz:8.1,loc:"L"},
+  {j:13,p:"B. V. Balonga",t:"block",b:"right-foot",s:"regular",xg:0.1045,dx:40,dy:15,gy:50,gz:20,loc:"V"},
+  {j:13,p:"J. L. Cortés",t:"block",b:"right-foot",s:"regular",xg:0.0461,dx:51,dy:23,gy:50,gz:20,loc:"V"},
+  {j:13,p:"A. Keita",t:"miss",b:"left-foot",s:"corner",xg:0.0183,dx:55,dy:23,gy:55.9,gz:13.8,loc:"V"},
+  {j:13,p:"A. López",t:"block",b:"left-foot",s:"free-kick",xg:0.0192,dx:81,dy:5,gy:50,gz:20,loc:"V"},
+  {j:13,p:"E. A. Frimpong",t:"save",b:"left-foot",s:"regular",xg:0.0405,dx:39,dy:21,gy:49.8,gz:19.3,loc:"V"},
+  {j:13,p:"B. Vázquez",t:"save",b:"right-foot",s:"regular",xg:0.1386,dx:62,dy:14,gy:49.7,gz:6.6,loc:"V"},
+  {j:13,p:"B. V. Balonga",t:"miss",b:"right-foot",s:"regular",xg:0.0056,dx:23,dy:45,gy:43.2,gz:42.6,loc:"V"},
+  {j:13,p:"B. Vázquez",t:"miss",b:"right-foot",s:"throw-in-set-piece",xg:0.0605,dx:67,dy:11,gy:57.4,gz:9.8,loc:"V"},
+  {j:13,p:"G. N. Enríquez",t:"save",b:"head",s:"regular",xg:0.1321,dx:65,dy:8,gy:50.6,gz:23.2,loc:"V"},
+  {j:13,p:"E. A. Frimpong",t:"block",b:"left-foot",s:"regular",xg:0.0088,dx:34,dy:21,gy:50,gz:20,loc:"V"},
+  {j:13,p:"E. A. Frimpong",t:"miss",b:"left-foot",s:"regular",xg:0.1374,dx:54,dy:14,gy:57.4,gz:36.7,loc:"V"},
+  {j:13,p:"E. A. Frimpong",t:"miss",b:"left-foot",s:"regular",xg:0.0105,dx:58,dy:25,gy:59.1,gz:10.4,loc:"V"},
+  {j:14,p:"X. Fernández",t:"save",b:"head",s:"regular",xg:0.1519,dx:57,dy:8,gy:53.1,gz:24.1,loc:"L"},
+  {j:14,p:"B. Moltenis",t:"save",b:"right-foot",s:"regular",xg:0.0342,dx:50,dy:24,gy:53.1,gz:11.2,loc:"L"},
+  {j:14,p:"E. A. Frimpong",t:"save",b:"left-foot",s:"throw-in-set-piece",xg:0.0076,dx:68,dy:57,gy:51.3,gz:14.2,loc:"L"},
+  {j:14,p:"B. Vázquez",t:"miss",b:"left-foot",s:"regular",xg:0.026,dx:65,dy:23,gy:57.3,gz:59.5,loc:"L"},
+  {j:14,p:"Á. Mula",t:"block",b:"right-foot",s:"regular",xg:0.1078,dx:42,dy:16,gy:50,gz:20,loc:"L"},
+  {j:14,p:"B. Vázquez",t:"save",b:"left-foot",s:"throw-in-set-piece",xg:0.0463,dx:50,dy:20,gy:47.9,gz:6.2,loc:"L"},
+  {j:14,p:"Á. Mula",t:"miss",b:"right-foot",s:"corner",xg:0.2485,dx:44,dy:10,gy:44,gz:44.1,loc:"L"},
+  {j:14,p:"E. Undabarrena",t:"block",b:"left-foot",s:"corner",xg:0.0817,dx:64,dy:6,gy:50,gz:20,loc:"L"},
+  {j:14,p:"X. Fernández",t:"goal",b:"right-foot",s:"regular",xg:0.7868,dx:55,dy:4,gy:48,gz:17.8,loc:"L"},
+  {j:14,p:"J. L. Cortés",t:"save",b:"head",s:"regular",xg:0.0709,dx:47,dy:15,gy:51.5,gz:28.6,loc:"L"},
+  {j:14,p:"J. L. Cortés",t:"miss",b:"left-foot",s:"regular",xg:0.0382,dx:26,dy:15,gy:43.6,gz:5.1,loc:"L"},
+  {j:15,p:"E. Undabarrena",t:"save",b:"head",s:"corner",xg:0.0533,dx:58,dy:12,gy:48.4,gz:24.6,loc:"V"},
+  {j:15,p:"B. Vázquez",t:"block",b:"left-foot",s:"regular",xg:0.0192,dx:74,dy:9,gy:50,gz:20,loc:"V"},
+  {j:15,p:"Á. Mula",t:"save",b:"right-foot",s:"throw-in-set-piece",xg:0.0249,dx:43,dy:21,gy:50.9,gz:14.7,loc:"V"},
+  {j:15,p:"D. Moreno",t:"block",b:"right-foot",s:"regular",xg:0.0009,dx:71,dy:17,gy:50,gz:20,loc:"V"},
+  {j:15,p:"A. Keita",t:"miss",b:"right-foot",s:"throw-in-set-piece",xg:0.0455,dx:38,dy:23,gy:41.3,gz:49.8,loc:"V"},
+  {j:15,p:"J. L. Cortés",t:"goal",b:"right-foot",s:"penalty",xg:0.76,dx:50,dy:10,gy:46.2,gz:18.3,loc:"V"},
+  {j:15,p:"J. L. Cortés",t:"post",b:"right-foot",s:"regular",xg:0.0599,dx:36,dy:20,gy:55.3,gz:40.8,loc:"V"},
+  {j:15,p:"X. Fernández",t:"goal",b:"right-foot",s:"regular",xg:0.0698,dx:51,dy:21,gy:52.2,gz:10.1,loc:"V"},
+  {j:16,p:"E. A. Frimpong",t:"save",b:"left-foot",s:"throw-in-set-piece",xg:0.0115,dx:66,dy:28,gy:50.4,gz:20.6,loc:"L"},
+  {j:16,p:"F. S. E. Diaz",t:"miss",b:"left-foot",s:"regular",xg:0.0556,dx:46,dy:21,gy:58.8,gz:40.8,loc:"L"},
+  {j:16,p:"B. Vázquez",t:"block",b:"right-foot",s:"regular",xg:0.0127,dx:33,dy:21,gy:50,gz:20,loc:"L"},
+  {j:16,p:"F. S. E. Diaz",t:"miss",b:"head",s:"corner",xg:0.137,dx:56,dy:7,gy:56.5,gz:56.8,loc:"L"},
+  {j:16,p:"S. Benito",t:"miss",b:"head",s:"regular",xg:0.1128,dx:53,dy:8,gy:43.5,gz:42.4,loc:"L"},
+  {j:16,p:"P. Ferrer",t:"miss",b:"left-foot",s:"regular",xg:0.058,dx:50,dy:17,gy:56.5,gz:47.8,loc:"L"},
+  {j:16,p:"S. Benito",t:"goal",b:"right-foot",s:"regular",xg:0.3047,dx:52,dy:8,gy:46.3,gz:12.2,loc:"L"},
+  {j:16,p:"P. Ferrer",t:"miss",b:"head",s:"regular",xg:0.15,dx:48,dy:9,gy:45.1,gz:43,loc:"L"},
+  {j:16,p:"E. A. Frimpong",t:"miss",b:"left-foot",s:"regular",xg:0.0354,dx:55,dy:33,gy:56.8,gz:48.7,loc:"L"},
+  {j:16,p:"E. A. Frimpong",t:"miss",b:"head",s:"corner",xg:0.1108,dx:38,dy:4,gy:41.2,gz:40.6,loc:"L"},
+  {j:16,p:"X. Fernández",t:"miss",b:"head",s:"regular",xg:0.035,dx:45,dy:14,gy:57.5,gz:51.1,loc:"L"},
+  {j:16,p:"B. Moltenis",t:"save",b:"head",s:"corner",xg:0.1234,dx:58,dy:8,gy:49,gz:19.9,loc:"L"},
+  {j:16,p:"B. Moltenis",t:"miss",b:"right-foot",s:"throw-in-set-piece",xg:0.0777,dx:63,dy:8,gy:41.2,gz:14.1,loc:"L"},
+  {j:16,p:"B. Vázquez",t:"miss",b:"right-foot",s:"regular",xg:0.0061,dx:34,dy:27,gy:41.2,gz:59.4,loc:"L"},
+  {j:16,p:"B. Vázquez",t:"save",b:"right-foot",s:"regular",xg:0.0259,dx:23,dy:28,gy:49.5,gz:4.6,loc:"L"},
+  {j:16,p:"X. Fernández",t:"miss",b:"right-foot",s:"penalty",xg:0.76,dx:50,dy:10,gy:57.7,gz:3.4,loc:"L"},
+  {j:16,p:"E. A. Frimpong",t:"miss",b:"left-foot",s:"throw-in-set-piece",xg:0.0029,dx:38,dy:25,gy:41.7,gz:41.3,loc:"L"},
+  {j:17,p:"E. Aguilar",t:"block",b:"left-foot",s:"regular",xg:0.0209,dx:38,dy:25,gy:50,gz:20,loc:"V"},
+  {j:17,p:"B. Moltenis",t:"miss",b:"head",s:"corner",xg:0.2111,dx:52,dy:5,gy:51.2,gz:46.8,loc:"V"},
+  {j:17,p:"J. L. Cortés",t:"block",b:"right-foot",s:"regular",xg:0.1102,dx:65,dy:16,gy:50,gz:20,loc:"V"},
+  {j:17,p:"D. Moreno",t:"save",b:"head",s:"throw-in-set-piece",xg:0.0709,dx:58,dy:7,gy:45.7,gz:2.7,loc:"V"},
+  {j:17,p:"G. N. Enríquez",t:"miss",b:"right-foot",s:"regular",xg:0.0228,dx:36,dy:26,gy:41.8,gz:50.9,loc:"V"},
+  {j:17,p:"D. Andújar",t:"save",b:"head",s:"set-piece",xg:0.142,dx:43,dy:8,gy:49.3,gz:21.9,loc:"V"},
+  {j:17,p:"B. Vázquez",t:"miss",b:"right-foot",s:"regular",xg:0.0519,dx:74,dy:13,gy:56.3,gz:8.7,loc:"V"},
+  {j:18,p:"J. L. Cortés",t:"save",b:"right-foot",s:"regular",xg:0.0414,dx:30,dy:22,gy:48,gz:33.3,loc:"V"},
+  {j:18,p:"E. Aguilar",t:"block",b:"left-foot",s:"regular",xg:0.1107,dx:40,dy:12,gy:50,gz:20,loc:"V"},
+  {j:18,p:"A. Keita",t:"save",b:"left-foot",s:"regular",xg:0.2025,dx:60,dy:9,gy:50.5,gz:35.6,loc:"V"},
+  {j:18,p:"X. Fernández",t:"miss",b:"head",s:"regular",xg:0.0089,dx:43,dy:9,gy:47.8,gz:57.4,loc:"V"},
+  {j:18,p:"D. Andújar",t:"save",b:"head",s:"set-piece",xg:0.2,dx:50,dy:8,gy:52.1,gz:13.3,loc:"V"},
+  {j:18,p:"P. Ferrer",t:"save",b:"left-foot",s:"regular",xg:0.0039,dx:42,dy:43,gy:53,gz:17,loc:"V"},
+  {j:18,p:"D. Andújar",t:"miss",b:"head",s:"corner",xg:0.1768,dx:55,dy:8,gy:42.5,gz:57.3,loc:"V"},
+  {j:18,p:"B. V. Balonga",t:"block",b:"right-foot",s:"regular",xg:0.0067,dx:24,dy:23,gy:50,gz:20,loc:"V"},
+  {j:18,p:"S. Benito",t:"save",b:"right-foot",s:"regular",xg:0.1122,dx:64,dy:16,gy:49.7,gz:2.1,loc:"V"},
+  {j:19,p:"E. A. Frimpong",t:"save",b:"left-foot",s:"regular",xg:0.022,dx:33,dy:36,gy:50.6,gz:33,loc:"L"},
+  {j:19,p:"A. Keita",t:"goal",b:"right-foot",s:"throw-in-set-piece",xg:0.1335,dx:64,dy:13,gy:54,gz:7.7,loc:"L"},
+  {j:19,p:"B. Vázquez",t:"goal",b:"right-foot",s:"regular",xg:0.0347,dx:72,dy:9,gy:54.3,gz:6.4,loc:"L"},
+  {j:19,p:"J. L. Cortés",t:"miss",b:"right-foot",s:"regular",xg:0.0226,dx:24,dy:18,gy:59.1,gz:2.5,loc:"L"},
+  {j:19,p:"J. L. Cortés",t:"save",b:"left-foot",s:"regular",xg:0.0289,dx:30,dy:6,gy:53.1,gz:19,loc:"L"},
+  {j:19,p:"E. Undabarrena",t:"block",b:"right-foot",s:"corner",xg:0.0471,dx:31,dy:23,gy:50,gz:20,loc:"L"},
+  {j:19,p:"B. Vázquez",t:"block",b:"right-foot",s:"set-piece",xg:0.0082,dx:73,dy:13,gy:50,gz:20,loc:"L"},
+  {j:19,p:"J. L. Cortés",t:"save",b:"right-foot",s:"regular",xg:0.1399,dx:65,dy:11,gy:52.4,gz:6.4,loc:"L"},
+  {j:19,p:"A. López",t:"miss",b:"left-foot",s:"free-kick",xg:0.0017,dx:48,dy:29,gy:44.1,gz:37.5,loc:"L"},
+  {j:19,p:"A. López",t:"miss",b:"right-foot",s:"regular",xg:0.0191,dx:38,dy:19,gy:41.9,gz:6.2,loc:"L"},
+  {j:19,p:"J. L. Cortés",t:"save",b:"right-foot",s:"regular",xg:0.0694,dx:67,dy:5,gy:45.9,gz:14.3,loc:"L"},
+  {j:19,p:"B. Vázquez",t:"miss",b:"right-foot",s:"corner",xg:0.0403,dx:60,dy:22,gy:40.8,gz:7.9,loc:"L"},
+  {j:19,p:"B. Vázquez",t:"miss",b:"right-foot",s:"set-piece",xg:0.0015,dx:53,dy:30,gy:41.8,gz:44.7,loc:"L"},
+  {j:20,p:"M. Jorrín",t:"goal",b:"left-foot",s:"regular",xg:0.4186,dx:56,dy:6,gy:47.3,gz:7.5,loc:"L"},
+  {j:20,p:"X. Fernández",t:"save",b:"right-foot",s:"regular",xg:0.1645,dx:45,dy:17,gy:45.9,gz:7.1,loc:"L"},
+  {j:20,p:"F. S. E. Diaz",t:"miss",b:"right-foot",s:"set-piece",xg:0.0016,dx:66,dy:23,gy:58.5,gz:13.3,loc:"L"},
+  {j:20,p:"P. Ferrer",t:"miss",b:"left-foot",s:"throw-in-set-piece",xg:0.0035,dx:75,dy:25,gy:42.5,gz:5.9,loc:"L"},
+  {j:20,p:"A. López",t:"block",b:"left-foot",s:"throw-in-set-piece",xg:0.0134,dx:36,dy:27,gy:50,gz:20,loc:"L"},
+  {j:20,p:"J. L. Cortés",t:"goal",b:"right-foot",s:"corner",xg:0.8188,dx:51,dy:4,gy:46.1,gz:24,loc:"L"},
+  {j:20,p:"M. Jorrín",t:"post",b:"head",s:"corner",xg:0.0681,dx:52,dy:11,gy:44.7,gz:40.4,loc:"L"},
+  {j:20,p:"B. Vázquez",t:"miss",b:"right-foot",s:"regular",xg:0.1588,dx:69,dy:8,gy:43.7,gz:28.9,loc:"L"},
+  {j:20,p:"B. V. Balonga",t:"goal",b:"right-foot",s:"penalty",xg:0.76,dx:50,dy:10,gy:54.2,gz:0.8,loc:"L"},
+  {j:20,p:"J. L. Cortés",t:"miss",b:"right-foot",s:"regular",xg:0.0276,dx:25,dy:8,gy:58,gz:17.7,loc:"L"},
+  {j:20,p:"A. López",t:"miss",b:"head",s:"regular",xg:0.0914,dx:38,dy:11,gy:56.1,gz:20.8,loc:"L"},
+  {j:21,p:"B. Vázquez",t:"miss",b:"right-foot",s:"free-kick",xg:0.0004,dx:23,dy:21,gy:58.7,gz:45.4,loc:"V"},
+  {j:21,p:"A. Keita",t:"miss",b:"right-foot",s:"throw-in-set-piece",xg:0.0171,dx:46,dy:29,gy:42.2,gz:50.1,loc:"V"},
+  {j:21,p:"X. Fernández",t:"miss",b:"left-foot",s:"regular",xg:0.3163,dx:36,dy:8,gy:56.8,gz:25.1,loc:"V"},
+  {j:21,p:"X. Fernández",t:"miss",b:"right-foot",s:"regular",xg:0.4297,dx:50,dy:12,gy:41.6,gz:49.4,loc:"V"},
+  {j:21,p:"J. L. Cortés",t:"save",b:"left-foot",s:"regular",xg:0.2229,dx:42,dy:11,gy:49.2,gz:13.8,loc:"V"},
+  {j:21,p:"A. López",t:"save",b:"left-foot",s:"free-kick",xg:0.0795,dx:71,dy:23,gy:49,gz:6.2,loc:"V"},
+  {j:21,p:"E. Morán",t:"save",b:"right-foot",s:"corner",xg:0.0472,dx:46,dy:22,gy:46.9,gz:7.7,loc:"V"},
+  {j:21,p:"B. Moltenis",t:"goal",b:"right-foot",s:"corner",xg:0.6785,dx:54,dy:5,gy:49.1,gz:14.3,loc:"V"},
+  {j:21,p:"J. L. Cortés",t:"block",b:"left-foot",s:"corner",xg:0.2712,dx:44,dy:7,gy:50,gz:20,loc:"V"},
+  {j:21,p:"B. Moltenis",t:"block",b:"right-foot",s:"throw-in-set-piece",xg:0.1889,dx:60,dy:14,gy:50,gz:20,loc:"V"},
+  {j:21,p:"X. Fernández",t:"save",b:"left-foot",s:"throw-in-set-piece",xg:0.1211,dx:57,dy:10,gy:49,gz:9.9,loc:"V"},
+  {j:21,p:"J. L. Cortés",t:"save",b:"right-foot",s:"regular",xg:0.2301,dx:60,dy:10,gy:48.4,gz:24.9,loc:"V"},
+  {j:21,p:"J. L. Cortés",t:"block",b:"right-foot",s:"regular",xg:0.033,dx:27,dy:8,gy:50,gz:20,loc:"V"},
+  {j:21,p:"A. López",t:"miss",b:"left-foot",s:"regular",xg:0.0076,dx:35,dy:28,gy:42.7,gz:7.6,loc:"V"},
+  {j:22,p:"A. López",t:"save",b:"left-foot",s:"regular",xg:0.0341,dx:32,dy:27,gy:47.2,gz:9.4,loc:"V"},
+  {j:22,p:"B. V. Balonga",t:"goal",b:"right-foot",s:"regular",xg:0.2056,dx:52,dy:19,gy:50.4,gz:27.3,loc:"V"},
+  {j:22,p:"B. Vázquez",t:"save",b:"right-foot",s:"corner",xg:0.0202,dx:68,dy:26,gy:48.4,gz:7.6,loc:"V"},
+  {j:22,p:"D. Andújar",t:"miss",b:"head",s:"corner",xg:0.1552,dx:55,dy:10,gy:42.2,gz:5.7,loc:"V"},
+  {j:22,p:"B. V. Balonga",t:"block",b:"left-foot",s:"corner",xg:0.0504,dx:40,dy:6,gy:50,gz:20,loc:"V"},
+  {j:22,p:"A. López",t:"save",b:"left-foot",s:"regular",xg:0.0139,dx:25,dy:26,gy:49,gz:29.9,loc:"V"},
+  {j:22,p:"J. L. Cortés",t:"save",b:"right-foot",s:"penalty",xg:0.76,dx:50,dy:10,gy:54.5,gz:20.5,loc:"V"},
+  {j:22,p:"D. Andújar",t:"goal",b:"head",s:"corner",xg:0.1349,dx:43,dy:7,gy:50.5,gz:28.8,loc:"V"},
+  {j:23,p:"B. Vázquez",t:"miss",b:"right-foot",s:"corner",xg:0.005,dx:35,dy:18,gy:41.7,gz:54.7,loc:"L"},
+  {j:23,p:"C. Calderón",t:"save",b:"right-foot",s:"regular",xg:0.3099,dx:58,dy:10,gy:50.2,gz:11.4,loc:"L"},
+  {j:23,p:"E. A. Frimpong",t:"block",b:"left-foot",s:"regular",xg:0.0014,dx:72,dy:20,gy:50,gz:20,loc:"L"},
+  {j:23,p:"V. Esquerdo",t:"save",b:"left-foot",s:"regular",xg:0.0466,dx:59,dy:28,gy:51.1,gz:23.9,loc:"L"},
+  {j:23,p:"V. Esquerdo",t:"miss",b:"left-foot",s:"regular",xg:0.0099,dx:66,dy:26,gy:59.2,gz:49.6,loc:"L"},
+  {j:23,p:"V. Sousa",t:"miss",b:"left-foot",s:"throw-in-set-piece",xg:0.0155,dx:49,dy:14,gy:41.9,gz:1.4,loc:"L"},
+  {j:23,p:"B. V. Balonga",t:"miss",b:"right-foot",s:"regular",xg:0.0467,dx:56,dy:22,gy:41,gz:42.2,loc:"L"},
+  {j:23,p:"B. Vázquez",t:"miss",b:"right-foot",s:"corner",xg:0.0266,dx:36,dy:22,gy:58.9,gz:18.8,loc:"L"},
+  {j:23,p:"B. V. Balonga",t:"block",b:"right-foot",s:"regular",xg:0.2263,dx:50,dy:12,gy:50,gz:20,loc:"L"},
+  {j:24,p:"Slavy",t:"goal",b:"right-foot",s:"regular",xg:0.2142,dx:56,dy:8,gy:50.8,gz:1.3,loc:"V"},
+  {j:24,p:"E. A. Frimpong",t:"block",b:"left-foot",s:"regular",xg:0.0049,dx:51,dy:31,gy:50,gz:20,loc:"V"},
+  {j:24,p:"B. Vázquez",t:"block",b:"left-foot",s:"regular",xg:0.0371,dx:48,dy:18,gy:50,gz:20,loc:"V"},
+  {j:24,p:"B. Vázquez",t:"miss",b:"right-foot",s:"regular",xg:0.0059,dx:70,dy:14,gy:42.3,gz:14.8,loc:"V"},
+  {j:24,p:"E. A. Frimpong",t:"miss",b:"left-foot",s:"throw-in-set-piece",xg:0.032,dx:41,dy:21,gy:55.9,gz:59.3,loc:"V"},
+  {j:24,p:"A. López",t:"block",b:"left-foot",s:"throw-in-set-piece",xg:0.0016,dx:31,dy:14,gy:50,gz:20,loc:"V"},
+  {j:24,p:"J. L. Cortés",t:"miss",b:"right-foot",s:"corner",xg:0.1375,dx:58,dy:13,gy:58.5,gz:6.6,loc:"V"},
+  {j:24,p:"J. L. Cortés",t:"miss",b:"right-foot",s:"regular",xg:0.2092,dx:62,dy:10,gy:57,gz:19.5,loc:"V"},
+  {j:24,p:"V. Esquerdo",t:"miss",b:"left-foot",s:"regular",xg:0.0123,dx:23,dy:21,gy:43.3,gz:50.1,loc:"V"},
+  {j:24,p:"J. L. Cortés",t:"save",b:"right-foot",s:"regular",xg:0.0508,dx:60,dy:19,gy:54.6,gz:7,loc:"V"},
+  {j:24,p:"J. L. Cortés",t:"block",b:"right-foot",s:"regular",xg:0.0067,dx:38,dy:19,gy:50,gz:20,loc:"V"},
+  {j:24,p:"J. L. Cortés",t:"block",b:"left-foot",s:"regular",xg:0.0114,dx:59,dy:13,gy:50,gz:20,loc:"V"},
+  {j:25,p:"E. A. Frimpong",t:"miss",b:"left-foot",s:"throw-in-set-piece",xg:0.0062,dx:54,dy:24,gy:59,gz:51.1,loc:"L"},
+  {j:25,p:"V. Esquerdo",t:"miss",b:"right-foot",s:"set-piece",xg:0.1949,dx:54,dy:12,gy:42.1,gz:10.5,loc:"L"},
+  {j:25,p:"B. V. Balonga",t:"block",b:"right-foot",s:"set-piece",xg:0.018,dx:38,dy:11,gy:50,gz:20,loc:"L"},
+  {j:25,p:"A. López",t:"goal",b:"left-foot",s:"regular",xg:0.0124,dx:16,dy:14,gy:52.8,gz:6.1,loc:"L"},
+  {j:26,p:"E. A. Frimpong",t:"goal",b:"left-foot",s:"regular",xg:0.0426,dx:46,dy:20,gy:52.7,gz:7.5,loc:"V"},
+  {j:26,p:"B. Vázquez",t:"block",b:"right-foot",s:"regular",xg:0.0378,dx:72,dy:11,gy:50,gz:20,loc:"V"},
+  {j:26,p:"E. A. Frimpong",t:"miss",b:"left-foot",s:"regular",xg:0.025,dx:65,dy:26,gy:41.4,gz:11.6,loc:"V"},
+  {j:26,p:"J. L. Cortés",t:"save",b:"right-foot",s:"regular",xg:0.0835,dx:70,dy:11,gy:51,gz:11.6,loc:"V"},
+  {j:27,p:"S. Petkov",t:"miss",b:"head",s:"regular",xg:0.1059,dx:66,dy:5,gy:43.3,gz:21.5,loc:"L"},
+  {j:27,p:"P. Ferrer",t:"miss",b:"left-foot",s:"throw-in-set-piece",xg:0.0097,dx:36,dy:13,gy:56.3,gz:6.7,loc:"L"},
+  {j:27,p:"X. Fernández",t:"save",b:"head",s:"corner",xg:0.2544,dx:49,dy:7,gy:51,gz:32.3,loc:"L"},
+  {j:27,p:"X. Fernández",t:"block",b:"right-foot",s:"corner",xg:0.0141,dx:42,dy:18,gy:50,gz:20,loc:"L"},
+  {j:27,p:"B. Vázquez",t:"block",b:"left-foot",s:"regular",xg:0.0408,dx:67,dy:14,gy:50,gz:20,loc:"L"},
+  {j:27,p:"X. Fernández",t:"miss",b:"head",s:"corner",xg:0.1499,dx:52,dy:7,gy:52.9,gz:43.8,loc:"L"},
+  {j:27,p:"A. López",t:"block",b:"left-foot",s:"corner",xg:0.0015,dx:30,dy:24,gy:50,gz:20,loc:"L"},
+  {j:27,p:"J. L. Cortés",t:"miss",b:"head",s:"set-piece",xg:0.0129,dx:47,dy:13,gy:56,gz:28.8,loc:"L"},
+  {j:27,p:"B. Vázquez",t:"block",b:"right-foot",s:"regular",xg:0.0011,dx:69,dy:24,gy:50,gz:20,loc:"L"},
+  {j:27,p:"J. L. Cortés",t:"miss",b:"right-foot",s:"regular",xg:0.0118,dx:58,dy:26,gy:41.7,gz:52.3,loc:"L"},
+  {j:27,p:"J. L. Cortés",t:"block",b:"right-foot",s:"regular",xg:0.0522,dx:66,dy:7,gy:50,gz:20,loc:"L"},
+  {j:27,p:"B. V. Balonga",t:"miss",b:"left-foot",s:"corner",xg:0.0786,dx:57,dy:10,gy:58.5,gz:44.1,loc:"L"},
+  {j:27,p:"A. López",t:"block",b:"left-foot",s:"corner",xg:0.0044,dx:37,dy:15,gy:50,gz:20,loc:"L"},
+  {j:28,p:"G. N. Enríquez",t:"miss",b:"right-foot",s:"corner",xg:0.0069,dx:48,dy:26,gy:56.1,gz:52.4,loc:"V"},
+  {j:28,p:"V. Esquerdo",t:"miss",b:"left-foot",s:"regular",xg:0.0157,dx:57,dy:23,gy:58.4,gz:46.1,loc:"V"},
+  {j:28,p:"V. Esquerdo",t:"block",b:"left-foot",s:"regular",xg:0.0035,dx:26,dy:26,gy:50,gz:20,loc:"V"},
+  {j:28,p:"B. Vázquez",t:"miss",b:"right-foot",s:"throw-in-set-piece",xg:0.0018,dx:66,dy:19,gy:54.7,gz:48.6,loc:"V"},
+  {j:28,p:"Slavy",t:"miss",b:"head",s:"corner",xg:0.082,dx:57,dy:10,gy:43.5,gz:2.3,loc:"V"},
+  {j:28,p:"E. Frimpong",t:"miss",b:"left-foot",s:"regular",xg:0.0155,dx:28,dy:24,gy:56.4,gz:58.8,loc:"V"},
+  {j:28,p:"Slavy",t:"save",b:"head",s:"corner",xg:0.0955,dx:47,dy:10,gy:50.6,gz:35.2,loc:"V"},
+  {j:28,p:"A. Keita",t:"block",b:"right-foot",s:"regular",xg:0.0673,dx:49,dy:20,gy:50,gz:20,loc:"V"},
+  {j:28,p:"B. Vázquez",t:"miss",b:"right-foot",s:"set-piece",xg:0.0049,dx:25,dy:15,gy:58.5,gz:17.4,loc:"V"},
+  {j:28,p:"X. Fernández",t:"miss",b:"right-foot",s:"throw-in-set-piece",xg:0.0266,dx:52,dy:19,gy:42.5,gz:10.1,loc:"V"},
+  {j:28,p:"M. Jorrín",t:"miss",b:"head",s:"corner",xg:0.24,dx:50,dy:4,gy:44.1,gz:59.9,loc:"V"},
+  {j:28,p:"X. Fernández",t:"save",b:"right-foot",s:"throw-in-set-piece",xg:0.0622,dx:51,dy:18,gy:53.3,gz:19.6,loc:"V"},
+  {j:29,p:"J. L. Cortés",t:"miss",b:"right-foot",s:"regular",xg:0.0096,dx:60,dy:26,gy:41.6,gz:41.4,loc:"L"},
+  {j:29,p:"V. Kisil",t:"save",b:"right-foot",s:"regular",xg:0.1192,dx:42,dy:14,gy:54.1,gz:19.1,loc:"L"},
+  {j:29,p:"E. Frimpong",t:"goal",b:"left-foot",s:"regular",xg:0.0196,dx:38,dy:31,gy:53.9,gz:35.8,loc:"L"},
+  {j:29,p:"Slavy",t:"miss",b:"head",s:"regular",xg:0.0988,dx:36,dy:7,gy:58.8,gz:59.5,loc:"L"},
+  {j:29,p:"Slavy",t:"goal",b:"head",s:"regular",xg:0.0973,dx:35,dy:9,gy:46.8,gz:23.1,loc:"L"},
+  {j:29,p:"B. Vázquez",t:"goal",b:"right-foot",s:"penalty",xg:0.76,dx:50,dy:10,gy:50.4,gz:26.3,loc:"L"},
+  {j:29,p:"B. Vázquez",t:"miss",b:"right-foot",s:"set-piece",xg:0.0015,dx:70,dy:16,gy:46.5,gz:53.8,loc:"L"}
+];
+
+  function loadTiros() {
+    const mc = document.getElementById('main-content');
+    if (!window._tirosF) window._tirosF = {tipo:'todos', loc:'todos'};
+    const F = window._tirosF;
+
+    let shots = TIROS_DATA;
+    if (F.tipo === 'goles') shots = shots.filter(s => s.t === 'goal');
+    if (F.loc  === 'local') shots = shots.filter(s => s.loc === 'L');
+    if (F.loc  === 'fuera') shots = shots.filter(s => s.loc === 'V');
+
+    const goals    = shots.filter(s => s.t === 'goal');
+    const onTarget = shots.filter(s => s.t === 'goal' || s.t === 'save');
+    const totalXG  = shots.reduce((a,s) => a + s.xg, 0);
+
+    const COL   = {goal:'#f97316', save:'#3b82f6', miss:'#94a3b8', block:'#a78bfa', post:'#fbbf24'};
+    const LABEL = {goal:'Gol', save:'A puerta', miss:'Fuera', block:'Bloqueado', post:'Poste'};
+
+    const PW=400, PH=250, SX=4, SY=5;
+    const pitchDots = shots.map(s => {
+      if (s.dx==null||s.dy==null) return '';
+      const cx = (s.dx * SX).toFixed(1);
+      const cy = (Math.min(s.dy, 50) * SY).toFixed(1);
+      const r  = Math.max(2.5, Math.min(10, 2 + s.xg * 8)).toFixed(1);
+      const col = COL[s.t] || '#999';
+      const op  = s.t === 'goal' ? 0.92 : 0.52;
+      const sw  = s.t === 'goal' ? '2' : '0.5';
+      const tip = s.p + ' J' + s.j + '|' + (LABEL[s.t]||s.t) + ' · xG ' + s.xg;
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" opacity="${op}" stroke="${col}" stroke-width="${sw}" class="tiro-dot" data-tip="${tip}" onmouseenter="tiroTip(event,this)" onmouseleave="tiroTipHide()"/>`;
+    }).join('');
+
+    const GM_X=20, GM_W=360, GM_TOP=30, GM_BOT=150, GM_H=120;
+    const goalDots = shots.filter(s => s.t !== 'block' && s.gy != null && s.gz != null).map(s => {
+      const gx   = (GM_X + (s.gy/100)*GM_W).toFixed(1);
+      const gyS  = (GM_BOT - (Math.min(s.gz/35, 1.5)*GM_H)).toFixed(1);
+      const col  = COL[s.t] || '#999';
+      const op   = s.t === 'goal' ? 0.92 : 0.45;
+      const sw   = s.t === 'goal' ? '2' : '0.8';
+      const stk  = s.t === 'goal' ? 'white' : col;
+      const tip  = s.p + ' J' + s.j + '|' + (LABEL[s.t]||s.t);
+      return `<circle cx="${gx}" cy="${gyS}" r="5" fill="${col}" opacity="${op}" stroke="${stk}" stroke-width="${sw}" class="tiro-dot" data-tip="${tip}" onmouseenter="tiroTip(event,this)" onmouseleave="tiroTipHide()"/>`;
+    }).join('');
+
+    const byP = {};
+    shots.forEach(s => {
+      if (!byP[s.p]) byP[s.p] = {g:0, t:0, xg:0};
+      byP[s.p].t++; byP[s.p].xg += s.xg;
+      if (s.t === 'goal') byP[s.p].g++;
+    });
+    const playerRows = Object.entries(byP)
+      .filter(([,v]) => v.t >= 2)
+      .sort((a,b) => b[1].g - a[1].g || b[1].t - a[1].t)
+      .map(([nm,v]) => `<div style="background:#1e1e2e;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:#ddd">${nm}</span><span style="font-size:12px;color:#f97316;font-weight:700">${v.g}G / ${v.t}T / xG ${v.xg.toFixed(2)}</span></div>`)
+      .join('');
+
+    const btn = (key, val, lbl) => {
+      const active = F[key] === val;
+      return `<button style="padding:4px 12px;border-radius:20px;border:1px solid ${active?'#f97316':'#444'};background:${active?'#f97316':'transparent'};color:${active?'white':'#bbb'};cursor:pointer;font-size:12px" onclick="window._tirosF.${key}='${val}';loadTiros()">${lbl}</button>`;
+    };
+
+    mc.innerHTML = `
+    <div style="padding:16px 20px">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+        <div style="background:#1e1e2e;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:#f97316">${shots.length}</div><div style="font-size:11px;color:#888;margin-top:2px">Tiros</div></div>
+        <div style="background:#1e1e2e;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:#f97316">${goals.length}</div><div style="font-size:11px;color:#888;margin-top:2px">Goles</div></div>
+        <div style="background:#1e1e2e;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:#f97316">${shots.length?((goals.length/shots.length)*100).toFixed(1):0}%</div><div style="font-size:11px;color:#888;margin-top:2px">% Conversión</div></div>
+        <div style="background:#1e1e2e;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:#f97316">${totalXG.toFixed(2)}</div><div style="font-size:11px;color:#888;margin-top:2px">xG Total</div></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;align-items:center">
+        <span style="color:#777;font-size:12px">Tipo:</span>
+        ${btn('tipo','todos','Todos')}${btn('tipo','goles','Solo Goles')}
+        <span style="color:#333;margin:0 6px">|</span>
+        <span style="color:#777;font-size:12px">Localía:</span>
+        ${btn('loc','todos','Todos')}${btn('loc','local','Local')}${btn('loc','fuera','Fuera')}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="background:#16213e;border-radius:12px;padding:14px">
+          <div style="font-size:13px;font-weight:700;color:#ccc;margin-bottom:10px">🗺️ Mapa de Tiros</div>
+          <svg viewBox="0 0 ${PW} ${PH}" style="width:100%;display:block;border-radius:6px">
+            <rect x="0" y="0" width="${PW}" height="${PH}" rx="4" fill="#1a4a1a"/>
+            <rect x="${(20.35*SX).toFixed(1)}" y="0" width="${(59.3*SX).toFixed(1)}" height="${(16.5*SY).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+            <rect x="${(36.55*SX).toFixed(1)}" y="0" width="${(26.9*SX).toFixed(1)}" height="${(5.5*SY).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+            <rect x="${(44.62*SX).toFixed(1)}" y="-6" width="${(10.76*SX).toFixed(1)}" height="6" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+            <circle cx="${(50*SX).toFixed(1)}" cy="${(11*SY).toFixed(1)}" r="2.5" fill="rgba(255,255,255,0.55)"/>
+            <line x1="0" y1="${PH-1}" x2="${PW}" y2="${PH-1}" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+            ${pitchDots}
+          </svg>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+            ${Object.entries(COL).map(([t,c]) => `<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:#888"><span style="width:8px;height:8px;border-radius:50%;background:${c};display:inline-block"></span>${LABEL[t]}</span>`).join('')}
+          </div>
+        </div>
+        <div style="background:#16213e;border-radius:12px;padding:14px">
+          <div style="font-size:13px;font-weight:700;color:#ccc;margin-bottom:10px">🥅 Portería · ${onTarget.length} a puerta</div>
+          <svg viewBox="0 0 400 180" style="width:100%;display:block;border-radius:6px">
+            <rect x="0" y="0" width="400" height="180" fill="#0f172a"/>
+            <rect x="${GM_X}" y="${GM_TOP}" width="${GM_W}" height="${GM_H}" fill="rgba(255,255,255,0.04)" stroke="white" stroke-width="2.5" rx="1"/>
+            <line x1="${GM_X}" y1="90" x2="${GM_X+GM_W}" y2="90" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="4,4"/>
+            <line x1="200" y1="${GM_TOP}" x2="200" y2="${GM_BOT}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="4,4"/>
+            <text x="200" y="${GM_TOP-10}" text-anchor="middle" fill="rgba(255,255,255,0.22)" font-size="8" font-family="sans-serif">⬆ Fuera alto</text>
+            <text x="${GM_X+4}" y="${GM_BOT+14}" fill="rgba(255,255,255,0.25)" font-size="8" font-family="sans-serif">◀ izq</text>
+            <text x="${GM_X+GM_W-4}" y="${GM_BOT+14}" text-anchor="end" fill="rgba(255,255,255,0.25)" font-size="8" font-family="sans-serif">der ▶</text>
+            ${goalDots}
+          </svg>
+        </div>
+      </div>
+      <div style="margin-top:16px;background:#16213e;border-radius:12px;padding:14px">
+        <div style="font-size:13px;font-weight:700;color:#ccc;margin-bottom:10px">👤 Por Jugador (≥ 2 tiros)</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">${playerRows}</div>
+      </div>
+    </div>`;
+  }
+
+  function tiroTip(e, el) {
+    const tip = document.getElementById('pos-tip');
+    const raw = (el.dataset.tip || '').replace(/\|/g, '<br><span style="font-size:11px;color:#bbb">');
+    tip.innerHTML = raw;
+    tip.style.display = 'block';
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top  = (e.clientY - 10) + 'px';
+  }
+  function tiroTipHide() {
+    document.getElementById('pos-tip').style.display = 'none';
   }
 
   // INIT
