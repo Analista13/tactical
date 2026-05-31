@@ -5034,7 +5034,7 @@
   async function computeAggBloqueShape(matches, period, thirdFilter, blockFilter) {
     const allData = await Promise.all(matches.map(p => getMatchData(p.id)));
     const GKS = ['GK','PT','POR','PORTERO','P','GOALKEEPER'];
-    const isGK = pos => GKS.includes((pos||'').toUpperCase().trim());
+    const isGK = p => GKS.includes((p.position||'').toUpperCase().trim());
 
     // Position lookup from all lineups
     const posLookup = {};
