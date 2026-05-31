@@ -164,7 +164,7 @@
 <div id="pos-tip" style="display:none;position:fixed;background:#1c2128;border:1px solid rgba(255,255,255,0.13);border-radius:8px;padding:9px 13px;font-family:'DM Sans',sans-serif;pointer-events:none;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.55);min-width:130px"></div>
 
 <header>
-  <img class="header-logo" id="headerLogo" src="primera_fed_logo.png" onerror="this.style.display='none'" alt="">
+  <img class="header-logo" id="headerLogo" src="https://tmssl.akamaized.net/images/wappen/head/13.png" alt="Atlético de Madrid">
   <div><div class="header-title" id="headerTitle">Tactical</div></div>
   <div class="header-sub" id="headerSub">Primera Federación · Playoff 25/26</div>
   <div class="header-badge" id="headerBadge" style="display:none">⚽ 51.036 eventos</div>
@@ -284,9 +284,7 @@
   // ── Home screen (contenido central) ─────────────────────────────────────────
   function renderHomeContent() {
     const cont = document.getElementById('content');
-    // Header: logo competición, sin equipo
-    const hLogo = document.getElementById('headerLogo');
-    if (hLogo) { hLogo.src = 'primera_fed_logo.png'; hLogo.style.display = ''; }
+    // Header: el logo del header siempre es el Atleti (identidad de la app)
     const hTitle = document.getElementById('headerTitle');
     if (hTitle) hTitle.textContent = 'Tactical';
     const hSub = document.getElementById('headerSub');
@@ -329,9 +327,7 @@
 
   function renderLeagueContent(league) {
     const cont = document.getElementById('content');
-    // Header
-    const hLogo = document.getElementById('headerLogo');
-    if (hLogo) { hLogo.src = league.logo; hLogo.style.display = ''; }
+    // Header: logo Atleti siempre fijo — solo actualizamos el subtítulo
     const hSub = document.getElementById('headerSub');
     if (hSub) hSub.textContent = `${league.shortName} · ${league.season}`;
     const hBadge = document.getElementById('headerBadge');
@@ -382,9 +378,7 @@
     PARTIDOS = PARTIDOS_MAP[id] || PARTIDOS_MAP[2908];
     PLAYER_DORSALES = PLAYER_DORSALES_MAP_D[id] || {};
     appState = 'analysis';
-    // Header: escudo del equipo + loc/vis buttons
-    const hLogo = document.getElementById('headerLogo');
-    if (hLogo) { hLogo.src = escudo; hLogo.style.display = ''; }
+    // Header: logo Atleti siempre fijo — actualizamos subtítulo y botones
     const hSub = document.getElementById('headerSub');
     if (hSub) hSub.textContent = currentLeague ? `${currentLeague.shortName} · ${name}` : name;
     const hBadge = document.getElementById('headerBadge');
