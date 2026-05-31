@@ -5036,16 +5036,25 @@
     const GKS = ['GK','PT','POR','PORTERO','P','GOALKEEPER'];
     const isGK = p => GKS.includes((p.position||'').toUpperCase().trim());
 
-    // Position lookup from all lineups
+    // Build lookup of Ponferradina player names + their positions
     const posLookup = {};
+    const ponfNames = new Set();
     Object.values(PONF_LINEUPS).forEach(lup =>
-      lup.forEach(r => { if(r[1]&&r[2]&&!posLookup[r[1]]) posLookup[r[1]] = r[2]; })
+      lup.forEach(r => {
+        if(r[1]&&r[2]) {
+          ponfNames.add(r[1]);
+          if(!posLookup[r[1]]) posLookup[r[1]] = r[2];
+        }
+      })
     );
 
     const acc = {};
     matches.forEach((partido, gi) => {
       const data = allData[gi];
-      let rows = data.filter(e => e.x_start!=null && e.y_start!=null && e.player_name);
+      // *** Only Ponferradina players ***
+      let rows = data.filter(e =>
+        e.x_start!=null && e.y_start!=null && e.player_name && ponfNames.has(e.player_name)
+      );
       if (period) rows = rows.filter(e => e.period === period);
       if (blockFilter) rows = rows.filter(e => e.team_out_of_possession_phase_type === blockFilter);
       else if (thirdFilter) rows = rows.filter(e => e.third_start === thirdFilter);
