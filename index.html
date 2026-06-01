@@ -14380,38 +14380,37 @@
       <path d="M3.5,${H} A3.5,3.5 0 0,1 0,${H-3.5}" fill="none" stroke="${lc}" stroke-width="${lw}"/>`;
 
     const evs = seq.events.filter(e => e.x_start != null);
+    if (!evs.length) return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${bg}${marks}</svg>`;
 
-    // Líneas (sin flechas, finas — igual que la referencia)
-    const lines = evs.map(e => {
-      const s  = skToSvgH(e.x_start, e.y_start);
-      const en = skToSvgH(
-        e.x_end != null ? e.x_end : e.x_start,
-        e.y_end != null ? e.y_end : e.y_start
-      );
-      const isPass = e.end_type === 'pass' || e.end_type === 'shot';
-      const col  = isPass ? 'rgba(255,255,255,0.92)' : 'rgba(232,180,60,0.92)';
-      const dash = isPass ? '' : ` stroke-dasharray="2.8,2"`;
-      return `<line x1="${s.cx.toFixed(2)}" y1="${s.cy.toFixed(2)}" x2="${en.cx.toFixed(2)}" y2="${en.cy.toFixed(2)}" stroke="${col}" stroke-width="1.3"${dash} stroke-linecap="round"/>`;
+    // Construir waypoints encadenados:
+    // Cada evento aporta su x_start como waypoint.
+    // El punto final es el x_end del último evento (si existe y es diferente al x_start).
+    // Conectar waypoints consecutivos = camino continuo sin cortes.
+    const wps = evs.map(e => ({
+      pt: skToSvgH(e.x_start, e.y_start),
+      isCarry: !['pass', 'shot'].includes(e.end_type)
+    }));
+
+    const lastEv = evs[evs.length - 1];
+    const hasRealEnd = lastEv.x_end != null &&
+      (Math.abs(lastEv.x_end - lastEv.x_start) > 0.5 || Math.abs((lastEv.y_end||0) - (lastEv.y_start||0)) > 0.5);
+    const endPt = hasRealEnd ? skToSvgH(lastEv.x_end, lastEv.y_end) : wps[wps.length - 1].pt;
+
+    // Líneas: segmento i conecta wps[i] → wps[i+1]; último segmento → endPt
+    const allPts = [...wps.map(w => w.pt), endPt];
+    const lines = wps.map((wp, i) => {
+      const a = allPts[i], b = allPts[i + 1];
+      const col  = wp.isCarry ? 'rgba(232,180,60,0.92)' : 'rgba(255,255,255,0.92)';
+      const dash = wp.isCarry ? ` stroke-dasharray="2.8,2"` : '';
+      return `<line x1="${a.cx.toFixed(2)}" y1="${a.cy.toFixed(2)}" x2="${b.cx.toFixed(2)}" y2="${b.cy.toFixed(2)}" stroke="${col}" stroke-width="1.4"${dash} stroke-linecap="round"/>`;
     }).join('');
 
-    // Puntos (start=rojo, intermedios=blanco pequeño, end=azul)
-    const dots = evs.map((e, i) => {
-      const s = skToSvgH(e.x_start, e.y_start);
-      let h = '';
-      if (i === 0) {
-        h += `<circle cx="${s.cx.toFixed(2)}" cy="${s.cy.toFixed(2)}" r="2.1" fill="#e05252"/>`;
-      } else {
-        h += `<circle cx="${s.cx.toFixed(2)}" cy="${s.cy.toFixed(2)}" r="1.1" fill="rgba(255,255,255,0.55)"/>`;
-      }
-      if (i === evs.length - 1) {
-        const en = skToSvgH(
-          e.x_end != null ? e.x_end : e.x_start,
-          e.y_end != null ? e.y_end : e.y_start
-        );
-        h += `<circle cx="${en.cx.toFixed(2)}" cy="${en.cy.toFixed(2)}" r="2.1" fill="#6baed6"/>`;
-      }
-      return h;
-    }).join('');
+    // Puntos: rojo=inicio, blanco pequeño=intermedios, azul=final
+    const dots = wps.map((wp, i) => {
+      const p = wp.pt;
+      if (i === 0) return `<circle cx="${p.cx.toFixed(2)}" cy="${p.cy.toFixed(2)}" r="2.1" fill="#e05252"/>`;
+      return `<circle cx="${p.cx.toFixed(2)}" cy="${p.cy.toFixed(2)}" r="1.1" fill="rgba(255,255,255,0.6)"/>`;
+    }).join('') + `<circle cx="${endPt.cx.toFixed(2)}" cy="${endPt.cy.toFixed(2)}" r="2.1" fill="#6baed6"/>`;
 
     return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${bg}${marks}${lines}${dots}</svg>`;
   }
