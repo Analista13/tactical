@@ -14330,23 +14330,24 @@
     };
   }
 
-  // Extrae secuencias de lead_to_shot=true de un array de eventos
+  // Extrae secuencias de posesión completa que contienen al menos un lead_to_shot.
+  // Los datos solo tienen eventos de Ponferradina, así que agrupamos por posesión:
+  // acumulamos todos los eventos hasta que la posesión termina (shot / possession_loss /
+  // clearance / foul_suffered) y guardamos solo los que tienen algún lead_to_shot=true.
+  // Esto incluye el build-up completo (campo propio → área rival) igual que la referencia.
   function extractSeqs(events, matchId) {
     const seqs = [];
-    let cur = [];
+    const ENDS = new Set(['shot','possession_loss','clearance','foul_suffered']);
+    let cur = [], hasLTS = false;
     for (const e of events) {
-      if (e.lead_to_shot) {
-        cur.push(e);
-        if (['shot','possession_loss','clearance','foul_suffered'].includes(e.end_type)) {
-          if (cur.length) seqs.push({ matchId, events: [...cur] });
-          cur = [];
-        }
-      } else {
-        if (cur.length) seqs.push({ matchId, events: [...cur] });
-        cur = [];
+      cur.push(e);
+      if (e.lead_to_shot) hasLTS = true;
+      if (ENDS.has(e.end_type)) {
+        if (hasLTS) seqs.push({ matchId, events: [...cur] });
+        cur = []; hasLTS = false;
       }
     }
-    if (cur.length) seqs.push({ matchId, events: [...cur] });
+    if (cur.length && hasLTS) seqs.push({ matchId, events: [...cur] });
     return seqs;
   }
 
