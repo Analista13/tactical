@@ -5326,11 +5326,20 @@
 
     if (allPlayers.length < 4) return null;
 
-    // Top 11 by appearances: regular starters (including CBs) always make the cut
+    // Top 11: 1 GK + 10 outfield.
+    // IMPORTANTE: garantizar que al menos 2 CBs aparecen siempre.
+    // Si los CBs rotaron mucho durante la temporada (p.ej. 4 CBs distintos con
+    // ~8 titularidades cada uno), pueden quedar fuera del top 10 por globalN
+    // aunque son parte esencial de la formación.
     const allGK = allPlayers.filter(p => isGK(p));
     const allOF = allPlayers.filter(p => !isGK(p));
-    const gk      = allGK.slice(0, 1);
-    const outfield = allOF.slice(0, 10);
+    const gk = allGK.slice(0, 1);
+
+    const cbPool  = allOF.filter(p => isCB(p.position));    // sorted by globalN
+    const guaranteedCBs = cbPool.slice(0, Math.min(2, cbPool.length));
+    const cbNames = new Set(guaranteedCBs.map(p => p.name));
+    const fillSlots = allOF.filter(p => !cbNames.has(p.name)).slice(0, 10 - guaranteedCBs.length);
+    const outfield  = [...guaranteedCBs, ...fillSlots];
     const hull = convexHull(outfield.map(p => ({x:p.x,y:p.y})));
     const area = hullArea(hull);
     const sorted = outfield.slice().sort((a,b) => a.x - b.x);
@@ -5402,7 +5411,7 @@
         zona3:{col:'#58a6ff',lbl:'Zona 3 — LOW BLOCK',    sub:'Posicionamiento defensivo cuando el rival ataca cerca del área'},
       };
 
-      if (bloqueSubTab === 'general') {
+      if (true) {  // vista agregada siempre usa el path "general" (sin zona sub-tabs)
         // General: show secondary sub-tabs (Todo / 1ª Parte / 2ª Parte / Comparativa)
         const secTabs = [
           {id:'all',lbl:'Todo'},
@@ -5517,7 +5526,7 @@
     };
     const isEstado=bloquePhase==='estado';
     const isAgg=bloqueView==='casa'||bloqueView==='fuera';
-    const showSubTabs=!isEstado;
+    const showSubTabs=!isEstado && !isAgg;  // agregado (Casa/Fuera) no usa zona sub-tabs
     const subTabsHTML=showSubTabs?`
       <div id="bloqueSubTabs" style="overflow-x:auto;margin-bottom:20px;padding-bottom:2px">
         <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content;min-width:100%">
