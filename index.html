@@ -13814,6 +13814,13 @@
 ];
 
   // ── Tooltip flotante para tiros ────────────────────────────────
+  function _tirosPlaceTip(tip, e) {
+    const tw = tip.offsetWidth || 180, th = tip.offsetHeight || 120;
+    const x = Math.max(8, Math.min(e.clientX + 16, window.innerWidth  - tw - 8));
+    const y = Math.max(8, Math.min(e.clientY - 16, window.innerHeight - th - 8));
+    tip.style.left = x + 'px';
+    tip.style.top  = y + 'px';
+  }
   function tirosShowTip(key, e) {
     const data = window._tirosTipData && window._tirosTipData[key];
     if (!data) return;
@@ -13821,16 +13828,12 @@
     if (!tip) {
       tip = document.createElement('div');
       tip.id = 'tiros-tooltip';
-      tip.style.cssText = 'position:fixed;z-index:99999;background:#1a2540;border:1px solid #334155;border-radius:10px;padding:10px 14px;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,0.7);min-width:170px;display:none;line-height:1.5';
+      tip.style.cssText = 'position:fixed;z-index:99999;background:#1a2540;border:1px solid #334155;border-radius:10px;padding:10px 14px;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,0.7);min-width:170px;display:none;line-height:1.5;font-family:inherit';
       document.body.appendChild(tip);
     }
     tip.innerHTML = data;
     tip.style.display = 'block';
-    const tw = tip.offsetWidth || 180, th = tip.offsetHeight || 110;
-    const x = Math.min(e.clientX + 14, window.innerWidth - tw - 10);
-    const y = Math.min(e.clientY - 14, window.innerHeight - th - 10);
-    tip.style.left = x + 'px';
-    tip.style.top  = y + 'px';
+    _tirosPlaceTip(tip, e);
   }
   function tirosHideTip() {
     const tip = document.getElementById('tiros-tooltip');
@@ -13839,9 +13842,13 @@
   function tirosMoveTip(e) {
     const tip = document.getElementById('tiros-tooltip');
     if (!tip || tip.style.display === 'none') return;
-    const tw = tip.offsetWidth || 180, th = tip.offsetHeight || 110;
-    tip.style.left = Math.min(e.clientX + 14, window.innerWidth - tw - 10) + 'px';
-    tip.style.top  = Math.min(e.clientY - 14, window.innerHeight - th - 10) + 'px';
+    _tirosPlaceTip(tip, e);
+  }
+  // Delegación de eventos en el contenedor SVG (más fiable que onmouseenter en <circle>)
+  function tirosOverSVG(e) {
+    const key = e.target && e.target.getAttribute ? e.target.getAttribute('data-tkey') : null;
+    if (key) tirosShowTip(key, e);
+    else tirosHideTip();
   }
 
   function loadTiros() {
@@ -13944,6 +13951,42 @@
         + '<div style="font-size:11px;color:#f59e0b;margin-top:5px;border-top:1px solid #334155;padding-top:4px">J'+s.j+' '+loc+' '+opp+' <b style="color:#e2e8f0">'+score+'</b></div>';
     }
 
+    function buildShotsTable(shots) {
+      if (!shots.length) return '<div style="color:#64748b;font-size:12px;text-align:center;padding:16px">Sin tiros registrados</div>';
+      const tIcons  = {goal:'⚽',miss:'❌',save:'🧤',block:'🚫',post:'🥅'};
+      const tColors = {goal:'#22c55e',miss:'#ef4444',save:'#f59e0b',block:'#94a3b8',post:'#c084fc'};
+      const sorted = [...shots].sort((a,b)=>a.j-b.j||(a.min||0)-(b.min||0));
+      const rows = sorted.map(s=>{
+        const mi = MATCH_INFO[s.j]||{};
+        const loc = mi.home?'🏠':'✈️';
+        const col = tColors[s.t]||'#94a3b8';
+        return '<tr style="border-bottom:1px solid #1e293b">'
+          +'<td style="padding:6px 10px;font-size:11px;color:#f59e0b;font-weight:700;white-space:nowrap">J'+s.j+' '+loc+'</td>'
+          +'<td style="padding:6px 10px;font-size:11px;color:#e2e8f0;white-space:nowrap">'+(mi.opp||'')+'</td>'
+          +'<td style="padding:6px 10px;font-size:12px;color:#e2e8f0;font-weight:800;text-align:center;white-space:nowrap">'+(mi.s||'–')+'</td>'
+          +'<td style="padding:6px 10px;font-size:11px;color:#94a3b8;text-align:center">'+(s.min!=null?s.min+'\'':'–')+'</td>'
+          +'<td style="padding:6px 10px;font-size:11px;color:'+col+';font-weight:700;white-space:nowrap">'+(tIcons[s.t]||'•')+' '+(TIPO_ES[s.t]||s.t)+'</td>'
+          +'<td style="padding:6px 10px;font-size:11px;color:#94a3b8;white-space:nowrap">'+(BODY_ES[s.b]||s.b||'')+'</td>'
+          +'<td style="padding:6px 10px;font-size:11px;color:#64748b;white-space:nowrap">'+(SITU_ES[s.s]||s.s||'')+'</td>'
+          +'<td style="padding:6px 10px;font-size:11px;color:#94a3b8;text-align:right;font-weight:600">'+s.xg.toFixed(2)+'</td>'
+          +'</tr>';
+      }).join('');
+      return '<div style="margin-top:16px;background:#16213e;border-radius:12px;overflow:hidden;border:1px solid #1e293b">'
+        +'<div style="padding:10px 14px;background:#0f172a;font-size:12px;font-weight:700;color:#94a3b8;letter-spacing:.5px">DETALLE DE TIROS ('+shots.length+')</div>'
+        +'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
+        +'<thead><tr style="background:#0f172a">'
+        +'<th style="padding:7px 10px;text-align:left;font-size:10px;color:#475569;font-weight:600">J</th>'
+        +'<th style="padding:7px 10px;text-align:left;font-size:10px;color:#475569;font-weight:600">Rival</th>'
+        +'<th style="padding:7px 10px;text-align:center;font-size:10px;color:#475569;font-weight:600">Resultado</th>'
+        +'<th style="padding:7px 10px;text-align:center;font-size:10px;color:#475569;font-weight:600">Min</th>'
+        +'<th style="padding:7px 10px;text-align:left;font-size:10px;color:#475569;font-weight:600">Tipo</th>'
+        +'<th style="padding:7px 10px;text-align:left;font-size:10px;color:#475569;font-weight:600">Parte</th>'
+        +'<th style="padding:7px 10px;text-align:left;font-size:10px;color:#475569;font-weight:600">Situación</th>'
+        +'<th style="padding:7px 10px;text-align:right;font-size:10px;color:#475569;font-weight:600">xG</th>'
+        +'</tr></thead>'
+        +'<tbody>'+rows+'</tbody></table></div></div>';
+    }
+
     function miniPitch(shots) {
       const W=100, H=68;
       // dy=0 → gol (arriba), dy=100 → portería propia (abajo)
@@ -13955,10 +13998,10 @@
         const op  = s.t==='goal' ? 0.95 : 0.65;
         const key = 'k'+s.j+'_'+s.dx+'_'+s.dy+'_'+i;
         window._tirosTipData[key] = buildTiroTip(s);
-        return '<circle cx="'+cx+'" cy="'+cy+'" r="2.8" fill="'+col+'" opacity="'+op+'" style="cursor:pointer" onmouseenter="tirosShowTip(\''+key+'\',event)" onmouseleave="tirosHideTip()" onmousemove="tirosMoveTip(event)"></circle>';
+        return '<circle cx="'+cx+'" cy="'+cy+'" r="2.8" fill="'+col+'" opacity="'+op+'" data-tkey="'+key+'" style="cursor:pointer"></circle>';
       }).join('');
       const lc='rgba(255,255,255,0.22)', lw='0.55';
-      return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block">'
+      const svg = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block">'
         // fondo
         +'<rect width="'+W+'" height="'+H+'" fill="#0c1220"/>'
         // contorno campo
@@ -13985,6 +14028,7 @@
         // ABAJO — punto penalty
         +'<circle cx="50" cy="57" r="0.7" fill="'+lc+'"/>'
         +dots+'</svg>';
+      return '<div onmouseover="tirosOverSVG(event)" onmouseleave="tirosHideTip()" onmousemove="tirosMoveTip(event)">'+svg+'</div>';
     }
 
     function bigPitch(shots) {
@@ -13997,10 +14041,10 @@
         const op  = s.t==='goal'?0.95:0.65;
         const key = 'b'+s.j+'_'+s.dx+'_'+s.dy+'_'+i;
         window._tirosTipData[key] = buildTiroTip(s);
-        return '<circle cx="'+cx+'" cy="'+cy+'" r="2.0" fill="'+col+'" opacity="'+op+'" stroke="rgba(255,255,255,0.25)" stroke-width="0.4" style="cursor:pointer" onmouseenter="tirosShowTip(\''+key+'\',event)" onmouseleave="tirosHideTip()" onmousemove="tirosMoveTip(event)"></circle>';
+        return '<circle cx="'+cx+'" cy="'+cy+'" r="2.8" fill="'+col+'" opacity="'+op+'" stroke="rgba(255,255,255,0.25)" stroke-width="0.4" data-tkey="'+key+'" style="cursor:pointer"></circle>';
       }).join('');
       const lc='rgba(255,255,255,0.25)', lw='0.7';
-      return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block">'
+      const svg = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block">'
         +'<rect width="'+W+'" height="'+H+'" fill="#0c1220"/>'
         +'<rect x="3" y="1" width="94" height="66" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
         +'<line x1="3" y1="34" x2="97" y2="34" stroke="'+lc+'" stroke-width="'+lw+'"/>'
@@ -14015,6 +14059,7 @@
         +'<rect x="44" y="65.5" width="12" height="1.5" fill="rgba(255,255,255,0.12)" stroke="'+lc+'" stroke-width="'+lw+'"/>'
         +'<circle cx="50" cy="57" r="0.7" fill="'+lc+'"/>'
         +dots+'</svg>';
+      return '<div onmouseover="tirosOverSVG(event)" onmouseleave="tirosHideTip()" onmousemove="tirosMoveTip(event)">'+svg+'</div>';
     }
 
     const tabBtn = (val, lbl) => {
@@ -14097,6 +14142,7 @@
           +'<span style="text-align:center"><div style="font-size:18px;font-weight:800;color:'+diffCol+'">'+diffStr+'</div><div style="font-size:10px;color:#64748b">xG diff</div></span>'
           +'</div></div>'
           +'<div style="max-width:700px;margin:0 auto;background:#111827;border-radius:12px;overflow:hidden;border:1px solid '+(goals>0?'rgba(34,197,94,0.2)':'#1e293b')+'">'+bigPitch(shots)+'</div>'
+          +buildShotsTable(shots)
           +'</div>';
         return;
       }
@@ -14193,6 +14239,7 @@
           +'<span style="text-align:center"><div style="font-size:18px;font-weight:800;color:'+diffCol+'">'+diffStr+'</div><div style="font-size:10px;color:#64748b">xG diff</div></span>'
           +'</div></div>'
           +'<div style="max-width:700px;margin:0 auto;background:#111827;border-radius:12px;overflow:hidden;border:1px solid '+(goals>0?'rgba(34,197,94,0.2)':'#1e293b')+'">'+bigPitch(shots)+'</div>'
+          +buildShotsTable(shots)
           +'</div>';
         return;
       }
