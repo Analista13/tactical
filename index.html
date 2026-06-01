@@ -3511,19 +3511,20 @@
     1066888:'RM',  // O. Mfulu        — mediocampista derecho
   };
 
-  // Corrige posiciones de tracking cuando el tier difiere ≥ 2 respecto a la canónica
-  // (ej. defensa rastreado como delantero, portero como CM, etc.)
+  // Usa la posición canónica siempre que exista (evita etiquetas como 'RB' para
+  // jugadores que juegan de 'LB', etc. — el tracking de SkillCorner puede variar
+  // partido a partido incluso dentro del mismo tier defensivo).
   function resolvePlayerPosition(player) {
     const tracked  = (player.position || '').toUpperCase().trim();
     const canonical = PLAYER_CANONICAL_POS[player.id];
     if(!canonical) return tracked || 'CM';
     const tTracked   = getPosTier(tracked).tier;
     const tCanonical = getPosTier(canonical).tier;
-    // GK nunca puede cambiar de posición
-    if(tCanonical === 0 || tTracked === 0) return tCanonical === 0 ? canonical : tracked;
-    // Diferencia de 2 o más tiers (DEF↔ATT): claramente incorrecto → usar canónica
-    if(Math.abs(tTracked - tCanonical) >= 2) return canonical;
-    return tracked;
+    // GK: si la canónica es GK → siempre GK; si el tracking dice GK → respetar
+    if(tCanonical === 0) return canonical;
+    if(tTracked === 0) return tracked;
+    // Si existe canónica definida manualmente, preferirla siempre
+    return canonical;
   }
 
   // ─── Helpers globales (accesibles desde buildAlineacionSVG, renderAlineacion, renderJugadores) ───
@@ -5232,14 +5233,16 @@
     const GKS = ['GK','PT','POR','PORTERO','P','GOALKEEPER'];
     const isGK = p => GKS.includes((p.position||'').toUpperCase().trim());
 
-    // Build lookup of Ponferradina player names + their positions
+    // Build lookup of Ponferradina player names + their positions/ids
     const posLookup = {};
+    const idLookup  = {};
     const ponfNames = new Set();
     Object.values(PONF_LINEUPS).forEach(lup =>
       lup.forEach(r => {
         if(r[1]&&r[2]) {
           ponfNames.add(r[1]);
           if(!posLookup[r[1]]) posLookup[r[1]] = r[2];
+          if(r[0]&&!idLookup[r[1]]) idLookup[r[1]] = r[0];
         }
       })
     );
@@ -5269,7 +5272,7 @@
       .filter(([,v]) => v.xs.length >= MIN_P)
       .map(([name,v]) => ({
         name, n: v.xs.length,
-        position: resolvePlayerPosition({id:0, position: posLookup[name]||'CM'}),
+        position: resolvePlayerPosition({id: idLookup[name]||0, position: posLookup[name]||'CM'}),
         x: v.xs.reduce((a,b)=>a+b,0)/v.xs.length,
         y: v.ys.reduce((a,b)=>a+b,0)/v.ys.length,
         fromLineup: false,
