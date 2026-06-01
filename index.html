@@ -3437,6 +3437,11 @@
     currentMainTab = tab;
     // Actualiza nav items del sidebar
     document.querySelectorAll('.nav-item[data-tab]').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    // Ocultar filtro Casa/Fuera del header en el tab Bloque
+    const lvLocal = document.getElementById('lv-local');
+    const lvVis   = document.getElementById('lv-visitante');
+    if (lvLocal) lvLocal.style.display = tab === 'bloque' ? 'none' : '';
+    if (lvVis)   lvVis.style.display   = tab === 'bloque' ? 'none' : '';
     if(tab === 'redpases')          loadRedPases();
     else if(tab === 'bloque')       loadBloque();
     else if(tab === 'pases')        loadPases();
@@ -4339,14 +4344,18 @@
     // Ordenar por x ascendente: los más profundos primero
     const sorted = outfield.slice().sort((a,b) => a.x - b.x);
     const n = sorted.length; // debería ser 10
-    // 4 más profundos → línea defensiva
-    // 3 más adelantados → línea de presión
-    // Resto (centro) → mediocampo
-    const nDef = Math.min(4, n);
-    const nFwd = n > nDef ? Math.min(3, n - nDef) : 0;
-    const defs = sorted.slice(0, nDef);
-    const fwds = sorted.slice(n - nFwd);
-    const mids = sorted.slice(nDef, n - nFwd);
+    // Agrupar por posición real (tier 1=def, 2=mid, 3=fwd).
+    // Fallback por X si algún grupo queda vacío.
+    let defs = outfield.filter(p => getPosTier(p.position).tier === 1);
+    let mids = outfield.filter(p => getPosTier(p.position).tier === 2);
+    let fwds = outfield.filter(p => getPosTier(p.position).tier === 3);
+    if (!defs.length || !fwds.length) {
+      const nDef = Math.min(4, n);
+      const nFwd = n > nDef ? Math.min(3, n - nDef) : 0;
+      defs = sorted.slice(0, nDef);
+      fwds = sorted.slice(n - nFwd);
+      mids = sorted.slice(nDef, n - nFwd);
+    }
 
     const avgX   = arr => arr.length ? arr.reduce((s,p)=>s+p.x,0)/arr.length : null;
     const spreadY = arr => arr.length>=2 ? Math.max(...arr.map(p=>p.y))-Math.min(...arr.map(p=>p.y)) : null;
@@ -5344,10 +5353,17 @@
     const area = hullArea(hull);
     const sorted = outfield.slice().sort((a,b) => a.x - b.x);
     const n = sorted.length;
-    const nDef = Math.min(4,n), nFwd = n > nDef ? Math.min(3,n-nDef) : 0;
-    const defs = sorted.slice(0,nDef);
-    const fwds = sorted.slice(n-nFwd);
-    const mids = sorted.slice(nDef, n-nFwd);
+    // Agrupar por posición real (tier 1=def, 2=mid, 3=fwd).
+    // Fallback por X si algún grupo queda vacío.
+    let defs = outfield.filter(p => getPosTier(p.position).tier === 1);
+    let mids = outfield.filter(p => getPosTier(p.position).tier === 2);
+    let fwds = outfield.filter(p => getPosTier(p.position).tier === 3);
+    if (!defs.length || !fwds.length) {
+      const nDef = Math.min(4,n), nFwd = n > nDef ? Math.min(3,n-nDef) : 0;
+      defs = sorted.slice(0,nDef);
+      fwds = sorted.slice(n-nFwd);
+      mids = sorted.slice(nDef, n-nFwd);
+    }
     const avgX = arr => arr.length ? arr.reduce((s,p)=>s+p.x,0)/arr.length : null;
     const spreadY = arr => arr.length>=2 ? Math.max(...arr.map(p=>p.y))-Math.min(...arr.map(p=>p.y)) : null;
     const defLine=avgX(defs), midLine=avgX(mids), fwdLine=avgX(fwds);
@@ -5520,13 +5536,8 @@
       const active=bloquePhase===id;
       return `<button onclick="setBloquePhase('${id}')" style="background:transparent;border:none;border-bottom:2px solid ${active?'var(--accent)':'transparent'};color:${active?'var(--accent)':'var(--text2)'};padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${label}</button>`;
     };
-    const vBtn=(id,label)=>{
-      const active=bloqueView===id;
-      return `<button onclick="bloqueView='${id}';bloqueDropOpen=false;loadBloque()" style="background:transparent;border:none;border-bottom:2px solid ${active?'var(--accent)':'transparent'};color:${active?'var(--accent)':'var(--text2)'};padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${label}</button>`;
-    };
     const isEstado=bloquePhase==='estado';
-    const isAgg=bloqueView==='casa'||bloqueView==='fuera';
-    const showSubTabs=!isEstado && !isAgg;  // agregado (Casa/Fuera) no usa zona sub-tabs
+    const showSubTabs=!isEstado;
     const subTabsHTML=showSubTabs?`
       <div id="bloqueSubTabs" style="overflow-x:auto;margin-bottom:20px;padding-bottom:2px">
         <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;width:fit-content;min-width:100%">
@@ -5537,20 +5548,16 @@
         </div>
       </div>`:'';
     document.getElementById('content').innerHTML=`<div class="anim">${head()}
-      ${!isAgg?buildBloqueHeader(ps):''}
-      <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:8px">
-        ${vBtn('partido','Partido')}${vBtn('casa','🏠 Casa')}${vBtn('fuera','✈️ Fuera')}
-      </div>
+      ${buildBloqueHeader(ps)}
       <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px">
-        ${phBtn('ataque','Ataque')}${phBtn('defensa','Defensa')}${isAgg?'':phBtn('estado','Por Estado')}
+        ${phBtn('ataque','Ataque')}${phBtn('defensa','Defensa')}${phBtn('estado','Por Estado')}
       </div>
       ${showSubTabs?subTabsHTML:''}
       <div id="bloqueCont">
-        <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">${isAgg?'Calculando...':'Selecciona un partido'}</div>
+        <div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>
       </div>
     </div>`;
     if(isEstado){renderBloqueEstado();return;}
-    if(isAgg){renderBloqueAgregado(bloqueView==='casa');return;}
     if(bloqueSubTab==='general'||bloqueMatchId) renderBloque();
   }
 
