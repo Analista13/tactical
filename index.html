@@ -4299,31 +4299,18 @@
     }
 
     // Construir exactamente los 11 jugadores del squad.
-    // Estrategia de coordenadas:
-    // • Sub-tabs con zona explícita (thirdFilter/blockFilter): usar coords de zona
-    //   si el jugador tiene ≥MIN_P eventos ahí; si no, fallback a r[5]/r[6].
-    // • Vista principal (sin zona explícita): SIEMPRE r[5]/r[6] (media global del
-    //   partido). Razón: un CB que sube en 5 córners tendría ≥MIN_P eventos en
-    //   attacking_third pero su media en esa zona sería x≈30 (estaba en el área),
-    //   colocándolo erróneamente junto a los delanteros.
-    const MIN_P = 5;
-    const useZoneCoords = !!(thirdFilter || blockFilter);
+    // Coords: SIEMPRE r[5]/r[6] (media global del partido desde lineup tracking).
+    // Las coords de zona (acc) NUNCA se usan para posición táctica: un CB que sube
+    // en córners acumula eventos en attacking_third con x≈30-40 (estaba en el área),
+    // colocándolo erróneamente junto a los delanteros.
     const avgArr = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
     const allPlayers = squad11.map(r => {
       const name = r[1];
       const position = posMap[name] || r[2] || 'CM';
-      const entry = acc[name];
-      if (useZoneCoords && entry && entry.xs.length >= MIN_P) {
-        return {
-          name, n:entry.xs.length, position,
-          x: avgArr(entry.xs), y: avgArr(entry.ys),
-          fromLineup: false,
-        };
-      }
-      // Fallback (o vista principal): coordenadas globales del partido
       if (r[5] != null && r[6] != null) {
+        const entry = acc[name];
         const n = entry ? entry.xs.length : 0;
-        return { name, n, position, x:r[5], y:r[6], fromLineup: useZoneCoords };
+        return { name, n, position, x:r[5], y:r[6], fromLineup: false };
       }
       return null;
     }).filter(Boolean);
@@ -5293,31 +5280,28 @@
     const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
     const resolvePos = name => resolvePlayerPosition({id: idLookup[name]||0, position: posLookup[name]||'CM'});
 
-    // COORDS STRATEGY:
-    // • Sub-tabs with explicit zone filter (thirdFilter/blockFilter set):
-    //   use zone-filtered event coords when ≥MIN_P, else global fallback.
-    //   This shows WHERE a player stands WITHIN that specific zone.
-    // • Main view (no zone filter — default ataque/defensa):
-    //   ALWAYS use globalAvgAcc coords for EVERY player.
-    //   Reason: CBs reach MIN_P=10 in attacking_third over a season
-    //   (corners, set-pieces) — their avg position inside that zone is
-    //   x≈20-30 (they're literally in the box), which would wrongly place
-    //   them among forwards. The global match-avg is the correct reference.
-    const useZoneCoords = !!(thirdFilter || blockFilter);
+    // COORDS STRATEGY — always use globalAvgAcc (starters-only match averages).
+    // Zone-specific event coords are NEVER used for player position, even in
+    // zone sub-tabs (thirdFilter/blockFilter). Reason: event coords within a
+    // specific zone are not representative of tactical position:
+    //   • CBs accumulate ≥10 attacking_third events (corner kicks where they
+    //     physically go into the box) → their avg attacking_third x ≈ 30-40,
+    //     which places them among forwards. Their real role is defensive.
+    //   • In defensive_third, forwards rarely appear → they'd be missing.
+    // The global match-average position (from starter lineup tracking) is the
+    // only reliable reference for WHERE a player typically stands.
 
     const allPlayers = [...ponfNames].map(name => {
       const g = globalAvgAcc[name];
       if (!g || g.xs.length < 2) return null;  // not in selected matches
-      const v    = acc[name];
-      const hasZone = useZoneCoords && v && v.xs.length >= MIN_P;
       return {
         name,
-        n:       hasZone ? v.xs.length : g.xs.length,
+        n:       g.xs.length,
         globalN: g.xs.length,
         position: resolvePos(name),
-        x: hasZone ? avg(v.xs) : avg(g.xs),
-        y: hasZone ? avg(v.ys) : avg(g.ys),
-        fromLineup: !hasZone && useZoneCoords,  // dimmed only in explicit zone sub-tabs
+        x: avg(g.xs),
+        y: avg(g.ys),
+        fromLineup: false,
       };
     }).filter(Boolean)
       .sort((a,b) => (b.globalN||0) - (a.globalN||0));  // most-played players first
