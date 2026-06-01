@@ -4298,26 +4298,32 @@
       acc[e.player_name].ys.push(e.y_start);
     }
 
-    // Construir exactamente los 11 jugadores del squad
-    // MIN_P = 5: necesitamos al menos 5 posesiones en la fase para usar esas coords
-    // Si no → usar avg_x/avg_y del lineup (promedio de tracking global de SkillCorner)
+    // Construir exactamente los 11 jugadores del squad.
+    // Estrategia de coordenadas:
+    // • Sub-tabs con zona explícita (thirdFilter/blockFilter): usar coords de zona
+    //   si el jugador tiene ≥MIN_P eventos ahí; si no, fallback a r[5]/r[6].
+    // • Vista principal (sin zona explícita): SIEMPRE r[5]/r[6] (media global del
+    //   partido). Razón: un CB que sube en 5 córners tendría ≥MIN_P eventos en
+    //   attacking_third pero su media en esa zona sería x≈30 (estaba en el área),
+    //   colocándolo erróneamente junto a los delanteros.
     const MIN_P = 5;
+    const useZoneCoords = !!(thirdFilter || blockFilter);
+    const avgArr = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
     const allPlayers = squad11.map(r => {
       const name = r[1];
       const position = posMap[name] || r[2] || 'CM';
       const entry = acc[name];
-      if (entry && entry.xs.length >= MIN_P) {
+      if (useZoneCoords && entry && entry.xs.length >= MIN_P) {
         return {
           name, n:entry.xs.length, position,
-          x: entry.xs.reduce((a,b)=>a+b,0)/entry.xs.length,
-          y: entry.ys.reduce((a,b)=>a+b,0)/entry.ys.length,
+          x: avgArr(entry.xs), y: avgArr(entry.ys),
           fromLineup: false,
         };
       }
-      // Fallback: coordenadas globales del partido (tracking completo SkillCorner)
+      // Fallback (o vista principal): coordenadas globales del partido
       if (r[5] != null && r[6] != null) {
         const n = entry ? entry.xs.length : 0;
-        return { name, n, position, x:r[5], y:r[6], fromLineup:true };
+        return { name, n, position, x:r[5], y:r[6], fromLineup: useZoneCoords };
       }
       return null;
     }).filter(Boolean);
