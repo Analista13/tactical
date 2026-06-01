@@ -14440,9 +14440,20 @@
     const cont = document.getElementById('content');
     if (window._seqVista   === undefined) window._seqVista   = 'top20';
     if (window._seqJornada === undefined) window._seqJornada = null;
+    if (window._seqFilter  === undefined) window._seqFilter  = 'all';
 
-    const vista   = window._seqVista;
-    const selJ    = window._seqJornada;
+    const vista     = window._seqVista;
+    const selJ      = window._seqJornada;
+    const seqFilter = window._seqFilter;
+
+    // Helper: es Ponferradina local?
+    const isPonfeHome = p => (p.local||'').toLowerCase().includes('ponferradina') ||
+                              (p.local||'').toLowerCase().includes('sd ponf');
+
+    // Filtrar partidos según Casa/Fuera
+    let partidosFiltrados = (PARTIDOS || []);
+    if (seqFilter === 'casa')  partidosFiltrados = partidosFiltrados.filter(p =>  isPonfeHome(p));
+    if (seqFilter === 'fuera') partidosFiltrados = partidosFiltrados.filter(p => !isPonfeHome(p));
 
     // Build match lookup: matchId → partido info
     const matchLookup = {};
@@ -14453,9 +14464,20 @@
       return `<button onclick="window._seqVista='${val}';loadSecuencias()" style="padding:6px 18px;border-radius:20px;border:1px solid ${act?'#f97316':'#334155'};background:${act?'#f97316':'transparent'};color:${act?'white':'#94a3b8'};cursor:pointer;font-size:13px;font-weight:${act?700:400}">${lbl}</button>`;
     };
 
-    const header = `<div style="display:flex;gap:8px;margin-bottom:18px;align-items:center">
-      <span style="font-size:13px;color:#64748b;margin-right:4px">Vista:</span>
-      ${tabBtn('top20','🔥 Top 20')}${tabBtn('jornada','📅 Por Jornada')}
+    const filterBtn = (val, lbl) => {
+      const act = seqFilter === val;
+      return `<button onclick="window._seqFilter='${val}';loadSecuencias()" style="padding:5px 14px;border-radius:20px;border:1px solid ${act?'#3b82f6':'#334155'};background:${act?'#1e3a5f':'transparent'};color:${act?'#60a5fa':'#94a3b8'};cursor:pointer;font-size:12px;font-weight:${act?700:400}">${lbl}</button>`;
+    };
+
+    const header = `<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;align-items:center">
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:13px;color:#64748b">Vista:</span>
+        ${tabBtn('top20','🔥 Top 20')}${tabBtn('jornada','📅 Por Jornada')}
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;margin-left:16px">
+        <span style="font-size:13px;color:#64748b">Filtro:</span>
+        ${filterBtn('all','Todos')}${filterBtn('casa','🏠 Casa')}${filterBtn('fuera','✈️ Fuera')}
+      </div>
     </div>`;
 
     // Legend
@@ -14469,9 +14491,9 @@
     cont.innerHTML = `<div style="padding:16px 20px">${header}<div id="seq-body"><div class="loading"><div class="spinner"></div><span>Cargando secuencias...</span></div></div></div>`;
 
     try {
-      // Cargar todos los partidos en paralelo
+      // Cargar los partidos filtrados (todos / casa / fuera)
       const allData = await Promise.all(
-        (PARTIDOS || []).map(p => getMatchData(p.id).then(ev => ({ matchId: p.id, events: ev })).catch(() => null))
+        partidosFiltrados.map(p => getMatchData(p.id).then(ev => ({ matchId: p.id, events: ev })).catch(() => null))
       );
 
       // Extraer todas las secuencias
@@ -14494,16 +14516,16 @@
 
       } else {
         // Por Jornada
-        // Jornada actual o primera disponible
-        const firstId = (PARTIDOS || [])[0]?.id;
-        const curId = selJ || firstId;
+        // Jornada actual o primera disponible del filtro activo
+        const firstId = partidosFiltrados[0]?.id;
+        const curId = (selJ && partidosFiltrados.find(p => p.id === selJ)) ? selJ : firstId;
         const curP  = matchLookup[curId] || {};
         const isPH  = (curP.local||'').includes('Ponferradina');
         const opp   = isPH ? curP.vis : curP.local;
         const loc   = isPH ? '🏠' : '✈️';
 
-        // Selector de partidos
-        const matchCards = (PARTIDOS || []).map(p => {
+        // Selector de partidos (solo los del filtro activo)
+        const matchCards = partidosFiltrados.map(p => {
           const act = p.id === curId;
           const isPH2 = (p.local||'').includes('Ponferradina');
           const opp2  = isPH2 ? p.vis : p.local;
