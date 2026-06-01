@@ -4892,10 +4892,11 @@
       }
     }
 
-    const allPlayers = [...fromOOP, ...fallbackPlayers];
-    if (allPlayers.length < 3) return null;
-    const gk       = allPlayers.filter(p => isGK(p));
-    const outfield = allPlayers.filter(p => !isGK(p));
+    const allPlayersSorted = [...fromOOP, ...fallbackPlayers].sort((a,b) => b.n - a.n);
+    if (allPlayersSorted.length < 3) return null;
+    // Limitar a 11 más frecuentes (1 portero + 10 de campo) para vista limpia
+    const gk       = allPlayersSorted.filter(p => isGK(p)).slice(0, 1);
+    const outfield = allPlayersSorted.filter(p => !isGK(p)).slice(0, 10);
 
     const hull = convexHull(outfield.map(p => ({x: p.x, y: p.y})));
     const area = hullArea(hull);
@@ -5263,7 +5264,7 @@
       });
     });
 
-    const MIN_P = 15;
+    const MIN_P = 10;
     const allPlayers = Object.entries(acc)
       .filter(([,v]) => v.xs.length >= MIN_P)
       .map(([name,v]) => ({
@@ -5272,12 +5273,17 @@
         x: v.xs.reduce((a,b)=>a+b,0)/v.xs.length,
         y: v.ys.reduce((a,b)=>a+b,0)/v.ys.length,
         fromLineup: false,
-      }));
+      }))
+      .sort((a,b) => b.n - a.n); // más apariciones primero
 
     if (allPlayers.length < 4) return null;
 
-    const gk = allPlayers.filter(p => isGK(p));
-    const outfield = allPlayers.filter(p => !isGK(p));
+    // Seleccionar solo los 11 más frecuentes: 1 portero + 10 de campo
+    // Esto garantiza un campo limpio y representativo de los titulares habituales
+    const allGK = allPlayers.filter(p => isGK(p));
+    const allOF = allPlayers.filter(p => !isGK(p));
+    const gk      = allGK.slice(0, 1);       // top 1 portero
+    const outfield = allOF.slice(0, 10);     // top 10 de campo
     const hull = convexHull(outfield.map(p => ({x:p.x,y:p.y})));
     const area = hullArea(hull);
     const sorted = outfield.slice().sort((a,b) => a.x - b.x);
