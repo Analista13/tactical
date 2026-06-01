@@ -4299,18 +4299,29 @@
     }
 
     // Construir exactamente los 11 jugadores del squad.
-    // Coords: SIEMPRE r[5]/r[6] (media global del partido desde lineup tracking).
-    // Las coords de zona (acc) NUNCA se usan para posición táctica: un CB que sube
-    // en córners acumula eventos en attacking_third con x≈30-40 (estaba en el área),
-    // colocándolo erróneamente junto a los delanteros.
+    // Coords de zona (acc) para la mayoría de jugadores: defensa → posiciones retrasadas,
+    // ataque → adelantadas. EXCEPCIÓN: GKs y CBs en fase de ataque siempre usan r[5]/r[6]
+    // (media global del partido) porque sus eventos en attacking_third son córners donde
+    // están físicamente en el área rival (x≈35-40), no su posición táctica real.
+    const MIN_P = 5;
     const avgArr = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+    const attackingFilter = thirdFilter === 'attacking_third' ||
+      (!thirdFilter && !blockFilter && bloquePhase === 'ataque');
+    const GKS_LOC = ['GK','PT','POR','PORTERO','P','GOALKEEPER'];
+    const isCB_loc = pos => ['CB','DC','DF','DEF','CD','BC','CT','LCB','RCB']
+      .includes((pos||'').toUpperCase().trim());
     const allPlayers = squad11.map(r => {
       const name = r[1];
       const position = posMap[name] || r[2] || 'CM';
+      const entry = acc[name];
+      const forceGlobal = GKS_LOC.includes(position.toUpperCase()) ||
+        (attackingFilter && isCB_loc(position));
+      if (!forceGlobal && entry && entry.xs.length >= MIN_P) {
+        return { name, n:entry.xs.length, position, x:avgArr(entry.xs), y:avgArr(entry.ys), fromLineup:false };
+      }
       if (r[5] != null && r[6] != null) {
-        const entry = acc[name];
         const n = entry ? entry.xs.length : 0;
-        return { name, n, position, x:r[5], y:r[6], fromLineup: false };
+        return { name, n, position, x:r[5], y:r[6], fromLineup: !forceGlobal };
       }
       return null;
     }).filter(Boolean);
@@ -5280,28 +5291,35 @@
     const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
     const resolvePos = name => resolvePlayerPosition({id: idLookup[name]||0, position: posLookup[name]||'CM'});
 
-    // COORDS STRATEGY — always use globalAvgAcc (starters-only match averages).
-    // Zone-specific event coords are NEVER used for player position, even in
-    // zone sub-tabs (thirdFilter/blockFilter). Reason: event coords within a
-    // specific zone are not representative of tactical position:
-    //   • CBs accumulate ≥10 attacking_third events (corner kicks where they
-    //     physically go into the box) → their avg attacking_third x ≈ 30-40,
-    //     which places them among forwards. Their real role is defensive.
-    //   • In defensive_third, forwards rarely appear → they'd be missing.
-    // The global match-average position (from starter lineup tracking) is the
-    // only reliable reference for WHERE a player typically stands.
+    // COORDS STRATEGY:
+    // • GKs: always globalAvgAcc (position doesn't vary meaningfully by zone).
+    // • CBs en fase de ataque (attacking_third): siempre globalAvgAcc.
+    //   Motivo: sus eventos en attacking_third son córners donde suben al área
+    //   rival (x≈35-40). Esa posición no representa dónde están tácticamente
+    //   durante el juego de ataque (normalmente se quedan en x≈-5 a 10).
+    // • Todos los demás: coords de zona (acc) si ≥MIN_P eventos, si no globalAvgAcc.
+    //   Así defensa muestra posiciones más retrasadas y ataque más adelantadas.
+    const attackingFilter = thirdFilter === 'attacking_third' ||
+      (!thirdFilter && !blockFilter && bloquePhase === 'ataque');
+    const isCB = pos => ['CB','DC','DF','DEF','CD','BC','CT','LCB','RCB']
+      .includes((pos||'').toUpperCase().trim());
 
     const allPlayers = [...ponfNames].map(name => {
       const g = globalAvgAcc[name];
       if (!g || g.xs.length < 2) return null;  // not in selected matches
+      const pos = resolvePos(name);
+      const v = acc[name];
+      // Forzar globalAvg: porteros y centrales en fase de ataque
+      const forceGlobal = isGK({position:pos}) || (attackingFilter && isCB(pos));
+      const hasZone = !forceGlobal && v && v.xs.length >= MIN_P;
       return {
         name,
-        n:       g.xs.length,
+        n:       hasZone ? v.xs.length : g.xs.length,
         globalN: g.xs.length,
-        position: resolvePos(name),
-        x: avg(g.xs),
-        y: avg(g.ys),
-        fromLineup: false,
+        position: pos,
+        x: hasZone ? avg(v.xs) : avg(g.xs),
+        y: hasZone ? avg(v.ys) : avg(g.ys),
+        fromLineup: !hasZone,
       };
     }).filter(Boolean)
       .sort((a,b) => (b.globalN||0) - (a.globalN||0));  // most-played players first
