@@ -14226,9 +14226,17 @@
         const avatarL = imgSrc
           ? '<img src="'+imgSrc+'" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #334155"/>'
           : '<div style="width:48px;height:48px;border-radius:50%;background:#1e293b;border:2px solid #334155;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#94a3b8">'+ini+'</div>';
-        const lblTab  = subTab==='casa'?'Casa': subTab==='fuera'?'Fuera': 'Temporada completa';
+        const lblTab  = subTab==='casa'?'🏠 Casa': subTab==='fuera'?'✈️ Fuera': 'Temporada completa';
+        // Subtab bar que mantiene el jugador seleccionado (no resetea _tirosPlayer)
+        const pSubBtn = (val, lbl) => {
+          const act = subTab===val;
+          return '<button onclick="window._tirosSubTab=\''+val+'\';loadTiros()" style="padding:5px 16px;border-radius:20px;border:1px solid '+(act?'#3b82f6':'#334155')+';background:'+(act?'#3b82f6':'transparent')+';color:'+(act?'white':'#94a3b8')+';cursor:pointer;font-size:12px;font-weight:'+(act?700:400)+'">'+lbl+'</button>';
+        };
+        const playerSubTabBar = '<div style="display:flex;gap:6px;margin-bottom:16px">'
+          +pSubBtn('all','Temporada')+pSubBtn('casa','🏠 Casa')+pSubBtn('fuera','✈️ Fuera')
+          +'</div>';
         cont.innerHTML = '<div style="padding:16px 20px">'+header
-          +subTabBar
+          +playerSubTabBar
           +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:10px 16px;background:#16213e;border-radius:10px;border:1px solid #1e293b">'
           +'<button onclick="window._tirosPlayer=null;loadTiros()" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px">← Volver</button>'
           +avatarL
