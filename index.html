@@ -14947,6 +14947,37 @@
   }
 
   // Tarjeta — igual que la referencia: pitch arriba, texto abajo
+  // Mapeo nombre de equipo → archivo de escudo en img/escudos/
+  const ESCUDO_MAP = {
+    'Arenas Club':     'arenas-club-getxo.png',
+    'Arenteiro':       'cd-arenteiro.png',
+    'Barakaldo':       'barakaldo-cf.png',
+    'Bilbao Athletic': 'athletic-bilbao.png',
+    'CD Lugo':         'cd-lugo.png',
+    'CD Tenerife':     'cd-tenerife.png',
+    'Cacereño':        'cp-cacereno.png',
+    'Celta de Vigo B': 'celta-fortuna.png',
+    'Guadalajara':     'cd-guadalajara.png',
+    'Mérida AD':       'merida-ad.png',
+    'Osasuna B':       'osasuna-promesas.png',
+    'Ourense CF':      'ourense-cf.png',
+    'Pontevedra CF':   'pontevedra-cf.png',
+    'Racing Ferrol':   'racing-ferrol.png',
+    'Real Avilés':     'real-aviles.png',
+    'Real Madrid B':   'real-madrid-castilla.png',
+    'Talavera CF':     'talavera-cf.png',
+    'Unionistas de S': 'unionistas-salamanca.png',
+    'Zamora CF':       'zamora-cf.png',
+  };
+
+  function getEscudoImg(teamName, size=28) {
+    const file = ESCUDO_MAP[teamName];
+    if (!file) return '';
+    return `<img src="img/escudos/${file}" width="${size}" height="${size}"
+      style="object-fit:contain;vertical-align:middle;border-radius:2px"
+      onerror="this.style.display='none'">`;
+  }
+
   function seqCard(seq, rank, matchInfo, shotLookup) {
     const xt  = seqXT(seq);
     const mi  = matchInfo || {};
@@ -14961,16 +14992,22 @@
     const endColor = outcome === 'goal' ? '#fbbf24' : '#6baed6';
     let outcomeHtml = '';
     if (outcome === 'goal') {
-      outcomeHtml = `<span style="font-size:12px;font-weight:700;color:#fbbf24;margin-left:6px">⚽ Gol</span>`;
+      outcomeHtml = `<span style="font-size:11px;font-weight:700;color:#fbbf24;margin-left:5px">⚽ Gol</span>`;
     } else if (outcome === 'shot') {
-      outcomeHtml = `<span style="font-size:12px;font-weight:700;color:#93c5fd;margin-left:6px">🎯 Tiro</span>`;
+      outcomeHtml = `<span style="font-size:11px;font-weight:700;color:#93c5fd;margin-left:5px">🎯 Tiro</span>`;
     }
+
+    const escudo = getEscudoImg(opp, 26);
 
     return `<div style="background:#1a2e1c;border:1px solid #253825;overflow:hidden;border-radius:3px">
       ${buildSeqSVG(seq, endColor)}
       <div style="padding:7px 10px 9px;background:#1c1c2c">
-        <div style="font-size:10px;color:#8899aa;margin-bottom:3px">Seq ${rank} • ${nPases} pases</div>
-        <div style="font-size:13px;font-weight:700;color:#e8eaf0;margin-bottom:2px">vs ${opp} ${locStr}${outcomeHtml}</div>
+        <div style="font-size:10px;color:#8899aa;margin-bottom:4px">Seq ${rank} • ${nPases} pases</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
+          ${escudo}
+          <span style="font-size:12px;font-weight:700;color:#e8eaf0">vs ${opp} ${locStr}</span>
+          ${outcomeHtml}
+        </div>
         <div style="font-size:13px;font-weight:800;color:#4ade80">xT: ${xt.toFixed(3)}</div>
       </div>
     </div>`;
