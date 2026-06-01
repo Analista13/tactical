@@ -5253,14 +5253,15 @@
       })
     );
 
-    // Global avg position per player from the SELECTED matches' lineup tracking (r[5], r[6]).
-    // Used as: (1) fallback coords for players who rarely enter the filtered zone (e.g. CBs in
-    // attacking_third), and (2) ranking metric — sort all players by how many of the selected
-    // matches they appeared in, so regular starters (CBs, GK, etc.) always make the top 11.
+    // Global avg position per player from STARTERS ONLY (start_time='00:00:00') in
+    // the selected matches. Starters-only is critical: sub entries can have extreme
+    // r[5]/r[6] values (e.g. RB coming on in the 88th min with x=38.7 because the
+    // whole team was pushing forward), which completely distorts position averages.
+    // globalN = number of selected matches where player started → ranks regular starters.
     const globalAvgAcc = {};
     matches.forEach(partido => {
       (PONF_LINEUPS[partido.id] || []).forEach(r => {
-        if (r[1] && r[5] != null && r[6] != null) {
+        if (r[1] && r[5] != null && r[6] != null && r[3] === '00:00:00') {
           if (!globalAvgAcc[r[1]]) globalAvgAcc[r[1]] = {xs:[], ys:[]};
           globalAvgAcc[r[1]].xs.push(r[5]);
           globalAvgAcc[r[1]].ys.push(r[6]);
