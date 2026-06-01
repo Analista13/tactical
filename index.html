@@ -517,6 +517,8 @@
   let pasesIndivZone    = 1;          // 1 | 2 | 3
   let pasesIndivPlayer  = null;       // nombre del jugador seleccionado
   const _pasesCache     = new Map();  // caché passes data por partido
+  let pasesEquipoView   = 'partido';  // 'partido' | 'temporada' — vista Equipo
+  let pasesTemporadaLoc = 'all';      // 'all' | 'casa' | 'fuera' — filtro temporada
   let locVis = 'todos';            // 'todos' | 'local' | 'visitante'
   let transMatchId    = null;
   let transSubTab     = 'ofensivas';   // 'ofensivas' | 'defensivas' | 'carreras'
@@ -6794,9 +6796,25 @@
     </div>`;
   }
 
+  // Toggle Partido / Temporada dentro del subtab Equipo
+  function buildPasesEquipoViewBar() {
+    const eq = v => pasesEquipoView === v;
+    const btn = (v, lbl) => `<button onclick="pasesEquipoView='${v}';renderPasesMap()"
+      style="background:${eq(v)?'var(--accent)':'transparent'};color:${eq(v)?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:7px 20px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s;white-space:nowrap">${lbl}</button>`;
+    return `<div style="display:flex;gap:2px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;width:fit-content;margin-bottom:16px">
+      ${btn('partido','📋 Partido')}${btn('temporada','📊 Temporada')}
+    </div>`;
+  }
+
   async function renderPasesMap() {
     const cont = document.getElementById('pasesCont');
     if (!cont) return;
+
+    // Vista Temporada — análisis Z1/Z2/Z3 Casa vs Fuera
+    if (pasesEquipoView === 'temporada') {
+      await renderPasesTemporada(cont);
+      return;
+    }
 
     const ps = getPartidos();
     const partido = ps.find(p => p.id === pasesMatchId) || ps[ps.length-1];
@@ -7019,7 +7037,7 @@
         </div>
       </div>` : '';
 
-    cont.innerHTML = matchSel + buildPasesSubTabs() + periodBar + zoneBar + typeBar +
+    cont.innerHTML = matchSel + buildPasesSubTabs() + buildPasesEquipoViewBar() + periodBar + zoneBar + typeBar +
       `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
         <span style="font-size:14px;font-weight:700;color:var(--text)">${headerTitle}</span>
         <span style="font-size:11px;color:var(--text3);margin-left:auto">${total} pases mostrados</span>
@@ -7028,6 +7046,236 @@
       svg +
       `</div>` +
       statBar + legend + playerTable;
+  }
+
+  // ─── MAPA DE PASES — VISTA TEMPORADA (Z1/Z2/Z3 Casa vs Fuera) ────────────────
+
+  async function renderPasesTemporada(cont) {
+    if (!cont) return;
+
+    const ps = getPartidos();
+    const isHome = p => (p.local||'').toLowerCase().includes(currentTeam.name.toLowerCase().split(' ')[0]);
+
+    // Filter matches by casa/fuera
+    const filteredPs = pasesTemporadaLoc === 'casa'  ? ps.filter(p =>  isHome(p))
+                     : pasesTemporadaLoc === 'fuera' ? ps.filter(p => !isHome(p))
+                     : ps;
+
+    // Sub-tabs bar + location filter bar
+    const locBtn = (v, lbl) => {
+      const act = pasesTemporadaLoc === v;
+      const cols = {all:'#c9d1d9', casa:'#58a6ff', fuera:'#e3b341'};
+      const col  = cols[v];
+      return `<button onclick="pasesTemporadaLoc='${v}';renderPasesMap()"
+        style="background:${act?col+'22':'var(--bg3)'};border:1px solid ${act?col:'var(--border)'};color:${act?col:'var(--text2)'};padding:6px 18px;border-radius:20px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:${act?700:500};cursor:pointer;transition:all 0.15s;white-space:nowrap">${lbl}</button>`;
+    };
+    const locBar = `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:18px">
+      <span style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-right:2px">Filtro</span>
+      ${locBtn('all','Todos')}${locBtn('casa','🏠 Casa')}${locBtn('fuera','✈️ Fuera')}
+      <span style="font-size:11px;color:var(--text3);margin-left:8px">${filteredPs.length} partido${filteredPs.length!==1?'s':''}</span>
+    </div>`;
+
+    cont.innerHTML = buildPasesSubTabs() + buildPasesEquipoViewBar() + locBar +
+      `<div class="loading"><div class="spinner"></div><span>Cargando ${filteredPs.length} partidos...</span></div>`;
+
+    // Load all pass data
+    const allPassArrays = await Promise.all(
+      filteredPs.map(p => getPasesData(p.id).then(passes => ({ pid: p.id, passes })).catch(() => ({ pid: p.id, passes: [] })))
+    );
+
+    // Aggregate stats per zone
+    // zone stats: { total, succ, byType: {prog,back,lat,long,other} }
+    const mkZone = () => ({ total:0, succ:0, byType:{prog:{s:0,f:0}, back:{s:0,f:0}, lat:{s:0,f:0}, long:{s:0,f:0}, other:{s:0,f:0}} });
+    const zoneStats = { 1: mkZone(), 2: mkZone(), 3: mkZone() };
+
+    // Zone transition matrix: from[z1][z2] = count  (excluding same-zone)
+    const transMatrix = {
+      1: { 2:0, 3:0 },
+      2: { 1:0, 3:0 },
+      3: { 1:0, 2:0 },
+    };
+
+    let totalPasses = 0;
+
+    for (const { passes } of allPassArrays) {
+      for (const p of passes) {
+        if (p.x == null) continue;
+        const { x: nx, xe: nxe } = normPassCoords(p);
+        const fromZ = xToZone(nx);
+        if (![1,2,3].includes(fromZ)) continue;
+
+        const zs = zoneStats[fromZ];
+        zs.total++;
+        totalPasses++;
+        const t = getPassType(p);
+        if (p.out === 's') { zs.succ++; zs.byType[t].s++; }
+        else               {             zs.byType[t].f++; }
+
+        // Transition: only if destination is different zone
+        if (nxe != null && p.out === 's') {
+          const toZ = xToZone(nxe);
+          if (toZ !== fromZ && transMatrix[fromZ] && transMatrix[fromZ][toZ] !== undefined) {
+            transMatrix[fromZ][toZ]++;
+          }
+        }
+      }
+    }
+
+    // Build Zone Cards
+    const ZONE_META = {
+      1: { label:'Z1', name:'Defensiva',  col:'#58a6ff', bg:'#58a6ff18' },
+      2: { label:'Z2', name:'Mediocampo', col:'#e3b341', bg:'#e3b34118' },
+      3: { label:'Z3', name:'Ataque',     col:'#f85149', bg:'#f8514918' },
+    };
+
+    const zoneCard = (z) => {
+      const zm = ZONE_META[z];
+      const zs = zoneStats[z];
+      const pct = zs.total ? Math.round(zs.succ / zs.total * 100) : 0;
+      const pctCol = pct >= 80 ? '#3fb950' : pct >= 65 ? '#e3b341' : '#f85149';
+      const shareOfTotal = totalPasses ? Math.round(zs.total / totalPasses * 100) : 0;
+
+      const typeRows = Object.entries(zs.byType).filter(([,v]) => v.s+v.f > 0).map(([t, v]) => {
+        const meta = PASS_TYPE_META[t];
+        const ttot = v.s + v.f;
+        const tpct = Math.round(v.s / ttot * 100);
+        return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid ${zm.col}18">
+          <span style="font-size:10px;color:${meta.color};min-width:80px">${meta.label}</span>
+          <div style="flex:1;background:var(--bg4);border-radius:4px;overflow:hidden;height:7px">
+            <div style="height:100%;background:${meta.color};width:${tpct}%;transition:width 0.4s"></div>
+          </div>
+          <span style="font-size:10px;color:var(--text2);min-width:36px;text-align:right">${ttot} · <span style="color:${meta.color}">${tpct}%</span></span>
+        </div>`;
+      }).join('');
+
+      return `<div style="background:${zm.bg};border:1px solid ${zm.col};border-radius:10px;padding:14px 16px;flex:1;min-width:200px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:${zm.col};line-height:1">${zm.label}</span>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text)">${zm.name}</div>
+            <div style="font-size:10px;color:var(--text3)">${shareOfTotal}% del total</div>
+          </div>
+          <div style="margin-left:auto;text-align:right">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);line-height:1">${zs.total}</div>
+            <div style="font-size:10px;color:var(--text3)">pases</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-bottom:10px">
+          <div style="text-align:center;flex:1;background:var(--bg2);border-radius:6px;padding:6px">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#3fb950">${zs.succ}</div>
+            <div style="font-size:9px;color:var(--text3)">exitosos</div>
+          </div>
+          <div style="text-align:center;flex:1;background:var(--bg2);border-radius:6px;padding:6px">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f85149">${zs.total-zs.succ}</div>
+            <div style="font-size:9px;color:var(--text3)">fallidos</div>
+          </div>
+          <div style="text-align:center;flex:1;background:var(--bg2);border-radius:6px;padding:6px">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${pctCol}">${pct}%</div>
+            <div style="font-size:9px;color:var(--text3)">precisión</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;font-weight:600;margin-bottom:6px">Tipo de pase</div>
+        ${typeRows || '<div style="font-size:11px;color:var(--text3)">Sin datos</div>'}
+      </div>`;
+    };
+
+    // Zone Transition Arrows
+    const TRANS_PAIRS = [
+      { from:1, to:2, col:'#58a6ff', label:'Z1 → Z2', desc:'Salida al medio' },
+      { from:2, to:3, col:'#e3b341', label:'Z2 → Z3', desc:'Progresión ataque' },
+      { from:1, to:3, col:'#a371f7', label:'Z1 → Z3', desc:'Balón largo directo' },
+      { from:2, to:1, col:'#8b949e', label:'Z2 → Z1', desc:'Descarga atrás' },
+      { from:3, to:2, col:'#8b949e', label:'Z3 → Z2', desc:'Recirculación' },
+    ];
+
+    const transCards = TRANS_PAIRS.map(({ from, to, col, label, desc }) => {
+      const cnt   = transMatrix[from]?.[to] || 0;
+      const total = Object.values(transMatrix[from]||{}).reduce((a,b) => a+b, 0) + zoneStats[from].succ;
+      const pct   = total ? Math.round(cnt / total * 100) : 0;
+      return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px">
+        <div style="text-align:center;min-width:38px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${col};line-height:1">${cnt}</div>
+          <div style="font-size:9px;color:var(--text3)">pases</div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;color:${col};margin-bottom:2px">${label}</div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:5px">${desc}</div>
+          <div style="background:var(--bg4);border-radius:4px;overflow:hidden;height:6px">
+            <div style="height:100%;background:${col};width:${Math.min(pct,100)}%;transition:width 0.4s"></div>
+          </div>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text3);min-width:36px;text-align:right">${pct}%</div>
+      </div>`;
+    }).join('');
+
+    // Per-match zone breakdown table
+    const matchRows = allPassArrays.map(({ pid, passes }) => {
+      const partido = ps.find(p => p.id === pid);
+      if (!partido) return '';
+      const ih = isHome(partido);
+      const rival = ih ? partido.vis : partido.local;
+      const zc = { 1:{t:0,s:0}, 2:{t:0,s:0}, 3:{t:0,s:0} };
+      for (const p of passes) {
+        if (p.x == null) continue;
+        const { x:nx } = normPassCoords(p);
+        const z = xToZone(nx);
+        if (![1,2,3].includes(z)) continue;
+        zc[z].t++;
+        if (p.out === 's') zc[z].s++;
+      }
+      const tot = passes.length;
+      const mkCell = (z) => {
+        const zm = ZONE_META[z];
+        const pct = zc[z].t ? Math.round(zc[z].s/zc[z].t*100) : 0;
+        const pctCol = pct >= 80 ? '#3fb950' : pct >= 65 ? '#e3b341' : '#f85149';
+        return `<td style="padding:6px 10px;text-align:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${zm.col}">${zc[z].t}</div>
+          <div style="font-size:9px;color:${pctCol}">${pct}%</div>
+        </td>`;
+      };
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:6px 10px;white-space:nowrap">
+          <span style="font-size:10px;font-weight:700;color:var(--accent);margin-right:4px">${partido.j}</span>
+          <span style="font-size:11px;color:var(--text)">${ih?'🏠':'✈️'} ${rival.length>14?rival.slice(0,13)+'…':rival}</span>
+        </td>
+        <td style="padding:6px 10px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--text3)">${tot}</td>
+        ${mkCell(1)}${mkCell(2)}${mkCell(3)}
+      </tr>`;
+    }).join('');
+
+    const matchTable = `<div style="margin-top:20px">
+      <div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-bottom:10px">Desglose por partido</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Partido</th>
+            <th style="text-align:center">Total</th>
+            <th style="text-align:center;color:#58a6ff">Z1</th>
+            <th style="text-align:center;color:#e3b341">Z2</th>
+            <th style="text-align:center;color:#f85149">Z3</th>
+          </tr></thead>
+          <tbody>${matchRows || '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text3)">Sin datos</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+    const titleStr = pasesTemporadaLoc === 'casa'  ? '🏠 Casa'
+                   : pasesTemporadaLoc === 'fuera' ? '✈️ Fuera'
+                   : '📊 Toda la temporada';
+
+    cont.innerHTML = buildPasesSubTabs() + buildPasesEquipoViewBar() + locBar +
+      `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:14px;font-weight:700;color:var(--text)">${titleStr} — Pases por zona</span>
+        <span style="font-size:11px;color:var(--text3);margin-left:auto">${totalPasses} pases totales · ${filteredPs.length} partido${filteredPs.length!==1?'s':''}</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+        ${zoneCard(1)}${zoneCard(2)}${zoneCard(3)}
+      </div>
+      <div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-bottom:10px">Transiciones entre zonas (pases exitosos)</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:8px">
+        ${transCards}
+      </div>
+      ${matchTable}`;
   }
 
   // ─── MAPA DE PASES — SUB-TAB JUGADORES ───────────────────────────────────────
