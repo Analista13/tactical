@@ -7236,7 +7236,11 @@
 
     let totalPasses = 0;
 
+    // Acumular todos los pases en un array plano (para el mapa SVG)
+    let allPassesCombined = [];
+
     for (const { passes } of allPassArrays) {
+      allPassesCombined = allPassesCombined.concat(passes);
       for (const p of passes) {
         if (p.x == null) continue;
         const { x: nx, xe: nxe } = normPassCoords(p);
@@ -7258,6 +7262,16 @@
           }
         }
       }
+    }
+
+    // Aplicar filtro de zona al array de visualización (igual que renderPasesMap)
+    let displayPasses = allPassesCombined;
+    if (pasesZoneFilter !== null) {
+      displayPasses = allPassesCombined.filter(p => {
+        if (p.x == null) return false;
+        const { x: nx } = normPassCoords(p);
+        return xToZone(nx) === pasesZoneFilter;
+      });
     }
 
     // Build Zone Cards
@@ -7402,8 +7416,8 @@
                    : pasesTemporadaLoc === 'fuera' ? '✈️ Fuera'
                    : '📊 Toda la temporada';
 
-    // ── Campo SVG de zonas ──────────────────────────────────────────────────
-    const pitchSvg = buildTemporadaZonePitchSVG(zoneStats, transMatrix, totalPasses);
+    // ── Campo SVG con líneas de pase individuales (mismo renderizado que vista Partido) ──
+    const pitchSvg = buildPasesMapSVG(displayPasses);
 
     cont.innerHTML = buildPasesSubTabs() + buildPasesEquipoViewBar() + locBar +
       `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
