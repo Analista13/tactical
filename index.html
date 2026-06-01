@@ -13816,13 +13816,15 @@
   function loadTiros() {
     const cont = document.getElementById('content');
     if (!window._tirosVista)   window._tirosVista   = 'jornadas';
-    if (!window._tirosJornada) window._tirosJornada = 1;
+    if (!window._tirosJornada) window._tirosJornada = 38;  // última jornada por defecto
     if (window._tirosPlayer  === undefined) window._tirosPlayer  = null;
     if (window._tirosElegir  === undefined) window._tirosElegir  = false;
+    if (window._tirosSubTab  === undefined) window._tirosSubTab  = 'all';
     const vista   = window._tirosVista;
     const selJ    = window._tirosJornada;
     const selP    = window._tirosPlayer;
     const elegir  = window._tirosElegir;
+    const subTab  = window._tirosSubTab;
 
     const CSV_J = [1,2,3,4,6,8,9,10,12,13,14,15,16,17,19,20,21,22,23,24,25,26,27,28,31,32,33,34,35,36,38];
 
@@ -13935,6 +13937,36 @@
         +dots+'</svg>';
     }
 
+    function bigPitch(shots) {
+      const W=100, H=68;
+      const dots = shots.map(s => {
+        if (s.dx==null||s.dy==null) return '';
+        const cx  = s.dx.toFixed(1);
+        const cy  = (s.dy*0.68).toFixed(1);
+        const col = s.t==='goal'?'#22c55e':'#ef4444';
+        const op  = s.t==='goal'?0.95:0.65;
+        const minStr2 = s.min ? ' · '+s.min+'\'' : '';
+        const tip = (TIPO_ES[s.t]||s.t)+minStr2+' · '+(BODY_ES[s.b]||s.b)+' · '+(SITU_ES[s.s]||s.s)+' · xG '+s.xg.toFixed(2);
+        return '<circle cx="'+cx+'" cy="'+cy+'" r="2.0" fill="'+col+'" opacity="'+op+'" stroke="rgba(255,255,255,0.25)" stroke-width="0.4" style="cursor:pointer"><title>'+tip+'</title></circle>';
+      }).join('');
+      const lc='rgba(255,255,255,0.25)', lw='0.7';
+      return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block">'
+        +'<rect width="'+W+'" height="'+H+'" fill="#0c1220"/>'
+        +'<rect x="3" y="1" width="94" height="66" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<line x1="3" y1="34" x2="97" y2="34" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<circle cx="50" cy="34" r="9" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<circle cx="50" cy="34" r="0.7" fill="'+lc+'"/>'
+        +'<rect x="21" y="1" width="58" height="15" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<rect x="37" y="1" width="26" height="5.5" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<rect x="44" y="0" width="12" height="1.5" fill="rgba(255,255,255,0.12)" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<circle cx="50" cy="11" r="0.7" fill="'+lc+'"/>'
+        +'<rect x="21" y="51" width="58" height="15" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<rect x="37" y="60.5" width="26" height="5.5" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<rect x="44" y="65.5" width="12" height="1.5" fill="rgba(255,255,255,0.12)" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<circle cx="50" cy="57" r="0.7" fill="'+lc+'"/>'
+        +dots+'</svg>';
+    }
+
     const tabBtn = (val, lbl) => {
       const active = vista === val;
       return '<button onclick="window._tirosVista=\''+val+'\';loadTiros()" style="padding:6px 18px;border-radius:20px;border:1px solid '+(active?'#f97316':'#334155')+';background:'+(active?'#f97316':'transparent')+';color:'+(active?'white':'#94a3b8')+';cursor:pointer;font-size:13px;font-weight:'+(active?700:400)+'">'+lbl+'</button>';
@@ -14004,37 +14036,6 @@
           ? '<img src="'+imgSrc+'" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #334155"/>'
           : '<div style="width:48px;height:48px;border-radius:50%;background:#1e293b;border:2px solid #334155;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#94a3b8">'+ini+'</div>';
 
-        // Large pitch (solo mitad atacante amplificada)
-        function bigPitch(shots) {
-          const W=100, H=68;
-          const dots = shots.map(s => {
-            if (s.dx==null||s.dy==null) return '';
-            const cx  = s.dx.toFixed(1);
-            const cy  = (s.dy*0.68).toFixed(1);
-            const col = s.t==='goal'?'#22c55e':'#ef4444';
-            const op  = s.t==='goal'?0.95:0.65;
-            const minStr2 = s.min ? ' · '+s.min+'\'' : '';
-            const tip = (TIPO_ES[s.t]||s.t)+minStr2+' · '+(BODY_ES[s.b]||s.b)+' · '+(SITU_ES[s.s]||s.s)+' · xG '+s.xg.toFixed(2);
-            return '<circle cx="'+cx+'" cy="'+cy+'" r="2.0" fill="'+col+'" opacity="'+op+'" stroke="rgba(255,255,255,0.25)" stroke-width="0.4" style="cursor:pointer"><title>'+tip+'</title></circle>';
-          }).join('');
-          const lc='rgba(255,255,255,0.25)', lw='0.7';
-          return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block">'
-            +'<rect width="'+W+'" height="'+H+'" fill="#0c1220"/>'
-            +'<rect x="3" y="1" width="94" height="66" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-            +'<line x1="3" y1="34" x2="97" y2="34" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-            +'<circle cx="50" cy="34" r="9" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-            +'<circle cx="50" cy="34" r="0.7" fill="'+lc+'"/>'
-            +'<rect x="21" y="1" width="58" height="15" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-            +'<rect x="37" y="1" width="26" height="5.5" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-            +'<rect x="44" y="0" width="12" height="1.5" fill="rgba(255,255,255,0.12)" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-            +'<circle cx="50" cy="11" r="0.7" fill="'+lc+'"/>'
-            +'<rect x="21" y="51" width="58" height="15" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-            +'<rect x="37" y="60.5" width="26" height="5.5" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-            +'<rect x="44" y="65.5" width="12" height="1.5" fill="rgba(255,255,255,0.12)" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-            +'<circle cx="50" cy="57" r="0.7" fill="'+lc+'"/>'
-            +dots+'</svg>';
-        }
-
         cont.innerHTML = '<div style="padding:16px 20px">'+header
           +matchBar+matchPanel
           +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:10px 16px;background:#0f172a;border-radius:10px;border:1px solid #1e293b">'
@@ -14097,9 +14098,24 @@
         +'</div>';
 
     } else {
+      // ── Filtro Casa / Fuera ───────────────────────────────────────
+      const locFilter = subTab==='casa'?'L': subTab==='fuera'?'V': null;
+      const tirosFilt = locFilter ? TIROS_DATA.filter(s=>s.loc===locFilter) : TIROS_DATA;
+
       const byP = {};
-      TIROS_DATA.forEach(s => { if(!byP[s.p]) byP[s.p]=[]; byP[s.p].push(s); });
+      tirosFilt.forEach(s => { if(!byP[s.p]) byP[s.p]=[]; byP[s.p].push(s); });
       const players = Object.entries(byP).sort((a,b)=>b[1].length-a[1].length);
+
+      // ── Subtab bar ────────────────────────────────────────────────
+      const subTabBtn = (val, lbl) => {
+        const act = subTab===val;
+        return '<button onclick="window._tirosSubTab=\''+val+'\';window._tirosPlayer=null;loadTiros()" style="padding:5px 16px;border-radius:20px;border:1px solid '+(act?'#3b82f6':'#334155')+';background:'+(act?'#3b82f6':'transparent')+';color:'+(act?'white':'#94a3b8')+';cursor:pointer;font-size:12px;font-weight:'+(act?700:400)+'">'+lbl+'</button>';
+      };
+      const subTabBar = '<div style="display:flex;gap:6px;margin-bottom:16px">'
+        +subTabBtn('all','Temporada')
+        +subTabBtn('casa','🏠 Casa')
+        +subTabBtn('fuera','✈️ Fuera')
+        +'</div>';
 
       // ── Player expanded view (Temporada) ──────────────────────────
       if (selP) {
@@ -14114,17 +14130,19 @@
         const avatarL = imgSrc
           ? '<img src="'+imgSrc+'" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #334155"/>'
           : '<div style="width:48px;height:48px;border-radius:50%;background:#1e293b;border:2px solid #334155;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#94a3b8">'+ini+'</div>';
+        const lblTab  = subTab==='casa'?'Casa': subTab==='fuera'?'Fuera': 'Temporada completa';
         cont.innerHTML = '<div style="padding:16px 20px">'+header
+          +subTabBar
           +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:10px 16px;background:#16213e;border-radius:10px;border:1px solid #1e293b">'
           +'<button onclick="window._tirosPlayer=null;loadTiros()" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px">← Volver</button>'
           +avatarL
-          +'<div style="font-size:15px;font-weight:800;color:#e2e8f0">'+selP+' · Temporada completa</div>'
+          +'<div style="font-size:15px;font-weight:800;color:#e2e8f0">'+selP+' · '+lblTab+'</div>'
           +'<div style="margin-left:auto;display:flex;gap:20px">'
           +'<span style="text-align:center"><div style="font-size:18px;font-weight:800;color:#f97316">'+goals+'</div><div style="font-size:10px;color:#64748b">Goles</div></span>'
           +'<span style="text-align:center"><div style="font-size:18px;font-weight:800;color:#94a3b8">'+shots.length+'</div><div style="font-size:10px;color:#64748b">Tiros</div></span>'
           +'<span style="text-align:center"><div style="font-size:18px;font-weight:800;color:'+diffCol+'">'+diffStr+'</div><div style="font-size:10px;color:#64748b">xG diff</div></span>'
           +'</div></div>'
-          +'<div style="max-width:700px;margin:0 auto;background:#111827;border-radius:12px;overflow:hidden;border:1px solid '+(goals>0?'rgba(34,197,94,0.2)':'#1e293b')+'">'+miniPitch(shots)+'</div>'
+          +'<div style="max-width:700px;margin:0 auto;background:#111827;border-radius:12px;overflow:hidden;border:1px solid '+(goals>0?'rgba(34,197,94,0.2)':'#1e293b')+'">'+bigPitch(shots)+'</div>'
           +'</div>';
         return;
       }
@@ -14151,12 +14169,14 @@
           +'</div></div></div>';
       }).join('');
 
+      const rankingLabel = subTab==='casa'?'RANKING TIROS · CASA': subTab==='fuera'?'RANKING TIROS · FUERA': 'RANKING TIROS · TEMPORADA';
       const tableRows = players.map(([name, shots], i) => {
         const goals = shots.filter(s=>s.t==='goal').length;
         const xg    = shots.reduce((a,s)=>a+s.xg,0);
         const diff  = goals - xg;
         const dc    = diff>=0?'#22c55e':'#ef4444';
-        return '<tr style="border-bottom:1px solid #1e293b">'
+        const safeName = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        return '<tr onclick="window._tirosPlayer=\''+safeName+'\';loadTiros()" onmouseover="this.style.background=\'#1e293b\'" onmouseout="this.style.background=\'\'" style="cursor:pointer;border-bottom:1px solid #1e293b">'
           +'<td style="padding:5px 8px;color:#64748b;font-size:11px">'+(i+1)+'</td>'
           +'<td style="padding:5px 8px;font-size:12px;color:#e2e8f0;font-weight:600">'+name+'</td>'
           +'<td style="padding:5px 8px;text-align:center;font-size:12px;color:#94a3b8">'+shots.length+'</td>'
@@ -14168,10 +14188,11 @@
       }).join('');
 
       cont.innerHTML = '<div style="padding:16px 20px">'+header
+        +subTabBar
         +'<div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start">'
         +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px">'+playerCards+'</div>'
         +'<div style="background:#16213e;border-radius:12px;overflow:hidden;border:1px solid #1e293b;position:sticky;top:16px">'
-        +'<div style="padding:10px 12px;background:#0f172a;font-size:12px;font-weight:700;color:#94a3b8">RANKING TIROS · TEMPORADA</div>'
+        +'<div style="padding:10px 12px;background:#0f172a;font-size:12px;font-weight:700;color:#94a3b8">'+rankingLabel+'</div>'
         +'<table style="width:100%;border-collapse:collapse"><thead><tr style="background:#0f172a">'
         +'<th style="padding:6px 8px;text-align:left;font-size:10px;color:#475569">#</th>'
         +'<th style="padding:6px 8px;text-align:left;font-size:10px;color:#475569">Jugador</th>'
