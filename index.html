@@ -222,6 +222,7 @@
     { tab:'faltas',       label:'Faltas' },
     { tab:'sanciones',    label:'Sanciones' },
     { tab:'tiros',        label:'Tiros' },
+    { tab:'secuencias',   label:'Sec. Pases OF' },
   ];
 
   // ── Render aside ─────────────────────────────────────────────────────────────
@@ -3445,6 +3446,7 @@
     else if(tab === 'faltas')       loadFaltas();
     else if(tab === 'sanciones')    loadSanciones();
     else if(tab === 'tiros')        loadTiros();
+    else if(tab === 'secuencias')   loadSecuencias();
     else if(tab === 'plantilla')    loadPlantillaTab();
   }
 
@@ -14311,6 +14313,260 @@
   }
 
 
+
+  // ─── SECUENCIAS PASES OFENSIVAS ─────────────────────────────────────────────
+
+  // Estado
+  if (window._seqVista   === undefined) window._seqVista   = 'top20';
+  if (window._seqJornada === undefined) window._seqJornada = null;
+
+  // Convierte coordenadas SkillCorner (x: -52.5..52.5, y: -34..34)
+  // al SVG viewBox "0 0 100 68" (y=0 = portería atacante, arriba)
+  function skToSvg(xsk, ysk) {
+    return {
+      cx: ((ysk || 0) + 34) / 68 * 100,
+      cy: (52.5 - (xsk || 0)) / 105 * 68
+    };
+  }
+
+  // Extrae secuencias de lead_to_shot=true de un array de eventos
+  function extractSeqs(events, matchId) {
+    const seqs = [];
+    let cur = [];
+    for (const e of events) {
+      if (e.lead_to_shot) {
+        cur.push(e);
+        if (['shot','possession_loss','clearance','foul_suffered'].includes(e.end_type)) {
+          if (cur.length) seqs.push({ matchId, events: [...cur] });
+          cur = [];
+        }
+      } else {
+        if (cur.length) seqs.push({ matchId, events: [...cur] });
+        cur = [];
+      }
+    }
+    if (cur.length) seqs.push({ matchId, events: [...cur] });
+    return seqs;
+  }
+
+  // xT total de una secuencia
+  const seqXT = seq => seq.events.reduce((s, e) => s + (e.player_targeted_xthreat || 0), 0);
+
+  // SVG mini campo con las líneas de la secuencia
+  function seqPitch(seq, size) {
+    const W = 100, H = 68;
+    const lc = 'rgba(255,255,255,0.22)', lw = '0.6';
+    const r = size === 'big' ? 2.2 : 1.8;
+    const lines = seq.events.map((e, i) => {
+      if (e.x_start == null) return '';
+      const s = skToSvg(e.x_start, e.y_start);
+      const en = skToSvg(e.x_end != null ? e.x_end : e.x_start, e.y_end != null ? e.y_end : e.y_start);
+      const isPass = e.end_type === 'pass' || e.end_type === 'shot';
+      const col = isPass ? 'rgba(255,255,255,0.85)' : 'rgba(255,200,50,0.85)';
+      const dash = isPass ? '' : ' stroke-dasharray="2.5,1.8"';
+      const line = `<line x1="${s.cx.toFixed(1)}" y1="${s.cy.toFixed(1)}" x2="${en.cx.toFixed(1)}" y2="${en.cy.toFixed(1)}" stroke="${col}" stroke-width="${size==='big'?'1.4':'1.1'}"${dash}/>`;
+      // Punto inicio (rojo) solo en el primer evento
+      const dotStart = i === 0
+        ? `<circle cx="${s.cx.toFixed(1)}" cy="${s.cy.toFixed(1)}" r="${r}" fill="#ef4444" opacity="0.95"/>`
+        : '';
+      // Punto final (azul) solo en el último evento
+      const dotEnd = i === seq.events.length - 1
+        ? `<circle cx="${en.cx.toFixed(1)}" cy="${en.cy.toFixed(1)}" r="${r}" fill="#60a5fa" opacity="0.95"/>`
+        : '';
+      return line + dotStart + dotEnd;
+    }).join('');
+
+    const pitch = `<rect width="${W}" height="${H}" fill="#0c1220"/>
+<rect x="3" y="1" width="94" height="66" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+<line x1="3" y1="34" x2="97" y2="34" stroke="${lc}" stroke-width="${lw}"/>
+<circle cx="50" cy="34" r="9" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+<circle cx="50" cy="34" r="0.7" fill="${lc}"/>
+<rect x="21" y="1" width="58" height="15" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+<rect x="37" y="1" width="26" height="5.5" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+<rect x="44" y="0" width="12" height="1.5" fill="rgba(255,255,255,0.1)" stroke="${lc}" stroke-width="${lw}"/>
+<circle cx="50" cy="11" r="0.7" fill="${lc}"/>
+<rect x="21" y="51" width="58" height="15" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+<rect x="37" y="60.5" width="26" height="5.5" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+<rect x="44" y="65.5" width="12" height="1.5" fill="rgba(255,255,255,0.1)" stroke="${lc}" stroke-width="${lw}"/>
+<circle cx="50" cy="57" r="0.7" fill="${lc}"/>
+${lines}`;
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block"><${''}>` +
+      `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${pitch}</svg>`;
+  }
+
+  // Construye el SVG completo del campo
+  function buildSeqSVG(seq, size) {
+    const W = 100, H = 68;
+    const lc = 'rgba(255,255,255,0.22)', lw = '0.6';
+    const r = size === 'big' ? 2.4 : 1.9;
+    const lines = seq.events.map((e, i) => {
+      if (e.x_start == null) return '';
+      const s  = skToSvg(e.x_start, e.y_start);
+      const en = skToSvg(e.x_end != null ? e.x_end : e.x_start,
+                         e.y_end != null ? e.y_end : e.y_start);
+      const isPass = e.end_type === 'pass' || e.end_type === 'shot';
+      const col    = isPass ? 'rgba(255,255,255,0.88)' : 'rgba(255,195,40,0.88)';
+      const dash   = isPass ? '' : ' stroke-dasharray="2.5,1.8"';
+      const sw     = size === 'big' ? '1.5' : '1.1';
+      const line   = `<line x1="${s.cx.toFixed(1)}" y1="${s.cy.toFixed(1)}" x2="${en.cx.toFixed(1)}" y2="${en.cy.toFixed(1)}" stroke="${col}" stroke-width="${sw}"${dash}/>`;
+      const dStart = i === 0 ? `<circle cx="${s.cx.toFixed(1)}" cy="${s.cy.toFixed(1)}" r="${r}" fill="#ef4444"/>` : '';
+      const dEnd   = i === seq.events.length-1 ? `<circle cx="${en.cx.toFixed(1)}" cy="${en.cy.toFixed(1)}" r="${r}" fill="#60a5fa"/>` : '';
+      return dStart + line + dEnd;
+    }).join('');
+
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+<rect width="${W}" height="${H}" fill="#0c1220"/>
+<rect x="3" y="1" width="94" height="66" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+<line x1="3" y1="34" x2="97" y2="34" stroke="${lc}" stroke-width="${lw}"/>
+<circle cx="50" cy="34" r="9" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+<circle cx="50" cy="34" r="0.7" fill="${lc}"/>
+<rect x="21" y="1" width="58" height="15" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+<rect x="37" y="1" width="26" height="5.5" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+<rect x="44" y="0" width="12" height="1.5" fill="rgba(255,255,255,0.1)" stroke="${lc}" stroke-width="${lw}"/>
+<circle cx="50" cy="11" r="0.7" fill="${lc}"/>
+<rect x="21" y="51" width="58" height="15" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+<rect x="37" y="60.5" width="26" height="5.5" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+<rect x="44" y="65.5" width="12" height="1.5" fill="rgba(255,255,255,0.1)" stroke="${lc}" stroke-width="${lw}"/>
+<circle cx="50" cy="57" r="0.7" fill="${lc}"/>
+${lines}</svg>`;
+  }
+
+  // Card de una secuencia
+  function seqCard(seq, rank, matchInfo) {
+    const xt  = seqXT(seq);
+    const mi  = matchInfo || {};
+    const isPonfeHome = (mi.local || '').includes('Ponferradina') || (mi.local || '').includes('SD Ponf');
+    const opp = isPonfeHome ? (mi.vis || '') : (mi.local || '');
+    const loc = isPonfeHome ? '🏠' : '✈️';
+    const sc  = mi.s || '–';
+    const acts = seq.events.length;
+    const phase = seq.events[0] ? (seq.events[0].team_in_possession_phase_type || '') : '';
+    const phaseLabel = {create:'Creación',finish:'Finalización',transition:'Transición',
+      quick_break:'Contragolpe',build_up:'Construcción',set_play:'Balón parado',
+      direct:'Directo',chaotic:'Caótico',disruption:'Disrupción'}[phase] || phase;
+    const endsShot = seq.events[seq.events.length-1]?.end_type === 'shot';
+
+    return `<div style="background:#111827;border-radius:10px;overflow:hidden;border:1px solid #1e293b">
+      ${buildSeqSVG(seq, 'small')}
+      <div style="padding:8px 10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:10px;color:#64748b">Seq ${rank} · ${acts} acc.</span>
+          ${endsShot ? '<span style="font-size:10px;color:#f97316">🎯</span>' : ''}
+        </div>
+        <div style="font-size:11px;color:#f59e0b;font-weight:700">${mi.j || ''} ${loc} ${opp}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:3px">
+          <span style="font-size:10px;color:#64748b">${phaseLabel}</span>
+          <span style="font-size:13px;font-weight:800;color:#22c55e">xT ${xt.toFixed(3)}</span>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  async function loadSecuencias() {
+    const cont = document.getElementById('content');
+    if (window._seqVista   === undefined) window._seqVista   = 'top20';
+    if (window._seqJornada === undefined) window._seqJornada = null;
+
+    const vista   = window._seqVista;
+    const selJ    = window._seqJornada;
+
+    // Build match lookup: matchId → partido info
+    const matchLookup = {};
+    (PARTIDOS || []).forEach(p => { matchLookup[p.id] = p; });
+
+    const tabBtn = (val, lbl) => {
+      const act = vista === val;
+      return `<button onclick="window._seqVista='${val}';loadSecuencias()" style="padding:6px 18px;border-radius:20px;border:1px solid ${act?'#f97316':'#334155'};background:${act?'#f97316':'transparent'};color:${act?'white':'#94a3b8'};cursor:pointer;font-size:13px;font-weight:${act?700:400}">${lbl}</button>`;
+    };
+
+    const header = `<div style="display:flex;gap:8px;margin-bottom:18px;align-items:center">
+      <span style="font-size:13px;color:#64748b;margin-right:4px">Vista:</span>
+      ${tabBtn('top20','🔥 Top 20')}${tabBtn('jornada','📅 Por Jornada')}
+    </div>`;
+
+    // Legend
+    const legend = `<div style="display:flex;gap:16px;align-items:center;margin-bottom:16px;padding:8px 12px;background:#0f172a;border-radius:8px;border:1px solid #1e293b">
+      <span style="font-size:11px;color:#64748b;font-weight:600">Leyenda:</span>
+      <span style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:5px"><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="rgba(255,255,255,0.88)" stroke-width="1.5"/></svg> Pase</span>
+      <span style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:5px"><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="rgba(255,195,40,0.88)" stroke-width="1.5" stroke-dasharray="4,3"/></svg> Conducción</span>
+      <span style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:5px"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#ef4444"/></svg> Inicio</span>
+      <span style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:5px"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#60a5fa"/></svg> Final</span>
+      <span style="font-size:11px;color:#94a3b8;margin-left:auto">🎯 = termina en disparo</span>
+    </div>`;
+
+    cont.innerHTML = `<div style="padding:16px 20px">${header}<div id="seq-body"><div class="loading"><div class="spinner"></div><span>Cargando secuencias...</span></div></div></div>`;
+
+    try {
+      // Cargar todos los partidos en paralelo
+      const allData = await Promise.all(
+        (PARTIDOS || []).map(p => getMatchData(p.id).then(ev => ({ matchId: p.id, events: ev })).catch(() => null))
+      );
+
+      // Extraer todas las secuencias
+      let allSeqs = [];
+      allData.filter(Boolean).forEach(({ matchId, events }) => {
+        extractSeqs(events, matchId).forEach(seq => allSeqs.push(seq));
+      });
+
+      // Ordenar por xT desc
+      allSeqs.sort((a, b) => seqXT(b) - seqXT(a));
+
+      const body = document.getElementById('seq-body');
+      if (!body) return;
+
+      if (vista === 'top20') {
+        const top = allSeqs.slice(0, 20);
+        const cards = top.map((seq, i) => seqCard(seq, i + 1, matchLookup[seq.matchId])).join('');
+        body.innerHTML = legend +
+          `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${cards}</div>`;
+
+      } else {
+        // Por Jornada
+        // Jornada actual o primera disponible
+        const firstId = (PARTIDOS || [])[0]?.id;
+        const curId = selJ || firstId;
+        const curP  = matchLookup[curId] || {};
+        const isPH  = (curP.local||'').includes('Ponferradina');
+        const opp   = isPH ? curP.vis : curP.local;
+        const loc   = isPH ? '🏠' : '✈️';
+
+        // Selector de partidos
+        const matchCards = (PARTIDOS || []).map(p => {
+          const act = p.id === curId;
+          const isPH2 = (p.local||'').includes('Ponferradina');
+          const opp2  = isPH2 ? p.vis : p.local;
+          const sc2   = p.s || '–';
+          const jLbl  = p.j || '';
+          return `<div onclick="window._seqJornada=${p.id};window._seqVista='jornada';loadSecuencias()" style="cursor:pointer;background:${act?'#1e3a5f':'#111827'};border-radius:8px;padding:8px 10px;border:1.5px solid ${act?'#3b82f6':'#1e293b'};min-width:0">
+            <div style="font-size:10px;font-weight:800;color:${act?'#60a5fa':'#f59e0b'}">${jLbl} ${isPH2?'🏠':'✈️'}</div>
+            <div style="font-size:11px;color:#e2e8f0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(opp2||'').length>13?(opp2||'').slice(0,12)+'…':opp2||''}</div>
+            <div style="font-size:12px;font-weight:800;color:#94a3b8;margin-top:2px">${sc2}</div>
+          </div>`;
+        }).join('');
+
+        // Secuencias de la jornada seleccionada
+        const jSeqs = allSeqs.filter(s => s.matchId === curId).slice(0, 5);
+        const cards5 = jSeqs.length
+          ? jSeqs.map((seq, i) => seqCard(seq, i + 1, curP)).join('')
+          : '<div style="color:#64748b;font-size:13px;text-align:center;padding:40px">Sin datos para este partido</div>';
+
+        body.innerHTML = `
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:6px;margin-bottom:16px">${matchCards}</div>
+          <div style="padding:10px 14px;background:#16213e;border-radius:10px;border:1px solid #1e293b;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+            <span style="font-size:12px;font-weight:800;color:#f59e0b">${curP.j||''}</span>
+            <span style="font-size:13px;color:#94a3b8">${loc}</span>
+            <span style="font-size:14px;font-weight:700;color:#e2e8f0">${opp||''}</span>
+            <span style="font-size:14px;font-weight:800;color:#94a3b8;margin-left:auto">${curP.s||'–'}</span>
+            <span style="font-size:11px;color:#64748b">${jSeqs.length} secuencias</span>
+          </div>
+          ${legend}
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${cards5}</div>`;
+      }
+    } catch(err) {
+      const body = document.getElementById('seq-body');
+      if (body) body.innerHTML = `<div style="color:#ef4444;padding:20px">Error cargando datos: ${err.message}</div>`;
+    }
+  }
 
   // INIT
   renderAside();
