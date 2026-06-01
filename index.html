@@ -5247,6 +5247,20 @@
       })
     );
 
+    // Fallback: season-average position per player from lineup tracking (r[5], r[6])
+    // Mirrors what computeTeamShape does for single-match (players with < MIN_P zone events
+    // fall back to their global average so ALL 11 appear — e.g. CBs in attack phase).
+    const globalAvgAcc = {};
+    Object.values(PONF_LINEUPS).forEach(lup =>
+      lup.forEach(r => {
+        if (r[1] && r[5] != null && r[6] != null) {
+          if (!globalAvgAcc[r[1]]) globalAvgAcc[r[1]] = {xs:[], ys:[]};
+          globalAvgAcc[r[1]].xs.push(r[5]);
+          globalAvgAcc[r[1]].ys.push(r[6]);
+        }
+      })
+    );
+
     const acc = {};
     matches.forEach((partido, gi) => {
       const data = allData[gi];
@@ -5268,25 +5282,49 @@
     });
 
     const MIN_P = 10;
-    const allPlayers = Object.entries(acc)
-      .filter(([,v]) => v.xs.length >= MIN_P)
-      .map(([name,v]) => ({
-        name, n: v.xs.length,
-        position: resolvePlayerPosition({id: idLookup[name]||0, position: posLookup[name]||'CM'}),
-        x: v.xs.reduce((a,b)=>a+b,0)/v.xs.length,
-        y: v.ys.reduce((a,b)=>a+b,0)/v.ys.length,
-        fromLineup: false,
-      }))
-      .sort((a,b) => b.n - a.n); // más apariciones primero
+    const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+    const resolvePos = name => resolvePlayerPosition({id: idLookup[name]||0, position: posLookup[name]||'CM'});
+
+    // Build players: zone-filtered data primary, global season avg as fallback
+    // (CBs never reach attacking_third threshold → appear dimmed at global avg position)
+    const allPlayers = [...ponfNames].map(name => {
+      const v = acc[name];
+      if (v && v.xs.length >= MIN_P) {
+        return {
+          name, n: v.xs.length,
+          position: resolvePos(name),
+          x: avg(v.xs), y: avg(v.ys),
+          fromLineup: false,
+        };
+      }
+      // Fallback: global season-average position (needs ≥ 3 match entries)
+      const g = globalAvgAcc[name];
+      if (g && g.xs.length >= 3) {
+        return {
+          name, n: v ? v.xs.length : 0,
+          globalN: g.xs.length,   // used for fallback sort priority
+          position: resolvePos(name),
+          x: avg(g.xs), y: avg(g.ys),
+          fromLineup: true,
+        };
+      }
+      return null;
+    }).filter(Boolean).sort((a,b) => {
+      // Zone-data players first; among fallback, sort by number of seasonal appearances
+      if (!a.fromLineup && b.fromLineup) return -1;
+      if (a.fromLineup && !b.fromLineup) return 1;
+      if (!a.fromLineup) return b.n - a.n;
+      return (b.globalN||0) - (a.globalN||0);
+    });
 
     if (allPlayers.length < 4) return null;
 
-    // Seleccionar solo los 11 más frecuentes: 1 portero + 10 de campo
-    // Esto garantiza un campo limpio y representativo de los titulares habituales
+    // Top 11: prioritise zone-data players; backfill remaining slots with fallback
+    // (ensures CBs always visible even if they never reached attacking_third threshold)
     const allGK = allPlayers.filter(p => isGK(p));
     const allOF = allPlayers.filter(p => !isGK(p));
     const gk      = allGK.slice(0, 1);       // top 1 portero
-    const outfield = allOF.slice(0, 10);     // top 10 de campo
+    const outfield = allOF.slice(0, 10);     // top 10 de campo (zone first, then fallback)
     const hull = convexHull(outfield.map(p => ({x:p.x,y:p.y})));
     const area = hullArea(hull);
     const sorted = outfield.slice().sort((a,b) => a.x - b.x);
