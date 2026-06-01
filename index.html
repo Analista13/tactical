@@ -4397,7 +4397,10 @@
   // colorOverride: optional hex to replace the phase color (used in comparativa)
   function buildBloqueSVG(shape, phase, colorOverride) {
     const phCol = colorOverride || (phase==='ataque' ? '#f0883e' : '#58a6ff');
-    const AW=920, AH=590, AMX=55, AMY=40, APW=AW-AMX*2, APH=AH-AMY*2;
+    // Canvas extendido: pitch = 590px altura, +90px abajo para medidas
+    const AW=920, AMX=55, AMY=40, APW=AW-AMX*2, APH=510;
+    const AH = AMY + APH + 90;  // total = 640
+    const pitchBottom = AMY + APH; // = 550
     const sv=(x,y)=>({sx:AMX+((x+52.5)/105)*APW, sy:AMY+((34-y)/68)*APH});
 
     const pitch = `
@@ -4446,19 +4449,51 @@
         <line x1="${cx.toFixed(1)}" y1="${(cy-8).toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(cy+8).toFixed(1)}" stroke="${phCol}" stroke-width="${cW}"/>`;
     }
 
-    // Width annotation arrow
+    // ── Measurement annotations ─────────────────────────────────────────────
+    // Helper: double-arrow horizontal bracket  |←label→|
+    const hBracket = (x1, x2, y, col, label, labelBelow=false) => {
+      const mx = (x1+x2)/2;
+      const ly = labelBelow ? y+13 : y-5;
+      return `<line x1="${x1.toFixed(1)}" y1="${y}" x2="${x2.toFixed(1)}" y2="${y}" stroke="${col}" stroke-width="1.4" stroke-opacity="0.85"/>
+        <line x1="${x1.toFixed(1)}" y1="${(y-5)}" x2="${x1.toFixed(1)}" y2="${(y+5)}" stroke="${col}" stroke-width="1.4" stroke-opacity="0.85"/>
+        <line x1="${x2.toFixed(1)}" y1="${(y-5)}" x2="${x2.toFixed(1)}" y2="${(y+5)}" stroke="${col}" stroke-width="1.4" stroke-opacity="0.85"/>
+        <text x="${mx.toFixed(1)}" y="${ly}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="${col}" fill-opacity="0.9">${label}</text>`;
+    };
+
+    // Helper: double-arrow vertical bracket  ↕ on the left
+    const vBracket = (x, y1, y2, col, label) => {
+      const my = (y1+y2)/2;
+      return `<line x1="${x}" y1="${y1.toFixed(1)}" x2="${x}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="1.4" stroke-opacity="0.85"/>
+        <line x1="${(x-5)}" y1="${y1.toFixed(1)}" x2="${(x+5)}" y2="${y1.toFixed(1)}" stroke="${col}" stroke-width="1.4" stroke-opacity="0.85"/>
+        <line x1="${(x-5)}" y1="${y2.toFixed(1)}" x2="${(x+5)}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="1.4" stroke-opacity="0.85"/>
+        <text x="${(x-10)}" y="${(my+4).toFixed(1)}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="${col}" fill-opacity="0.9">${label}</text>`;
+    };
+
     let widthAnnot = '';
-    if(shape.teamWidth!=null && shape.players.length>=2){
-      const maxX=Math.max(...shape.players.map(p=>p.x));
-      const maxY=Math.max(...shape.players.map(p=>p.y));
-      const minY=Math.min(...shape.players.map(p=>p.y));
-      const{sx:ax}=sv(Math.min(maxX+9,48),0);
-      const{sy:ay1}=sv(0,maxY);
-      const{sy:ay2}=sv(0,minY);
-      widthAnnot=`<line x1="${ax}" y1="${ay1.toFixed(0)}" x2="${ax}" y2="${ay2.toFixed(0)}" stroke="${phCol}" stroke-width="1" stroke-opacity="0.45"/>
-        <line x1="${(ax-4)}" y1="${ay1.toFixed(0)}" x2="${(ax+4)}" y2="${ay1.toFixed(0)}" stroke="${phCol}" stroke-width="1" stroke-opacity="0.45"/>
-        <line x1="${(ax-4)}" y1="${ay2.toFixed(0)}" x2="${(ax+4)}" y2="${ay2.toFixed(0)}" stroke="${phCol}" stroke-width="1" stroke-opacity="0.45"/>
-        <text x="${(ax+8)}" y="${((ay1+ay2)/2+4).toFixed(0)}" font-family="DM Sans,sans-serif" font-size="10" fill="${phCol}" fill-opacity="0.75">${shape.teamWidth.toFixed(0)}m</text>`;
+
+    // 1. LEFT — anchura vertical del equipo
+    if (shape.teamWidth != null && shape.players.length >= 2) {
+      const maxY = Math.max(...shape.players.map(p => p.y));
+      const minY = Math.min(...shape.players.map(p => p.y));
+      const { sy: ay1 } = sv(0, maxY);
+      const { sy: ay2 } = sv(0, minY);
+      const ax = AMX - 18;
+      widthAnnot += vBracket(ax, ay1, ay2, phCol, `${shape.teamWidth.toFixed(1)}m`);
+    }
+
+    // 2. BOTTOM — profundidad: defMidGap / midFwdGap / defFwdGap
+    if (shape.defLine != null && shape.midLine != null && shape.fwdLine != null) {
+      const { sx: sxDef } = sv(shape.defLine, 0);
+      const { sx: sxMid } = sv(shape.midLine, 0);
+      const { sx: sxFwd } = sv(shape.fwdLine, 0);
+      const y1 = pitchBottom + 20;
+      const y2 = pitchBottom + 50;
+      // Segmento def→mid
+      widthAnnot += hBracket(sxDef, sxMid, y1, '#58a6ff', `${(shape.defMidGap||0).toFixed(1)}m`);
+      // Segmento mid→fwd
+      widthAnnot += hBracket(sxMid, sxFwd, y1, '#f85149', `${(shape.midFwdGap||0).toFixed(1)}m`);
+      // Total def→fwd
+      widthAnnot += hBracket(sxDef, sxFwd, y2, phCol, `${(shape.defFwdGap||0).toFixed(1)}m`);
     }
 
     // GK dot (always shown; dimmed if no phase possessions, using lineup global coords)
