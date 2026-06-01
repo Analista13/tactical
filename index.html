@@ -14354,9 +14354,52 @@
   // xT total de una secuencia
   const seqXT = seq => seq.events.reduce((s, e) => s + (e.player_targeted_xthreat || 0), 0);
 
+  // ── CRUCE CON TIROS_DATA ──────────────────────────────────────────────────
+  // Normaliza nombre: última palabra, sin tildes, minúsculas
+  // Ej: "Andoni López" → "lopez", "A. Keita" → "keita"
+  function normalizeName(name) {
+    if (!name) return '';
+    const words = name.trim().split(/\s+/);
+    const last = words[words.length - 1];
+    return last.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  }
+
+  // Construye lookup: "{jornada}_{apellidoNorm}" → [outcome1, outcome2, ...]
+  // Usando TIROS_DATA (ya definido en el archivo)
+  function buildShotLookup() {
+    const lookup = {};
+    for (const t of TIROS_DATA) {
+      const key = `${t.j}_${normalizeName(t.p)}`;
+      if (!lookup[key]) lookup[key] = [];
+      lookup[key].push(t.t); // 'goal', 'miss', 'save', 'block', 'post'
+    }
+    return lookup;
+  }
+
+  // Obtiene el resultado del tiro final de una secuencia
+  // Devuelve: 'goal' | 'shot' | null
+  // null = la secuencia no termina en tiro (possession_loss, clearance, foul_suffered)
+  function getSeqOutcome(seq, shotLookup) {
+    const lastEv = seq.events[seq.events.length - 1];
+    if (!lastEv || lastEv.end_type !== 'shot') return null;
+
+    // Jornada del partido
+    const partido = (PARTIDOS || []).find(p => p.id === seq.matchId);
+    if (!partido) return 'shot';
+    const jNum = parseInt((partido.j || '').replace(/\D/g, ''), 10);
+    if (!jNum) return 'shot';
+
+    const key = `${jNum}_${normalizeName(lastEv.player_name)}`;
+    const outcomes = shotLookup[key];
+    if (!outcomes || !outcomes.length) return 'shot'; // tiro confirmado por SK pero no cruzado
+
+    return outcomes.includes('goal') ? 'goal' : 'shot';
+  }
+
   // SVG del campo horizontal — estilo referencia profesional
   // Campo verde oscuro, líneas finas, sin flechas
-  function buildSeqSVG(seq) {
+  function buildSeqSVG(seq, endColor) {
+    endColor = endColor || '#6baed6';
     const W = 105, H = 68;
     const lc = 'rgba(255,255,255,0.28)', lw = '0.55';
 
@@ -14411,13 +14454,13 @@
       const p = wp.pt;
       if (i === 0) return `<circle cx="${p.cx.toFixed(2)}" cy="${p.cy.toFixed(2)}" r="2.1" fill="#e05252"/>`;
       return `<circle cx="${p.cx.toFixed(2)}" cy="${p.cy.toFixed(2)}" r="1.1" fill="rgba(255,255,255,0.6)"/>`;
-    }).join('') + `<circle cx="${endPt.cx.toFixed(2)}" cy="${endPt.cy.toFixed(2)}" r="2.1" fill="#6baed6"/>`;
+    }).join('') + `<circle cx="${endPt.cx.toFixed(2)}" cy="${endPt.cy.toFixed(2)}" r="2.1" fill="${endColor}"/>`;
 
     return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${bg}${marks}${lines}${dots}</svg>`;
   }
 
   // Tarjeta — igual que la referencia: pitch arriba, texto abajo
-  function seqCard(seq, rank, matchInfo) {
+  function seqCard(seq, rank, matchInfo, shotLookup) {
     const xt  = seqXT(seq);
     const mi  = matchInfo || {};
     const isPH = (mi.local || '').toLowerCase().includes('ponferradina') ||
@@ -14426,11 +14469,21 @@
     const locStr = isPH ? '(H)' : '(A)';
     const nPases = seq.events.filter(e => e.end_type === 'pass' || e.end_type === 'shot').length;
 
+    // Cruce con TIROS_DATA para saber si acabó en gol o tiro
+    const outcome = shotLookup ? getSeqOutcome(seq, shotLookup) : null;
+    const endColor = outcome === 'goal' ? '#fbbf24' : '#6baed6';
+    let outcomeHtml = '';
+    if (outcome === 'goal') {
+      outcomeHtml = `<span style="font-size:12px;font-weight:700;color:#fbbf24;margin-left:6px">⚽ Gol</span>`;
+    } else if (outcome === 'shot') {
+      outcomeHtml = `<span style="font-size:12px;font-weight:700;color:#93c5fd;margin-left:6px">🎯 Tiro</span>`;
+    }
+
     return `<div style="background:#1a2e1c;border:1px solid #253825;overflow:hidden;border-radius:3px">
-      ${buildSeqSVG(seq)}
+      ${buildSeqSVG(seq, endColor)}
       <div style="padding:7px 10px 9px;background:#1c1c2c">
         <div style="font-size:10px;color:#8899aa;margin-bottom:3px">Seq ${rank} • ${nPases} pases</div>
-        <div style="font-size:13px;font-weight:700;color:#e8eaf0;margin-bottom:2px">vs ${opp} ${locStr}</div>
+        <div style="font-size:13px;font-weight:700;color:#e8eaf0;margin-bottom:2px">vs ${opp} ${locStr}${outcomeHtml}</div>
         <div style="font-size:13px;font-weight:800;color:#4ade80">xT: ${xt.toFixed(3)}</div>
       </div>
     </div>`;
@@ -14481,9 +14534,10 @@
     </div>`;
 
     // Legend
-    const legend = `<div style="display:flex;gap:18px;align-items:center;margin-bottom:14px;padding:7px 14px;background:#111827;border-radius:6px;border:1px solid #1e2a1e">
-      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#aab"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#e05252"/></svg> Inicio secuencia</span>
-      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#aab"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#6baed6"/></svg> Final secuencia</span>
+    const legend = `<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:14px;padding:7px 14px;background:#111827;border-radius:6px;border:1px solid #1e2a1e">
+      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#aab"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#e05252"/></svg> Inicio</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#aab"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#6baed6"/></svg> Final (tiro)</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#aab"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#fbbf24"/></svg> Final (gol)</span>
       <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#aab"><svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="rgba(232,180,60,0.9)" stroke-width="1.3" stroke-dasharray="3,2"/></svg> Conducción</span>
       <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#aab"><svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="rgba(255,255,255,0.9)" stroke-width="1.3"/></svg> Pase</span>
     </div>`;
@@ -14505,12 +14559,15 @@
       // Ordenar por xT desc
       allSeqs.sort((a, b) => seqXT(b) - seqXT(a));
 
+      // Construir lookup de tiros para cruce con TIROS_DATA
+      const shotLookup = buildShotLookup();
+
       const body = document.getElementById('seq-body');
       if (!body) return;
 
       if (vista === 'top20') {
         const top = allSeqs.slice(0, 20);
-        const cards = top.map((seq, i) => seqCard(seq, i + 1, matchLookup[seq.matchId])).join('');
+        const cards = top.map((seq, i) => seqCard(seq, i + 1, matchLookup[seq.matchId], shotLookup)).join('');
         body.innerHTML = legend +
           `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${cards}</div>`;
 
@@ -14541,7 +14598,7 @@
         // Secuencias de la jornada seleccionada
         const jSeqs = allSeqs.filter(s => s.matchId === curId).slice(0, 5);
         const cards5 = jSeqs.length
-          ? jSeqs.map((seq, i) => seqCard(seq, i + 1, curP)).join('')
+          ? jSeqs.map((seq, i) => seqCard(seq, i + 1, curP, shotLookup)).join('')
           : '<div style="color:#64748b;font-size:13px;text-align:center;padding:40px">Sin datos para este partido</div>';
 
         body.innerHTML = `
