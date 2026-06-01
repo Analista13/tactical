@@ -14829,15 +14829,15 @@
       const a = allPts[i], b = allPts[i + 1];
       const col  = wp.isCarry ? 'rgba(232,180,60,0.92)' : 'rgba(255,255,255,0.92)';
       const dash = wp.isCarry ? ` stroke-dasharray="2.8,2"` : '';
-      return `<line x1="${a.cx.toFixed(2)}" y1="${a.cy.toFixed(2)}" x2="${b.cx.toFixed(2)}" y2="${b.cy.toFixed(2)}" stroke="${col}" stroke-width="1.4"${dash} stroke-linecap="round"/>`;
+      return `<line x1="${a.cx.toFixed(2)}" y1="${a.cy.toFixed(2)}" x2="${b.cx.toFixed(2)}" y2="${b.cy.toFixed(2)}" stroke="${col}" stroke-width="0.7"${dash} stroke-linecap="round"/>`;
     }).join('');
 
     // Puntos: rojo=inicio, blanco pequeño=intermedios, azul=final
     const dots = wps.map((wp, i) => {
       const p = wp.pt;
-      if (i === 0) return `<circle cx="${p.cx.toFixed(2)}" cy="${p.cy.toFixed(2)}" r="2.1" fill="#e05252"/>`;
-      return `<circle cx="${p.cx.toFixed(2)}" cy="${p.cy.toFixed(2)}" r="1.1" fill="rgba(255,255,255,0.6)"/>`;
-    }).join('') + `<circle cx="${endPt.cx.toFixed(2)}" cy="${endPt.cy.toFixed(2)}" r="2.1" fill="${endColor}"/>`;
+      if (i === 0) return `<circle cx="${p.cx.toFixed(2)}" cy="${p.cy.toFixed(2)}" r="1.6" fill="#e05252"/>`;
+      return `<circle cx="${p.cx.toFixed(2)}" cy="${p.cy.toFixed(2)}" r="0.7" fill="rgba(255,255,255,0.6)"/>`;
+    }).join('') + `<circle cx="${endPt.cx.toFixed(2)}" cy="${endPt.cy.toFixed(2)}" r="1.6" fill="${endColor}"/>`;
 
     return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${bg}${marks}${lines}${dots}</svg>`;
   }
