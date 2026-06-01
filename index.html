@@ -13813,7 +13813,39 @@
   {j:38,p:"Slavy",t:"save",b:"right-foot",s:"regular",xg:0.0606,dx:40,dy:23,gy:50.5,gz:6.8,loc:"L",min:1}
 ];
 
+  // ── Tooltip flotante para tiros ────────────────────────────────
+  function tirosShowTip(key, e) {
+    const data = window._tirosTipData && window._tirosTipData[key];
+    if (!data) return;
+    let tip = document.getElementById('tiros-tooltip');
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'tiros-tooltip';
+      tip.style.cssText = 'position:fixed;z-index:99999;background:#1a2540;border:1px solid #334155;border-radius:10px;padding:10px 14px;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,0.7);min-width:170px;display:none;line-height:1.5';
+      document.body.appendChild(tip);
+    }
+    tip.innerHTML = data;
+    tip.style.display = 'block';
+    const tw = tip.offsetWidth || 180, th = tip.offsetHeight || 110;
+    const x = Math.min(e.clientX + 14, window.innerWidth - tw - 10);
+    const y = Math.min(e.clientY - 14, window.innerHeight - th - 10);
+    tip.style.left = x + 'px';
+    tip.style.top  = y + 'px';
+  }
+  function tirosHideTip() {
+    const tip = document.getElementById('tiros-tooltip');
+    if (tip) tip.style.display = 'none';
+  }
+  function tirosMoveTip(e) {
+    const tip = document.getElementById('tiros-tooltip');
+    if (!tip || tip.style.display === 'none') return;
+    const tw = tip.offsetWidth || 180, th = tip.offsetHeight || 110;
+    tip.style.left = Math.min(e.clientX + 14, window.innerWidth - tw - 10) + 'px';
+    tip.style.top  = Math.min(e.clientY - 14, window.innerHeight - th - 10) + 'px';
+  }
+
   function loadTiros() {
+    window._tirosTipData = {};
     const cont = document.getElementById('content');
     if (!window._tirosVista)   window._tirosVista   = 'jornadas';
     if (!window._tirosJornada) window._tirosJornada = 38;  // última jornada por defecto
@@ -13894,18 +13926,36 @@
                       'throw-in-set-piece':'Saque lateral',
                       'fast-break':'Contragolpe',other:'Otro'};
 
+    function buildTiroTip(s) {
+      const mi = MATCH_INFO[s.j] || {};
+      const typeColors = {goal:'#22c55e', miss:'#ef4444', save:'#f59e0b', block:'#94a3b8', post:'#c084fc'};
+      const col  = typeColors[s.t] || '#94a3b8';
+      const icon = s.t==='goal'?'⚽':s.t==='miss'?'❌':s.t==='save'?'🧤':s.t==='block'?'🚫':s.t==='post'?'🥅':'•';
+      const tipo = TIPO_ES[s.t] || s.t;
+      const minLbl = s.min ? '<div style="font-size:11px;color:#94a3b8;margin-top:1px">⏱ '+s.min+'\'</div>' : '';
+      const opp  = mi.opp || '';
+      const loc  = mi.home ? '🏠' : '✈️';
+      const score = mi.s || '–';
+      return '<div style="font-size:13px;font-weight:800;color:'+col+'">'+icon+' '+tipo+'</div>'
+        + minLbl
+        + '<div style="font-size:11px;color:#94a3b8;margin-top:3px">'+(BODY_ES[s.b]||s.b||'')+'</div>'
+        + '<div style="font-size:11px;color:#64748b">'+(SITU_ES[s.s]||s.s||'')+'</div>'
+        + '<div style="font-size:11px;color:#64748b;margin-top:2px">xG <span style="color:#e2e8f0">'+s.xg.toFixed(2)+'</span></div>'
+        + '<div style="font-size:11px;color:#f59e0b;margin-top:5px;border-top:1px solid #334155;padding-top:4px">J'+s.j+' '+loc+' '+opp+' <b style="color:#e2e8f0">'+score+'</b></div>';
+    }
+
     function miniPitch(shots) {
       const W=100, H=68;
       // dy=0 → gol (arriba), dy=100 → portería propia (abajo)
-      const dots = shots.map(s => {
+      const dots = shots.map((s, i) => {
         if (s.dx==null||s.dy==null) return '';
         const cx  = s.dx.toFixed(1);
         const cy  = (s.dy * 0.68).toFixed(1);
         const col = s.t==='goal' ? '#22c55e' : '#ef4444';
         const op  = s.t==='goal' ? 0.95 : 0.65;
-        const minStr = s.min ? ' · '+s.min+'\'' : '';
-        const tip = (TIPO_ES[s.t]||s.t)+minStr+' · '+(BODY_ES[s.b]||s.b)+' · '+(SITU_ES[s.s]||s.s)+' · xG '+s.xg.toFixed(2);
-        return '<circle cx="'+cx+'" cy="'+cy+'" r="2.8" fill="'+col+'" opacity="'+op+'" style="cursor:pointer"><title>'+tip+'</title></circle>';
+        const key = 'k'+s.j+'_'+s.dx+'_'+s.dy+'_'+i;
+        window._tirosTipData[key] = buildTiroTip(s);
+        return '<circle cx="'+cx+'" cy="'+cy+'" r="2.8" fill="'+col+'" opacity="'+op+'" style="cursor:pointer" onmouseenter="tirosShowTip(\''+key+'\',event)" onmouseleave="tirosHideTip()" onmousemove="tirosMoveTip(event)"></circle>';
       }).join('');
       const lc='rgba(255,255,255,0.22)', lw='0.55';
       return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block">'
@@ -13939,15 +13989,15 @@
 
     function bigPitch(shots) {
       const W=100, H=68;
-      const dots = shots.map(s => {
+      const dots = shots.map((s, i) => {
         if (s.dx==null||s.dy==null) return '';
         const cx  = s.dx.toFixed(1);
         const cy  = (s.dy*0.68).toFixed(1);
         const col = s.t==='goal'?'#22c55e':'#ef4444';
         const op  = s.t==='goal'?0.95:0.65;
-        const minStr2 = s.min ? ' · '+s.min+'\'' : '';
-        const tip = (TIPO_ES[s.t]||s.t)+minStr2+' · '+(BODY_ES[s.b]||s.b)+' · '+(SITU_ES[s.s]||s.s)+' · xG '+s.xg.toFixed(2);
-        return '<circle cx="'+cx+'" cy="'+cy+'" r="2.0" fill="'+col+'" opacity="'+op+'" stroke="rgba(255,255,255,0.25)" stroke-width="0.4" style="cursor:pointer"><title>'+tip+'</title></circle>';
+        const key = 'b'+s.j+'_'+s.dx+'_'+s.dy+'_'+i;
+        window._tirosTipData[key] = buildTiroTip(s);
+        return '<circle cx="'+cx+'" cy="'+cy+'" r="2.0" fill="'+col+'" opacity="'+op+'" stroke="rgba(255,255,255,0.25)" stroke-width="0.4" style="cursor:pointer" onmouseenter="tirosShowTip(\''+key+'\',event)" onmouseleave="tirosHideTip()" onmousemove="tirosMoveTip(event)"></circle>';
       }).join('');
       const lc='rgba(255,255,255,0.25)', lw='0.7';
       return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block">'
