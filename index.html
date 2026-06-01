@@ -5286,24 +5286,31 @@
     const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
     const resolvePos = name => resolvePlayerPosition({id: idLookup[name]||0, position: posLookup[name]||'CM'});
 
-    // Build one player object per Ponf player who appeared in ≥2 of the selected matches.
-    // Coords: zone-filtered if ≥MIN_P events, else global match-avg (fromLineup:true = dimmed).
-    // RANKED by globalN (matches played in selected set) — NOT by zone events.
-    // This guarantees regular starters like CBs always enter the top-11 even if they
-    // rarely appear in attacking_third or defensive_third.
+    // COORDS STRATEGY:
+    // • Sub-tabs with explicit zone filter (thirdFilter/blockFilter set):
+    //   use zone-filtered event coords when ≥MIN_P, else global fallback.
+    //   This shows WHERE a player stands WITHIN that specific zone.
+    // • Main view (no zone filter — default ataque/defensa):
+    //   ALWAYS use globalAvgAcc coords for EVERY player.
+    //   Reason: CBs reach MIN_P=10 in attacking_third over a season
+    //   (corners, set-pieces) — their avg position inside that zone is
+    //   x≈20-30 (they're literally in the box), which would wrongly place
+    //   them among forwards. The global match-avg is the correct reference.
+    const useZoneCoords = !!(thirdFilter || blockFilter);
+
     const allPlayers = [...ponfNames].map(name => {
       const g = globalAvgAcc[name];
-      if (!g || g.xs.length < 2) return null;  // never played in these matches
-      const v = acc[name];
-      const hasZone = v && v.xs.length >= MIN_P;
+      if (!g || g.xs.length < 2) return null;  // not in selected matches
+      const v    = acc[name];
+      const hasZone = useZoneCoords && v && v.xs.length >= MIN_P;
       return {
         name,
-        n:       v ? v.xs.length : 0,
+        n:       hasZone ? v.xs.length : g.xs.length,
         globalN: g.xs.length,
         position: resolvePos(name),
         x: hasZone ? avg(v.xs) : avg(g.xs),
         y: hasZone ? avg(v.ys) : avg(g.ys),
-        fromLineup: !hasZone,
+        fromLineup: !hasZone && useZoneCoords,  // dimmed only in explicit zone sub-tabs
       };
     }).filter(Boolean)
       .sort((a,b) => (b.globalN||0) - (a.globalN||0));  // most-played players first
