@@ -7050,6 +7050,145 @@
 
   // ─── MAPA DE PASES — VISTA TEMPORADA (Z1/Z2/Z3 Casa vs Fuera) ────────────────
 
+  // ─── SVG de campo con zonas e intensidad de pases ─────────────────────────
+  // zoneStats: { 1:{total,succ,...}, 2:{...}, 3:{...} }
+  // transMatrix: { 1:{2:n,3:n}, 2:{1:n,3:n}, 3:{1:n,2:n} }
+  function buildTemporadaZonePitchSVG(zoneStats, transMatrix, totalPasses) {
+    const AW=920, AH=420, AMX=52, AMY=46, APW=AW-AMX*2, APH=AH-AMY*2;
+    const sv = (x,y) => ({ sx: AMX+((x+52.5)/105)*APW, sy: AMY+((34-y)/68)*APH });
+
+    // ── Pitch field marks ────────────────────────────────────────────────────
+    const pitch = `
+      <rect width="${AW}" height="${AH}" fill="#0b150b"/>
+      <rect x="${AMX}" y="${AMY}" width="${APW}" height="${APH}" fill="#0d1f0d" stroke="#1c3a1c" stroke-width="1.5"/>
+      <line x1="${AW/2}" y1="${AMY}" x2="${AW/2}" y2="${AH-AMY}" stroke="#1c3a1c" stroke-width="1"/>
+      <circle cx="${AW/2}" cy="${AH/2}" r="${(APH*9.15/68).toFixed(0)}" fill="none" stroke="#1c3a1c" stroke-width="1"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${(AW-AMX-APW*16.5/105).toFixed(1)}" y="${(AMY+APH*(68-40.32)/2/68).toFixed(1)}" width="${(APW*16.5/105).toFixed(1)}" height="${(APH*40.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.8"/>
+      <rect x="${AMX}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+      <rect x="${(AW-AMX-APW*5.5/105).toFixed(1)}" y="${(AMY+APH*(68-18.32)/2/68).toFixed(1)}" width="${(APW*5.5/105).toFixed(1)}" height="${(APH*18.32/68).toFixed(1)}" fill="none" stroke="#1c3a1c" stroke-width="0.5"/>
+      <polygon points="${AW-AMX+14},${AH/2} ${AW-AMX+2},${AH/2-7} ${AW-AMX+2},${AH/2+7}" fill="rgba(255,255,255,0.18)"/>
+      <text x="${AW-AMX-4}" y="${AMY-10}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.22)" letter-spacing="1">ATAQUE →</text>`;
+
+    // ── Zone geometry ────────────────────────────────────────────────────────
+    const z1x  = sv(-52.5, 0).sx;
+    const z12x = sv(-17.5, 0).sx;
+    const z23x = sv(17.5,  0).sx;
+    const z3x  = sv(52.5,  0).sx;
+    const zW1=z12x-z1x, zW2=z23x-z12x, zW3=z3x-z23x;
+
+    // Zone centers x
+    const cx1 = (z1x  + z12x) / 2;
+    const cx2 = (z12x + z23x) / 2;
+    const cx3 = (z23x + z3x)  / 2;
+    const cyM = AMY + APH / 2; // vertical center
+
+    // ── Zone fill intensity (proportional to pass volume) ───────────────────
+    const ZCOL  = { 1:'#58a6ff', 2:'#e3b341', 3:'#f85149' };
+    const maxZ  = Math.max(1, zoneStats[1].total, zoneStats[2].total, zoneStats[3].total);
+    const zoneFills = [1,2,3].map(z => {
+      const zs  = zoneStats[z];
+      const op  = 0.06 + (zs.total / maxZ) * 0.25;
+      const bop = 0.25 + (zs.total / maxZ) * 0.55;
+      const col = ZCOL[z];
+      const zx  = z===1 ? z1x : z===2 ? z12x : z23x;
+      const zw  = z===1 ? zW1 : z===2 ? zW2 : zW3;
+      const pct = zs.total ? Math.round(zs.succ / zs.total * 100) : 0;
+      const pctCol = pct >= 80 ? '#3fb950' : pct >= 65 ? '#e3b341' : '#f85149';
+      const zxC = zx + zw/2;
+
+      // Type mini-bars inside zone
+      const typeData = Object.entries(zs.byType).filter(([,v]) => v.s+v.f > 0)
+        .map(([t,v]) => ({ t, n:v.s+v.f, col:PASS_TYPE_META[t].color }))
+        .sort((a,b) => b.n-a.n);
+      const barMaxN = typeData[0]?.n || 1;
+      const barW = zw * 0.72;
+      const barX = zx + zw*0.14;
+      let barY = AMY + APH * 0.67;
+      const barH = 6, barGap = 9;
+      const typeBars = typeData.slice(0,4).map(({ n, col:tc }) => {
+        const bw = (n / barMaxN) * barW;
+        const bar = `<rect x="${barX.toFixed(1)}" y="${barY.toFixed(1)}" width="${bw.toFixed(1)}" height="${barH}" rx="2" fill="${tc}" fill-opacity="0.7"/>`;
+        barY += barGap;
+        return bar;
+      }).join('');
+
+      // Percentage ring (arc) just for visual indicator
+      const r = 24;
+      const angle = pct / 100 * 360;
+      const rad   = (angle - 90) * Math.PI / 180;
+      const x2arc = (zxC + r * Math.cos(rad)).toFixed(2);
+      const y2arc = (cyM - APH*0.15 + r * Math.sin(rad)).toFixed(2);
+      const large = angle > 180 ? 1 : 0;
+      const arc   = pct > 0 && pct < 100
+        ? `<path d="M${zxC.toFixed(2)},${(cyM-APH*0.15-r).toFixed(2)} A${r},${r} 0 ${large} 1 ${x2arc},${y2arc}" fill="none" stroke="${pctCol}" stroke-width="3.5" stroke-linecap="round"/>`
+        : '';
+      const arcBg = `<circle cx="${zxC.toFixed(2)}" cy="${(cyM-APH*0.15).toFixed(2)}" r="${r}" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3.5"/>`;
+
+      return `
+        <rect x="${zx.toFixed(1)}" y="${AMY}" width="${zw.toFixed(1)}" height="${APH}" fill="${col}" fill-opacity="${op.toFixed(3)}" stroke="${col}" stroke-width="1.2" stroke-opacity="${bop.toFixed(3)}"/>
+        <text x="${zxC.toFixed(1)}" y="${(AMY+20).toFixed(1)}" text-anchor="middle" font-family="Bebas Neue,sans-serif" font-size="19" fill="${col}" fill-opacity="0.95">Z${z}</text>
+        <text x="${zxC.toFixed(1)}" y="${(AMY+34).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" font-weight="600" fill="rgba(255,255,255,0.55)">${z===1?'Defensiva':z===2?'Mediocampo':'Ataque'}</text>
+        ${arcBg}${arc}
+        <text x="${zxC.toFixed(1)}" y="${(cyM-APH*0.15+5).toFixed(1)}" text-anchor="middle" font-family="Bebas Neue,sans-serif" font-size="18" fill="${pctCol}">${pct}%</text>
+        <text x="${zxC.toFixed(1)}" y="${(cyM-APH*0.15+17).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="rgba(255,255,255,0.5)">precisión</text>
+        <text x="${zxC.toFixed(1)}" y="${(AMY+APH*0.56).toFixed(1)}" text-anchor="middle" font-family="Bebas Neue,sans-serif" font-size="28" fill="${col}" fill-opacity="0.9">${zs.total}</text>
+        <text x="${zxC.toFixed(1)}" y="${(AMY+APH*0.56+12).toFixed(1)}" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="rgba(255,255,255,0.45)">pases</text>
+        ${typeBars}`;
+    }).join('');
+
+    // ── Arrowhead marker ────────────────────────────────────────────────────
+    const defs = `<defs>
+      <marker id="arh-fwd" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="rgba(255,255,255,0.8)"/>
+      </marker>
+      <marker id="arh-bwd" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="rgba(180,180,180,0.6)"/>
+      </marker>
+    </defs>`;
+
+    // ── Transition arrows ───────────────────────────────────────────────────
+    const maxTrans = Math.max(1,
+      transMatrix[1][2], transMatrix[1][3], transMatrix[2][3],
+      transMatrix[2][1], transMatrix[3][2]);
+
+    // Helper: curved arrow between two x points at given y, with quadratic bezier
+    const drawArrow = (x1, x2, yBase, curveDelta, count, col, markerUrl) => {
+      if (!count) return '';
+      const sw = (1.5 + (count/maxTrans) * 8).toFixed(1);
+      const mx = (x1+x2)/2, cy2 = yBase + curveDelta;
+      const path = `<path d="M${x1.toFixed(1)},${yBase.toFixed(1)} Q${mx.toFixed(1)},${cy2.toFixed(1)} ${x2.toFixed(1)},${yBase.toFixed(1)}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-opacity="0.85" stroke-linecap="round" marker-end="${markerUrl}"/>`;
+      const lx = mx, ly = Math.min(yBase, cy2) - 6;
+      const label = `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-family="Bebas Neue,sans-serif" font-size="14" fill="${col}" fill-opacity="0.95">${count}</text>`;
+      return path + label;
+    };
+
+    // Forward transitions (above center, curve up = negative curveDelta)
+    const yFwd = AMY + APH * 0.38;
+    const yFwd13 = AMY + APH * 0.18;
+    const fwd12 = drawArrow(cx1, cx2, yFwd,  -APH*0.14, transMatrix[1][2], '#58a6ff', 'url(#arh-fwd)');
+    const fwd23 = drawArrow(cx2, cx3, yFwd,  -APH*0.14, transMatrix[2][3], '#e3b341', 'url(#arh-fwd)');
+    const fwd13 = drawArrow(cx1, cx3, yFwd13,-APH*0.10, transMatrix[1][3], '#a371f7', 'url(#arh-fwd)');
+
+    // Backward transitions (below center, curve down = positive curveDelta)
+    const yBwd = AMY + APH * 0.72;
+    const bwd21 = drawArrow(cx2, cx1, yBwd, APH*0.14, transMatrix[2][1], 'rgba(180,180,180,0.7)', 'url(#arh-bwd)');
+    const bwd32 = drawArrow(cx3, cx2, yBwd, APH*0.14, transMatrix[3][2], 'rgba(180,180,180,0.7)', 'url(#arh-bwd)');
+
+    // ── Legend (bottom) ─────────────────────────────────────────────────────
+    const legY = AH - 14;
+    const legend = `
+      <circle cx="${(AMX+14).toFixed(0)}" cy="${legY}" r="4" fill="#58a6ff" fill-opacity="0.8"/>
+      <text x="${(AMX+22).toFixed(0)}" y="${legY+4}" font-family="DM Sans,sans-serif" font-size="10" fill="rgba(255,255,255,0.5)">Z1 Defensiva</text>
+      <circle cx="${(AMX+110).toFixed(0)}" cy="${legY}" r="4" fill="#e3b341" fill-opacity="0.8"/>
+      <text x="${(AMX+118).toFixed(0)}" y="${legY+4}" font-family="DM Sans,sans-serif" font-size="10" fill="rgba(255,255,255,0.5)">Z2 Mediocampo</text>
+      <circle cx="${(AMX+218).toFixed(0)}" cy="${legY}" r="4" fill="#f85149" fill-opacity="0.8"/>
+      <text x="${(AMX+226).toFixed(0)}" y="${legY+4}" font-family="DM Sans,sans-serif" font-size="10" fill="rgba(255,255,255,0.5)">Z3 Ataque</text>
+      <text x="${(AW-AMX).toFixed(0)}" y="${legY+4}" text-anchor="end" font-family="DM Sans,sans-serif" font-size="10" fill="rgba(255,255,255,0.35)">Intensidad = volumen de pases · Número en flecha = pases entre zonas</text>`;
+
+    return `<svg viewBox="0 0 ${AW} ${AH}" style="width:100%;display:block">${defs}${pitch}${zoneFills}${fwd13}${fwd12}${fwd23}${bwd21}${bwd32}${legend}</svg>`;
+  }
+
   async function renderPasesTemporada(cont) {
     if (!cont) return;
 
@@ -7263,10 +7402,16 @@
                    : pasesTemporadaLoc === 'fuera' ? '✈️ Fuera'
                    : '📊 Toda la temporada';
 
+    // ── Campo SVG de zonas ──────────────────────────────────────────────────
+    const pitchSvg = buildTemporadaZonePitchSVG(zoneStats, transMatrix, totalPasses);
+
     cont.innerHTML = buildPasesSubTabs() + buildPasesEquipoViewBar() + locBar +
       `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
         <span style="font-size:14px;font-weight:700;color:var(--text)">${titleStr} — Pases por zona</span>
         <span style="font-size:11px;color:var(--text3);margin-left:auto">${totalPasses} pases totales · ${filteredPs.length} partido${filteredPs.length!==1?'s':''}</span>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px">
+        ${pitchSvg}
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
         ${zoneCard(1)}${zoneCard(2)}${zoneCard(3)}
