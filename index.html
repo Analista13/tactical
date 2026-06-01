@@ -5247,19 +5247,20 @@
       })
     );
 
-    // Fallback: season-average position per player from lineup tracking (r[5], r[6])
-    // Mirrors what computeTeamShape does for single-match (players with < MIN_P zone events
-    // fall back to their global average so ALL 11 appear — e.g. CBs in attack phase).
+    // Global avg position per player from the SELECTED matches' lineup tracking (r[5], r[6]).
+    // Used as: (1) fallback coords for players who rarely enter the filtered zone (e.g. CBs in
+    // attacking_third), and (2) ranking metric — sort all players by how many of the selected
+    // matches they appeared in, so regular starters (CBs, GK, etc.) always make the top 11.
     const globalAvgAcc = {};
-    Object.values(PONF_LINEUPS).forEach(lup =>
-      lup.forEach(r => {
+    matches.forEach(partido => {
+      (PONF_LINEUPS[partido.id] || []).forEach(r => {
         if (r[1] && r[5] != null && r[6] != null) {
           if (!globalAvgAcc[r[1]]) globalAvgAcc[r[1]] = {xs:[], ys:[]};
           globalAvgAcc[r[1]].xs.push(r[5]);
           globalAvgAcc[r[1]].ys.push(r[6]);
         }
-      })
-    );
+      });
+    });
 
     const acc = {};
     matches.forEach((partido, gi) => {
@@ -5285,46 +5286,35 @@
     const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
     const resolvePos = name => resolvePlayerPosition({id: idLookup[name]||0, position: posLookup[name]||'CM'});
 
-    // Build players: zone-filtered data primary, global season avg as fallback
-    // (CBs never reach attacking_third threshold → appear dimmed at global avg position)
+    // Build one player object per Ponf player who appeared in ≥2 of the selected matches.
+    // Coords: zone-filtered if ≥MIN_P events, else global match-avg (fromLineup:true = dimmed).
+    // RANKED by globalN (matches played in selected set) — NOT by zone events.
+    // This guarantees regular starters like CBs always enter the top-11 even if they
+    // rarely appear in attacking_third or defensive_third.
     const allPlayers = [...ponfNames].map(name => {
-      const v = acc[name];
-      if (v && v.xs.length >= MIN_P) {
-        return {
-          name, n: v.xs.length,
-          position: resolvePos(name),
-          x: avg(v.xs), y: avg(v.ys),
-          fromLineup: false,
-        };
-      }
-      // Fallback: global season-average position (needs ≥ 3 match entries)
       const g = globalAvgAcc[name];
-      if (g && g.xs.length >= 3) {
-        return {
-          name, n: v ? v.xs.length : 0,
-          globalN: g.xs.length,   // used for fallback sort priority
-          position: resolvePos(name),
-          x: avg(g.xs), y: avg(g.ys),
-          fromLineup: true,
-        };
-      }
-      return null;
-    }).filter(Boolean).sort((a,b) => {
-      // Zone-data players first; among fallback, sort by number of seasonal appearances
-      if (!a.fromLineup && b.fromLineup) return -1;
-      if (a.fromLineup && !b.fromLineup) return 1;
-      if (!a.fromLineup) return b.n - a.n;
-      return (b.globalN||0) - (a.globalN||0);
-    });
+      if (!g || g.xs.length < 2) return null;  // never played in these matches
+      const v = acc[name];
+      const hasZone = v && v.xs.length >= MIN_P;
+      return {
+        name,
+        n:       v ? v.xs.length : 0,
+        globalN: g.xs.length,
+        position: resolvePos(name),
+        x: hasZone ? avg(v.xs) : avg(g.xs),
+        y: hasZone ? avg(v.ys) : avg(g.ys),
+        fromLineup: !hasZone,
+      };
+    }).filter(Boolean)
+      .sort((a,b) => (b.globalN||0) - (a.globalN||0));  // most-played players first
 
     if (allPlayers.length < 4) return null;
 
-    // Top 11: prioritise zone-data players; backfill remaining slots with fallback
-    // (ensures CBs always visible even if they never reached attacking_third threshold)
+    // Top 11 by appearances: regular starters (including CBs) always make the cut
     const allGK = allPlayers.filter(p => isGK(p));
     const allOF = allPlayers.filter(p => !isGK(p));
-    const gk      = allGK.slice(0, 1);       // top 1 portero
-    const outfield = allOF.slice(0, 10);     // top 10 de campo (zone first, then fallback)
+    const gk      = allGK.slice(0, 1);
+    const outfield = allOF.slice(0, 10);
     const hull = convexHull(outfield.map(p => ({x:p.x,y:p.y})));
     const area = hullArea(hull);
     const sorted = outfield.slice().sort((a,b) => a.x - b.x);
