@@ -14320,12 +14320,13 @@
   if (window._seqVista   === undefined) window._seqVista   = 'top20';
   if (window._seqJornada === undefined) window._seqJornada = null;
 
-  // Convierte coordenadas SkillCorner (x: -52.5..52.5, y: -34..34)
-  // al SVG viewBox "0 0 100 68" (y=0 = portería atacante, arriba)
-  function skToSvg(xsk, ysk) {
+  // Convierte coordenadas SkillCorner → SVG horizontal (campo apaisado, ataque → derecha)
+  // SkillCorner: x ∈ [-52.5, 52.5] positivo=ataque  |  y ∈ [-34, 34] lateral
+  // SVG viewBox "0 0 105 68": x=0 portería propia, x=105 portería rival
+  function skToSvgH(xsk, ysk) {
     return {
-      cx: ((ysk || 0) + 34) / 68 * 100,
-      cy: (52.5 - (xsk || 0)) / 105 * 68
+      cx: (xsk || 0) + 52.5,   // [0 … 105]
+      cy: 34 - (ysk || 0)        // [0 … 68]  (arriba = positivo SkillCorner)
     };
   }
 
@@ -14352,111 +14353,138 @@
   // xT total de una secuencia
   const seqXT = seq => seq.events.reduce((s, e) => s + (e.player_targeted_xthreat || 0), 0);
 
-  // SVG mini campo con las líneas de la secuencia
-  function seqPitch(seq, size) {
-    const W = 100, H = 68;
-    const lc = 'rgba(255,255,255,0.22)', lw = '0.6';
-    const r = size === 'big' ? 2.2 : 1.8;
-    const lines = seq.events.map((e, i) => {
-      if (e.x_start == null) return '';
-      const s = skToSvg(e.x_start, e.y_start);
-      const en = skToSvg(e.x_end != null ? e.x_end : e.x_start, e.y_end != null ? e.y_end : e.y_start);
+  // SVG del campo horizontal con trayectoria de la secuencia
+  // Campo apaisado: portería propia izquierda, portería rival derecha
+  function buildSeqSVG(seq) {
+    const W = 105, H = 68;
+    const lc = 'rgba(255,255,255,0.2)', lw = '0.5';
+    // ID único para los markers (evitar conflictos entre múltiples SVGs en la misma página)
+    const uid = 'sq' + Math.random().toString(36).slice(2, 9);
+
+    const defs = `<defs>
+      <marker id="ap${uid}" viewBox="0 0 10 10" refX="8" refY="5"
+        markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M0,1 L9,5 L0,9 z" fill="rgba(255,255,255,0.95)"/>
+      </marker>
+      <marker id="ac${uid}" viewBox="0 0 10 10" refX="8" refY="5"
+        markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M0,1 L9,5 L0,9 z" fill="rgba(255,195,40,0.95)"/>
+      </marker>
+    </defs>`;
+
+    // Marcas del campo — proporciones reales (105×68 m)
+    const fieldBg = `<rect width="${W}" height="${H}" fill="#0d1b2a" rx="4"/>`;
+    const fieldLines = [
+      // borde exterior
+      `<rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="${lc}" stroke-width="${lw}" rx="4"/>`,
+      // línea de medio campo
+      `<line x1="${W/2}" y1="0" x2="${W/2}" y2="${H}" stroke="${lc}" stroke-width="${lw}"/>`,
+      // círculo central
+      `<circle cx="${W/2}" cy="${H/2}" r="9.15" fill="none" stroke="${lc}" stroke-width="${lw}"/>`,
+      `<circle cx="${W/2}" cy="${H/2}" r="0.6" fill="${lc}"/>`,
+      // área grande izquierda (defensiva)
+      `<rect x="0" y="13.84" width="16.5" height="40.32" fill="none" stroke="${lc}" stroke-width="${lw}"/>`,
+      // área pequeña izquierda
+      `<rect x="0" y="24.84" width="5.5" height="18.32" fill="none" stroke="${lc}" stroke-width="${lw}"/>`,
+      // portería izquierda
+      `<rect x="0" y="30.34" width="1.2" height="7.32" fill="rgba(255,255,255,0.12)" stroke="${lc}" stroke-width="${lw}"/>`,
+      // área grande derecha (atacante) — con fondo sutil
+      `<rect x="${W-16.5}" y="13.84" width="16.5" height="40.32" fill="rgba(255,255,255,0.02)" stroke="${lc}" stroke-width="${lw}"/>`,
+      // área pequeña derecha
+      `<rect x="${W-5.5}" y="24.84" width="5.5" height="18.32" fill="none" stroke="${lc}" stroke-width="${lw}"/>`,
+      // portería derecha
+      `<rect x="${W-1.2}" y="30.34" width="1.2" height="7.32" fill="rgba(255,255,255,0.12)" stroke="${lc}" stroke-width="${lw}"/>`,
+      // puntos de penalti
+      `<circle cx="11" cy="${H/2}" r="0.6" fill="${lc}"/>`,
+      `<circle cx="${W-11}" cy="${H/2}" r="0.6" fill="${lc}"/>`,
+    ].join('');
+
+    const events = seq.events.filter(e => e.x_start != null);
+
+    // 1. Líneas (debajo de los puntos)
+    const linesSvg = events.map(e => {
+      const s  = skToSvgH(e.x_start, e.y_start);
+      const en = skToSvgH(
+        e.x_end != null ? e.x_end : e.x_start,
+        e.y_end != null ? e.y_end : e.y_start
+      );
+      const dx = en.cx - s.cx, dy = en.cy - s.cy;
+      const len = Math.sqrt(dx*dx + dy*dy);
+      if (len < 0.8) return '';
       const isPass = e.end_type === 'pass' || e.end_type === 'shot';
-      const col = isPass ? 'rgba(255,255,255,0.85)' : 'rgba(255,200,50,0.85)';
-      const dash = isPass ? '' : ' stroke-dasharray="2.5,1.8"';
-      const line = `<line x1="${s.cx.toFixed(1)}" y1="${s.cy.toFixed(1)}" x2="${en.cx.toFixed(1)}" y2="${en.cy.toFixed(1)}" stroke="${col}" stroke-width="${size==='big'?'1.4':'1.1'}"${dash}/>`;
-      // Punto inicio (rojo) solo en el primer evento
-      const dotStart = i === 0
-        ? `<circle cx="${s.cx.toFixed(1)}" cy="${s.cy.toFixed(1)}" r="${r}" fill="#ef4444" opacity="0.95"/>`
-        : '';
-      // Punto final (azul) solo en el último evento
-      const dotEnd = i === seq.events.length - 1
-        ? `<circle cx="${en.cx.toFixed(1)}" cy="${en.cy.toFixed(1)}" r="${r}" fill="#60a5fa" opacity="0.95"/>`
-        : '';
-      return line + dotStart + dotEnd;
+      const col  = isPass ? 'rgba(255,255,255,0.95)' : 'rgba(255,195,40,0.95)';
+      const mid  = isPass ? `url(#ap${uid})` : `url(#ac${uid})`;
+      const dash = isPass ? '' : ` stroke-dasharray="3.5,2.2"`;
+      // Recortar el final para que la flecha no tape el punto de llegada
+      const shrink = Math.min(4, len * 0.22);
+      const x2 = (en.cx - dx/len*shrink).toFixed(2);
+      const y2 = (en.cy - dy/len*shrink).toFixed(2);
+      return `<line x1="${s.cx.toFixed(2)}" y1="${s.cy.toFixed(2)}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="2.2"${dash} stroke-linecap="round" marker-end="${mid}"/>`;
     }).join('');
 
-    const pitch = `<rect width="${W}" height="${H}" fill="#0c1220"/>
-<rect x="3" y="1" width="94" height="66" fill="none" stroke="${lc}" stroke-width="${lw}"/>
-<line x1="3" y1="34" x2="97" y2="34" stroke="${lc}" stroke-width="${lw}"/>
-<circle cx="50" cy="34" r="9" fill="none" stroke="${lc}" stroke-width="${lw}"/>
-<circle cx="50" cy="34" r="0.7" fill="${lc}"/>
-<rect x="21" y="1" width="58" height="15" fill="none" stroke="${lc}" stroke-width="${lw}"/>
-<rect x="37" y="1" width="26" height="5.5" fill="none" stroke="${lc}" stroke-width="${lw}"/>
-<rect x="44" y="0" width="12" height="1.5" fill="rgba(255,255,255,0.1)" stroke="${lc}" stroke-width="${lw}"/>
-<circle cx="50" cy="11" r="0.7" fill="${lc}"/>
-<rect x="21" y="51" width="58" height="15" fill="none" stroke="${lc}" stroke-width="${lw}"/>
-<rect x="37" y="60.5" width="26" height="5.5" fill="none" stroke="${lc}" stroke-width="${lw}"/>
-<rect x="44" y="65.5" width="12" height="1.5" fill="rgba(255,255,255,0.1)" stroke="${lc}" stroke-width="${lw}"/>
-<circle cx="50" cy="57" r="0.7" fill="${lc}"/>
-${lines}`;
-    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block"><${''}>` +
-      `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${pitch}</svg>`;
-  }
-
-  // Construye el SVG completo del campo
-  function buildSeqSVG(seq, size) {
-    const W = 100, H = 68;
-    const lc = 'rgba(255,255,255,0.22)', lw = '0.6';
-    const r = size === 'big' ? 2.4 : 1.9;
-    const lines = seq.events.map((e, i) => {
-      if (e.x_start == null) return '';
-      const s  = skToSvg(e.x_start, e.y_start);
-      const en = skToSvg(e.x_end != null ? e.x_end : e.x_start,
-                         e.y_end != null ? e.y_end : e.y_start);
-      const isPass = e.end_type === 'pass' || e.end_type === 'shot';
-      const col    = isPass ? 'rgba(255,255,255,0.88)' : 'rgba(255,195,40,0.88)';
-      const dash   = isPass ? '' : ' stroke-dasharray="2.5,1.8"';
-      const sw     = size === 'big' ? '1.5' : '1.1';
-      const line   = `<line x1="${s.cx.toFixed(1)}" y1="${s.cy.toFixed(1)}" x2="${en.cx.toFixed(1)}" y2="${en.cy.toFixed(1)}" stroke="${col}" stroke-width="${sw}"${dash}/>`;
-      const dStart = i === 0 ? `<circle cx="${s.cx.toFixed(1)}" cy="${s.cy.toFixed(1)}" r="${r}" fill="#ef4444"/>` : '';
-      const dEnd   = i === seq.events.length-1 ? `<circle cx="${en.cx.toFixed(1)}" cy="${en.cy.toFixed(1)}" r="${r}" fill="#60a5fa"/>` : '';
-      return dStart + line + dEnd;
+    // 2. Puntos (encima de las líneas)
+    const dotsSvg = events.map((e, i) => {
+      const s = skToSvgH(e.x_start, e.y_start);
+      let html = '';
+      if (i === 0) {
+        // Inicio: círculo verde con número 1
+        html += `<circle cx="${s.cx.toFixed(2)}" cy="${s.cy.toFixed(2)}" r="3.2" fill="#22c55e" stroke="white" stroke-width="0.6"/>`;
+        html += `<text x="${s.cx.toFixed(2)}" y="${(s.cy+1.1).toFixed(2)}" font-size="3" fill="white" text-anchor="middle" font-weight="bold" font-family="Arial,sans-serif">1</text>`;
+      } else {
+        // Intermedios: pequeño punto blanco
+        html += `<circle cx="${s.cx.toFixed(2)}" cy="${s.cy.toFixed(2)}" r="1.8" fill="rgba(255,255,255,0.7)" stroke="rgba(255,255,255,0.3)" stroke-width="0.3"/>`;
+      }
+      // Punto final en el extremo del último evento
+      if (i === events.length - 1) {
+        const en = skToSvgH(
+          e.x_end != null ? e.x_end : e.x_start,
+          e.y_end != null ? e.y_end : e.y_start
+        );
+        const isShot = e.end_type === 'shot';
+        html += `<circle cx="${en.cx.toFixed(2)}" cy="${en.cy.toFixed(2)}" r="3.2" fill="${isShot?'#ef4444':'#60a5fa'}" stroke="white" stroke-width="0.6"/>`;
+        if (isShot) html += `<text x="${en.cx.toFixed(2)}" y="${(en.cy+1.1).toFixed(2)}" font-size="3.2" fill="white" text-anchor="middle" font-family="Arial,sans-serif">⚽</text>`;
+      }
+      return html;
     }).join('');
 
-    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
-<rect width="${W}" height="${H}" fill="#0c1220"/>
-<rect x="3" y="1" width="94" height="66" fill="none" stroke="${lc}" stroke-width="${lw}"/>
-<line x1="3" y1="34" x2="97" y2="34" stroke="${lc}" stroke-width="${lw}"/>
-<circle cx="50" cy="34" r="9" fill="none" stroke="${lc}" stroke-width="${lw}"/>
-<circle cx="50" cy="34" r="0.7" fill="${lc}"/>
-<rect x="21" y="1" width="58" height="15" fill="none" stroke="${lc}" stroke-width="${lw}"/>
-<rect x="37" y="1" width="26" height="5.5" fill="none" stroke="${lc}" stroke-width="${lw}"/>
-<rect x="44" y="0" width="12" height="1.5" fill="rgba(255,255,255,0.1)" stroke="${lc}" stroke-width="${lw}"/>
-<circle cx="50" cy="11" r="0.7" fill="${lc}"/>
-<rect x="21" y="51" width="58" height="15" fill="none" stroke="${lc}" stroke-width="${lw}"/>
-<rect x="37" y="60.5" width="26" height="5.5" fill="none" stroke="${lc}" stroke-width="${lw}"/>
-<rect x="44" y="65.5" width="12" height="1.5" fill="rgba(255,255,255,0.1)" stroke="${lc}" stroke-width="${lw}"/>
-<circle cx="50" cy="57" r="0.7" fill="${lc}"/>
-${lines}</svg>`;
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${defs}${fieldBg}${fieldLines}${linesSvg}${dotsSvg}</svg>`;
   }
 
-  // Card de una secuencia
+  // Tarjeta de una secuencia
   function seqCard(seq, rank, matchInfo) {
-    const xt  = seqXT(seq);
-    const mi  = matchInfo || {};
-    const isPonfeHome = (mi.local || '').includes('Ponferradina') || (mi.local || '').includes('SD Ponf');
-    const opp = isPonfeHome ? (mi.vis || '') : (mi.local || '');
-    const loc = isPonfeHome ? '🏠' : '✈️';
-    const sc  = mi.s || '–';
+    const xt   = seqXT(seq);
+    const mi   = matchInfo || {};
+    const isPH = (mi.local || '').toLowerCase().includes('ponferradina') ||
+                 (mi.local || '').toLowerCase().includes('sd ponf');
+    const opp  = isPH ? (mi.vis || '') : (mi.local || '');
+    const loc  = isPH ? '🏠' : '✈️';
+    const sc   = mi.s || '–';
     const acts = seq.events.length;
-    const phase = seq.events[0] ? (seq.events[0].team_in_possession_phase_type || '') : '';
-    const phaseLabel = {create:'Creación',finish:'Finalización',transition:'Transición',
-      quick_break:'Contragolpe',build_up:'Construcción',set_play:'Balón parado',
-      direct:'Directo',chaotic:'Caótico',disruption:'Disrupción'}[phase] || phase;
+    const phase = seq.events[0]?.team_in_possession_phase_type || '';
+    const phaseES = {
+      create:'Creación', finish:'Finalización', transition:'Transición',
+      quick_break:'Contragolpe', build_up:'Construcción', set_play:'Balón parado',
+      direct:'Directo', chaotic:'Caótico', disruption:'Disrupción'
+    }[phase] || phase;
     const endsShot = seq.events[seq.events.length-1]?.end_type === 'shot';
+    const xtColor = xt >= 0.15 ? '#22c55e' : xt >= 0.07 ? '#f59e0b' : '#94a3b8';
+    const rkBg    = rank <= 3 ? '#f97316' : rank <= 10 ? '#d97706' : '#334155';
 
-    return `<div style="background:#111827;border-radius:10px;overflow:hidden;border:1px solid #1e293b">
-      ${buildSeqSVG(seq, 'small')}
-      <div style="padding:8px 10px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
-          <span style="font-size:10px;color:#64748b">Seq ${rank} · ${acts} acc.</span>
-          ${endsShot ? '<span style="font-size:10px;color:#f97316">🎯</span>' : ''}
+    return `<div style="background:#0f172a;border-radius:10px;overflow:hidden;border:1px solid #1e293b;display:flex;flex-direction:column">
+      ${buildSeqSVG(seq)}
+      <div style="padding:10px 12px;display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="background:${rkBg};color:white;font-size:10px;font-weight:800;padding:2px 9px;border-radius:20px">#${rank}</span>
+          <span style="font-size:16px;font-weight:900;color:${xtColor};letter-spacing:-0.3px">xT ${xt.toFixed(3)}</span>
         </div>
-        <div style="font-size:11px;color:#f59e0b;font-weight:700">${mi.j || ''} ${loc} ${opp}</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:3px">
-          <span style="font-size:10px;color:#64748b">${phaseLabel}</span>
-          <span style="font-size:13px;font-weight:800;color:#22c55e">xT ${xt.toFixed(3)}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px;font-weight:700;color:#f59e0b;white-space:nowrap">${mi.j||''} ${loc}</span>
+          <span style="font-size:12px;font-weight:600;color:#e2e8f0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${opp}</span>
+          <span style="font-size:12px;font-weight:800;color:#94a3b8">${sc}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:10px;color:#64748b">${phaseES} · ${acts} acc.</span>
+          ${endsShot ? '<span style="font-size:11px;color:#f97316;font-weight:700">🎯 disparo</span>' : ''}
         </div>
       </div>
     </div>`;
@@ -14487,11 +14515,12 @@ ${lines}</svg>`;
     // Legend
     const legend = `<div style="display:flex;gap:16px;align-items:center;margin-bottom:16px;padding:8px 12px;background:#0f172a;border-radius:8px;border:1px solid #1e293b">
       <span style="font-size:11px;color:#64748b;font-weight:600">Leyenda:</span>
-      <span style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:5px"><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="rgba(255,255,255,0.88)" stroke-width="1.5"/></svg> Pase</span>
-      <span style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:5px"><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="rgba(255,195,40,0.88)" stroke-width="1.5" stroke-dasharray="4,3"/></svg> Conducción</span>
-      <span style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:5px"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#ef4444"/></svg> Inicio</span>
-      <span style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:5px"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#60a5fa"/></svg> Final</span>
-      <span style="font-size:11px;color:#94a3b8;margin-left:auto">🎯 = termina en disparo</span>
+      <span style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:5px"><svg width="28" height="8"><line x1="0" y1="4" x2="22" y2="4" stroke="rgba(255,255,255,0.95)" stroke-width="2.2" stroke-linecap="round"/><polygon points="22,1 28,4 22,7" fill="rgba(255,255,255,0.95)"/></svg> Pase</span>
+      <span style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:5px"><svg width="28" height="8"><line x1="0" y1="4" x2="22" y2="4" stroke="rgba(255,195,40,0.95)" stroke-width="2.2" stroke-dasharray="4,2.5" stroke-linecap="round"/><polygon points="22,1 28,4 22,7" fill="rgba(255,195,40,0.95)"/></svg> Conducción</span>
+      <span style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:5px"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#22c55e" stroke="white" stroke-width="1"/></svg> Inicio</span>
+      <span style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:5px"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#60a5fa" stroke="white" stroke-width="1"/></svg> Final</span>
+      <span style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:5px"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#ef4444" stroke="white" stroke-width="1"/></svg> Disparo</span>
+      <span style="font-size:11px;color:#f97316;font-weight:600;margin-left:auto">🎯 = termina en disparo</span>
     </div>`;
 
     cont.innerHTML = `<div style="padding:16px 20px">${header}<div id="seq-body"><div class="loading"><div class="spinner"></div><span>Cargando secuencias...</span></div></div></div>`;
@@ -14518,7 +14547,7 @@ ${lines}</svg>`;
         const top = allSeqs.slice(0, 20);
         const cards = top.map((seq, i) => seqCard(seq, i + 1, matchLookup[seq.matchId])).join('');
         body.innerHTML = legend +
-          `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${cards}</div>`;
+          `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px">${cards}</div>`;
 
       } else {
         // Por Jornada
@@ -14560,7 +14589,7 @@ ${lines}</svg>`;
             <span style="font-size:11px;color:#64748b">${jSeqs.length} secuencias</span>
           </div>
           ${legend}
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${cards5}</div>`;
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px">${cards5}</div>`;
       }
     } catch(err) {
       const body = document.getElementById('seq-body');
