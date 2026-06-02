@@ -12515,7 +12515,7 @@
                   ['Completo','Presionador','Bloque pasivo','Conservador'],
                   ['Completo','En transición','Bloque puro','Discreto'],
                   ['Muy efectivo','Recuperador','Perturbador','Sin impacto'],
-                  ['Muy vulnerable','Superado en mov.','Superado en pos.','Muy fiable'],
+                  ['Muy vulnerable','Superado en pos.','Superado en mov.','Muy fiable'],
                   ['Pressing total','Contrapresor','Presionador directo','Sin pressing'],
                 ];
                 const _ql = (_profileObeScatterPreset >= 0 && _QUAD_LABELS[_profileObeScatterPreset])
@@ -12569,8 +12569,8 @@
                   ],
                   [// 3: Vulnerabilidades — TR=malo, TL, BR, BL=bueno
                     `<strong>${_ln}</strong> está en el cuadrante <em>Muy vulnerable</em>: superado con frecuencia por movimiento (P${_pX}) y en posesión (P${_pY}). Dos áreas de mejora claras a trabajar con él.`,
-                    `<strong>${_ln}</strong> está en el cuadrante <em>Superado en mov.</em>: le generan más problemas las carreras sin balón (P${_pX}) que las situaciones en posesión rival (P${_pY}).`,
-                    `<strong>${_ln}</strong> está en el cuadrante <em>Superado en pos.</em>: gestiona bien los movimientos (P${_pX}) pero le cuesta más defender cuando el rival tiene el balón (P${_pY}).`,
+                    `<strong>${_ln}</strong> está en el cuadrante <em>Superado en pos.</em>: gestiona bien los movimientos sin balón (P${_pX}) pero le generan más problemas las situaciones con el rival en posesión (P${_pY}).`,
+                    `<strong>${_ln}</strong> está en el cuadrante <em>Superado en mov.</em>: defiende bien cuando el rival tiene el balón (P${_pY}) pero le cuestan más las carreras y movimientos sin balón (P${_pX}).`,
                     `<strong>${_ln}</strong> está en el cuadrante <em>Muy fiable</em>: raramente superado ni por movimiento (P${_pX}) ni en posesión (P${_pY}). Muy sólido y difícil de batir en ambas situaciones.`,
                   ],
                   [// 4: Pressing detallado — TR, TL, BR, BL
