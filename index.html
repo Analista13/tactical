@@ -14562,7 +14562,7 @@
 
     const header = '<div style="display:flex;gap:8px;margin-bottom:18px;align-items:center">'
       +'<span style="font-size:13px;color:#64748b;margin-right:4px">Vista:</span>'
-      +tabBtn('jornadas','Por Jornadas')+tabBtn('temporada','Temporada')
+      +tabBtn('jornadas','Por Jornadas')+tabBtn('temporada','Temporada')+tabBtn('xgot','xGOT')
       +'</div>';
 
     if (vista === 'jornadas') {
@@ -14684,6 +14684,113 @@
         +'</div></div>'
         +(jornadaShots.length===0?'<div style="color:#475569;padding:40px;text-align:center">Sin datos de tiros para J'+selJ+'</div>':'')
         +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px">'+playerCards+'</div>'
+        +'</div>';
+
+    } else if (vista === 'xgot') {
+      // ══════════════════════════════════════════════════════════════
+      // TAB xGOT — Vista de portería con tamaño proporcional al xG
+      // ══════════════════════════════════════════════════════════════
+      const locSub = subTab==='casa'?'L': subTab==='fuera'?'V': null;
+      const shots  = locSub ? TIROS_DATA.filter(s=>s.loc===locSub) : TIROS_DATA;
+
+      const subBtn = (val,lbl) => {
+        const act = subTab===val;
+        return '<button onclick="window._tirosSubTab=\''+val+'\';loadTiros()" style="padding:5px 16px;border-radius:20px;border:1px solid '+(act?'#f97316':'#334155')+';background:'+(act?'#f97316':'transparent')+';color:'+(act?'white':'#94a3b8')+';cursor:pointer;font-size:12px;font-weight:'+(act?700:400)+'">'+lbl+'</button>';
+      };
+      const filterBar = '<div style="display:flex;gap:6px;margin-bottom:16px">'
+        +subBtn('all','Temporada completa')+subBtn('casa','🏠 Casa')+subBtn('fuera','✈️ Fuera')
+        +'</div>';
+
+      // Stats
+      const n       = shots.length;
+      const goals   = shots.filter(s=>s.t==='goal').length;
+      const saves   = shots.filter(s=>s.t==='save').length;
+      const onT     = goals + saves;
+      const xgTotal = shots.reduce((a,s)=>a+s.xg,0);
+      const xgOT    = shots.filter(s=>s.t==='goal'||s.t==='save').reduce((a,s)=>a+s.xg,0);
+      const xgPerT  = n ? xgTotal/n : 0;
+      const onTPct  = n ? onT/n*100 : 0;
+      const xgotPct = xgTotal ? xgOT/xgTotal*100 : 0;
+
+      const statBar = '<div style="display:flex;flex-wrap:wrap;gap:0;background:#111827;border:1px solid #1e293b;border-radius:10px;overflow:hidden;margin-bottom:16px">'
+        +['<div style="padding:14px 20px;border-right:1px solid #1e293b;text-align:center"><div style="font-size:20px;font-weight:800;color:#facc15">'+xgOT.toFixed(2)+'</div><div style="font-size:10px;color:#64748b;margin-top:2px">xGOT</div></div>',
+          '<div style="padding:14px 20px;border-right:1px solid #1e293b;text-align:center"><div style="font-size:20px;font-weight:800;color:#94a3b8">'+xgotPct.toFixed(1)+'%</div><div style="font-size:10px;color:#64748b;margin-top:2px">xGOT / xG</div></div>',
+          '<div style="padding:14px 20px;border-right:1px solid #1e293b;text-align:center"><div style="font-size:20px;font-weight:800;color:#22c55e">'+goals+'</div><div style="font-size:10px;color:#64748b;margin-top:2px">Goles</div></div>',
+          '<div style="padding:14px 20px;border-right:1px solid #1e293b;text-align:center"><div style="font-size:20px;font-weight:800;color:#e2e8f0">'+xgTotal.toFixed(2)+'</div><div style="font-size:10px;color:#64748b;margin-top:2px">xG</div></div>',
+          '<div style="padding:14px 20px;border-right:1px solid #1e293b;text-align:center"><div style="font-size:20px;font-weight:800;color:#60a5fa">'+onT+'</div><div style="font-size:10px;color:#64748b;margin-top:2px">A portería</div></div>',
+          '<div style="padding:14px 20px;border-right:1px solid #1e293b;text-align:center"><div style="font-size:20px;font-weight:800;color:#60a5fa">'+onTPct.toFixed(1)+'%</div><div style="font-size:10px;color:#64748b;margin-top:2px">% a portería</div></div>',
+          '<div style="padding:14px 20px;border-right:1px solid #1e293b;text-align:center"><div style="font-size:20px;font-weight:800;color:#e2e8f0">'+n+'</div><div style="font-size:10px;color:#64748b;margin-top:2px">Tiros</div></div>',
+          '<div style="padding:14px 20px;text-align:center"><div style="font-size:20px;font-weight:800;color:#e2e8f0">'+xgPerT.toFixed(2)+'</div><div style="font-size:10px;color:#64748b;margin-top:2px">xG / Tiro</div></div>',
+        ].join('')+'</div>';
+
+      // Vista de portería — puntos posicionados por gy/gz, tamaño por xG
+      const VW=480, VH=180;
+      const GW=220, GH=70;
+      const GX=(VW-GW)/2, GY=(VH-GH)/2;
+      const xgMax = Math.max(...shots.map(s=>s.xg), 0.01);
+      const tColors={goal:'#22c55e',save:'#f0c040',miss:'#ef4444',block:'#ef4444',post:'#c084fc'};
+
+      // Escala radio: r proporcional a sqrt(xg) para área visual justa, máx 18, mín 5
+      const radius = xg => Math.max(5, Math.min(18, 5 + Math.sqrt(xg/xgMax)*13));
+
+      const sorted = [...shots].sort((a,b) => a.xg - b.xg); // bajo xG primero → alto xG encima
+      let svgDots = '';
+      sorted.forEach((s,i) => {
+        const col = tColors[s.t] || '#94a3b8';
+        const r   = radius(s.xg);
+        const key = 'xgot_'+i;
+        window._tirosTipData[key] = buildTiroTip(s);
+        let cx, cy;
+        if (s.gy!=null && s.gz!=null) {
+          cx = GX + (s.gy/100)*GW;
+          cy = GY + (1 - s.gz/100)*GH;
+        } else {
+          // tiros sin coordenada de marco: dispersarlos fuera del marco
+          const spread = 22 + (i % 7)*8;
+          cx = s.dx!=null ? s.dx/100*VW : VW/2 + (Math.random()-0.5)*VW*0.6;
+          cy = GY - spread;
+        }
+        svgDots += '<circle data-tkey="'+key+'" cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+r.toFixed(1)+'"'
+          +' fill="'+col+'" opacity="0.82" stroke="rgba(0,0,0,0.25)" stroke-width="0.8" style="cursor:pointer"/>';
+      });
+
+      // Red
+      const netV = Array.from({length:10},(_,i)=>'<line x1="'+(GX+(i+1)*GW/11).toFixed(1)+'" y1="'+GY+'" x2="'+(GX+(i+1)*GW/11).toFixed(1)+'" y2="'+(GY+GH)+'" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>').join('');
+      const netH = Array.from({length:4},(_,i)=>'<line x1="'+GX+'" y1="'+(GY+(i+1)*GH/5).toFixed(1)+'" x2="'+(GX+GW)+'" y2="'+(GY+(i+1)*GH/5).toFixed(1)+'" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>').join('');
+
+      const goalSVG = '<svg viewBox="0 0 '+VW+' '+VH+'" style="width:100%;max-width:700px;display:block;margin:0 auto">'
+        +'<rect width="'+VW+'" height="'+VH+'" fill="#0c1220"/>'
+        // sombra detrás del marco
+        +'<rect x="'+(GX-2)+'" y="'+(GY-2)+'" width="'+(GW+4)+'" height="'+(GH+4)+'" rx="1" fill="rgba(0,0,0,0.4)"/>'
+        // red
+        +'<rect x="'+GX+'" y="'+GY+'" width="'+GW+'" height="'+GH+'" fill="rgba(200,220,200,0.04)"/>'
+        +netV+netH
+        // postes
+        +'<rect x="'+(GX-2.5)+'" y="'+(GY-2)+'" width="5" height="'+(GH+4)+'" fill="rgba(255,255,255,0.9)"/>'
+        +'<rect x="'+(GX+GW-2.5)+'" y="'+(GY-2)+'" width="5" height="'+(GH+4)+'" fill="rgba(255,255,255,0.9)"/>'
+        // larguero
+        +'<rect x="'+(GX-2.5)+'" y="'+(GY-2.5)+'" width="'+(GW+5)+'" height="5" fill="rgba(255,255,255,0.9)"/>'
+        // suelo
+        +'<line x1="0" y1="'+(GY+GH+2)+'" x2="'+VW+'" y2="'+(GY+GH+2)+'" stroke="rgba(255,255,255,0.15)" stroke-width="0.8"/>'
+        +svgDots
+        +'</svg>';
+
+      // Leyenda
+      const legend = '<div style="display:flex;gap:16px;align-items:center;justify-content:center;margin:10px 0 14px;flex-wrap:wrap">'
+        +[['#22c55e','Gol'],['#f0c040','Parado'],['#ef4444','Fuera / Bloqueado'],['#c084fc','Palo']].map(([c,l])=>
+          '<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8">'
+          +'<svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="'+c+'" opacity="0.85"/></svg>'+l+'</span>'
+        ).join('')
+        +'<span style="font-size:11px;color:#475569;margin-left:8px">Tamaño = xG</span>'
+        +'</div>';
+
+      cont.innerHTML = '<div style="padding:16px 20px">'+header+filterBar
+        +'<div style="background:#111827;border:1px solid #1e293b;border-radius:10px;overflow:hidden;padding:8px 0">'
+        +'<div style="padding:6px 14px 0;font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px">VISTA DE PORTERÍA · '+( locSub==='L'?'CASA': locSub==='V'?'FUERA':'TEMPORADA COMPLETA')+'</div>'
+        +legend
+        +'<div onmouseover="tirosOverSVG(event)" onmouseleave="tirosHideTip()" onmousemove="tirosMoveTip(event)">'+goalSVG+'</div>'
+        +'</div>'
+        +'<div style="margin-top:14px">'+statBar+'</div>'
         +'</div>';
 
     } else {
