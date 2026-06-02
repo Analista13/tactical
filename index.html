@@ -14555,6 +14555,133 @@
       return '<div onmouseover="tirosOverSVG(event)" onmouseleave="tirosHideTip()" onmousemove="tirosMoveTip(event)">'+svg+'</div>';
     }
 
+    // ── Mapa campo numerado (tiros con número) ────────────────────────
+    function numberedPitch(shots) {
+      const W=100, H=68;
+      const tColors = {goal:'#22c55e',save:'#f59e0b',miss:'#ef4444',block:'#94a3b8',post:'#c084fc'};
+      const sorted = [...shots].sort((a,b)=>(a.min||0)-(b.min||0));
+      const dots = sorted.map((s,i) => {
+        if (s.dx==null||s.dy==null) return '';
+        const cx  = s.dx.toFixed(1);
+        const cy  = (s.dy*0.68).toFixed(1);
+        const col = tColors[s.t] || '#94a3b8';
+        const key = 'np'+s.j+'_'+i;
+        window._tirosTipData[key] = buildTiroTip(s);
+        const n = i+1;
+        return '<g data-tkey="'+key+'" style="cursor:pointer">'
+          +'<circle cx="'+cx+'" cy="'+cy+'" r="3.8" fill="'+col+'" opacity="0.9" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/>'
+          +'<text x="'+cx+'" y="'+(parseFloat(cy)+1.3).toFixed(1)+'" text-anchor="middle" font-size="3.2" font-weight="700" fill="#0d1117">'+n+'</text>'
+          +'</g>';
+      }).join('');
+      const lc='rgba(255,255,255,0.25)', lw='0.7';
+      const svg = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block">'
+        +'<rect width="'+W+'" height="'+H+'" fill="#0c1220"/>'
+        +'<rect x="3" y="1" width="94" height="66" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<line x1="3" y1="34" x2="97" y2="34" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<circle cx="50" cy="34" r="9" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<circle cx="50" cy="34" r="0.7" fill="'+lc+'"/>'
+        +'<rect x="21" y="1" width="58" height="15" fill="rgba(255,255,255,0.03)" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<rect x="37" y="1" width="26" height="5.5" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<rect x="44" y="0" width="12" height="1.5" fill="rgba(255,255,255,0.15)" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<circle cx="50" cy="11" r="0.7" fill="'+lc+'"/>'
+        +'<rect x="21" y="51" width="58" height="15" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<rect x="37" y="60.5" width="26" height="5.5" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<rect x="44" y="65.5" width="12" height="1.5" fill="rgba(255,255,255,0.15)" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        +'<circle cx="50" cy="57" r="0.7" fill="'+lc+'"/>'
+        +dots+'</svg>';
+      return '<div onmouseover="tirosOverSVG(event)" onmouseleave="tirosHideTip()" onmousemove="tirosMoveTip(event)">'+svg+'</div>';
+    }
+
+    // ── Vista portería (gy/gz de SofaScore) ──────────────────────────
+    function goalMouthSVG(shots) {
+      const GW=100, GH=34;
+      const tColors = {goal:'#22c55e',save:'#f59e0b',miss:'#ef4444',block:'#94a3b8',post:'#c084fc'};
+      const valid = shots.filter(s=>s.gy!=null&&s.gz!=null);
+      const dots = valid.map((s,i)=>{
+        const cx = (s.gy/100*GW).toFixed(1);
+        const cy = ((1-s.gz/100)*GH).toFixed(1);
+        const col = tColors[s.t]||'#94a3b8';
+        const key = 'gm'+s.j+'_'+i;
+        window._tirosTipData[key] = buildTiroTip(s);
+        return '<g data-tkey="'+key+'" style="cursor:pointer">'
+          +'<circle cx="'+cx+'" cy="'+cy+'" r="3.5" fill="'+col+'" opacity="0.85" stroke="rgba(0,0,0,0.35)" stroke-width="0.5"/>'
+          +'<text x="'+cx+'" y="'+(parseFloat(cy)+1.2).toFixed(1)+'" text-anchor="middle" font-size="3.0" font-weight="700" fill="#0d1117">'+(i+1)+'</text>'
+          +'</g>';
+      }).join('');
+      const lc='rgba(255,255,255,0.55)';
+      const svg='<svg viewBox="-8 -6 116 46" style="width:100%;display:block">'
+        +'<rect x="-8" y="-6" width="116" height="46" fill="#0c1220"/>'
+        // red de fondo
+        +'<rect x="0" y="0" width="'+GW+'" height="'+GH+'" fill="rgba(255,255,255,0.02)" stroke="'+lc+'" stroke-width="0.8"/>'
+        // líneas de red
+        +Array.from({length:9},(_,i)=>'<line x1="'+(i+1)*10+'" y1="0" x2="'+(i+1)*10+'" y2="'+GH+'" stroke="rgba(255,255,255,0.08)" stroke-width="0.4"/>').join('')
+        +Array.from({length:3},(_,i)=>'<line x1="0" y1="'+((i+1)*GH/4)+'" x2="'+GW+'" y2="'+((i+1)*GH/4)+'" stroke="rgba(255,255,255,0.08)" stroke-width="0.4"/>').join('')
+        // postes
+        +'<rect x="0" y="0" width="1.5" height="'+GH+'" fill="rgba(255,255,255,0.7)"/>'
+        +'<rect x="'+(GW-1.5)+'" y="0" width="1.5" height="'+GH+'" fill="rgba(255,255,255,0.7)"/>'
+        // larguero
+        +'<rect x="0" y="0" width="'+GW+'" height="1.5" fill="rgba(255,255,255,0.7)"/>'
+        // suelo
+        +'<line x1="-8" y1="'+GH+'" x2="108" y2="'+GH+'" stroke="rgba(255,255,255,0.3)" stroke-width="0.6"/>'
+        +dots
+        +'</svg>';
+      return '<div style="background:#0c1220;border-radius:8px;overflow:hidden;border:1px solid #1e293b" onmouseover="tirosOverSVG(event)" onmouseleave="tirosHideTip()" onmousemove="tirosMoveTip(event)">'+svg+'</div>';
+    }
+
+    // ── Panel estadísticas (referencia imagen) ────────────────────────
+    function statsPanelHTML(shots) {
+      const n       = shots.length;
+      const goals   = shots.filter(s=>s.t==='goal').length;
+      const saves   = shots.filter(s=>s.t==='save').length;
+      const blocked = shots.filter(s=>s.t==='block').length;
+      const missed  = shots.filter(s=>s.t==='miss').length;
+      const post    = shots.filter(s=>s.t==='post').length;
+      const onT     = goals + saves;
+      const xg      = shots.reduce((a,s)=>a+s.xg,0);
+      const pct = v => n ? Math.round(v/n*100)+'%' : '—';
+      const bar = (v,col) => '<div style="height:3px;border-radius:2px;background:#1e293b;margin-top:3px"><div style="height:3px;border-radius:2px;background:'+col+';width:'+(n?Math.round(v/n*100):0)+'%"></div></div>';
+
+      const row = (label, v, col, showBar) =>
+        '<div style="padding:5px 0;border-bottom:1px solid #1e293b">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between">'
+        +'<span style="font-size:11px;color:#94a3b8">'+label+'</span>'
+        +'<div>'+(n&&showBar?'<span style="font-size:10px;color:#64748b;margin-right:6px">'+pct(v)+'</span>':'')
+        +'<span style="font-size:12px;font-weight:700;color:'+col+'">'+v+'<span style="font-size:10px;color:#475569;font-weight:400"> / '+n+'</span></span>'
+        +'</div></div>'
+        +(showBar?bar(v,col):'')
+        +'</div>';
+
+      // Donut goles
+      const r=26, c=30, circ=(2*Math.PI*r).toFixed(1);
+      const dash = n ? (goals/n*2*Math.PI*r).toFixed(1) : '0';
+      const gCol = goals>0?'#22c55e':'#475569';
+
+      return '<div style="background:#111827;border:1px solid #1e293b;border-radius:10px;padding:14px 16px;height:100%;box-sizing:border-box">'
+        +'<div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">'
+        // Donut
+        +'<div style="position:relative;width:'+(c*2)+'px;height:'+(c*2)+'px;flex-shrink:0">'
+        +'<svg width="'+(c*2)+'" height="'+(c*2)+'" viewBox="0 0 '+(c*2)+' '+(c*2)+'" style="transform:rotate(-90deg)">'
+        +'<circle cx="'+c+'" cy="'+c+'" r="'+r+'" fill="none" stroke="#1e293b" stroke-width="5"/>'
+        +'<circle cx="'+c+'" cy="'+c+'" r="'+r+'" fill="none" stroke="'+gCol+'" stroke-width="5" stroke-dasharray="'+dash+' '+circ+'" stroke-linecap="round"/>'
+        +'</svg>'
+        +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">'
+        +'<div style="font-size:16px;font-weight:800;color:#e2e8f0;line-height:1">'+goals+'</div>'
+        +'<div style="font-size:9px;color:#64748b">Goles</div>'
+        +'</div></div>'
+        // Total + xG
+        +'<div>'
+        +'<div style="font-size:11px;color:#64748b;margin-bottom:2px">Total tiros</div>'
+        +'<div style="font-size:26px;font-weight:800;color:#f1f5f9;line-height:1">'+n+'</div>'
+        +'<div style="font-size:10px;color:#64748b;margin-top:5px">xG total: <span style="color:#facc15;font-weight:700">'+xg.toFixed(2)+'</span></div>'
+        +'</div></div>'
+        // Filas
+        +row('Tiros a portería',  onT,     '#22c55e', true)
+        +row('Tiros bloqueados',  blocked, '#94a3b8', true)
+        +row('Tiros desviados',   missed,  '#ef4444', true)
+        +(post ? row('Al palo', post, '#c084fc', true) : '')
+        +'</div>';
+    }
+
     const tabBtn = (val, lbl) => {
       const active = vista === val;
       return '<button onclick="window._tirosVista=\''+val+'\';loadTiros()" style="padding:6px 18px;border-radius:20px;border:1px solid '+(active?'#f97316':'#334155')+';background:'+(active?'#f97316':'transparent')+';color:'+(active?'white':'#94a3b8')+';cursor:pointer;font-size:13px;font-weight:'+(active?700:400)+'">'+lbl+'</button>';
@@ -14624,17 +14751,24 @@
           ? '<img src="'+imgSrc+'" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #334155"/>'
           : '<div style="width:48px;height:48px;border-radius:50%;background:#1e293b;border:2px solid #334155;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#94a3b8">'+ini+'</div>';
 
-        cont.innerHTML = '<div style="padding:16px 20px">'+header
-          +matchBar+matchPanel
-          +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:10px 16px;background:#0f172a;border-radius:10px;border:1px solid #1e293b">'
+        const playerHeader = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:10px 16px;background:#0f172a;border-radius:10px;border:1px solid #1e293b">'
           +'<button onclick="window._tirosPlayer=null;loadTiros()" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px">← Volver</button>'
+          +avatarL
           +'<div style="font-size:14px;font-weight:700;color:#e2e8f0">'+selP+'</div>'
-          +'<div style="margin-left:auto;display:flex;gap:20px">'
-          +'<span style="text-align:center"><div style="font-size:18px;font-weight:800;color:#f97316">'+goals+'</div><div style="font-size:10px;color:#64748b">Goles</div></span>'
-          +'<span style="text-align:center"><div style="font-size:18px;font-weight:800;color:#94a3b8">'+shots.length+'</div><div style="font-size:10px;color:#64748b">Tiros</div></span>'
-          +'<span style="text-align:center"><div style="font-size:18px;font-weight:800;color:'+diffCol+'">'+diffStr+'</div><div style="font-size:10px;color:#64748b">xG diff</div></span>'
-          +'</div></div>'
-          +'<div style="max-width:700px;margin:0 auto;background:#111827;border-radius:12px;overflow:hidden;border:1px solid '+(goals>0?'rgba(34,197,94,0.2)':'#1e293b')+'">'+bigPitch(shots)+'</div>'
+          +'<div style="margin-left:auto;font-size:10px;color:#64748b">xG diff: <span style="color:'+diffCol+';font-weight:700">'+diffStr+'</span></div>'
+          +'</div>';
+        const hasGM = shots.some(s=>s.gy!=null&&s.gz!=null);
+        cont.innerHTML = '<div style="padding:16px 20px">'+header
+          +matchBar+matchPanel+playerHeader
+          +'<div style="display:grid;grid-template-columns:1fr '+(hasGM?'1fr ':'')+' 240px;gap:14px;margin-bottom:16px;align-items:start">'
+          +'<div style="background:#111827;border-radius:10px;overflow:hidden;border:1px solid #1e293b">'
+          +'<div style="padding:8px 12px;background:#0f172a;font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px">MAPA DE TIROS</div>'
+          +numberedPitch(shots)+'</div>'
+          +(hasGM?'<div style="background:#111827;border-radius:10px;overflow:hidden;border:1px solid #1e293b">'
+            +'<div style="padding:8px 12px;background:#0f172a;font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px">VISTA PORTERÍA</div>'
+            +goalMouthSVG(shots)+'</div>':'')
+          +statsPanelHTML(shots)
+          +'</div>'
           +buildShotsTable(shots)
           +'</div>';
         return;
@@ -14673,16 +14807,20 @@
             +'</div></div></div>';
         }).join('');
 
+      const summarySection = jornadaShots.length > 0
+        ? '<div style="display:grid;grid-template-columns:1fr 260px;gap:14px;margin-bottom:20px;align-items:start">'
+          +'<div style="background:#111827;border-radius:10px;overflow:hidden;border:1px solid #1e293b">'
+          +'<div style="padding:8px 12px;background:#0f172a;font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px">MAPA DE TIROS · J'+selJ+'</div>'
+          +numberedPitch(jornadaShots)
+          +'</div>'
+          +statsPanelHTML(jornadaShots)
+          +'</div>'
+        : '<div style="color:#475569;padding:40px;text-align:center">Sin datos de tiros para J'+selJ+'</div>';
+
       cont.innerHTML = '<div style="padding:16px 20px">'+header
         +matchBar+matchPanel
-        +'<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:10px 16px;background:#0f172a;border-radius:10px;border:1px solid #1e293b">'
-        +'<div style="font-size:13px;font-weight:700;color:#94a3b8">TIROS DEL PARTIDO</div>'
-        +'<div style="margin-left:auto;display:flex;gap:24px">'
-        +'<span style="text-align:center"><div style="font-size:18px;font-weight:800;color:#f97316">'+totalGoals+'</div><div style="font-size:10px;color:#64748b">Goles</div></span>'
-        +'<span style="text-align:center"><div style="font-size:18px;font-weight:800;color:#94a3b8">'+jornadaShots.length+'</div><div style="font-size:10px;color:#64748b">Tiros</div></span>'
-        +'<span style="text-align:center"><div style="font-size:18px;font-weight:800;color:#94a3b8">'+totalXG+'</div><div style="font-size:10px;color:#64748b">xG</div></span>'
-        +'</div></div>'
-        +(jornadaShots.length===0?'<div style="color:#475569;padding:40px;text-align:center">Sin datos de tiros para J'+selJ+'</div>':'')
+        +summarySection
+        +(jornadaShots.length>0?'<div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px;margin-bottom:10px">DESGLOSE POR JUGADOR</div>':'')
         +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px">'+playerCards+'</div>'
         +'</div>';
 
@@ -14728,18 +14866,24 @@
         const playerSubTabBar = '<div style="display:flex;gap:6px;margin-bottom:16px">'
           +pSubBtn('all','Temporada')+pSubBtn('casa','🏠 Casa')+pSubBtn('fuera','✈️ Fuera')
           +'</div>';
-        cont.innerHTML = '<div style="padding:16px 20px">'+header
-          +playerSubTabBar
-          +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:10px 16px;background:#16213e;border-radius:10px;border:1px solid #1e293b">'
+        const hasGM2 = shots.some(s=>s.gy!=null&&s.gz!=null);
+        const playerHdr2 = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:10px 16px;background:#16213e;border-radius:10px;border:1px solid #1e293b">'
           +'<button onclick="window._tirosPlayer=null;loadTiros()" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px">← Volver</button>'
           +avatarL
           +'<div style="font-size:15px;font-weight:800;color:#e2e8f0">'+selP+' · '+lblTab+'</div>'
-          +'<div style="margin-left:auto;display:flex;gap:20px">'
-          +'<span style="text-align:center"><div style="font-size:18px;font-weight:800;color:#f97316">'+goals+'</div><div style="font-size:10px;color:#64748b">Goles</div></span>'
-          +'<span style="text-align:center"><div style="font-size:18px;font-weight:800;color:#94a3b8">'+shots.length+'</div><div style="font-size:10px;color:#64748b">Tiros</div></span>'
-          +'<span style="text-align:center"><div style="font-size:18px;font-weight:800;color:'+diffCol+'">'+diffStr+'</div><div style="font-size:10px;color:#64748b">xG diff</div></span>'
-          +'</div></div>'
-          +'<div style="max-width:700px;margin:0 auto;background:#111827;border-radius:12px;overflow:hidden;border:1px solid '+(goals>0?'rgba(34,197,94,0.2)':'#1e293b')+'">'+bigPitch(shots)+'</div>'
+          +'<div style="margin-left:auto;font-size:10px;color:#64748b">xG diff: <span style="color:'+diffCol+';font-weight:700">'+diffStr+'</span></div>'
+          +'</div>';
+        cont.innerHTML = '<div style="padding:16px 20px">'+header
+          +playerSubTabBar+playerHdr2
+          +'<div style="display:grid;grid-template-columns:1fr '+(hasGM2?'1fr ':'')+' 240px;gap:14px;margin-bottom:16px;align-items:start">'
+          +'<div style="background:#111827;border-radius:10px;overflow:hidden;border:1px solid #1e293b">'
+          +'<div style="padding:8px 12px;background:#0f172a;font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px">MAPA DE TIROS</div>'
+          +numberedPitch(shots)+'</div>'
+          +(hasGM2?'<div style="background:#111827;border-radius:10px;overflow:hidden;border:1px solid #1e293b">'
+            +'<div style="padding:8px 12px;background:#0f172a;font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px">VISTA PORTERÍA</div>'
+            +goalMouthSVG(shots)+'</div>':'')
+          +statsPanelHTML(shots)
+          +'</div>'
           +buildShotsTable(shots)
           +'</div>';
         return;
