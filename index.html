@@ -15232,17 +15232,29 @@
           const cw = XS[c + 1] - x1, ch = YS[r + 1] - y1;
           const cx = ((x1 + XS[c + 1]) / 2).toFixed(1);
           const cy = ((y1 + YS[r + 1]) / 2).toFixed(1);
-          let color;
+          let color, zVal = 0;
           if (mode === 'zscore') {
-            const z = sStd[idx] > 0 ? (props[idx] - sMean[idx]) / sStd[idx] : 0;
-            color = zColor(z);
+            zVal = sStd[idx] > 0 ? (props[idx] - sMean[idx]) / sStd[idx] : 0;
+            color = zColor(zVal);
           } else {
             color = absColor(props[idx], maxProp);
           }
           cells += `<rect x="${x1}" y="${y1}" width="${cw}" height="${ch}" fill="${color}"/>`;
           if (total > 0) {
-            const lbl = mode === 'zscore' ? counts[idx] : `${(props[idx] * 100).toFixed(0)}%`;
-            cells += `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-size="4.5" fill="rgba(255,255,255,0.92)" font-weight="700" font-family="sans-serif">${lbl}</text>`;
+            // Línea 1: porcentaje (grande) — igual en ambos modos
+            const pct = `${(props[idx] * 100).toFixed(0)}%`;
+            const cyUp = (parseFloat(cy) - 2.6).toFixed(1);
+            const cyDn = (parseFloat(cy) + 3.0).toFixed(1);
+            cells += `<text x="${cx}" y="${cyUp}" text-anchor="middle" dominant-baseline="middle" font-size="5" fill="rgba(255,255,255,0.96)" font-weight="700" font-family="sans-serif">${pct}</text>`;
+            // Línea 2: eventos + flecha de tendencia (modo zscore) o solo eventos (modo avg)
+            const arrow = mode === 'zscore'
+              ? (zVal > 0.35 ? ' ▲' : zVal < -0.35 ? ' ▼' : '')
+              : '';
+            const subCol = mode === 'zscore'
+              ? (zVal > 0.35 ? 'rgba(255,150,150,0.95)' : zVal < -0.35 ? 'rgba(150,190,255,0.95)' : 'rgba(255,255,255,0.38)')
+              : 'rgba(255,255,255,0.4)';
+            const subTxt = mode === 'zscore' ? `${counts[idx]} ev.${arrow}` : `${counts[idx]} ev.`;
+            cells += `<text x="${cx}" y="${cyDn}" text-anchor="middle" dominant-baseline="middle" font-size="3.1" fill="${subCol}" font-family="sans-serif">${subTxt}</text>`;
           }
         }
       }
@@ -15251,6 +15263,11 @@
         ${cells}${PITCH_MARKS}
       </svg>`;
     }
+
+    // Etiquetas de columna alineadas con las zonas del SVG (proporciones 33.3/16.7/16.7/33.3)
+    const zoneColLabels = `<div style="display:grid;grid-template-columns:33.3% 16.7% 16.7% 33.3%;font-size:8px;font-weight:700;color:#334155;text-align:center;padding:4px 0 2px;letter-spacing:.04em;text-transform:uppercase">
+      <span>Def. Propia</span><span>D. Central</span><span>A. Central</span><span>At. Rival</span>
+    </div>`;
 
     try {
       // Load all matches
@@ -15307,18 +15324,21 @@
         const isH = isPH(p);
         const opp = isH ? p.vis : p.local;
         const oppShort = (opp || '').length > 12 ? opp.slice(0, 11) + '…' : opp;
+        const evTot = (mCounts[p.id] || []).reduce((a, b) => a + b, 0);
         return `<div onclick="window._dzJornada=${p.id};loadDefZonas()" style="cursor:pointer;background:${act ? '#1e3a5f' : '#111827'};border-radius:8px;padding:8px 10px;border:1.5px solid ${act ? '#3b82f6' : '#1e293b'};min-width:0">
           <div style="font-size:10px;font-weight:800;color:${act ? '#60a5fa' : '#f59e0b'}">${p.j || ''} ${isH ? '🏠' : '✈️'}</div>
           <div style="font-size:11px;color:#e2e8f0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${oppShort}</div>
           <div style="font-size:12px;font-weight:800;color:#94a3b8;margin-top:2px">${p.s || '–'}</div>
+          <div style="font-size:9px;color:#475569;margin-top:2px">${evTot} ev.</div>
         </div>`;
       }).join('');
 
       const legend = `<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:7px 14px;background:#111827;border-radius:6px;border:1px solid #1e293b;margin-bottom:12px;font-size:11px;color:#94a3b8">
         <span style="font-weight:600;color:#cbd5e1">Actividad defensiva vs media temporada:</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;background:rgba(239,68,68,0.7);border-radius:2px"></span>Por encima</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;background:rgba(239,68,68,0.7);border-radius:2px"></span>Por encima <span style="color:#f87171;font-weight:700">▲</span></span>
         <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;background:rgba(100,116,139,0.3);border-radius:2px;border:1px solid #334155"></span>Media</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;background:rgba(59,130,246,0.7);border-radius:2px"></span>Por debajo</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;background:rgba(59,130,246,0.7);border-radius:2px"></span>Por debajo <span style="color:#93c5fd;font-weight:700">▼</span></span>
+        <span style="color:#475569">· Cada zona: % del total · n=eventos</span>
       </div>`;
 
       const body = document.getElementById('dz-body');
@@ -15338,6 +15358,7 @@
                 <div style="font-size:10px;color:#64748b">${curTotal} eventos def.</div>
               </div>
             </div>
+            ${zoneColLabels}
             ${buildSVG(curCounts, 'zscore', sMean, sStd)}
           </div>
           <div style="background:#111827;border-radius:10px;border:1px solid #1e293b;overflow:hidden">
@@ -15348,9 +15369,10 @@
                 <div style="font-size:13px;font-weight:700;color:#e2e8f0">Media SD Ponferradina</div>
               </div>
               <div style="text-align:right;flex-shrink:0">
-                <div style="font-size:11px;color:#64748b">~${avgTot} eventos/partido</div>
+                <div style="font-size:11px;color:#64748b">~${avgTot} ev./partido</div>
               </div>
             </div>
+            ${zoneColLabels}
             ${buildSVG(avgCounts, 'avg', sMean, sStd)}
           </div>
         </div>`;
