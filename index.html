@@ -12521,12 +12521,10 @@
                 const _ql = (_profileObeScatterPreset >= 0 && _QUAD_LABELS[_profileObeScatterPreset])
                   ? _QUAD_LABELS[_profileObeScatterPreset]
                   : ['','','',''];
-                const _qPad = 7;
-                // Player quadrant (to highlight its label)
-                const _pX = obeData[_profileObeScatterX]?.p ?? null;
-                const _pY = obeData[_profileObeScatterY]?.p ?? null;
-                const _xHi = _pX !== null && _pX >= 50;
-                const _yHi = _pY !== null && _pY >= 50;
+                const _qPad = 20;
+                // Player quadrant (to highlight its label) — based on visual position vs avg lines
+                const _xHi = _sxv !== undefined && _sxv > _avgX;
+                const _yHi = _syv !== undefined && _syv > _avgY;
                 // Which quadrant index is the player in? 0=TR,1=TL,2=BR,3=BL
                 const _pQi = _sxv !== undefined && _syv !== undefined
                   ? (_xHi && _yHi ? 0 : !_xHi && _yHi ? 1 : _xHi && !_yHi ? 2 : 3) : -1;
