@@ -11643,6 +11643,8 @@
   let _profileObeDistMetric = 'Total OBE';
   let _profileObeScatterX = 'Total OBE';
   let _profileObeScatterY = 'Presión directa';
+  let _profileObeScatterPreset = 0;   // index into _SCATTER_PRESETS; -1 = custom
+  let _profileObeScatterCustom = false; // custom panel open?
   let _profileRunView   = 'tabla';   // 'tabla' | 'dist'  (carreras sin balón subtab)
   let _profileRunMetric = 'tot_p30'; // metric key for carreras beeswarm
   let _profilePasesView   = 'tabla'; // 'tabla' | 'dist'
@@ -12365,6 +12367,21 @@
               if (_profileObeView === 'scatter') {
                 const _pos_s = obeData.pos || 'DC';
                 const _allScMets = [...(_OBE_TAB.defensiva||[]), ...(_OBE_TAB.presion||[])];
+
+                // Presets
+                const _SPRST = [
+                  {lbl:'OBE vs Pressing',        x:'Total OBE',       y:'Presión directa'  },
+                  {lbl:'Zona de intervención',    x:'Bloque bajo',     y:'Transición'        },
+                  {lbl:'Resultados defensivos',   x:'Disrup. directa', y:'Recuper. directa' },
+                  {lbl:'Vulnerabilidades',        x:'Superado mov.',   y:'Superado posesión' },
+                  {lbl:'Pressing detallado',      x:'Presión directa', y:'Contrapresión'     },
+                ];
+                // Apply preset if not custom
+                if (_profileObeScatterPreset >= 0 && _SPRST[_profileObeScatterPreset]) {
+                  _profileObeScatterX = _SPRST[_profileObeScatterPreset].x;
+                  _profileObeScatterY = _SPRST[_profileObeScatterPreset].y;
+                }
+                // Fallback if custom axes are invalid
                 if (!_allScMets.includes(_profileObeScatterX)) _profileObeScatterX = _allScMets[0]||'Total OBE';
                 if (!_allScMets.includes(_profileObeScatterY)) _profileObeScatterY = _allScMets[1]||_allScMets[0];
 
@@ -12379,7 +12396,24 @@
                 const _sxv = obeData[_profileObeScatterX]?.v;
                 const _syv = obeData[_profileObeScatterY]?.v;
 
-                // Axis selector helper
+                // ── Preset buttons bar ──────────────────────────────────────────
+                const _presetBar = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+                  ${_SPRST.map((pr,i)=>{
+                    const act = _profileObeScatterPreset===i;
+                    return `<button onclick="_profileObeScatterPreset=${i};_profileObeScatterCustom=false;openPlayerProfile(${p.d})"
+                      style="padding:5px 13px;border-radius:20px;border:1px solid ${act?'var(--accent)':'var(--border)'};
+                             background:${act?'rgba(200,169,110,0.14)':'var(--bg2)'};
+                             color:${act?'var(--accent)':'var(--text2)'};font-size:11px;
+                             font-weight:${act?700:400};cursor:pointer;transition:all .15s;white-space:nowrap">${pr.lbl}</button>`;
+                  }).join('')}
+                  <button onclick="_profileObeScatterPreset=-1;_profileObeScatterCustom=true;openPlayerProfile(${p.d})"
+                    style="padding:5px 13px;border-radius:20px;border:1px solid ${_profileObeScatterPreset===-1?'#58a6ff':'var(--border)'};
+                           background:${_profileObeScatterPreset===-1?'rgba(88,166,255,0.12)':'var(--bg2)'};
+                           color:${_profileObeScatterPreset===-1?'#58a6ff':'var(--text3)'};font-size:11px;
+                           font-weight:${_profileObeScatterPreset===-1?700:400};cursor:pointer;transition:all .15s;white-space:nowrap">✏️ Personalizar</button>
+                </div>`;
+
+                // ── Custom axis selectors (only shown in custom mode) ──────────
                 const _axBtn = (axis, key) => {
                   const cur = axis==='x'?_profileObeScatterX:_profileObeScatterY;
                   const act = cur===key;
@@ -12391,6 +12425,16 @@
                            background:${bg};color:${act?ac:'var(--text2)'};font-size:10px;
                            font-weight:${act?700:400};cursor:pointer;white-space:nowrap;transition:all .15s">${key}</button>`;
                 };
+                const _customPanel = _profileObeScatterCustom ? `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+                  <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:7px">
+                    <span style="font-size:10px;color:#ffa657;font-weight:700;width:28px;flex-shrink:0">X →</span>
+                    ${_allScMets.map(k=>_axBtn('x',k)).join('')}
+                  </div>
+                  <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+                    <span style="font-size:10px;color:#58a6ff;font-weight:700;width:28px;flex-shrink:0">↑ Y</span>
+                    ${_allScMets.map(k=>_axBtn('y',k)).join('')}
+                  </div>
+                </div>` : '';
 
                 // Chart dimensions
                 const SW=580,SH=340,ML=52,MR=20,MT=16,MB=46;
@@ -12418,7 +12462,7 @@
                 [..._scPts].sort((a,b)=>a.y-b.y).forEach((pt,i)=>_yRk[pt.n]=i);
                 const _pColS=q=>q>=75?'#3fb950':q>=50?'#c8a96e':q>=25?'#f0883e':'#f85149';
 
-                // Dots SVG
+                // Dots
                 const _R=4;
                 const _dotsS=_scPts.map(pt=>{
                   const cx=_xSc(pt.x).toFixed(1), cy=_ySc(pt.y).toFixed(1);
@@ -12475,18 +12519,8 @@
                   <text x="${(ML+PW-4).toFixed(1)}" y="${(MT+12).toFixed(1)}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.18)">${_nPts} jugadores · ${_OBE_POS_DESC[_pos_s]||_pos_s} · 1ª RFEF 25/26</text>
                 </svg>`;
 
-                return _obeTog +
-                  `<div style="margin-bottom:8px">
-                    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:5px">
-                      <span style="font-size:10px;color:#ffa657;font-weight:700;width:28px;flex-shrink:0">X →</span>
-                      ${_allScMets.map(k=>_axBtn('x',k)).join('')}
-                    </div>
-                    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-                      <span style="font-size:10px;color:#58a6ff;font-weight:700;width:28px;flex-shrink:0">↑ Y</span>
-                      ${_allScMets.map(k=>_axBtn('y',k)).join('')}
-                    </div>
-                  </div>
-                  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">${_scSVG}</div>
+                return _obeTog + _presetBar + _customPanel +
+                  `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">${_scSVG}</div>
                   <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
                     <span style="color:rgba(255,255,255,0.22)">- - media liga</span>
                     <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffa657;margin-right:3px;vertical-align:middle"></span>${p.name}</span>
