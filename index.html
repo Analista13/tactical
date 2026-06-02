@@ -14723,42 +14723,57 @@
           '<div style="padding:14px 20px;text-align:center"><div style="font-size:20px;font-weight:800;color:#e2e8f0">'+xgPerT.toFixed(2)+'</div><div style="font-size:10px;color:#64748b;margin-top:2px">xG / Tiro</div></div>',
         ].join('')+'</div>';
 
-      // Vista de portería — puntos posicionados por gy/gz, tamaño por xG
-      const VW=480, VH=180;
-      const GW=220, GH=70;
-      const GX=(VW-GW)/2, GY=(VH-GH)/2;
+      // Vista de portería — coordenadas SofaScore corregidas
+      // La portería ocupa gy=44.62–55.38 (7.32m/68m×100) y gz=0(suelo)–24.4(larguero)
+      const VW=560, VH=320;
+      const GW=260, GH=87; // proporción 3:1 igual que portería real (7.32m × 2.44m)
+      const GX=150, GY=185; // espacio suficiente arriba para tiros que se van por encima
+      // Constantes coordenadas SofaScore
+      const LEFT_POST=44.62, GY_WIDTH=10.76, GZ_CROSSBAR=24.4;
       const xgMax = Math.max(...shots.map(s=>s.xg), 0.01);
-      const tColors={goal:'#22c55e',save:'#f0c040',miss:'#ef4444',block:'#ef4444',post:'#c084fc'};
+      const tColors={goal:'#22c55e',save:'#f0c040',miss:'#ef4444',block:'#94a3b8',post:'#c084fc'};
 
-      // Escala radio: r proporcional a sqrt(xg) para área visual justa, máx 18, mín 5
-      const radius = xg => Math.max(5, Math.min(18, 5 + Math.sqrt(xg/xgMax)*13));
+      // Radio proporcional a sqrt(xg) para que el área sea justa, máx 14, mín 3
+      const radius = xg => Math.max(3, Math.min(14, 3 + Math.sqrt(xg/xgMax)*11));
 
       const sorted = [...shots].sort((a,b) => a.xg - b.xg); // bajo xG primero → alto xG encima
       let svgDots = '';
+      let blockIdx = 0;
       sorted.forEach((s,i) => {
         const col = tColors[s.t] || '#94a3b8';
         const r   = radius(s.xg);
         const key = 'xgot_'+i;
         window._tirosTipData[key] = buildTiroTip(s);
         let cx, cy;
-        if (s.gy!=null && s.gz!=null) {
-          cx = GX + (s.gy/100)*GW;
-          cy = GY + (1 - s.gz/100)*GH;
+        if (s.t === 'block') {
+          // Bloqueados: SofaScore pone gy=50/gz=20 como placeholder, no son coordenadas reales
+          // → dispersarlos en zona debajo del marco con layout ordenado
+          const bw = GW * 0.72;
+          cx = GX + GW*0.14 + (blockIdx % 10) * (bw/10);
+          cy = GY + GH + 20 + Math.floor(blockIdx/10)*18;
+          blockIdx++;
+        } else if (s.gy!=null && s.gz!=null) {
+          // Mapeo correcto: portería ocupa gy=LEFT_POST a LEFT_POST+GY_WIDTH, gz=0(suelo) a GZ_CROSSBAR
+          cx = GX + (s.gy - LEFT_POST) / GY_WIDTH * GW;
+          cy = GY + (1 - s.gz / GZ_CROSSBAR) * GH;
         } else {
-          // tiros sin coordenada de marco: dispersarlos fuera del marco
-          const spread = 22 + (i % 7)*8;
-          cx = s.dx!=null ? s.dx/100*VW : VW/2 + (Math.random()-0.5)*VW*0.6;
-          cy = GY - spread;
+          cx = VW/2;
+          cy = GY + GH + 25;
         }
         svgDots += '<circle data-tkey="'+key+'" cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+r.toFixed(1)+'"'
           +' fill="'+col+'" opacity="0.82" stroke="rgba(0,0,0,0.25)" stroke-width="0.8" style="cursor:pointer"/>';
       });
 
-      // Red
+      // Red de portería
       const netV = Array.from({length:10},(_,i)=>'<line x1="'+(GX+(i+1)*GW/11).toFixed(1)+'" y1="'+GY+'" x2="'+(GX+(i+1)*GW/11).toFixed(1)+'" y2="'+(GY+GH)+'" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>').join('');
       const netH = Array.from({length:4},(_,i)=>'<line x1="'+GX+'" y1="'+(GY+(i+1)*GH/5).toFixed(1)+'" x2="'+(GX+GW)+'" y2="'+(GY+(i+1)*GH/5).toFixed(1)+'" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>').join('');
 
-      const goalSVG = '<svg viewBox="0 0 '+VW+' '+VH+'" style="width:100%;max-width:700px;display:block;margin:0 auto">'
+      // Etiqueta zona bloqueados (solo si hay tiros bloqueados)
+      const blockedLabel = shots.some(s=>s.t==='block')
+        ? '<text x="'+VW/2+'" y="'+(GY+GH+52)+'" text-anchor="middle" font-size="8" fill="rgba(148,163,184,0.45)" font-family="sans-serif">BLOQUEADOS · posición en portería no disponible</text>'
+        : '';
+
+      const goalSVG = '<svg viewBox="0 0 '+VW+' '+VH+'" style="width:100%;max-width:720px;display:block;margin:0 auto">'
         +'<rect width="'+VW+'" height="'+VH+'" fill="#0c1220"/>'
         // sombra detrás del marco
         +'<rect x="'+(GX-2)+'" y="'+(GY-2)+'" width="'+(GW+4)+'" height="'+(GH+4)+'" rx="1" fill="rgba(0,0,0,0.4)"/>'
@@ -14773,6 +14788,7 @@
         // suelo
         +'<line x1="0" y1="'+(GY+GH+2)+'" x2="'+VW+'" y2="'+(GY+GH+2)+'" stroke="rgba(255,255,255,0.15)" stroke-width="0.8"/>'
         +svgDots
+        +blockedLabel
         +'</svg>';
 
       // Leyenda
