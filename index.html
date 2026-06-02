@@ -14881,12 +14881,12 @@
 
     function xtColor(xt) {
       const t = Math.min(1, xt / xtMax);
-      if (t < 0.005) return 'rgba(50,10,90,0.07)'; // fondo morado oscuro
+      if (t < 0.005) return 'rgba(80,10,160,0.28)'; // morado muy bajo
       // morado → magenta → amarillo
       const r = Math.round(80  + t * 175);
       const g = Math.round(0   + t * 200);
       const b = Math.round(150 - t * 150);
-      const a = 0.05 + t * 0.55;
+      const a = 0.28 + t * 0.52; // mínimo 0.28 → líneas moradas siempre visibles
       return `rgba(${r},${g},${b},${a.toFixed(2)})`;
     }
 
@@ -14951,25 +14951,49 @@
       </div>`;
     }).join('');
 
-    const legend = `<div style="display:flex;align-items:center;gap:18px;padding:8px 16px;background:#0d0a1e;border-radius:8px;border:1px solid #1e1240;margin-bottom:14px">
-      <span style="font-size:11px;font-weight:700;color:#c4b5fd;letter-spacing:0.5px;white-space:nowrap">PASES &amp; CONDUCCIONES</span>
-      <span style="font-size:10px;color:#475569;white-space:nowrap">Temporada completa</span>
-      <div style="display:flex;align-items:center;gap:8px;flex:1;max-width:260px">
-        <span style="font-size:10px;color:#64748b;white-space:nowrap">xT bajo</span>
-        <svg width="100%" height="8" style="flex:1;min-width:60px">
-          <defs>
-            <linearGradient id="xtGrad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%"   stop-color="rgba(80,0,150,0.4)"/>
-              <stop offset="35%"  stop-color="rgba(140,20,180,0.65)"/>
-              <stop offset="65%"  stop-color="rgba(220,60,120,0.8)"/>
-              <stop offset="100%" stop-color="rgba(250,200,0,0.95)"/>
-            </linearGradient>
-          </defs>
-          <rect x="0" y="2" width="100%" height="4" rx="2" fill="url(#xtGrad)"/>
-        </svg>
-        <span style="font-size:10px;color:#facc15;font-weight:700;white-space:nowrap">xT alto</span>
+    const legend = `
+    <div style="display:flex;gap:12px;margin-bottom:14px;align-items:stretch">
+
+      <!-- Panel explicativo xT -->
+      <div style="background:#0d0a1e;border:1px solid #1e1240;border-radius:8px;padding:12px 16px;flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:800;color:#c4b5fd;letter-spacing:0.5px">¿Qué es el xT?</span>
+          <span style="font-size:10px;color:#475569">Expected Threat — Amenaza Esperada</span>
+        </div>
+        <p style="margin:0;font-size:11px;color:#94a3b8;line-height:1.6">
+          El <strong style="color:#e2e8f0">xT</strong> mide la probabilidad de que una acción (pase o conducción) lleve al equipo a marcar un gol, en función del área del campo donde comienza y termina.
+          Un valor alto significa que la acción mueve el balón a zonas más peligrosas.
+        </p>
       </div>
-      <span style="margin-left:auto;font-size:10px;color:#475569;white-space:nowrap">${valid.length} partidos · top ${ranked.length} jugadores · ranked por xT/90</span>
+
+      <!-- Panel leyenda de colores -->
+      <div style="background:#0d0a1e;border:1px solid #1e1240;border-radius:8px;padding:12px 16px;min-width:260px;display:flex;flex-direction:column;justify-content:space-between;gap:10px">
+        <div style="font-size:12px;font-weight:800;color:#c4b5fd;letter-spacing:0.5px">Color de las líneas</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <svg width="36" height="6"><line x1="0" y1="3" x2="36" y2="3" stroke="rgba(80,10,160,0.75)" stroke-width="2.5" stroke-linecap="round"/></svg>
+            <span style="font-size:11px;color:#94a3b8"><strong style="color:#a78bfa">Morado</strong> — pase/conducción de <strong style="color:#e2e8f0">bajo xT</strong> (circulación, salida de balón)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <svg width="36" height="6"><line x1="0" y1="3" x2="36" y2="3" stroke="rgba(250,200,0,0.95)" stroke-width="2.5" stroke-linecap="round"/></svg>
+            <span style="font-size:11px;color:#94a3b8"><strong style="color:#facc15">Amarillo</strong> — pase/conducción de <strong style="color:#e2e8f0">alto xT</strong> (penetración, zona de remate)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+            <svg width="140" height="8">
+              <defs><linearGradient id="xtGrad2" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%"   stop-color="rgba(80,10,160,0.75)"/>
+                <stop offset="40%"  stop-color="rgba(160,20,180,0.85)"/>
+                <stop offset="75%"  stop-color="rgba(220,70,100,0.9)"/>
+                <stop offset="100%" stop-color="rgba(250,200,0,0.95)"/>
+              </linearGradient></defs>
+              <rect x="0" y="2" width="140" height="4" rx="2" fill="url(#xtGrad2)"/>
+            </svg>
+            <span style="font-size:10px;color:#475569">bajo → alto</span>
+          </div>
+        </div>
+        <div style="font-size:10px;color:#475569;margin-top:2px">${valid.length} partidos · top ${ranked.length} jugadores · ordenados por xT/90</div>
+      </div>
+
     </div>`;
 
     cont.innerHTML = buildPasesSubTabs() + legend +
