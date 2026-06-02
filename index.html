@@ -14691,15 +14691,58 @@
       // TAB xGOT — Vista de portería con tamaño proporcional al xG
       // ══════════════════════════════════════════════════════════════
       const locSub = subTab==='casa'?'L': subTab==='fuera'?'V': null;
-      const shots  = locSub ? TIROS_DATA.filter(s=>s.loc===locSub) : TIROS_DATA;
+      const shots  = subTab==='jornada' ? TIROS_DATA.filter(s=>s.j===selJ)
+                   : locSub             ? TIROS_DATA.filter(s=>s.loc===locSub)
+                   :                      TIROS_DATA;
 
       const subBtn = (val,lbl) => {
         const act = subTab===val;
         return '<button onclick="window._tirosSubTab=\''+val+'\';loadTiros()" style="padding:5px 16px;border-radius:20px;border:1px solid '+(act?'#f97316':'#334155')+';background:'+(act?'#f97316':'transparent')+';color:'+(act?'white':'#94a3b8')+';cursor:pointer;font-size:12px;font-weight:'+(act?700:400)+'">'+lbl+'</button>';
       };
       const filterBar = '<div style="display:flex;gap:6px;margin-bottom:16px">'
-        +subBtn('all','Temporada completa')+subBtn('casa','🏠 Casa')+subBtn('fuera','✈️ Fuera')
+        +subBtn('all','Temporada completa')+subBtn('casa','🏠 Casa')+subBtn('fuera','✈️ Fuera')+subBtn('jornada','📅 Jornada')
         +'</div>';
+
+      // ── Match bar + Elegir (solo cuando subTab==='jornada') ──────────
+      let xgotMatchBar = '', xgotMatchPanel = '';
+      if (subTab === 'jornada') {
+        const mi  = MATCH_INFO[selJ] || {};
+        const xgml = mi.home ? '🏠' : '✈️';
+        const sc  = mi.s || '–';
+        const pts = sc.split('-').map(Number);
+        const ponfe = mi.home ? pts[0] : pts[1];
+        const rival = mi.home ? pts[1] : pts[0];
+        const scCol = ponfe>rival?'#22c55e':ponfe===rival?'#f59e0b':'#ef4444';
+        xgotMatchBar = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:'+(elegir?'12px':'16px')+';padding:10px 16px;background:#16213e;border-radius:10px;border:1px solid #1e293b">'
+          +'<span style="font-size:11px;font-weight:800;color:#f59e0b">J'+selJ+'</span>'
+          +'<span style="font-size:13px;color:#94a3b8">'+xgml+'</span>'
+          +'<span style="font-size:13px;font-weight:700;color:#e2e8f0">'+(mi.opp||'')+'</span>'
+          +'<span style="font-size:14px;font-weight:800;color:'+scCol+'">'+sc+'</span>'
+          +'<button onclick="window._tirosElegir='+(!elegir)+';loadTiros()" style="margin-left:auto;background:'+(elegir?'#3b82f6':'#1e293b')+';border:1px solid '+(elegir?'#3b82f6':'#334155')+';color:'+(elegir?'white':'#94a3b8')+';border-radius:6px;padding:5px 14px;cursor:pointer;font-size:12px;font-weight:600">'+(elegir?'✕ Cerrar':'→ Elegir')+'</button>'
+          +'</div>';
+        if (elegir) {
+          const jcards = CSV_J.map(j => {
+            const mj  = MATCH_INFO[j] || {};
+            const act = j===selJ;
+            const lj  = mj.home ? '🏠' : '✈️';
+            const scj = mj.s || '–';
+            const ptsj = scj.split('-').map(Number);
+            const pj  = mj.home ? ptsj[0] : ptsj[1];
+            const rj  = mj.home ? ptsj[1] : ptsj[0];
+            const sjc = pj>rj?'#22c55e':pj===rj?'#f59e0b':'#ef4444';
+            const opp = (mj.opp||'').length>12 ? (mj.opp||'').slice(0,11)+'…' : (mj.opp||'');
+            return '<div onclick="window._tirosJornada='+j+';window._tirosElegir=false;loadTiros()" style="cursor:pointer;background:'+(act?'#1e3a5f':'#111827')+';border-radius:8px;padding:8px 10px;border:1.5px solid '+(act?'#3b82f6':'#1e293b')+';min-width:0">'
+              +'<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">'
+              +'<span style="font-size:10px;font-weight:800;color:'+(act?'#60a5fa':'#f59e0b')+'">J'+j+'</span>'
+              +'<span style="font-size:11px;color:#94a3b8;margin-left:2px">'+lj+'</span>'
+              +'</div>'
+              +'<div style="font-size:11px;color:#e2e8f0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+opp+'</div>'
+              +'<div style="font-size:12px;font-weight:800;color:'+sjc+';margin-top:2px">'+scj+'</div>'
+              +'</div>';
+          }).join('');
+          xgotMatchPanel = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:6px;margin-bottom:16px">'+jcards+'</div>';
+        }
+      }
 
       // Stats
       const n       = shots.length;
@@ -14776,15 +14819,16 @@
       const goalSVG = '<svg viewBox="0 0 '+VW+' '+VH+'" style="width:100%;max-width:720px;display:block;margin:0 auto">'
         +'<rect width="'+VW+'" height="'+VH+'" fill="#0c1220"/>'
         // sombra detrás del marco
-        +'<rect x="'+(GX-2)+'" y="'+(GY-2)+'" width="'+(GW+4)+'" height="'+(GH+4)+'" rx="1" fill="rgba(0,0,0,0.4)"/>'
+        +'<rect x="'+(GX-1.5)+'" y="'+(GY-1.5)+'" width="'+(GW+3)+'" height="'+(GH+3)+'" rx="1" fill="rgba(0,0,0,0.4)"/>'
         // red
         +'<rect x="'+GX+'" y="'+GY+'" width="'+GW+'" height="'+GH+'" fill="rgba(200,220,200,0.04)"/>'
         +netV+netH
-        // postes
-        +'<rect x="'+(GX-2.5)+'" y="'+(GY-2)+'" width="5" height="'+(GH+4)+'" fill="rgba(255,255,255,0.9)"/>'
-        +'<rect x="'+(GX+GW-2.5)+'" y="'+(GY-2)+'" width="5" height="'+(GH+4)+'" fill="rgba(255,255,255,0.9)"/>'
-        // larguero
-        +'<rect x="'+(GX-2.5)+'" y="'+(GY-2.5)+'" width="'+(GW+5)+'" height="5" fill="rgba(255,255,255,0.9)"/>'
+        // poste izquierdo (3px, centrado en GX)
+        +'<rect x="'+(GX-1.5)+'" y="'+(GY-1.5)+'" width="3" height="'+(GH+3)+'" fill="rgba(255,255,255,0.92)"/>'
+        // poste derecho (3px, centrado en GX+GW)
+        +'<rect x="'+(GX+GW-1.5)+'" y="'+(GY-1.5)+'" width="3" height="'+(GH+3)+'" fill="rgba(255,255,255,0.92)"/>'
+        // larguero (3px, centrado en GY)
+        +'<rect x="'+(GX-1.5)+'" y="'+(GY-1.5)+'" width="'+(GW+3)+'" height="3" fill="rgba(255,255,255,0.92)"/>'
         // suelo
         +'<line x1="0" y1="'+(GY+GH+2)+'" x2="'+VW+'" y2="'+(GY+GH+2)+'" stroke="rgba(255,255,255,0.15)" stroke-width="0.8"/>'
         +svgDots
@@ -14800,9 +14844,9 @@
         +'<span style="font-size:11px;color:#475569;margin-left:8px">Tamaño = xG</span>'
         +'</div>';
 
-      cont.innerHTML = '<div style="padding:16px 20px">'+header+filterBar
+      cont.innerHTML = '<div style="padding:16px 20px">'+header+filterBar+xgotMatchBar+xgotMatchPanel
         +'<div style="background:#111827;border:1px solid #1e293b;border-radius:10px;overflow:hidden;padding:8px 0">'
-        +'<div style="padding:6px 14px 0;font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px">VISTA DE PORTERÍA · '+( locSub==='L'?'CASA': locSub==='V'?'FUERA':'TEMPORADA COMPLETA')+'</div>'
+        +'<div style="padding:6px 14px 0;font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px">VISTA DE PORTERÍA · '+(subTab==='jornada'?('J'+selJ+' · '+(MATCH_INFO[selJ]||{opp:''}).opp): locSub==='L'?'CASA': locSub==='V'?'FUERA':'TEMPORADA COMPLETA')+'</div>'
         +legend
         +'<div onmouseover="tirosOverSVG(event)" onmouseleave="tirosHideTip()" onmousemove="tirosMoveTip(event)">'+goalSVG+'</div>'
         +'</div>'
