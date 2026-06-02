@@ -6833,13 +6833,14 @@
     if (pasesSubTab === 'jugadores') await renderPasesJugadores();
     else if (pasesSubTab === 'progresion') await renderProgresion();
     else if (pasesSubTab === 'mapasind') await renderMapasIndividuales();
+    else if (pasesSubTab === 'topxt')    await renderTopXtMaps();
     else await renderPasesMap();
   }
 
   // ── Barra de sub-tabs compartida (Equipo | Jugadores) ─────────────────────
   function buildPasesSubTabs() {
     return `<div style="display:flex;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;width:fit-content;margin-bottom:16px">
-      ${[['equipo','Equipo'],['jugadores','Jugadores'],['progresion','Progresión'],['mapasind','Mapas Ind.']].map(([id,lbl]) => {
+      ${[['equipo','Equipo'],['jugadores','Jugadores'],['progresion','Progresión'],['mapasind','Mapas Ind.'],['topxt','Top xT']].map(([id,lbl]) => {
         const act = pasesSubTab === id;
         return `<button onclick="pasesSubTab='${id}';pasesDropdownOpen=false;loadPases()"
           style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:7px 20px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s;white-space:nowrap">${lbl}</button>`;
@@ -14803,6 +14804,163 @@
   }
 
 
+
+  // ─── TOP xT/90 — PASS & CARRY MAPS ──────────────────────────────────────────
+  async function renderTopXtMaps() {
+    const cont = document.getElementById('pasesCont');
+    if (!cont) return;
+
+    cont.innerHTML = buildPasesSubTabs() +
+      `<div class="loading"><div class="spinner"></div><span>Cargando datos de temporada...</span></div>`;
+
+    // Cargar todos los partidos en paralelo
+    const allData = await Promise.all(
+      (PARTIDOS || []).map(p =>
+        getMatchData(p.id).then(ev => ({ matchId: p.id, events: ev })).catch(() => null)
+      )
+    );
+    const valid = allData.filter(Boolean);
+
+    // Agregar eventos por jugador (solo con coordenadas de origen y destino)
+    const playerEvs = {}; // name → [{xs,ys,xe,ye,xt}]
+    for (const { events } of valid) {
+      for (const e of events) {
+        if (!e.player_name || e.x_start == null || e.x_end == null) continue;
+        if (!playerEvs[e.player_name]) playerEvs[e.player_name] = [];
+        playerEvs[e.player_name].push({
+          xs: e.x_start, ys: e.y_start || 0,
+          xe: e.x_end,   ye: e.y_end   || 0,
+          xt: e.player_targeted_xthreat || 0,
+        });
+      }
+    }
+
+    // Minutos jugados desde PONF_LINEUPS
+    function parseMin(t) {
+      if (!t) return 0;
+      const p = t.split(':').map(Number);
+      return p.length >= 3 ? p[0] * 60 + p[1] + p[2] / 60
+           : p.length === 2 ? p[0] + p[1] / 60 : 0;
+    }
+    const playerMins = {};
+    for (const p of (PARTIDOS || [])) {
+      for (const r of (PONF_LINEUPS[p.id] || [])) {
+        const name = r[1]; if (!name) continue;
+        const mins = Math.max(0, (r[4] ? parseMin(r[4]) : 90) - parseMin(r[3]));
+        playerMins[name] = (playerMins[name] || 0) + mins;
+      }
+    }
+
+    // Ranking por xT/90 (mínimo 90 minutos jugados)
+    const allPlantilla = [
+      ...(PLANTILLA_923.porteros       || []),
+      ...(PLANTILLA_923.defensas       || []),
+      ...(PLANTILLA_923.centrocampistas|| []),
+      ...(PLANTILLA_923.delanteros     || []),
+    ];
+    function getInfo(evName) {
+      return allPlantilla.find(p =>
+        (p.csvName && p.csvName === evName) || p.name === evName ||
+        (p.name||'').split(' ').slice(-1)[0] === (evName||'').split(' ').slice(-1)[0]
+      ) || null;
+    }
+    function abbrev(name) {
+      const p = (name||'').trim().split(/\s+/);
+      return p.length < 2 ? name : p[0][0] + '. ' + p.slice(1).join(' ');
+    }
+
+    const ranked = Object.entries(playerEvs).map(([name, evs]) => {
+      const totalXt = evs.reduce((s, e) => s + e.xt, 0);
+      const mins    = playerMins[name] || 0;
+      return { name, evs, totalXt, mins, xt90: mins >= 45 ? totalXt / mins * 90 : 0 };
+    }).filter(p => p.mins >= 90).sort((a, b) => b.xt90 - a.xt90).slice(0, 20);
+
+    // Escala de color global: percentil 97 de todos los xT > 0
+    const allXts = ranked.flatMap(p => p.evs.map(e => e.xt)).filter(x => x > 0).sort((a, b) => a - b);
+    const xtMax  = allXts[Math.floor(allXts.length * 0.97)] || 0.01;
+
+    function xtColor(xt) {
+      const t = Math.min(1, xt / xtMax);
+      if (t < 0.005) return 'rgba(50,10,90,0.20)'; // fondo morado oscuro
+      // morado → magenta → amarillo
+      const r = Math.round(80  + t * 175);
+      const g = Math.round(0   + t * 200);
+      const b = Math.round(150 - t * 150);
+      const a = 0.15 + t * 0.75;
+      return `rgba(${r},${g},${b},${a.toFixed(2)})`;
+    }
+
+    // Pitch marks
+    const W = 105, H = 68, lc = 'rgba(255,255,255,0.18)', lw = '0.4';
+    const pitchMks = `
+      <rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+      <line x1="${W/2}" y1="0" x2="${W/2}" y2="${H}" stroke="${lc}" stroke-width="${lw}"/>
+      <circle cx="${W/2}" cy="${H/2}" r="9.15" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+      <circle cx="${W/2}" cy="${H/2}" r="0.45" fill="${lc}"/>
+      <rect x="0"         y="13.84" width="16.5" height="40.32" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+      <rect x="0"         y="24.84" width="5.5"  height="18.32" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+      <rect x="${W-16.5}" y="13.84" width="16.5" height="40.32" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+      <rect x="${W-5.5}"  y="24.84" width="5.5"  height="18.32" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+      <circle cx="11"      cy="${H/2}" r="0.45" fill="${lc}"/>
+      <circle cx="${W-11}" cy="${H/2}" r="0.45" fill="${lc}"/>`;
+
+    function buildXtSVG(evs) {
+      // Ordenar: bajo xT primero (fondo), alto xT encima
+      const sorted = [...evs].sort((a, b) => a.xt - b.xt);
+      // Si hay muchos eventos, muestrear los de bajo xT para mantener rendimiento
+      let filtered = sorted;
+      if (sorted.length > 800) {
+        const hiXt  = sorted.filter(e => e.xt > xtMax * 0.15);
+        const lowXt = sorted.filter(e => e.xt <= xtMax * 0.15);
+        const maxLow = Math.max(400, 800 - hiXt.length);
+        const step   = Math.ceil(lowXt.length / maxLow);
+        filtered = [...lowXt.filter((_, i) => i % step === 0), ...hiXt];
+      }
+      let lines = '', dots = '';
+      for (const e of filtered) {
+        const s = skToSvgH(e.xs, e.ys);
+        const f = skToSvgH(e.xe, e.ye);
+        const col = xtColor(e.xt);
+        const sw  = (0.35 + (e.xt / xtMax) * 0.9).toFixed(2);
+        lines += `<line x1="${s.cx.toFixed(1)}" y1="${s.cy.toFixed(1)}" x2="${f.cx.toFixed(1)}" y2="${f.cy.toFixed(1)}" stroke="${col}" stroke-width="${sw}" stroke-linecap="round"/>`;
+        if (e.xt > xtMax * 0.25)
+          dots += `<circle cx="${f.cx.toFixed(1)}" cy="${f.cy.toFixed(1)}" r="0.8" fill="${xtColor(e.xt)}"/>`;
+      }
+      return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+        <rect width="${W}" height="${H}" fill="#0a0714"/>
+        ${lines}${dots}${pitchMks}
+      </svg>`;
+    }
+
+    // Tarjetas
+    const cards = ranked.map(p => {
+      const info        = getInfo(p.name);
+      const displayName = info?.name ? abbrev(info.name) : abbrev(p.name);
+      const avatar      = info?.img
+        ? `<img src="${info.img}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2.5px solid #2a1a50;flex-shrink:0" onerror="this.style.display='none'">`
+        : `<div style="width:40px;height:40px;border-radius:50%;background:#160e2e;border:2px solid #2a1a50;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#6b4fa0;flex-shrink:0">${displayName.slice(0,1)}</div>`;
+      return `<div style="background:#0a0714;border:1px solid #1a0f38;border-radius:6px;overflow:hidden">
+        ${buildXtSVG(p.evs)}
+        <div style="padding:7px 10px 10px;display:flex;align-items:center;gap:8px">
+          ${avatar}
+          <div style="min-width:0;flex:1">
+            <div style="font-size:12px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${displayName}</div>
+            <div style="font-size:10px;color:#64748b;margin-top:1px">${p.totalXt.toFixed(2)} xT · <span style="color:#facc15;font-weight:700">${p.xt90.toFixed(2)} xT/90</span></div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    const legend = `<div style="display:flex;gap:16px;align-items:center;padding:6px 14px;background:#0a0714;border-radius:6px;border:1px solid #1a0f38;margin-bottom:12px;font-size:11px;color:#64748b">
+      <span style="font-weight:600;color:#94a3b8">Pases y conducciones · Temporada completa</span>
+      <span style="display:flex;align-items:center;gap:5px"><svg width="22" height="5"><line x1="0" y1="2.5" x2="22" y2="2.5" stroke="rgba(240,200,0,0.9)" stroke-width="2"/></svg>xT alto</span>
+      <span style="display:flex;align-items:center;gap:5px"><svg width="22" height="5"><line x1="0" y1="2.5" x2="22" y2="2.5" stroke="rgba(120,0,200,0.55)" stroke-width="1.2"/></svg>xT bajo</span>
+      <span style="margin-left:auto;color:#475569">${valid.length} partidos · top ${ranked.length} jugadores por xT/90</span>
+    </div>`;
+
+    cont.innerHTML = buildPasesSubTabs() + legend +
+      `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${cards}</div>`;
+  }
 
   // ─── MAPAS DE PASES INDIVIDUALES ─────────────────────────────────────────────
   async function renderMapasIndividuales() {
