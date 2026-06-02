@@ -14556,39 +14556,76 @@
     }
 
     // ── Mapa campo numerado (tiros con número) ────────────────────────
+    // ── Vista desde detrás de la portería ────────────────────────────
+    // Tiros a portería (save/goal) → dentro del marco con gy/gz
+    // Tiros fuera/bloqueados       → en el campo con dx/dy
     function numberedPitch(shots) {
-      const W=100, H=68;
-      const tColors = {goal:'#22c55e',save:'#f59e0b',miss:'#ef4444',block:'#94a3b8',post:'#c084fc'};
-      const sorted = [...shots].sort((a,b)=>(a.min||0)-(b.min||0));
-      const dots = sorted.map((s,i) => {
-        if (s.dx==null||s.dy==null) return '';
-        const cx  = s.dx.toFixed(1);
-        const cy  = (s.dy*0.68).toFixed(1);
-        const col = tColors[s.t] || '#94a3b8';
-        const key = 'np'+s.j+'_'+i;
-        window._tirosTipData[key] = buildTiroTip(s);
-        const n = i+1;
-        return '<g data-tkey="'+key+'" style="cursor:pointer">'
-          +'<circle cx="'+cx+'" cy="'+cy+'" r="3.8" fill="'+col+'" opacity="0.9" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/>'
-          +'<text x="'+cx+'" y="'+(parseFloat(cy)+1.3).toFixed(1)+'" text-anchor="middle" font-size="3.2" font-weight="700" fill="#0d1117">'+n+'</text>'
+      const VW=280, VH=210;
+      // Portería
+      const GW=100, GH=33;
+      const GX=(VW-GW)/2;          // 90
+      const goalLine=VH-18;         // 192
+      const GY=goalLine-GH;         // 159 (larguero)
+      // Área chica
+      const sixW=GW+32, sixH=20;
+      const sixX=(VW-sixW)/2, sixY=goalLine-sixH;
+      // Área grande
+      const penW=GW+96, penH=64;
+      const penX=(VW-penW)/2, penY=goalLine-penH;
+      // Punto de penalti
+      const spotY=penY+14;
+
+      const tColors={goal:'#22c55e',save:'#f59e0b',miss:'#ef4444',block:'#94a3b8',post:'#c084fc'};
+      const sorted=[...shots].sort((a,b)=>(a.min||0)-(b.min||0));
+
+      let dots='';
+      sorted.forEach((s,i)=>{
+        const n=i+1, col=tColors[s.t]||'#94a3b8';
+        const key='np'+s.j+'_'+i;
+        window._tirosTipData[key]=buildTiroTip(s);
+        let cx,cy;
+        if ((s.t==='goal'||s.t==='save') && s.gy!=null && s.gz!=null) {
+          // dentro del marco
+          cx = GX + (s.gy/100)*GW;
+          cy = GY + (1 - s.gz/100)*GH;
+        } else if (s.dx!=null && s.dy!=null) {
+          // en el campo (arriba del marco)
+          cx = s.dx/100 * VW;
+          cy = GY - 10 - (s.dy/100)*(GY-12);
+          cy = Math.max(8, Math.min(GY-10, cy));
+        } else return;
+        dots+='<g data-tkey="'+key+'" style="cursor:pointer">'
+          +'<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="9" fill="'+col+'" opacity="0.92" stroke="rgba(0,0,0,0.35)" stroke-width="0.8"/>'
+          +'<text x="'+cx.toFixed(1)+'" y="'+(cy+3.5).toFixed(1)+'" text-anchor="middle" font-size="8" font-weight="700" fill="white">'+n+'</text>'
           +'</g>';
-      }).join('');
-      const lc='rgba(255,255,255,0.25)', lw='0.7';
-      const svg = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block">'
-        +'<rect width="'+W+'" height="'+H+'" fill="#0c1220"/>'
-        +'<rect x="3" y="1" width="94" height="66" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-        +'<line x1="3" y1="34" x2="97" y2="34" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-        +'<circle cx="50" cy="34" r="9" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-        +'<circle cx="50" cy="34" r="0.7" fill="'+lc+'"/>'
-        +'<rect x="21" y="1" width="58" height="15" fill="rgba(255,255,255,0.03)" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-        +'<rect x="37" y="1" width="26" height="5.5" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-        +'<rect x="44" y="0" width="12" height="1.5" fill="rgba(255,255,255,0.15)" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-        +'<circle cx="50" cy="11" r="0.7" fill="'+lc+'"/>'
-        +'<rect x="21" y="51" width="58" height="15" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-        +'<rect x="37" y="60.5" width="26" height="5.5" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-        +'<rect x="44" y="65.5" width="12" height="1.5" fill="rgba(255,255,255,0.15)" stroke="'+lc+'" stroke-width="'+lw+'"/>'
-        +'<circle cx="50" cy="57" r="0.7" fill="'+lc+'"/>'
-        +dots+'</svg>';
+      });
+
+      const lc='rgba(255,255,255,0.22)', lw='0.8';
+      const netV=Array.from({length:9},(_,i)=>'<line x1="'+(GX+(i+1)*GW/10).toFixed(1)+'" y1="'+GY+'" x2="'+(GX+(i+1)*GW/10).toFixed(1)+'" y2="'+goalLine+'" stroke="rgba(255,255,255,0.09)" stroke-width="0.4"/>').join('');
+      const netH=Array.from({length:3},(_,i)=>'<line x1="'+GX+'" y1="'+(GY+(i+1)*GH/4).toFixed(1)+'" x2="'+(GX+GW)+'" y2="'+(GY+(i+1)*GH/4).toFixed(1)+'" stroke="rgba(255,255,255,0.09)" stroke-width="0.4"/>').join('');
+
+      const svg='<svg viewBox="0 0 '+VW+' '+VH+'" style="width:100%;display:block">'
+        // fondo
+        +'<rect width="'+VW+'" height="'+VH+'" fill="#0e1a14"/>'
+        // área grande
+        +'<rect x="'+penX+'" y="'+penY+'" width="'+penW+'" height="'+penH+'" fill="rgba(255,255,255,0.025)" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        // punto penalti
+        +'<circle cx="'+(VW/2)+'" cy="'+spotY+'" r="1" fill="'+lc+'"/>'
+        // área chica
+        +'<rect x="'+sixX+'" y="'+sixY+'" width="'+sixW+'" height="'+sixH+'" fill="none" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        // línea de gol
+        +'<line x1="0" y1="'+goalLine+'" x2="'+VW+'" y2="'+goalLine+'" stroke="'+lc+'" stroke-width="'+lw+'"/>'
+        // red
+        +'<rect x="'+GX+'" y="'+GY+'" width="'+GW+'" height="'+GH+'" fill="rgba(200,210,200,0.06)"/>'
+        +netV+netH
+        // postes
+        +'<rect x="'+(GX-1.5)+'" y="'+GY+'" width="3" height="'+(GH+1)+'" fill="rgba(255,255,255,0.85)"/>'
+        +'<rect x="'+(GX+GW-1.5)+'" y="'+GY+'" width="3" height="'+(GH+1)+'" fill="rgba(255,255,255,0.85)"/>'
+        // larguero
+        +'<rect x="'+(GX-1.5)+'" y="'+(GY-1.5)+'" width="'+(GW+3)+'" height="3" fill="rgba(255,255,255,0.85)"/>'
+        +dots
+        +'</svg>';
+
       return '<div onmouseover="tirosOverSVG(event)" onmouseleave="tirosHideTip()" onmousemove="tirosMoveTip(event)">'+svg+'</div>';
     }
 
