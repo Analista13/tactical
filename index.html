@@ -6832,13 +6832,14 @@
     cont.innerHTML = `<div class="anim" id="pasesCont"><div class="loading"><div class="spinner"></div><span>Cargando...</span></div></div>`;
     if (pasesSubTab === 'jugadores') await renderPasesJugadores();
     else if (pasesSubTab === 'progresion') await renderProgresion();
+    else if (pasesSubTab === 'mapasind') await renderMapasIndividuales();
     else await renderPasesMap();
   }
 
   // ── Barra de sub-tabs compartida (Equipo | Jugadores) ─────────────────────
   function buildPasesSubTabs() {
     return `<div style="display:flex;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px;width:fit-content;margin-bottom:16px">
-      ${[['equipo','Equipo'],['jugadores','Jugadores'],['progresion','Progresión']].map(([id,lbl]) => {
+      ${[['equipo','Equipo'],['jugadores','Jugadores'],['progresion','Progresión'],['mapasind','Mapas Ind.']].map(([id,lbl]) => {
         const act = pasesSubTab === id;
         return `<button onclick="pasesSubTab='${id}';pasesDropdownOpen=false;loadPases()"
           style="background:${act?'var(--accent)':'transparent'};color:${act?'#0d1117':'var(--text2)'};border:none;border-radius:16px;padding:7px 20px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s;white-space:nowrap">${lbl}</button>`;
@@ -6863,12 +6864,12 @@
     const isHome0 = partido.local === currentTeam.name;
     const [gl0,gv0] = (partido.s||'0-0').split('-').map(Number);
     const resCol0 = isHome0 ? (gl0>gv0?'var(--green)':gl0<gv0?'var(--red)':'var(--text3)') : (gv0>gl0?'var(--green)':gv0<gl0?'var(--red)':'var(--text3)');
-    const onElegir = `pasesDropdownOpen=!pasesDropdownOpen;${pasesSubTab==='jugadores'?'renderPasesJugadores':pasesSubTab==='progresion'?'renderProgresion':'renderPasesMap'}()`;
+    const onElegir = `pasesDropdownOpen=!pasesDropdownOpen;${pasesSubTab==='jugadores'?'renderPasesJugadores':pasesSubTab==='progresion'?'renderProgresion':pasesSubTab==='mapasind'?'renderMapasIndividuales':'renderPasesMap'}()`;
 
     const elegirBtn = `<button onclick="${onElegir}"
       style="background:${pasesDropdownOpen?'rgba(88,166,255,0.12)':'var(--bg2)'};border:1px solid ${pasesDropdownOpen?'rgba(88,166,255,0.45)':'var(--border)'};color:${pasesDropdownOpen?'var(--blue)':'var(--text2)'};padding:5px 13px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap">✎ Elegir</button>`;
 
-    const onPick = `pasesMatchId=MATCHID;pasesDropdownOpen=false;pasesPeriod='t';pasesTypeFilter='all';pasesZoneFilter=null;${pasesSubTab==='jugadores'?'renderPasesJugadores':pasesSubTab==='progresion'?'renderProgresion':'renderPasesMap'}()`;
+    const onPick = `pasesMatchId=MATCHID;pasesDropdownOpen=false;pasesPeriod='t';pasesTypeFilter='all';pasesZoneFilter=null;${pasesSubTab==='jugadores'?'renderPasesJugadores':pasesSubTab==='progresion'?'renderProgresion':pasesSubTab==='mapasind'?'renderMapasIndividuales':'renderPasesMap'}()`;
     const matchChips = pasesDropdownOpen ? (() => {
       const chips = ps.map(p => {
         const rv  = p.local === currentTeam.name ? p.vis : p.local;
@@ -14802,6 +14803,123 @@
   }
 
 
+
+  // ─── MAPAS DE PASES INDIVIDUALES ─────────────────────────────────────────────
+  async function renderMapasIndividuales() {
+    const cont = document.getElementById('pasesCont');
+    if (!cont) return;
+    const ps = getPartidos();
+    if (!ps.length) return;
+    if (!pasesMatchId) pasesMatchId = ps[ps.length - 1].id;
+    const partido = ps.find(p => p.id === pasesMatchId) || ps[ps.length - 1];
+
+    cont.innerHTML = buildPasesSubTabs() + buildPasesHeader(partido, ps) +
+      `<div class="loading"><div class="spinner"></div><span>Cargando mapas...</span></div>`;
+
+    const matchData = await getMatchData(pasesMatchId);
+
+    // Solo eventos de pase con coordenadas completas
+    const passEvents = matchData.filter(e =>
+      e.pass_outcome && e.x_start != null && e.x_end != null && e.player_name
+    );
+
+    // Agrupar por jugador → ordenar por total desc
+    const byPlayer = {};
+    for (const e of passEvents) {
+      if (!byPlayer[e.player_name]) byPlayer[e.player_name] = [];
+      byPlayer[e.player_name].push(e);
+    }
+    const players = Object.entries(byPlayer).sort((a, b) => b[1].length - a[1].length);
+
+    // Lookup de foto e info en PLANTILLA_923
+    const allPlantilla = [
+      ...(PLANTILLA_923.porteros       || []),
+      ...(PLANTILLA_923.defensas       || []),
+      ...(PLANTILLA_923.centrocampistas|| []),
+      ...(PLANTILLA_923.delanteros     || []),
+    ];
+    function getPlayerInfo(evName) {
+      return allPlantilla.find(p =>
+        (p.csvName && p.csvName === evName) ||
+        p.name === evName ||
+        (p.name || '').split(' ').slice(-1)[0] === (evName || '').split(' ').slice(-1)[0]
+      ) || null;
+    }
+    function abbrev(name) {
+      const parts = (name || '').trim().split(/\s+/);
+      if (parts.length < 2) return name;
+      return parts[0][0] + '. ' + parts.slice(1).join(' ');
+    }
+
+    // SVG pitch marks
+    const W = 105, H = 68;
+    const lc = 'rgba(255,255,255,0.20)', lw = '0.45';
+    const pitchMks = `
+      <rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+      <line x1="${W/2}" y1="0" x2="${W/2}" y2="${H}" stroke="${lc}" stroke-width="${lw}"/>
+      <circle cx="${W/2}" cy="${H/2}" r="9.15" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+      <circle cx="${W/2}" cy="${H/2}" r="0.5" fill="${lc}"/>
+      <rect x="0"          y="13.84" width="16.5" height="40.32" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+      <rect x="0"          y="24.84" width="5.5"  height="18.32" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+      <rect x="${W-16.5}"  y="13.84" width="16.5" height="40.32" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+      <rect x="${W-5.5}"   y="24.84" width="5.5"  height="18.32" fill="none" stroke="${lc}" stroke-width="${lw}"/>
+      <circle cx="11"       cy="${H/2}" r="0.5" fill="${lc}"/>
+      <circle cx="${W-11}"  cy="${H/2}" r="0.5" fill="${lc}"/>`;
+
+    function buildPassSVG(passes) {
+      // Líneas primero, puntos destino encima, puntos origen al final
+      let lines = '', destDots = '', origDots = '';
+      for (const p of passes) {
+        const s = skToSvgH(p.x_start, p.y_start);
+        const e = skToSvgH(p.x_end,   p.y_end);
+        const ok  = p.pass_outcome === 'successful';
+        const col = ok ? 'rgba(74,222,128,0.60)' : 'rgba(248,113,113,0.60)';
+        const dc  = ok ? '#4ade80' : '#f87171';
+        lines    += `<line x1="${s.cx.toFixed(1)}" y1="${s.cy.toFixed(1)}" x2="${e.cx.toFixed(1)}" y2="${e.cy.toFixed(1)}" stroke="${col}" stroke-width="0.55" stroke-linecap="round"/>`;
+        destDots += `<circle cx="${e.cx.toFixed(1)}" cy="${e.cy.toFixed(1)}" r="0.9" fill="${dc}"/>`;
+        origDots += `<circle cx="${s.cx.toFixed(1)}" cy="${s.cy.toFixed(1)}" r="0.55" fill="rgba(255,255,255,0.45)"/>`;
+      }
+      return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+        <rect width="${W}" height="${H}" fill="#162318"/>
+        ${lines}${destDots}${origDots}${pitchMks}
+      </svg>`;
+    }
+
+    // Construir tarjetas
+    const cards = players.map(([evName, passes]) => {
+      const info  = getPlayerInfo(evName);
+      const succ  = passes.filter(p => p.pass_outcome === 'successful').length;
+      const total = passes.length;
+      const pct   = total > 0 ? Math.round(succ / total * 100) : 0;
+      const displayName = abbrev(info?.name || evName);
+      const avatar = info?.img
+        ? `<img src="${info.img}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #253825;flex-shrink:0" onerror="this.style.display='none'">`
+        : `<div style="width:38px;height:38px;border-radius:50%;background:#1a2e1c;border:2px solid #253825;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#475569;flex-shrink:0">${(info?.name||evName).slice(0,1)}</div>`;
+
+      return `<div style="background:#111827;border:1px solid #1e293b;border-radius:6px;overflow:hidden">
+        ${buildPassSVG(passes)}
+        <div style="padding:7px 10px 9px;display:flex;align-items:center;gap:8px">
+          ${avatar}
+          <div style="min-width:0;flex:1">
+            <div style="font-size:12px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${displayName}</div>
+            <div style="font-size:10px;color:#64748b;margin-top:1px">${total} pases · <span style="color:${pct>=80?'#4ade80':pct>=60?'#facc15':'#f87171'};font-weight:700">${pct}% acierto</span></div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Leyenda
+    const legend = `<div style="display:flex;gap:16px;align-items:center;padding:7px 14px;background:#0d1117;border-radius:6px;border:1px solid #1e293b;margin-bottom:12px;font-size:11px;color:#64748b">
+      <span style="display:flex;align-items:center;gap:5px"><svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="rgba(74,222,128,0.8)" stroke-width="1.5"/></svg>Completado</span>
+      <span style="display:flex;align-items:center;gap:5px"><svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="rgba(248,113,113,0.8)" stroke-width="1.5"/></svg>Fallido</span>
+      <span style="display:flex;align-items:center;gap:5px"><svg width="10" height="10"><circle cx="5" cy="5" r="3.5" fill="rgba(255,255,255,0.4)"/></svg>Origen</span>
+      <span style="display:flex;align-items:center;gap:5px"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#4ade80"/></svg>Destino</span>
+    </div>`;
+
+    cont.innerHTML = buildPasesSubTabs() + buildPasesHeader(partido, ps) +
+      legend +
+      `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${cards}</div>`;
+  }
 
   // ─── SECUENCIAS PASES OFENSIVAS ─────────────────────────────────────────────
 
