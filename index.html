@@ -12283,7 +12283,10 @@
                 // ── Beeswarm distribution chart ────────────────────────────────────
                 const _pos_d = obeData.pos || 'DC';
                 const _pCol_d = q => q >= 75 ? '#3fb950' : q >= 50 ? '#c8a96e' : q >= 25 ? '#f0883e' : '#f85149';
-                const _metricPills_d = _OBE_METRICS.map(([key,,grp]) => {
+                const _tabKeys_d = new Set(_OBE_TAB[_profileTab] || []);
+                // Reset metric if it doesn't belong to the current tab
+                if (!_tabKeys_d.has(_profileObeDistMetric)) _profileObeDistMetric = (_OBE_TAB[_profileTab]||[])[0] || 'Total OBE';
+                const _metricPills_d = _OBE_METRICS.filter(([key]) => _tabKeys_d.has(key)).map(([key,,grp]) => {
                   const act = _profileObeDistMetric === key;
                   return `<button onclick="_profileObeDistMetric='${key.replace(/'/g,"\\'")}';openPlayerProfile(${p.d})"
                     style="padding:4px 11px;border-radius:16px;border:1px solid ${act?'#58a6ff':'var(--border)'};
