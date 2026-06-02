@@ -331,7 +331,6 @@
 
   function renderLeagueContent(league) {
     const cont = document.getElementById('content');
-    // Header: logo Atleti siempre fijo — solo actualizamos el subtítulo
     const hSub = document.getElementById('headerSub');
     if (hSub) hSub.textContent = `${league.shortName} · ${league.season}`;
     const hBadge = document.getElementById('headerBadge');
@@ -339,39 +338,175 @@
     const hLV = document.getElementById('headerLocVis');
     if (hLV) hLV.style.display = 'none';
 
-    const teamCard = (t) => {
-      const logoHtml = t.escudo
-        ? `<img class="ws-team-escudo" src="${t.escudo}" alt="${t.name}" onerror="this.style.display='none'">`
-        : `<div class="ws-team-initial" style="background:${t.color||'var(--bg4)'}33;color:${t.color||'var(--text3)'}">${t.initials||t.name[0]}</div>`;
-      if (t.active) {
-        return `
-          <div class="ws-team-card" onclick="openTeam(${t.id},'${t.name.replace(/'/g,"\\'")}','${t.escudo}')">
-            ${logoHtml}
-            <div class="ws-team-name">${t.name}</div>
-            <div class="ws-team-sub">${t.partidos} partidos</div>
-          </div>`;
+    // ── Auto-compute stats from PARTIDOS data ──────────────────────────────────
+    function getStats(teamId, teamName) {
+      const partidos = PARTIDOS_MAP[teamId] || [];
+      // Use the last significant word of the team name to detect home games
+      const key = (teamName || '').split(/\s+/).pop().toLowerCase();
+
+      const mk = () => ({ PJ:0, G:0, E:0, P:0, GF:0, GC:0 });
+      const total = mk(), casa = mk(), fuera = mk();
+
+      for (const p of partidos) {
+        if (!p.s || p.s === '–') continue;
+        const parts = p.s.split('-').map(s => parseInt(s, 10));
+        if (parts.length < 2 || isNaN(parts[0]) || isNaN(parts[1])) continue;
+        const isH = (p.local || '').toLowerCase().includes(key);
+        const gf = isH ? parts[0] : parts[1];
+        const gc = isH ? parts[1] : parts[0];
+        const r  = gf > gc ? 'G' : gf === gc ? 'E' : 'P';
+        total.PJ++; total.GF += gf; total.GC += gc; total[r]++;
+        if (isH) { casa.PJ++;  casa.GF  += gf; casa.GC  += gc; casa[r]++;  }
+        else      { fuera.PJ++; fuera.GF += gf; fuera.GC += gc; fuera[r]++; }
       }
-      return `
-        <div class="ws-team-card locked">
-          ${logoHtml}
-          <div class="ws-team-name">${t.name}</div>
-          <div class="ws-team-lock">🔒</div>
-          <div class="ws-team-sub">Próximamente</div>
+
+      const last5 = partidos.filter(p => p.s && p.s !== '–').slice(-5).map(p => {
+        const pts = (p.s || '').split('-').map(s => parseInt(s, 10));
+        if (isNaN(pts[0])) return null;
+        const isH = (p.local || '').toLowerCase().includes(key);
+        const gf = isH ? pts[0] : pts[1], gc = isH ? pts[1] : pts[0];
+        return gf > gc ? 'G' : gf === gc ? 'E' : 'P';
+      }).filter(Boolean);
+
+      return {
+        total, casa, fuera,
+        Pts:    total.G * 3 + total.E,
+        DIF:    total.GF - total.GC,
+        winPct: total.PJ > 0 ? total.G / total.PJ * 100 : 0,
+        last5,
+      };
+    }
+
+    // ── Sub-renderers ──────────────────────────────────────────────────────────
+    const formBadge = r => {
+      const [c, l] = r === 'G' ? ['#22c55e','V'] : r === 'E' ? ['#ca8a04','E'] : ['#ef4444','D'];
+      return `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${c}1a;border:1.5px solid ${c};font-size:9px;font-weight:800;color:${c}">${l}</span>`;
+    };
+
+    const splitRow = (s, lbl) => {
+      const dif = s.GF - s.GC;
+      const dc  = dif > 0 ? '#4ade80' : dif < 0 ? '#f87171' : '#94a3b8';
+      return `<div style="display:flex;align-items:center;gap:6px;font-size:10.5px">
+        <span style="width:46px;font-weight:700;color:#475569">${lbl}</span>
+        <span style="color:#64748b">${s.PJ}PJ</span>
+        <span style="font-weight:700;color:#4ade80">${s.G}G</span>
+        <span style="color:#ca8a04">${s.E}E</span>
+        <span style="color:#f87171">${s.P}P</span>
+        <span style="margin-left:auto;color:#94a3b8">${s.GF}:${s.GC}</span>
+        <span style="font-weight:700;color:${dc};min-width:30px;text-align:right">${(dif>=0?'+':'')+dif}</span>
+      </div>`;
+    };
+
+    const teamCard = t => {
+      const logo = t.escudo
+        ? `<img style="width:58px;height:58px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.55))" src="${t.escudo}" alt="" onerror="this.style.display='none'">`
+        : `<div style="width:58px;height:58px;border-radius:50%;background:${t.color||'#1e293b'};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0">${t.initials||t.name[0]}</div>`;
+
+      if (!t.active) {
+        return `<div style="background:#0c1220;border:1px solid #1a2435;border-radius:14px;padding:18px 22px;display:flex;align-items:center;gap:14px;opacity:0.38">
+          ${logo}
+          <div>
+            <div style="font-size:15px;font-weight:700;color:#475569">${t.name}</div>
+            <div style="font-size:11px;color:#2d3d52;margin-top:4px">🔒 Próximamente</div>
+          </div>
         </div>`;
+      }
+
+      const s = getStats(t.id, t.name);
+      const wPct  = Math.round(s.winPct);
+      const dPct  = s.total.PJ > 0 ? Math.round(s.total.E / s.total.PJ * 100) : 0;
+      const lPct  = Math.max(0, 100 - wPct - dPct);
+      const difStr = (s.DIF >= 0 ? '+' : '') + s.DIF;
+      const difCol  = s.DIF > 0 ? '#4ade80' : s.DIF < 0 ? '#f87171' : '#94a3b8';
+
+      const metrics = [
+        {l:'PJ', v:s.total.PJ, c:'#94a3b8'},
+        {l:'G',  v:s.total.G,  c:'#4ade80'},
+        {l:'E',  v:s.total.E,  c:'#ca8a04'},
+        {l:'P',  v:s.total.P,  c:'#f87171'},
+        {l:'GF', v:s.total.GF, c:'#60a5fa'},
+        {l:'GC', v:s.total.GC, c:'#f87171'},
+        {l:'DIF',v:difStr,     c:difCol},
+        {l:'PTS',v:s.Pts,      c:'#f59e0b'},
+      ];
+
+      return `<div style="background:linear-gradient(145deg,#0c1220 0%,#091525 60%,#0c1d35 100%);border:1px solid #1e3a5f;border-radius:14px;padding:22px 24px;cursor:pointer;transition:box-shadow .2s,border-color .2s"
+        onmouseover="this.style.borderColor='#3b82f6';this.style.boxShadow='0 4px 28px rgba(59,130,246,0.13)'"
+        onmouseout="this.style.borderColor='#1e3a5f';this.style.boxShadow='none'"
+        onclick="openTeam(${t.id},'${t.name.replace(/'/g,"\\'")}','${t.escudo}')">
+
+        <!-- Cabecera -->
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+          ${logo}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:19px;font-weight:900;color:#f1f5f9;letter-spacing:-.01em">${t.name}</div>
+            <div style="font-size:11px;color:#3d5470;margin-top:3px">${league.name} · ${league.season}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:34px;font-weight:900;color:#f59e0b;line-height:1">${s.Pts}</div>
+            <div style="font-size:9px;font-weight:700;color:#78350f;letter-spacing:.07em;text-transform:uppercase">puntos</div>
+          </div>
+        </div>
+
+        <!-- Métricas -->
+        <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:16px">
+          ${metrics.map(m => `
+            <div style="background:#060d18;border-radius:8px;padding:9px 4px;text-align:center">
+              <div style="font-size:15px;font-weight:800;color:${m.c};line-height:1.15">${m.v}</div>
+              <div style="font-size:8px;font-weight:700;color:#2a3d52;letter-spacing:.05em;text-transform:uppercase;margin-top:3px">${m.l}</div>
+            </div>`).join('')}
+        </div>
+
+        <!-- Barra V/E/D -->
+        <div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:10px;font-weight:700;color:#334155;letter-spacing:.06em;text-transform:uppercase">Rendimiento</span>
+            <div style="display:flex;gap:14px">
+              <span style="font-size:11px;font-weight:700;color:#4ade80">${wPct}% V</span>
+              <span style="font-size:11px;font-weight:600;color:#ca8a04">${dPct}% E</span>
+              <span style="font-size:11px;font-weight:600;color:#f87171">${lPct}% D</span>
+            </div>
+          </div>
+          <div style="height:7px;background:#060d18;border-radius:4px;overflow:hidden;display:flex;gap:1px">
+            <div style="width:${wPct}%;min-width:${s.total.G>0?3:0}px;height:100%;background:linear-gradient(90deg,#15803d,#4ade80);border-radius:4px 0 0 4px;flex-shrink:0"></div>
+            <div style="width:${dPct}%;min-width:${s.total.E>0?3:0}px;height:100%;background:#a16207;flex-shrink:0"></div>
+            <div style="flex:1;min-width:${s.total.P>0?3:0}px;height:100%;background:#b91c1c;border-radius:0 4px 4px 0"></div>
+          </div>
+        </div>
+
+        <!-- Split Casa / Fuera -->
+        <div style="background:#060d18;border-radius:10px;padding:11px 14px;margin-bottom:16px;display:flex;flex-direction:column;gap:7px">
+          ${splitRow(s.casa,  '🏠 Casa')}
+          <div style="height:1px;background:#0f1e30"></div>
+          ${splitRow(s.fuera, '✈️ Fuera')}
+        </div>
+
+        <!-- Forma + CTA -->
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:9px;font-weight:700;color:#2d3d52;letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px">Últimas 5</div>
+            <div style="display:flex;gap:5px">${s.last5.map(formBadge).join('')}</div>
+          </div>
+          <span style="font-size:12px;font-weight:700;color:#3b82f6;letter-spacing:-.01em">Ver análisis completo →</span>
+        </div>
+      </div>`;
     };
 
     cont.innerHTML = `
-      <div class="ws-home anim">
-        <div class="ws-league-header">
-          <img class="ws-league-logo" src="${league.logo}" alt="${league.name}"
-            onerror="this.outerHTML='<div class=\'ws-comp-logo-fallback\' style=\'width:60px;height:60px;font-size:16px\'>1ª</div>'">
+      <div style="padding:16px 20px">
+        <!-- Header liga -->
+        <div style="display:flex;align-items:center;gap:18px;padding:18px 22px;background:linear-gradient(135deg,#091525,#0c1220);border:1px solid #1e3a5f;border-radius:14px;margin-bottom:20px">
+          <img src="${league.logo}" style="width:62px;height:62px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 2px 14px rgba(0,0,0,0.7))"
+            onerror="this.outerHTML='<div style=\'width:62px;height:62px;background:#0c1220;border-radius:10px;border:1px solid #1e3a5f;display:flex;align-items:center;justify-content:center;font-size:26px\'>🏆</div>'">
           <div>
-            <div class="ws-league-title">${league.name} — ${league.shortName}</div>
-            <div class="ws-league-sub">Temporada ${league.season} · ${league.teams.filter(t=>t.active).length} de ${league.teams.length} equipos analizados</div>
+            <div style="font-size:22px;font-weight:900;color:#f1f5f9;letter-spacing:-.02em">${league.name}</div>
+            <div style="font-size:12px;color:#3d5470;margin-top:4px">Temporada ${league.season} · ${league.teams.filter(t=>t.active).length} de ${league.teams.length} equipos analizados</div>
           </div>
         </div>
-        <div class="ws-section-title">Equipos</div>
-        <div class="ws-teams-grid">
+
+        <!-- Team cards -->
+        <div style="font-size:10px;font-weight:700;color:#2a3d52;letter-spacing:.09em;text-transform:uppercase;margin-bottom:10px;padding-left:2px">Equipos</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
           ${league.teams.map(teamCard).join('')}
         </div>
       </div>`;
