@@ -14881,12 +14881,12 @@
 
     function xtColor(xt) {
       const t = Math.min(1, xt / xtMax);
-      if (t < 0.005) return 'rgba(50,10,90,0.20)'; // fondo morado oscuro
+      if (t < 0.005) return 'rgba(50,10,90,0.07)'; // fondo morado oscuro
       // morado → magenta → amarillo
       const r = Math.round(80  + t * 175);
       const g = Math.round(0   + t * 200);
       const b = Math.round(150 - t * 150);
-      const a = 0.15 + t * 0.75;
+      const a = 0.05 + t * 0.55;
       return `rgba(${r},${g},${b},${a.toFixed(2)})`;
     }
 
@@ -14921,10 +14921,10 @@
         const s = skToSvgH(e.xs, e.ys);
         const f = skToSvgH(e.xe, e.ye);
         const col = xtColor(e.xt);
-        const sw  = (0.35 + (e.xt / xtMax) * 0.9).toFixed(2);
+        const sw  = (0.10 + (e.xt / xtMax) * 0.36).toFixed(2);
         lines += `<line x1="${s.cx.toFixed(1)}" y1="${s.cy.toFixed(1)}" x2="${f.cx.toFixed(1)}" y2="${f.cy.toFixed(1)}" stroke="${col}" stroke-width="${sw}" stroke-linecap="round"/>`;
-        if (e.xt > xtMax * 0.25)
-          dots += `<circle cx="${f.cx.toFixed(1)}" cy="${f.cy.toFixed(1)}" r="0.8" fill="${xtColor(e.xt)}"/>`;
+        if (e.xt > xtMax * 0.55)
+          dots += `<circle cx="${f.cx.toFixed(1)}" cy="${f.cy.toFixed(1)}" r="0.4" fill="${xtColor(e.xt)}"/>`;
       }
       return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
         <rect width="${W}" height="${H}" fill="#0a0714"/>
