@@ -11639,8 +11639,10 @@
   let __hmData = null;           // lazy-loaded player_heatmap.json cache
   let _profileTab = 'heatmap';  // 'heatmap' | 'defensiva' | 'presion' | 'carreras' | 'pases'
   let _profileDorsal = null;
-  let _profileObeView = 'tabla';  // 'tabla' | 'dist'
+  let _profileObeView = 'tabla';  // 'tabla' | 'dist' | 'scatter'
   let _profileObeDistMetric = 'Total OBE';
+  let _profileObeScatterX = 'Total OBE';
+  let _profileObeScatterY = 'Presión directa';
   let _profileRunView   = 'tabla';   // 'tabla' | 'dist'  (carreras sin balón subtab)
   let _profileRunMetric = 'tot_p30'; // metric key for carreras beeswarm
   let _profilePasesView   = 'tabla'; // 'tabla' | 'dist'
@@ -12277,6 +12279,7 @@
               const _obeTog = `<div style="display:flex;gap:8px;margin-bottom:14px">
                 <button onclick="_profileObeView='tabla';openPlayerProfile(${p.d})" style="padding:5px 16px;border-radius:6px;border:1px solid ${_profileObeView==='tabla'?'var(--accent)':'var(--border)'};background:${_profileObeView==='tabla'?'rgba(200,169,110,0.12)':'var(--bg2)'};color:${_profileObeView==='tabla'?'var(--accent)':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profileObeView==='tabla'?700:500}">📋 Tabla</button>
                 <button onclick="_profileObeView='dist';openPlayerProfile(${p.d})" style="padding:5px 16px;border-radius:6px;border:1px solid ${_profileObeView==='dist'?'#58a6ff':'var(--border)'};background:${_profileObeView==='dist'?'rgba(88,166,255,0.12)':'var(--bg2)'};color:${_profileObeView==='dist'?'#58a6ff':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profileObeView==='dist'?700:500}">📊 Distribución</button>
+                <button onclick="_profileObeView='scatter';openPlayerProfile(${p.d})" style="padding:5px 16px;border-radius:6px;border:1px solid ${_profileObeView==='scatter'?'#3fb950':'var(--border)'};background:${_profileObeView==='scatter'?'rgba(63,185,80,0.12)':'var(--bg2)'};color:${_profileObeView==='scatter'?'#3fb950':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profileObeView==='scatter'?700:500}">📈 Dispersión</button>
               </div>`;
 
               if (_profileObeView === 'dist') {
@@ -12357,6 +12360,141 @@
                   <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#58a6ff;margin-right:3px;vertical-align:middle"></span>${p.name}</span>
                 </div>`;
               }
+
+              // ── SCATTER ─────────────────────────────────────────────────────────
+              if (_profileObeView === 'scatter') {
+                const _pos_s = obeData.pos || 'DC';
+                const _allScMets = [...(_OBE_TAB.defensiva||[]), ...(_OBE_TAB.presion||[])];
+                if (!_allScMets.includes(_profileObeScatterX)) _profileObeScatterX = _allScMets[0]||'Total OBE';
+                if (!_allScMets.includes(_profileObeScatterY)) _profileObeScatterY = _allScMets[1]||_allScMets[0];
+
+                // Build scatter points by joining X and Y arrays by player name
+                const _xArr = (_DIST_DATA[_pos_s]||{})[_profileObeScatterX]||[];
+                const _yArr = (_DIST_DATA[_pos_s]||{})[_profileObeScatterY]||[];
+                const _xMap = {}; _xArr.forEach(([v,n])=>_xMap[n]=v);
+                const _scPts = _yArr.filter(([,n])=>_xMap[n]!==undefined).map(([yv,n])=>({n,x:_xMap[n],y:yv}));
+                const _nPts = _scPts.length;
+
+                // Current player values from obeData
+                const _sxv = obeData[_profileObeScatterX]?.v;
+                const _syv = obeData[_profileObeScatterY]?.v;
+
+                // Axis selector helper
+                const _axBtn = (axis, key) => {
+                  const cur = axis==='x'?_profileObeScatterX:_profileObeScatterY;
+                  const act = cur===key;
+                  const vn  = axis==='x'?'_profileObeScatterX':'_profileObeScatterY';
+                  const ac  = axis==='x'?'#ffa657':'#58a6ff';
+                  const bg  = act?(axis==='x'?'rgba(255,166,87,0.18)':'rgba(88,166,255,0.18)'):'var(--bg2)';
+                  return `<button onclick="${vn}='${key.replace(/'/g,"\\'")}';openPlayerProfile(${p.d})"
+                    style="padding:3px 8px;border-radius:12px;border:1px solid ${act?ac:'var(--border)'};
+                           background:${bg};color:${act?ac:'var(--text2)'};font-size:10px;
+                           font-weight:${act?700:400};cursor:pointer;white-space:nowrap;transition:all .15s">${key}</button>`;
+                };
+
+                // Chart dimensions
+                const SW=580,SH=340,ML=52,MR=20,MT=16,MB=46;
+                const PW=SW-ML-MR, PH=SH-MT-MB;
+
+                // Value ranges
+                const _xVals=_scPts.map(pt=>pt.x), _yVals=_scPts.map(pt=>pt.y);
+                let _xMin=_xVals.length?Math.min(..._xVals):0, _xMax=_xVals.length?Math.max(..._xVals):1;
+                let _yMin=_yVals.length?Math.min(..._yVals):0, _yMax=_yVals.length?Math.max(..._yVals):1;
+                if(_sxv!==undefined){_xMin=Math.min(_xMin,_sxv);_xMax=Math.max(_xMax,_sxv);}
+                if(_syv!==undefined){_yMin=Math.min(_yMin,_syv);_yMax=Math.max(_yMax,_syv);}
+                const _xSp=_xMax-_xMin||1, _ySp=_yMax-_yMin||1;
+                _xMin-=_xSp*0.06; _xMax+=_xSp*0.06;
+                _yMin-=_ySp*0.06; _yMax+=_ySp*0.06;
+                const _xSc=v=>ML+(v-_xMin)/(_xMax-_xMin)*PW;
+                const _ySc=v=>MT+PH-(v-_yMin)/(_yMax-_yMin)*PH;
+
+                // Average lines
+                const _avgX=_xVals.length?_xVals.reduce((a,b)=>a+b,0)/_xVals.length:(_xMin+_xMax)/2;
+                const _avgY=_yVals.length?_yVals.reduce((a,b)=>a+b,0)/_yVals.length:(_yMin+_yMax)/2;
+
+                // Combined rank coloring
+                const _xRk={}, _yRk={};
+                [..._scPts].sort((a,b)=>a.x-b.x).forEach((pt,i)=>_xRk[pt.n]=i);
+                [..._scPts].sort((a,b)=>a.y-b.y).forEach((pt,i)=>_yRk[pt.n]=i);
+                const _pColS=q=>q>=75?'#3fb950':q>=50?'#c8a96e':q>=25?'#f0883e':'#f85149';
+
+                // Dots SVG
+                const _R=4;
+                const _dotsS=_scPts.map(pt=>{
+                  const cx=_xSc(pt.x).toFixed(1), cy=_ySc(pt.y).toFixed(1);
+                  const cPct=_nPts>1?(((_xRk[pt.n]||0)+(_yRk[pt.n]||0))/(2*(_nPts-1))*100):50;
+                  const col=_pColS(cPct);
+                  const nm=pt.n.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+                  const xlbl=_profileObeScatterX.replace(/'/g,"\\'");
+                  const ylbl=_profileObeScatterY.replace(/'/g,"\\'");
+                  return `<circle cx="${cx}" cy="${cy}" r="${_R}" fill="${col}" fill-opacity="0.6" style="cursor:pointer"
+                    onmouseover="_obeTipShow(event,'<strong>${nm}</strong><br>${xlbl}: ${pt.x}<br>${ylbl}: ${pt.y}')"
+                    onmouseout="_obeTipHide()"/>`;
+                }).join('');
+
+                // Selected player highlighted dot
+                let _selSvg='';
+                if(_sxv!==undefined&&_syv!==undefined){
+                  const sx=_xSc(_sxv).toFixed(1), sy=_ySc(_syv).toFixed(1), sc='#ffa657';
+                  const ln=p.name.split(' ').pop();
+                  _selSvg=`<defs><filter id="sgd3" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                    <circle cx="${sx}" cy="${sy}" r="${_R+5}" fill="none" stroke="${sc}" stroke-width="2.2" filter="url(#sgd3)" opacity="0.8"/>
+                    <circle cx="${sx}" cy="${sy}" r="${_R+1}" fill="${sc}"/>
+                    <rect x="${(parseFloat(sx)-55).toFixed(1)}" y="${(parseFloat(sy)-22).toFixed(1)}" width="110" height="16" rx="3" fill="rgba(13,17,23,0.92)" stroke="${sc}" stroke-width="0.8"/>
+                    <text x="${sx}" y="${(parseFloat(sy)-9).toFixed(1)}" text-anchor="middle" font-size="10" fill="${sc}" font-weight="700">${ln} · ${_sxv} / ${_syv}</text>`;
+                }
+
+                // Average reference lines
+                const _avgXs=_xSc(_avgX).toFixed(1), _avgYs=_ySc(_avgY).toFixed(1);
+                const _qLines=`
+                  <line x1="${_avgXs}" y1="${MT}" x2="${_avgXs}" y2="${(MT+PH).toFixed(1)}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="4,4"/>
+                  <line x1="${ML}" y1="${_avgYs}" x2="${(ML+PW).toFixed(1)}" y2="${_avgYs}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="4,4"/>`;
+
+                // Ticks
+                let _xTks='', _yTks='';
+                for(let i=0;i<=4;i++){
+                  const xv=_xMin+i/4*(_xMax-_xMin), xs=_xSc(xv).toFixed(1);
+                  _xTks+=`<line x1="${xs}" y1="${(MT+PH).toFixed(1)}" x2="${xs}" y2="${(MT+PH+5).toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+                    <text x="${xs}" y="${(MT+PH+16).toFixed(1)}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)">${xv.toFixed(xv>10?0:1)}</text>`;
+                  const yv=_yMin+i/4*(_yMax-_yMin), ys=_ySc(yv).toFixed(1);
+                  _yTks+=`<line x1="${(ML-5).toFixed(1)}" y1="${ys}" x2="${ML}" y2="${ys}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+                    <text x="${(ML-7).toFixed(1)}" y="${ys}" dominant-baseline="middle" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.3)">${yv.toFixed(yv>10?0:1)}</text>`;
+                }
+
+                // Axis labels
+                const _xLbl=`<text x="${(ML+PW/2).toFixed(1)}" y="${(SH-6).toFixed(1)}" text-anchor="middle" font-size="10" fill="#ffa657" font-weight="600">${_profileObeScatterX}</text>`;
+                const _yLbl=`<text x="10" y="${(MT+PH/2).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="#58a6ff" font-weight="600" transform="rotate(-90,10,${(MT+PH/2).toFixed(1)})">${_profileObeScatterY}</text>`;
+
+                const _scSVG=`<svg viewBox="0 0 ${SW} ${SH}" width="100%" style="display:block;overflow:visible">
+                  <rect width="${SW}" height="${SH}" fill="#0d1117"/>
+                  <rect x="${ML}" y="${MT}" width="${PW}" height="${PH}" fill="#0b150b" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+                  ${_qLines}${_dotsS}${_selSvg}
+                  <line x1="${ML}" y1="${(MT+PH).toFixed(1)}" x2="${(ML+PW).toFixed(1)}" y2="${(MT+PH).toFixed(1)}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                  <line x1="${ML}" y1="${MT}" x2="${ML}" y2="${(MT+PH).toFixed(1)}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                  ${_xTks}${_yTks}${_xLbl}${_yLbl}
+                  <text x="${(ML+PW-4).toFixed(1)}" y="${(MT+12).toFixed(1)}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.18)">${_nPts} jugadores · ${_OBE_POS_DESC[_pos_s]||_pos_s} · 1ª RFEF 25/26</text>
+                </svg>`;
+
+                return _obeTog +
+                  `<div style="margin-bottom:8px">
+                    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:5px">
+                      <span style="font-size:10px;color:#ffa657;font-weight:700;width:28px;flex-shrink:0">X →</span>
+                      ${_allScMets.map(k=>_axBtn('x',k)).join('')}
+                    </div>
+                    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+                      <span style="font-size:10px;color:#58a6ff;font-weight:700;width:28px;flex-shrink:0">↑ Y</span>
+                      ${_allScMets.map(k=>_axBtn('y',k)).join('')}
+                    </div>
+                  </div>
+                  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">${_scSVG}</div>
+                  <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
+                    <span style="color:rgba(255,255,255,0.22)">- - media liga</span>
+                    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffa657;margin-right:3px;vertical-align:middle"></span>${p.name}</span>
+                    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3fb950;margin-right:3px;vertical-align:middle"></span>Alto en ambas</span>
+                    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f85149;margin-right:3px;vertical-align:middle"></span>Bajo en ambas</span>
+                  </div>`;
+              }
+
               // ── TABLA VISUAL ────────────────────────────────────────────────────
               const _ochip = (lbl,val,c,sub) => `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:center;min-width:68px;flex:1">
                 <div style="font-size:18px;font-weight:800;color:${c};font-family:'Bebas Neue',sans-serif">${val}</div>
