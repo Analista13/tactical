@@ -12519,6 +12519,71 @@
                   <text x="${(ML+PW-4).toFixed(1)}" y="${(MT+12).toFixed(1)}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.18)">${_nPts} jugadores · ${_OBE_POS_DESC[_pos_s]||_pos_s} · 1ª RFEF 25/26</text>
                 </svg>`;
 
+                // ── Explanation card ────────────────────────────────────────────
+                const _pX = obeData[_profileObeScatterX]?.p ?? null;
+                const _pY = obeData[_profileObeScatterY]?.p ?? null;
+                const _xHi = _pX !== null && _pX >= 50;
+                const _yHi = _pY !== null && _pY >= 50;
+                const _ln  = p.name.split(' ').slice(-1)[0];
+                const _presetInterpretations = [
+                  // 0: OBE vs Pressing
+                  [
+                    `<strong>${_ln}</strong> tiene un OBE total alto (P${_pX}) y también presiona mucho directamente al portador (P${_pY}). Es un jugador <strong>muy completo defensivamente</strong>: se activa tanto en estructura como saliendo a presionar.`,
+                    `<strong>${_ln}</strong> acumula muchas intervenciones defensivas (P${_pX}) pero presiona menos directamente al portador (P${_pY}). <strong>Defensor de bloque</strong>: sólido en estructura, no tan agresivo saliendo a presionar.`,
+                    `<strong>${_ln}</strong> presiona mucho directamente al portador (P${_pY}) pero su volumen OBE total es menor (P${_pX}). <strong>Perfil presionador</strong>: agresivo saliendo a presionar pero con menos intervenciones estructuradas.`,
+                    `Tanto el OBE total (P${_pX}) como el pressing directo (P${_pY}) están por debajo de la media. <strong>${_ln}</strong> tiene un perfil defensivo más <strong>conservador y pasivo</strong>.`,
+                  ],
+                  // 1: Zona de intervención
+                  [
+                    `<strong>${_ln}</strong> interviene mucho en bloque bajo (P${_pX}) y también en transición (P${_pY}). Se implica defensivamente <strong>en todas las fases</strong>, con y sin estructura.`,
+                    `<strong>${_ln}</strong> es muy activo en bloque bajo (P${_pX}) pero menos en transición (P${_pY}). Jugador de <strong>defensa organizada</strong>: rinde mejor en bloque que persiguiendo tras pérdida.`,
+                    `<strong>${_ln}</strong> destaca en las transiciones defensivas (P${_pY}) pero actúa menos en bloque bajo (P${_pX}). <strong>Reactivo y dinámico</strong> tras pérdida, pero no su fuerte en defensa posicional.`,
+                    `Pocas intervenciones tanto en bloque bajo (P${_pX}) como en transición (P${_pY}). <strong>${_ln}</strong> tiene una actividad defensiva discreta en ambas fases.`,
+                  ],
+                  // 2: Resultados defensivos
+                  [
+                    `<strong>${_ln}</strong> genera resultados defensivos concretos: alta disrupción (P${_pX}) y muchas recuperaciones directas (P${_pY}). Sus intervenciones <strong>tienen impacto real</strong> en el juego.`,
+                    `<strong>${_ln}</strong> desestabiliza al rival con frecuencia (P${_pX}) aunque recupera menos el balón directamente (P${_pY}). <strong>Perturbador activo</strong>: molesta, aunque no siempre recupera.`,
+                    `<strong>${_ln}</strong> recupera el balón directo con regularidad (P${_pY}) pero genera menos disrupción activa (P${_pX}). <strong>Recuperador</strong>: eficaz cuando intercepta, menos agresivo en el acoso.`,
+                    `Tanto la disrupción (P${_pX}) como la recuperación directa (P${_pY}) están por debajo de la media. Las intervenciones de <strong>${_ln}</strong> no suelen generar consecuencias inmediatas.`,
+                  ],
+                  // 3: Vulnerabilidades (invertido: valores bajos son mejores)
+                  [
+                    `<strong>${_ln}</strong> es superado con cierta frecuencia tanto por movimiento sin balón (P${_pX}) como en posesión (P${_pY}). Son <strong>dos áreas de mejora claras</strong> para trabajar con él.`,
+                    `<strong>${_ln}</strong> tiene más problemas leyendo movimientos sin balón (P${_pX}) que defendiendo en posesión (P${_pY}). Mejor posicionado de lo que parece, pero le cuesta anticipar las carreras.`,
+                    `<strong>${_ln}</strong> gestiona bien el juego en posesión rival (P${_pY}) pero le generan más problemas los movimientos sin balón (P${_pX}). Le cuesta más seguir carreras que defender 1v1.`,
+                    `<strong>${_ln}</strong> raramente es superado: ni por movimiento (P${_pX}) ni en posesión (P${_pY}). <strong>Muy fiable y difícil de batir</strong> en ambas situaciones.`,
+                  ],
+                  // 4: Pressing detallado
+                  [
+                    `<strong>${_ln}</strong> presiona mucho al portador (P${_pX}) y también contrapresiona bien tras pérdida (P${_pY}). <strong>Pressing completo</strong>: alta intensidad tanto en bloque como en transición ofensiva.`,
+                    `<strong>${_ln}</strong> presiona activamente al portador (P${_pX}) pero la contrapresión inmediata es más limitada (P${_pY}). Buen <strong>presionador frontal</strong> pero se recupera más despacio tras pérdida.`,
+                    `<strong>${_ln}</strong> destaca en la contrapresión (P${_pY}): reacciona muy bien nada más perder el balón. El pressing directo al portador es menor (P${_pX}).`,
+                    `Pressing contenido en ambas vertientes: directo (P${_pX}) y contrapresión (P${_pY}). <strong>${_ln}</strong> no es un perfil presionador; prefiere esperar al rival.`,
+                  ],
+                ];
+                let _scDesc = '';
+                if (_pX !== null && _pY !== null) {
+                  let _interpText = '';
+                  if (_profileObeScatterPreset >= 0 && _presetInterpretations[_profileObeScatterPreset]) {
+                    const _qi = (_profileObeScatterPreset===3) // vulnerabilidades: invertido
+                      ? (!_xHi&&!_yHi?0:_xHi&&_yHi?3:_xHi&&!_yHi?1:2) // inverted logic shown correctly above
+                      : (_xHi&&_yHi?0:_xHi&&!_yHi?1:!_xHi&&_yHi?2:3);
+                    // For vulnerabilities, high percentile = bad, so reorder: hi+hi=bad(idx 0 in array[3]), lo+lo=good(idx 3 in array[0])
+                    _interpText = _presetInterpretations[_profileObeScatterPreset][
+                      _profileObeScatterPreset===3
+                        ? (_xHi&&_yHi?0:_xHi&&!_yHi?1:!_xHi&&_yHi?2:3)
+                        : (_xHi&&_yHi?0:_xHi&&!_yHi?1:!_xHi&&_yHi?2:3)
+                    ];
+                  } else {
+                    _interpText = `<strong>${_ln}</strong> tiene un percentil <strong>P${_pX}</strong> en ${_profileObeScatterX} y <strong>P${_pY}</strong> en ${_profileObeScatterY} respecto a los ${_OBE_POS_DESC[_pos_s]||_pos_s} de la liga.`;
+                  }
+                  _scDesc = `<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:10px 14px;margin-top:10px">
+                    <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">📖 Por qué ocupa esta posición en el gráfico</div>
+                    <div style="font-size:12px;color:var(--text2);line-height:1.6">${_interpText}</div>
+                  </div>`;
+                }
+
                 return _obeTog + _presetBar + _customPanel +
                   `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">${_scSVG}</div>
                   <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
@@ -12526,7 +12591,7 @@
                     <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffa657;margin-right:3px;vertical-align:middle"></span>${p.name}</span>
                     <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3fb950;margin-right:3px;vertical-align:middle"></span>Alto en ambas</span>
                     <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f85149;margin-right:3px;vertical-align:middle"></span>Bajo en ambas</span>
-                  </div>`;
+                  </div>${_scDesc}`;
               }
 
               // ── TABLA VISUAL ────────────────────────────────────────────────────
