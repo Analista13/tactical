@@ -12522,6 +12522,9 @@
                   ? _QUAD_LABELS[_profileObeScatterPreset]
                   : ['','','',''];
                 const _qPad = 20;
+                // Percentiles for use in interpretation texts
+                const _pX = obeData[_profileObeScatterX]?.p ?? null;
+                const _pY = obeData[_profileObeScatterY]?.p ?? null;
                 // Player quadrant (to highlight its label) — based on visual position vs avg lines
                 const _xHi = _sxv !== undefined && _sxv > _avgX;
                 const _yHi = _syv !== undefined && _syv > _avgY;
