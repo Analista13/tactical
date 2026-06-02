@@ -11645,10 +11645,18 @@
   let _profileObeScatterY = 'Presión directa';
   let _profileObeScatterPreset = 0;   // index into _SCATTER_PRESETS; -1 = custom
   let _profileObeScatterCustom = false; // custom panel open?
-  let _profileRunView   = 'tabla';   // 'tabla' | 'dist'  (carreras sin balón subtab)
-  let _profileRunMetric = 'tot_p30'; // metric key for carreras beeswarm
-  let _profilePasesView   = 'tabla'; // 'tabla' | 'dist'
-  let _profilePasesMetric = 'passes_p90'; // metric key for pases beeswarm
+  let _profileRunView   = 'tabla';   // 'tabla' | 'dist' | 'scatter'
+  let _profileRunMetric = 'tot_p30';
+  let _profileRunScatterX = 'tot_p30';
+  let _profileRunScatterY = 'peligrosas_p30';
+  let _profileRunScatterPreset = 0;
+  let _profileRunScatterCustom = false;
+  let _profilePasesView   = 'tabla'; // 'tabla' | 'dist' | 'scatter'
+  let _profilePasesMetric = 'passes_p90';
+  let _profilePasesScatterX = 'passes_p90';
+  let _profilePasesScatterY = 'pct_ok';
+  let _profilePasesScatterPreset = 0;
+  let _profilePasesScatterCustom = false;
 
   // Mapeo nombre plantilla → clave _OBE_DATA (solo si difieren)
   const _OBE_KEY_MAP = {
@@ -11827,6 +11835,7 @@
               const _rTogBar = `<div style="display:flex;gap:8px;margin-bottom:16px">
                 ${_rTog('tabla','📋 Tabla','var(--accent)')}
                 ${_rTog('dist','📊 Distribución','#58a6ff')}
+                ${_rTog('scatter','📈 Dispersión','#3fb950')}
               </div>`;
 
               // ── Metrics for beeswarm ───────────────────────────────────────────
@@ -11940,6 +11949,136 @@
                     <span style="color:${_curMet.col}">▶ ${p.name.split(' ').slice(-1)[0]}</span>
                     <span style="margin-left:4px">· ${_nP} ${_posGrpLbl[_runGrp]||_runGrp} · 1ª RFEF 25/26</span>
                   </div>`;
+              }
+
+              // ── SCATTER VIEW (CARRERAS) ────────────────────────────────────────
+              if (_profileRunView === 'scatter') {
+                const _P2Gs={'Delantero':'DEL','Extremo izq.':'EXT','Extremo der.':'EXT','Lateral izq.':'LAT','Lateral der.':'LAT','Mediocentro':'MC','MC ofensivo':'MC','Def. central':'DC'};
+                const _posGrpLblS={DEL:'delanteros',EXT:'extremos',MC:'centrocampistas',LAT:'laterales',DC:'defensas centrales'};
+                const _rGrp = _P2Gs[p.pos]||'EXT';
+                const _RSPRST=[
+                  {lbl:'Volumen vs Eficacia',    x:'tot_p30',              y:'recibidas_p30'        },
+                  {lbl:'Peligro vs Velocidad',   x:'peligrosas_p30',       y:'alta_vel_pct'         },
+                  {lbl:'Perfil ofensivo',        x:'st.espalda.p30',       y:'st.adelanto.p30'      },
+                  {lbl:'Espacios interiores',    x:'st.caida_espacio.p30', y:'st.medio_espacio.p30' },
+                  {lbl:'Amplitud vs Profundidad',x:'st.tirar_ancho.p30',   y:'st.espalda.p30'       },
+                ];
+                if (_profileRunScatterPreset>=0&&_RSPRST[_profileRunScatterPreset]){
+                  _profileRunScatterX=_RSPRST[_profileRunScatterPreset].x;
+                  _profileRunScatterY=_RSPRST[_profileRunScatterPreset].y;
+                }
+                const _rxArr=(_LIGA_CARRERASSB[_rGrp]||{})[_profileRunScatterX]||[];
+                const _ryArr=(_LIGA_CARRERASSB[_rGrp]||{})[_profileRunScatterY]||[];
+                const _rxMap={}; _rxArr.forEach(([v,n])=>_rxMap[n]=v);
+                const _rscPts=_ryArr.filter(([,n])=>_rxMap[n]!==undefined).map(([yv,n])=>({n,x:_rxMap[n],y:yv}));
+                const _rnPts=_rscPts.length;
+                const _rsxv=_getRM(_rd,_profileRunScatterX);
+                const _rsyv=_getRM(_rd,_profileRunScatterY);
+                const SW=580,SH=340,ML=52,MR=20,MT=16,MB=46;
+                const PW=SW-ML-MR,PH=SH-MT-MB;
+                const _rxVals=_rscPts.map(pt=>pt.x),_ryVals=_rscPts.map(pt=>pt.y);
+                let _rxMin=_rxVals.length?Math.min(..._rxVals):0,_rxMax=_rxVals.length?Math.max(..._rxVals):1;
+                let _ryMin=_ryVals.length?Math.min(..._ryVals):0,_ryMax=_ryVals.length?Math.max(..._ryVals):1;
+                _rxMin=Math.min(_rxMin,_rsxv);_rxMax=Math.max(_rxMax,_rsxv);
+                _ryMin=Math.min(_ryMin,_rsyv);_ryMax=Math.max(_ryMax,_rsyv);
+                const _rxSp=_rxMax-_rxMin||1,_rySp=_ryMax-_ryMin||1;
+                _rxMin-=_rxSp*0.05;_rxMax+=_rxSp*0.05;_ryMin-=_rySp*0.05;_ryMax+=_rySp*0.05;
+                const _rxSc=v=>ML+(v-_rxMin)/(_rxMax-_rxMin)*PW;
+                const _rySc=v=>MT+PH-(v-_ryMin)/(_ryMax-_ryMin)*PH;
+                const _ravgX=_rxVals.length?_rxVals.reduce((a,b)=>a+b,0)/_rxVals.length:(_rxMin+_rxMax)/2;
+                const _ravgY=_ryVals.length?_ryVals.reduce((a,b)=>a+b,0)/_ryVals.length:(_ryMin+_ryMax)/2;
+                const _rrxRk={},_rryRk={};
+                [..._rscPts].sort((a,b)=>a.x-b.x).forEach((pt,i)=>_rrxRk[pt.n]=i);
+                [..._rscPts].sort((a,b)=>a.y-b.y).forEach((pt,i)=>_rryRk[pt.n]=i);
+                const _rpColS=q=>q>=75?'#3fb950':q>=50?'#c8a96e':q>=25?'#f0883e':'#f85149';
+                const _rR=4;
+                const _rdotsS=_rscPts.map(pt=>{
+                  const cx=_rxSc(pt.x).toFixed(1),cy=_rySc(pt.y).toFixed(1);
+                  const cPct=_rnPts>1?(((_rrxRk[pt.n]||0)+(_rryRk[pt.n]||0))/(2*(_rnPts-1))*100):50;
+                  const col=_rpColS(cPct);
+                  const nm=pt.n.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+                  return `<circle cx="${cx}" cy="${cy}" r="${_rR}" fill="${col}" fill-opacity="0.6" style="cursor:pointer"
+                    onmouseover="this.nextElementSibling.style.display='block'" onmouseout="this.nextElementSibling.style.display='none'"/>
+                    <foreignObject x="${cx}" y="${cy}" width="1" height="1" style="overflow:visible;pointer-events:none;display:none">
+                      <div xmlns="http://www.w3.org/1999/xhtml" style="position:absolute;background:#1c2128;border:1px solid #444;border-radius:6px;padding:5px 8px;font-size:10px;color:#e6edf3;white-space:nowrap;transform:translate(-50%,-110%);pointer-events:none">
+                        ${nm}<br/>${_profileRunScatterX}: ${pt.x.toFixed(2)} · ${_profileRunScatterY}: ${pt.y.toFixed(2)}</div></foreignObject>`;
+                }).join('');
+                const sx=_rxSc(_rsxv).toFixed(1),sy=_rySc(_rsyv).toFixed(1),sc='#ffa657';
+                const _rln=p.name.split(' ').pop();
+                const _rselSvg=`<circle cx="${sx}" cy="${sy}" r="7" fill="${sc}" fill-opacity="0.9" stroke="#fff" stroke-width="1.5"/>
+                  <text x="${sx}" y="${(parseFloat(sy)-9).toFixed(1)}" text-anchor="middle" font-size="10" fill="${sc}" font-weight="700">${_rln} · ${_rsxv.toFixed(2)} / ${_rsyv.toFixed(2)}</text>`;
+                const _ravgXs=_rxSc(_ravgX).toFixed(1),_ravgYs=_rySc(_ravgY).toFixed(1);
+                const _rqLines=`<line x1="${_ravgXs}" y1="${MT}" x2="${_ravgXs}" y2="${(MT+PH).toFixed(1)}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="4,4"/>
+                  <line x1="${ML}" y1="${_ravgYs}" x2="${(ML+PW).toFixed(1)}" y2="${_ravgYs}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="4,4"/>`;
+                let _rxTks='',_ryTks='';
+                for(let i=0;i<=4;i++){
+                  const xv=_rxMin+i/4*(_rxMax-_rxMin),xs=_rxSc(xv).toFixed(1);
+                  _rxTks+=`<line x1="${xs}" y1="${(MT+PH).toFixed(1)}" x2="${xs}" y2="${(MT+PH+4).toFixed(1)}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                    <text x="${xs}" y="${(MT+PH+14).toFixed(1)}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.4)">${xv.toFixed(1)}</text>`;
+                  const yv=_ryMin+i/4*(_ryMax-_ryMin),ys=_rySc(yv).toFixed(1);
+                  _ryTks+=`<line x1="${(ML-4).toFixed(1)}" y1="${ys}" x2="${ML}" y2="${ys}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                    <text x="${(ML-6).toFixed(1)}" y="${(parseFloat(ys)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.4)">${yv.toFixed(1)}</text>`;
+                }
+                const _rLblX=_RM.find(m=>m.k===_profileRunScatterX)?.lbl||_profileRunScatterX;
+                const _rLblY=_RM.find(m=>m.k===_profileRunScatterY)?.lbl||_profileRunScatterY;
+                const _rAxisLbls=`<text x="${(ML+PW/2).toFixed(1)}" y="${(SH-4).toFixed(1)}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.5)">${_rLblX}</text>
+                  <text x="11" y="${(MT+PH/2).toFixed(1)}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.5)" transform="rotate(-90,11,${(MT+PH/2).toFixed(1)})">${_rLblY}</text>`;
+                const _RQUAD_LABELS=[
+                  ['Centro del juego','Oportunista','Trabajador','Pasivo'],
+                  ['Explosivo','Velocista','Hombre gol','Pasivo'],
+                  ['Completo','Apoyo adelantado','En profundidad','Sin perfil'],
+                  ['Espacios interiores','Caída interior','Mediapunta','Exterior'],
+                  ['Extremo total','Extremo puro','Profundidad','Interior'],
+                ];
+                const _rql=(_profileRunScatterPreset>=0&&_RQUAD_LABELS[_profileRunScatterPreset])?_RQUAD_LABELS[_profileRunScatterPreset]:['','','',''];
+                const _rqPad=20;
+                const _rXHi=_rsxv>_ravgX,_rYHi=_rsyv>_ravgY;
+                const _rpQi=_rXHi&&_rYHi?0:!_rXHi&&_rYHi?1:_rXHi&&!_rYHi?2:3;
+                const _rqc=i=>_rpQi===i?'rgba(200,169,110,0.85)':'rgba(255,255,255,0.18)';
+                const _rqfw=i=>_rpQi===i?'700':'400';
+                const _rquadSVG=_rql[0]?`
+                  <text x="${(ML+PW-_rqPad).toFixed(1)}" y="${(MT+_rqPad+10).toFixed(1)}" text-anchor="end"   font-size="10" fill="${_rqc(0)}" font-weight="${_rqfw(0)}" font-style="italic">${_rql[0]}</text>
+                  <text x="${(ML+_rqPad).toFixed(1)}"    y="${(MT+_rqPad+10).toFixed(1)}" text-anchor="start" font-size="10" fill="${_rqc(1)}" font-weight="${_rqfw(1)}" font-style="italic">${_rql[1]}</text>
+                  <text x="${(ML+PW-_rqPad).toFixed(1)}" y="${(MT+PH-_rqPad).toFixed(1)}" text-anchor="end"  font-size="10" fill="${_rqc(2)}" font-weight="${_rqfw(2)}" font-style="italic">${_rql[2]}</text>
+                  <text x="${(ML+_rqPad).toFixed(1)}"    y="${(MT+PH-_rqPad).toFixed(1)}" text-anchor="start" font-size="10" fill="${_rqc(3)}" font-weight="${_rqfw(3)}" font-style="italic">${_rql[3]}</text>`:'';
+                const _rscSVG=`<svg viewBox="0 0 ${SW} ${SH}" width="100%" style="display:block;overflow:visible">
+                  <rect width="${SW}" height="${SH}" fill="#0d1117"/>
+                  <rect x="${ML}" y="${MT}" width="${PW}" height="${PH}" fill="#0b150b" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+                  ${_rqLines}${_rdotsS}${_rselSvg}${_rxTks}${_ryTks}${_rAxisLbls}${_rquadSVG}
+                </svg>`;
+                const _rpresetBar=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+                  ${_RSPRST.map((s,i)=>{const act=_profileRunScatterPreset===i;return`<button onclick="_profileRunScatterPreset=${i};_profileRunScatterCustom=false;openPlayerProfile(${p.d})" style="padding:4px 12px;border-radius:16px;border:1px solid ${act?'#3fb950':'var(--border)'};background:${act?'rgba(63,185,80,0.18)':'var(--bg2)'};color:${act?'#3fb950':'var(--text2)'};font-size:11px;font-weight:${act?700:500};cursor:pointer;transition:all .15s">${s.lbl}</button>`;}).join('')}
+                  <button onclick="_profileRunScatterCustom=!_profileRunScatterCustom;openPlayerProfile(${p.d})" style="padding:4px 12px;border-radius:16px;border:1px solid ${_profileRunScatterCustom?'#ffa657':'var(--border)'};background:${_profileRunScatterCustom?'rgba(255,166,87,0.18)':'var(--bg2)'};color:${_profileRunScatterCustom?'#ffa657':'var(--text3)'};font-size:11px;cursor:pointer;transition:all .15s">✏️ Personalizar</button>
+                </div>`;
+                const _raxBtn=(axis,key)=>{const cur=axis==='x'?_profileRunScatterX:_profileRunScatterY;const act=cur===key;const vn=axis==='x'?'_profileRunScatterX':'_profileRunScatterY';const ac=axis==='x'?'#ffa657':'#58a6ff';const bg=act?(axis==='x'?'rgba(255,166,87,0.18)':'rgba(88,166,255,0.18)'):'var(--bg2)';return`<button onclick="${vn}='${key.replace(/'/g,"\\'")}';_profileRunScatterPreset=-1;openPlayerProfile(${p.d})" style="padding:3px 10px;border-radius:12px;border:1px solid ${act?ac:'var(--border)'};background:${bg};color:${act?ac:'var(--text2)'};font-size:10px;cursor:pointer;transition:all .15s">${_RM.find(m=>m.k===key)?.lbl||key}</button>`;};
+                const _rcustomPanel=_profileRunScatterCustom?`<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+                  <div style="font-size:10px;color:#ffa657;margin-bottom:6px;font-weight:700">Eje X</div>
+                  <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${_RM.map(m=>_raxBtn('x',m.k)).join('')}</div>
+                  <div style="font-size:10px;color:#58a6ff;margin-bottom:6px;font-weight:700">Eje Y</div>
+                  <div style="display:flex;gap:5px;flex-wrap:wrap">${_RM.map(m=>_raxBtn('y',m.k)).join('')}</div>
+                </div>`:'';
+                const _rInterpMap=[
+                  [`<strong>${_rln}</strong> en <em>Centro del juego</em>: alto volumen (${_rsxv.toFixed(2)}) y alta recepción (${_rsyv.toFixed(2)}). Referencia en los desmarques.`,`<strong>${_rln}</strong> en <em>Oportunista</em>: pocas carreras pero alta efectividad — recibe balón cuando se desmarca. Selecciona muy bien sus movimientos.`,`<strong>${_rln}</strong> en <em>Trabajador</em>: muchos desmarques pero baja recepción. Se mueve para liberar espacio aunque no siempre recibe.`,`<strong>${_rln}</strong> en <em>Pasivo</em>: participación limitada en desmarques. Bajo volumen y baja recepción respecto a la liga.`],
+                  [`<strong>${_rln}</strong> en <em>Explosivo</em>: carreras peligrosas (${_rsxv.toFixed(2)}) y alta velocidad (${_rsyv.toFixed(1)}%). El perfil más amenazante del ataque.`,`<strong>${_rln}</strong> en <em>Velocista</em>: muy rápido pero menos carreras peligrosas. La velocidad es su arma principal.`,`<strong>${_rln}</strong> en <em>Hombre gol</em>: carreras peligrosas sin depender de velocidad punta. Inteligencia de movimiento sobre explosividad.`,`<strong>${_rln}</strong> en <em>Pasivo</em>: pocas carreras peligrosas y baja explosividad. Perfil menos amenazante.`],
+                  [`<strong>${_rln}</strong> en <em>Completo</em>: combina espalda (${_rsxv.toFixed(2)}) con apoyo adelantado (${_rsyv.toFixed(2)}). Versátil en su perfil ofensivo.`,`<strong>${_rln}</strong> en <em>Apoyo adelantado</em>: predominan los movimientos de apoyo sobre los desmarques en profundidad. Más asociativo que vertical.`,`<strong>${_rln}</strong> en <em>En profundidad</em>: especialista en carreras a la espalda de la defensa. Perfil vertical y de ruptura.`,`<strong>${_rln}</strong> en <em>Sin perfil claro</em>: bajo volumen en carreras de ruptura y apoyos adelantados.`],
+                  [`<strong>${_rln}</strong> en <em>Espacios interiores</em>: activo en caídas al espacio (${_rsxv.toFixed(2)}) y medio espacio (${_rsyv.toFixed(2)}). Se mueve entre líneas con frecuencia.`,`<strong>${_rln}</strong> en <em>Caída interior</em>: se mueve hacia el espacio entre líneas pero menos en medio espacio puro.`,`<strong>${_rln}</strong> en <em>Mediapunta</em>: predominan las carreras de medio espacio. Se mete en zona de finalización con inteligencia.`,`<strong>${_rln}</strong> en <em>Exterior</em>: movimientos interiores poco frecuentes. Su juego transcurre en zonas de banda.`],
+                  [`<strong>${_rln}</strong> en <em>Extremo total</em>: amplía el campo (${_rsxv.toFixed(2)}) y genera profundidad (${_rsyv.toFixed(2)}). Extremo muy completo.`,`<strong>${_rln}</strong> en <em>Extremo puro</em>: da amplitud con carreras en banda pero no tanto en profundidad. Abre el campo sin romper líneas.`,`<strong>${_rln}</strong> en <em>Profundidad</em>: especialista en carreras a la espalda, menos orientado a la amplitud.`,`<strong>${_rln}</strong> en <em>Interior</em>: ni amplitud ni profundidad destacadas respecto a la liga.`],
+                ];
+                let _rinterpText='';
+                if (_profileRunScatterPreset>=0&&_rInterpMap[_profileRunScatterPreset]) _rinterpText=_rInterpMap[_profileRunScatterPreset][_rpQi];
+                else _rinterpText=`<strong>${_rln}</strong> · ${_rLblX}: ${_rsxv.toFixed(2)} · ${_rLblY}: ${_rsyv.toFixed(2)} — vs ${_posGrpLblS[_rGrp]||_rGrp} 1ª RFEF 25/26.`;
+                const _rscDesc=`<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:10px 14px;margin-top:10px">
+                  <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">📖 Lectura del gráfico</div>
+                  <div style="font-size:12px;color:var(--text2);line-height:1.6">${_rinterpText}</div>
+                </div>`;
+                return _rTogBar+_rpresetBar+_rcustomPanel+
+                  `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">${_rscSVG}</div>
+                  <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
+                    <span style="color:rgba(255,255,255,0.22)">- - media liga</span>
+                    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffa657;margin-right:3px;vertical-align:middle"></span>${p.name}</span>
+                    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3fb950;margin-right:3px;vertical-align:middle"></span>Alto en ambas</span>
+                    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f85149;margin-right:3px;vertical-align:middle"></span>Bajo en ambas</span>
+                  </div>${_rscDesc}`;
               }
 
               // ── TABLA VIEW ─────────────────────────────────────────────────────
@@ -12056,7 +12195,7 @@
                          font-size:12px;cursor:pointer;font-weight:${act?700:500};transition:all .15s">${lbl}</button>`;
               };
               const _pTogBar=`<div style="display:flex;gap:8px;margin-bottom:16px">
-                ${_pTog('tabla','📋 Tabla','var(--accent)')}${_pTog('dist','📊 Distribución','#58a6ff')}</div>`;
+                ${_pTog('tabla','📋 Tabla','var(--accent)')}${_pTog('dist','📊 Distribución','#58a6ff')}${_pTog('scatter','📈 Dispersión','#3fb950')}</div>`;
 
               // ── DISTRIBUCIÓN ─────────────────────────────────────────────────
               if (_profilePasesView === 'dist') {
@@ -12141,6 +12280,143 @@
                     <span style="color:${_curPM.col}">▶ ${p.name.split(' ').slice(-1)[0]}</span>
                     <span>· ${_nPL} ${_posGrpLbl[_pGrp]||_pGrp} · 1ª RFEF 25/26</span>
                   </div>`;
+              }
+
+              // ── SCATTER VIEW (PASES) ───────────────────────────────────────────
+              if (_profilePasesView === 'scatter') {
+                const _pP2Gs={'Delantero':'DEL','Extremo izq.':'EXT','Extremo der.':'EXT','Lateral izq.':'LAT','Lateral der.':'LAT','Mediocentro':'MC','MC ofensivo':'MC','Def. central':'DC'};
+                const _pGrpLblS={DEL:'delanteros',EXT:'extremos',MC:'centrocampistas',LAT:'laterales',DC:'defensas centrales'};
+                const _pGrpS=_pP2Gs[p.pos]||null;
+                if(!_pGrpS) return _pTogBar+`<div style="padding:30px;text-align:center;color:var(--text3);font-size:12px">Sin comparativa de liga disponible para porteros</div>`;
+                const _pGet2=(d,k)=>{const km={'passes_p90':'p90','pct_ok':'pct','high_press_pct':'high_pressure_pct'};const rk=km[k]||k;for(const sec of [d.vol,d.dir,d.dist,d.lines,d.quality,d.context])if(sec&&rk in sec)return sec[rk];return 0;};
+                const _PSPRST=[
+                  {lbl:'Volumen vs Acierto',  x:'passes_p90',      y:'pct_ok'          },
+                  {lbl:'Amenaza creada',       x:'xT_p90',          y:'dangerous_pct'   },
+                  {lbl:'Dirección del juego',  x:'forward_pct',     y:'first_break_pct' },
+                  {lbl:'Presión y rapidez',    x:'high_press_pct',  y:'one_touch_pct'   },
+                  {lbl:'Juego largo',          x:'long_pct',        y:'xT_p90'          },
+                ];
+                if (_profilePasesScatterPreset>=0&&_PSPRST[_profilePasesScatterPreset]){
+                  _profilePasesScatterX=_PSPRST[_profilePasesScatterPreset].x;
+                  _profilePasesScatterY=_PSPRST[_profilePasesScatterPreset].y;
+                }
+                const _PM2=[
+                  {k:'passes_p90',lbl:'Pases p90'},{k:'pct_ok',lbl:'% Acierto'},{k:'forward_pct',lbl:'% Adelante'},
+                  {k:'backward_pct',lbl:'% Atrás'},{k:'long_pct',lbl:'% Largo'},{k:'first_break_pct',lbl:'% Ruptura línea'},
+                  {k:'xT_p90',lbl:'xT p90'},{k:'dangerous_pct',lbl:'% Peligroso'},{k:'high_press_pct',lbl:'% Alta presión'},{k:'one_touch_pct',lbl:'% 1er toque'},
+                ];
+                const _pxArr=(_LIGA_PASES[_pGrpS]||{})[_profilePasesScatterX]||[];
+                const _pyArr=(_LIGA_PASES[_pGrpS]||{})[_profilePasesScatterY]||[];
+                const _pxMap={}; _pxArr.forEach(([v,n])=>_pxMap[n]=v);
+                const _pscPts=_pyArr.filter(([,n])=>_pxMap[n]!==undefined).map(([yv,n])=>({n,x:_pxMap[n],y:yv}));
+                const _pnPts=_pscPts.length;
+                const _psxv=_pGet2(_pd,_profilePasesScatterX);
+                const _psyv=_pGet2(_pd,_profilePasesScatterY);
+                const SW=580,SH=340,ML=52,MR=20,MT=16,MB=46;
+                const PW=SW-ML-MR,PH=SH-MT-MB;
+                const _pxVals=_pscPts.map(pt=>pt.x),_pyVals=_pscPts.map(pt=>pt.y);
+                let _pxMin=_pxVals.length?Math.min(..._pxVals):0,_pxMax=_pxVals.length?Math.max(..._pxVals):1;
+                let _pyMin=_pyVals.length?Math.min(..._pyVals):0,_pyMax=_pyVals.length?Math.max(..._pyVals):1;
+                _pxMin=Math.min(_pxMin,_psxv);_pxMax=Math.max(_pxMax,_psxv);
+                _pyMin=Math.min(_pyMin,_psyv);_pyMax=Math.max(_pyMax,_psyv);
+                const _pxSp=_pxMax-_pxMin||1,_pySp=_pyMax-_pyMin||1;
+                _pxMin-=_pxSp*0.05;_pxMax+=_pxSp*0.05;_pyMin-=_pySp*0.05;_pyMax+=_pySp*0.05;
+                const _pxSc=v=>ML+(v-_pxMin)/(_pxMax-_pxMin)*PW;
+                const _pySc=v=>MT+PH-(v-_pyMin)/(_pyMax-_pyMin)*PH;
+                const _pavgX=_pxVals.length?_pxVals.reduce((a,b)=>a+b,0)/_pxVals.length:(_pxMin+_pxMax)/2;
+                const _pavgY=_pyVals.length?_pyVals.reduce((a,b)=>a+b,0)/_pyVals.length:(_pyMin+_pyMax)/2;
+                const _ppxRk={},_ppyRk={};
+                [..._pscPts].sort((a,b)=>a.x-b.x).forEach((pt,i)=>_ppxRk[pt.n]=i);
+                [..._pscPts].sort((a,b)=>a.y-b.y).forEach((pt,i)=>_ppyRk[pt.n]=i);
+                const _ppColS=q=>q>=75?'#3fb950':q>=50?'#c8a96e':q>=25?'#f0883e':'#f85149';
+                const _pR=4;
+                const _pdotsS=_pscPts.map(pt=>{
+                  const cx=_pxSc(pt.x).toFixed(1),cy=_pySc(pt.y).toFixed(1);
+                  const cPct=_pnPts>1?(((_ppxRk[pt.n]||0)+(_ppyRk[pt.n]||0))/(2*(_pnPts-1))*100):50;
+                  const col=_ppColS(cPct);
+                  const nm=pt.n.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+                  return `<circle cx="${cx}" cy="${cy}" r="${_pR}" fill="${col}" fill-opacity="0.6" style="cursor:pointer"
+                    onmouseover="this.nextElementSibling.style.display='block'" onmouseout="this.nextElementSibling.style.display='none'"/>
+                    <foreignObject x="${cx}" y="${cy}" width="1" height="1" style="overflow:visible;pointer-events:none;display:none">
+                      <div xmlns="http://www.w3.org/1999/xhtml" style="position:absolute;background:#1c2128;border:1px solid #444;border-radius:6px;padding:5px 8px;font-size:10px;color:#e6edf3;white-space:nowrap;transform:translate(-50%,-110%);pointer-events:none">
+                        ${nm}<br/>${_profilePasesScatterX}: ${pt.x.toFixed(2)} · ${_profilePasesScatterY}: ${pt.y.toFixed(2)}</div></foreignObject>`;
+                }).join('');
+                const psx=_pxSc(_psxv).toFixed(1),psy=_pySc(_psyv).toFixed(1),psc='#ffa657';
+                const _pln=p.name.split(' ').pop();
+                const _pselSvg=`<circle cx="${psx}" cy="${psy}" r="7" fill="${psc}" fill-opacity="0.9" stroke="#fff" stroke-width="1.5"/>
+                  <text x="${psx}" y="${(parseFloat(psy)-9).toFixed(1)}" text-anchor="middle" font-size="10" fill="${psc}" font-weight="700">${_pln} · ${_psxv.toFixed(2)} / ${_psyv.toFixed(2)}</text>`;
+                const _pavgXs=_pxSc(_pavgX).toFixed(1),_pavgYs=_pySc(_pavgY).toFixed(1);
+                const _pqLines=`<line x1="${_pavgXs}" y1="${MT}" x2="${_pavgXs}" y2="${(MT+PH).toFixed(1)}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="4,4"/>
+                  <line x1="${ML}" y1="${_pavgYs}" x2="${(ML+PW).toFixed(1)}" y2="${_pavgYs}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="4,4"/>`;
+                let _pxTks='',_pyTks='';
+                for(let i=0;i<=4;i++){
+                  const xv=_pxMin+i/4*(_pxMax-_pxMin),xs=_pxSc(xv).toFixed(1);
+                  _pxTks+=`<line x1="${xs}" y1="${(MT+PH).toFixed(1)}" x2="${xs}" y2="${(MT+PH+4).toFixed(1)}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                    <text x="${xs}" y="${(MT+PH+14).toFixed(1)}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.4)">${xv.toFixed(1)}</text>`;
+                  const yv=_pyMin+i/4*(_pyMax-_pyMin),ys=_pySc(yv).toFixed(1);
+                  _pyTks+=`<line x1="${(ML-4).toFixed(1)}" y1="${ys}" x2="${ML}" y2="${ys}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                    <text x="${(ML-6).toFixed(1)}" y="${(parseFloat(ys)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.4)">${yv.toFixed(1)}</text>`;
+                }
+                const _pLblX=_PM2.find(m=>m.k===_profilePasesScatterX)?.lbl||_profilePasesScatterX;
+                const _pLblY=_PM2.find(m=>m.k===_profilePasesScatterY)?.lbl||_profilePasesScatterY;
+                const _pAxisLbls=`<text x="${(ML+PW/2).toFixed(1)}" y="${(SH-4).toFixed(1)}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.5)">${_pLblX}</text>
+                  <text x="11" y="${(MT+PH/2).toFixed(1)}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.5)" transform="rotate(-90,11,${(MT+PH/2).toFixed(1)})">${_pLblY}</text>`;
+                const _PQUAD_LABELS=[
+                  ['Distribuidor','Preciso','Lanzador','Discreto'],
+                  ['Creador','Vertical','Generador','Seguro'],
+                  ['Progresivo','Rompelíneas','Directo','Recirculador'],
+                  ['Solvente','Técnico','Resistente','Tranquilo'],
+                  ['Filtrador','Lanzador largo','Creador corto','Corto'],
+                ];
+                const _pql=(_profilePasesScatterPreset>=0&&_PQUAD_LABELS[_profilePasesScatterPreset])?_PQUAD_LABELS[_profilePasesScatterPreset]:['','','',''];
+                const _pqPad=20;
+                const _pXHi=_psxv>_pavgX,_pYHi=_psyv>_pavgY;
+                const _ppQi=_pXHi&&_pYHi?0:!_pXHi&&_pYHi?1:_pXHi&&!_pYHi?2:3;
+                const _pqc=i=>_ppQi===i?'rgba(200,169,110,0.85)':'rgba(255,255,255,0.18)';
+                const _pqfw=i=>_ppQi===i?'700':'400';
+                const _pquadSVG=_pql[0]?`
+                  <text x="${(ML+PW-_pqPad).toFixed(1)}" y="${(MT+_pqPad+10).toFixed(1)}" text-anchor="end"   font-size="10" fill="${_pqc(0)}" font-weight="${_pqfw(0)}" font-style="italic">${_pql[0]}</text>
+                  <text x="${(ML+_pqPad).toFixed(1)}"    y="${(MT+_pqPad+10).toFixed(1)}" text-anchor="start" font-size="10" fill="${_pqc(1)}" font-weight="${_pqfw(1)}" font-style="italic">${_pql[1]}</text>
+                  <text x="${(ML+PW-_pqPad).toFixed(1)}" y="${(MT+PH-_pqPad).toFixed(1)}" text-anchor="end"  font-size="10" fill="${_pqc(2)}" font-weight="${_pqfw(2)}" font-style="italic">${_pql[2]}</text>
+                  <text x="${(ML+_pqPad).toFixed(1)}"    y="${(MT+PH-_pqPad).toFixed(1)}" text-anchor="start" font-size="10" fill="${_pqc(3)}" font-weight="${_pqfw(3)}" font-style="italic">${_pql[3]}</text>`:'';
+                const _pscSVG=`<svg viewBox="0 0 ${SW} ${SH}" width="100%" style="display:block;overflow:visible">
+                  <rect width="${SW}" height="${SH}" fill="#0d1117"/>
+                  <rect x="${ML}" y="${MT}" width="${PW}" height="${PH}" fill="#0b150b" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+                  ${_pqLines}${_pdotsS}${_pselSvg}${_pxTks}${_pyTks}${_pAxisLbls}${_pquadSVG}
+                </svg>`;
+                const _ppresetBar=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+                  ${_PSPRST.map((s,i)=>{const act=_profilePasesScatterPreset===i;return`<button onclick="_profilePasesScatterPreset=${i};_profilePasesScatterCustom=false;openPlayerProfile(${p.d})" style="padding:4px 12px;border-radius:16px;border:1px solid ${act?'#58a6ff':'var(--border)'};background:${act?'rgba(88,166,255,0.18)':'var(--bg2)'};color:${act?'#58a6ff':'var(--text2)'};font-size:11px;font-weight:${act?700:500};cursor:pointer;transition:all .15s">${s.lbl}</button>`;}).join('')}
+                  <button onclick="_profilePasesScatterCustom=!_profilePasesScatterCustom;openPlayerProfile(${p.d})" style="padding:4px 12px;border-radius:16px;border:1px solid ${_profilePasesScatterCustom?'#ffa657':'var(--border)'};background:${_profilePasesScatterCustom?'rgba(255,166,87,0.18)':'var(--bg2)'};color:${_profilePasesScatterCustom?'#ffa657':'var(--text3)'};font-size:11px;cursor:pointer;transition:all .15s">✏️ Personalizar</button>
+                </div>`;
+                const _paxBtn2=(axis,key)=>{const cur=axis==='x'?_profilePasesScatterX:_profilePasesScatterY;const act=cur===key;const vn=axis==='x'?'_profilePasesScatterX':'_profilePasesScatterY';const ac=axis==='x'?'#ffa657':'#58a6ff';const bg=act?(axis==='x'?'rgba(255,166,87,0.18)':'rgba(88,166,255,0.18)'):'var(--bg2)';return`<button onclick="${vn}='${key.replace(/'/g,"\\'")}';_profilePasesScatterPreset=-1;openPlayerProfile(${p.d})" style="padding:3px 10px;border-radius:12px;border:1px solid ${act?ac:'var(--border)'};background:${bg};color:${act?ac:'var(--text2)'};font-size:10px;cursor:pointer;transition:all .15s">${_PM2.find(m=>m.k===key)?.lbl||key}</button>`;};
+                const _pcustomPanel=_profilePasesScatterCustom?`<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+                  <div style="font-size:10px;color:#ffa657;margin-bottom:6px;font-weight:700">Eje X</div>
+                  <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${_PM2.map(m=>_paxBtn2('x',m.k)).join('')}</div>
+                  <div style="font-size:10px;color:#58a6ff;margin-bottom:6px;font-weight:700">Eje Y</div>
+                  <div style="display:flex;gap:5px;flex-wrap:wrap">${_PM2.map(m=>_paxBtn2('y',m.k)).join('')}</div>
+                </div>`:'';
+                const _pInterpMap=[
+                  [`<strong>${_pln}</strong> en <em>Distribuidor</em>: alto volumen de pases (${_psxv.toFixed(1)} p90) con excelente acierto (${_psyv.toFixed(1)}%). Motor del juego combinativo.`,`<strong>${_pln}</strong> en <em>Preciso</em>: menor volumen pero muy acertado. Selecciona bien sus pases y no derrocha balones.`,`<strong>${_pln}</strong> en <em>Lanzador</em>: mucho volumen de pases pero con menor porcentaje de acierto. Muy participativo aunque pierde más balones.`,`<strong>${_pln}</strong> en <em>Discreto</em>: bajo volumen y menor acierto respecto a la liga. Participación pasiva en la circulación.`],
+                  [`<strong>${_pln}</strong> en <em>Creador</em>: alto xT (${_psxv.toFixed(3)}) y alto % pases peligrosos (${_psyv.toFixed(1)}%). El perfil más generador de peligro del equipo.`,`<strong>${_pln}</strong> en <em>Vertical</em>: alto % pases peligrosos pero menor xT acumulado. Intenta la jugada peligrosa aunque con menos volumen amenazante.`,`<strong>${_pln}</strong> en <em>Generador</em>: alto xT acumulado pero menor % de pases peligrosos. Genera amenaza con volumen más que con pases de ruptura.`,`<strong>${_pln}</strong> en <em>Seguro</em>: bajo xT y bajo % peligroso. Juego de circulación sin amenaza directa.`],
+                  [`<strong>${_pln}</strong> en <em>Progresivo</em>: muchos pases hacia adelante (${_psxv.toFixed(1)}%) y alto % de ruptura de líneas (${_psyv.toFixed(1)}%). Impulsa el juego hacia zonas ofensivas.`,`<strong>${_pln}</strong> en <em>Rompelíneas</em>: rompe líneas con frecuencia aunque no predomina el pase adelante. Busca los huecos entre líneas.`,`<strong>${_pln}</strong> en <em>Directo</em>: mucho juego hacia adelante pero pocas roturas de líneas. Progresa por banda o espacios seguros.`,`<strong>${_pln}</strong> en <em>Recirculador</em>: predomina el pase hacia atrás o lateral. Mantiene posesión sin impulsar el juego.`],
+                  [`<strong>${_pln}</strong> en <em>Solvente</em>: alto % bajo presión (${_psxv.toFixed(1)}%) y mucho primer toque (${_psyv.toFixed(1)}%). Resuelve rápido y bien en situaciones difíciles.`,`<strong>${_pln}</strong> en <em>Técnico</em>: predomina el primer toque aunque con menor actividad bajo presión. Rápido en situaciones cómodas.`,`<strong>${_pln}</strong> en <em>Resistente</em>: maneja bien la presión rival pero prefiere tomarse tiempo. Sólido aunque no tan explosivo.`,`<strong>${_pln}</strong> en <em>Tranquilo</em>: pocas situaciones bajo presión y menos primer toque. Juega en zonas cómodas y se toma su tiempo.`],
+                  [`<strong>${_pln}</strong> en <em>Filtrador</em>: mucho juego largo (${_psxv.toFixed(1)}%) con alto xT (${_psyv.toFixed(3)}). Sus pases largos generan peligro real.`,`<strong>${_pln}</strong> en <em>Lanzador largo</em>: alto % de pases largos pero menor amenaza generada. Lanza mucho aunque no siempre al espacio correcto.`,`<strong>${_pln}</strong> en <em>Creador corto</em>: alto xT generado con pocos pases largos. Muy amenazante con pases cortos y combinaciones.`,`<strong>${_pln}</strong> en <em>Corto</em>: juego de corto recorrido con baja generación de amenaza. Circulación segura y sin riesgos.`],
+                ];
+                let _pinterpText='';
+                if (_profilePasesScatterPreset>=0&&_pInterpMap[_profilePasesScatterPreset]) _pinterpText=_pInterpMap[_profilePasesScatterPreset][_ppQi];
+                else _pinterpText=`<strong>${_pln}</strong> · ${_pLblX}: ${_psxv.toFixed(2)} · ${_pLblY}: ${_psyv.toFixed(2)} — vs ${_pGrpLblS[_pGrpS]||_pGrpS} 1ª RFEF 25/26.`;
+                const _pscDesc=`<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:10px 14px;margin-top:10px">
+                  <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">📖 Lectura del gráfico</div>
+                  <div style="font-size:12px;color:var(--text2);line-height:1.6">${_pinterpText}</div>
+                </div>`;
+                return _pTogBar+_ppresetBar+_pcustomPanel+
+                  `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">${_pscSVG}</div>
+                  <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
+                    <span style="color:rgba(255,255,255,0.22)">- - media liga</span>
+                    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffa657;margin-right:3px;vertical-align:middle"></span>${p.name}</span>
+                    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3fb950;margin-right:3px;vertical-align:middle"></span>Alto en ambas</span>
+                    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f85149;margin-right:3px;vertical-align:middle"></span>Bajo en ambas</span>
+                  </div>${_pscDesc}`;
               }
 
               // ── TABLA ───────────────────────────────────────────────────────────
