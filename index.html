@@ -14757,16 +14757,12 @@
           +'<div style="font-size:14px;font-weight:700;color:#e2e8f0">'+selP+'</div>'
           +'<div style="margin-left:auto;font-size:10px;color:#64748b">xG diff: <span style="color:'+diffCol+';font-weight:700">'+diffStr+'</span></div>'
           +'</div>';
-        const hasGM = shots.some(s=>s.gy!=null&&s.gz!=null);
         cont.innerHTML = '<div style="padding:16px 20px">'+header
           +matchBar+matchPanel+playerHeader
-          +'<div style="display:grid;grid-template-columns:1fr '+(hasGM?'1fr ':'')+' 240px;gap:14px;margin-bottom:16px;align-items:start">'
+          +'<div style="display:grid;grid-template-columns:1fr 240px;gap:14px;margin-bottom:16px;align-items:start">'
           +'<div style="background:#111827;border-radius:10px;overflow:hidden;border:1px solid #1e293b">'
           +'<div style="padding:8px 12px;background:#0f172a;font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px">MAPA DE TIROS</div>'
           +numberedPitch(shots)+'</div>'
-          +(hasGM?'<div style="background:#111827;border-radius:10px;overflow:hidden;border:1px solid #1e293b">'
-            +'<div style="padding:8px 12px;background:#0f172a;font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px">VISTA PORTERÍA</div>'
-            +goalMouthSVG(shots)+'</div>':'')
           +statsPanelHTML(shots)
           +'</div>'
           +buildShotsTable(shots)
@@ -14866,7 +14862,6 @@
         const playerSubTabBar = '<div style="display:flex;gap:6px;margin-bottom:16px">'
           +pSubBtn('all','Temporada')+pSubBtn('casa','🏠 Casa')+pSubBtn('fuera','✈️ Fuera')
           +'</div>';
-        const hasGM2 = shots.some(s=>s.gy!=null&&s.gz!=null);
         const playerHdr2 = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:10px 16px;background:#16213e;border-radius:10px;border:1px solid #1e293b">'
           +'<button onclick="window._tirosPlayer=null;loadTiros()" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px">← Volver</button>'
           +avatarL
@@ -14875,13 +14870,10 @@
           +'</div>';
         cont.innerHTML = '<div style="padding:16px 20px">'+header
           +playerSubTabBar+playerHdr2
-          +'<div style="display:grid;grid-template-columns:1fr '+(hasGM2?'1fr ':'')+' 240px;gap:14px;margin-bottom:16px;align-items:start">'
+          +'<div style="display:grid;grid-template-columns:1fr 240px;gap:14px;margin-bottom:16px;align-items:start">'
           +'<div style="background:#111827;border-radius:10px;overflow:hidden;border:1px solid #1e293b">'
           +'<div style="padding:8px 12px;background:#0f172a;font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px">MAPA DE TIROS</div>'
           +numberedPitch(shots)+'</div>'
-          +(hasGM2?'<div style="background:#111827;border-radius:10px;overflow:hidden;border:1px solid #1e293b">'
-            +'<div style="padding:8px 12px;background:#0f172a;font-size:11px;font-weight:700;color:#64748b;letter-spacing:.5px">VISTA PORTERÍA</div>'
-            +goalMouthSVG(shots)+'</div>':'')
           +statsPanelHTML(shots)
           +'</div>'
           +buildShotsTable(shots)
