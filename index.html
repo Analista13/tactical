@@ -11657,11 +11657,14 @@
   let _profilePasesScatterY = 'pct_ok';
   let _profilePasesScatterPreset = 0;
   let _profilePasesScatterCustom = false;
-  let _profilePossView = 'tabla';    // 'tabla' | 'radar' | 'scatter'
+  let _profilePossView = 'tabla';    // 'tabla' | 'radar' | 'scatter' | 'comparar'
   let _profilePossScatterX = 'carries';
   let _profilePossScatterY = 'retained';
   let _profilePossPosIdx = 0;
   let _profilePossScatterPreset = 0;
+  let _profilePossCompIdxs = [];     // índices en _LIGA_POSS[pos] de jugadores a comparar (max 3)
+  let _profilePossCompPos = '';      // posición activa cuando se seleccionaron los índices
+  let _profilePossCompTeam = '';     // filtro de equipo en el selector
 
   // Mapeo nombre plantilla → clave _OBE_DATA (solo si difieren)
   const _OBE_KEY_MAP = {
@@ -11694,6 +11697,390 @@
     'Sergio Benito':      [{pos:'Center Forward',  m:9, carries:{v:1.86,r:67}, fwd:{v:1.86,r:87},qpasses:{v:0.74,r:6}, tspace:{v:50.0, r:62}, retained:{v:58.44,r:92},rec_tight:{v:1.11,r:16}}],
     'José Luis Cortés':   [{pos:'Center Forward',  m:14,carries:{v:2.78,r:92}, fwd:{v:1.62,r:79},qpasses:{v:1.27,r:24},tspace:{v:33.33,r:22}, retained:{v:32.71,r:8}, rec_tight:{v:2.2, r:74}}],
   };
+
+  const _LIGA_POSS = {
+    'Central Defender': [
+      {n:'Adrià Miquel Bosch Sanchis',t:'Pontevedra CF',m:27,cr:18,fr:69,qr:26,tr:92,rr:7,rtr:29},
+      {n:'Adrián Crespo Sánchez',t:'CP Cacereño',m:11,cr:52,fr:26,qr:2,tr:64,rr:54,rtr:73},
+      {n:'Adrián Gómez Ramírez',t:'Real Avilés Club de Fútbol',m:7,cr:67,fr:81,qr:4,tr:64,rr:43,rtr:96},
+      {n:'Adrián Pérez Galiano',t:'Ourense CF',m:5,cr:15,fr:94,qr:8,tr:41,rr:83,rtr:99},
+      {n:'Aimar  Duñabeitia Madariaga',t:'Bilbao Athletic',m:15,cr:38,fr:26,qr:41,tr:null,rr:4,rtr:13},
+      {n:'Alain Ribeiro De Aguiar',t:'Pontevedra CF',m:7,cr:12,fr:26,qr:13,tr:19,rr:54,rtr:67},
+      {n:'Alberto González Marín',t:'Real Murcia CF',m:16,cr:12,fr:61,qr:76,tr:64,rr:23,rtr:41},
+      {n:'Aleix Gorjón Vivó',t:'CD Unionistas de Salamanca CF',m:13,cr:81,fr:26,qr:62,tr:null,rr:72,rtr:13},
+      {n:'Aleksa Puric',t:'Atlético Madrid B',m:26,cr:89,fr:56,qr:49,tr:19,rr:8,rtr:28},
+      {n:'Andrés López Carmona',t:'Real Murcia CF',m:8,cr:65,fr:26,qr:6,tr:19,rr:4,rtr:80},
+      {n:'Anthony Rigoberto Landázuri Estacio',t:'CD Tenerife',m:27,cr:54,fr:72,qr:95,tr:19,rr:20,rtr:38},
+      {n:'Antonio Montoro Rodríguez',t:'Pontevedra CF',m:26,cr:59,fr:70,qr:31,tr:19,rr:12,rtr:76},
+      {n:'Antxón Jaso Zunzarren',t:'Real Murcia CF',m:5,cr:33,fr:34,qr:56,tr:null,rr:52,rtr:26},
+      {n:'Aymane Jelbat',t:'Ourense CF',m:17,cr:58,fr:26,qr:30,tr:47,rr:37,rtr:88},
+      {n:'Boris Moltenis',t:'SD Ponferradina',m:9,cr:17,fr:26,qr:33,tr:19,rr:54,rtr:40},
+      {n:'Borja Granero Niñerola',t:'Real Avilés Club de Fútbol',m:10,cr:36,fr:78,qr:42,tr:19,rr:75,rtr:83},
+      {n:'Chukwuma Eze',t:'Real Avilés Club de Fútbol',m:7,cr:94,fr:88,qr:1,tr:64,rr:83,rtr:91},
+      {n:'Daniel Martínez Moreno',t:'Atlético Madrid B',m:24,cr:98,fr:69,qr:83,tr:null,rr:28,rtr:28},
+      {n:'David Andújar Jiménez',t:'SD Ponferradina',m:11,cr:62,fr:26,qr:28,tr:92,rr:97,rtr:47},
+      {n:'Diego Espejo Concepción',t:'CA Osasuna B',m:9,cr:42,fr:95,qr:10,tr:19,rr:4,rtr:51},
+      {n:'Edgar Climent Pujol Portorreal',t:'Racing Club de Ferrol',m:23,cr:76,fr:26,qr:89,tr:83,rr:90,rtr:90},
+      {n:'Eliseo Falcón Falcón',t:'CD Arenteiro',m:8,cr:16,fr:26,qr:65,tr:64,rr:68,rtr:78},
+      {n:'Eneko Undabarrena Ubillos',t:'SD Ponferradina',m:16,cr:19,fr:26,qr:37,tr:null,rr:54,rtr:13},
+      {n:'Enrique López Fernández',t:'CD Guadalajara',m:6,cr:91,fr:26,qr:35,tr:19,rr:23,rtr:60},
+      {n:'Enrique Ribes Recaj',t:'Real Club Celta de Vigo B',m:5,cr:73,fr:26,qr:97,tr:80,rr:78,rtr:97},
+      {n:'Erik Ruiz Álvarez',t:'Zamora CF',m:18,cr:3,fr:26,qr:72,tr:null,rr:75,rtr:13},
+      {n:'Francisco Carmona García',t:'Ourense CF',m:22,cr:48,fr:26,qr:1,tr:19,rr:10,rtr:43},
+      {n:'Gaizka Martínez Navarro',t:'Mérida Asociación Deportiva',m:8,cr:71,fr:26,qr:78,tr:null,rr:75,rtr:13},
+      {n:'Germán Novoa Enríquez',t:'SD Ponferradina',m:25,cr:90,fr:82,qr:55,tr:19,rr:15,rtr:37},
+      {n:'Gerónimo Spina',t:'Atlético Madrid B',m:5,cr:18,fr:34,qr:49,tr:87,rr:52,rtr:53},
+      {n:'Héctor Pérez Claros',t:'Real Murcia CF',m:8,cr:4,fr:26,qr:82,tr:null,rr:null,rtr:13},
+      {n:'Ibaider Garriz Mendaza',t:'CD Lugo',m:17,cr:97,fr:76,qr:22,tr:47,rr:35,rtr:76},
+      {n:'Iker Monreal Agundez',t:'Bilbao Athletic',m:11,cr:55,fr:26,qr:67,tr:19,rr:44,rtr:77},
+      {n:'Iker Ropero Saizar',t:'Barakaldo CF',m:7,cr:11,fr:26,qr:35,tr:92,rr:97,rtr:92},
+      {n:'Iker San Vicente Marquínez',t:'CP Cacereño',m:6,cr:74,fr:26,qr:20,tr:19,rr:15,rtr:69},
+      {n:'Ismael Said Athuman González',t:'Zamora CF',m:16,cr:40,fr:80,qr:44,tr:null,rr:54,rtr:13},
+      {n:'Iván Martínez Muñoz',t:'CP Cacereño',m:19,cr:75,fr:26,qr:29,tr:47,rr:38,rtr:74},
+      {n:'Jaime Vázquez Cuervo-Arango',t:'Real Club Celta de Vigo B',m:6,cr:21,fr:34,qr:81,tr:22,rr:16,rtr:60},
+      {n:'Javier Ablanque Albarrán',t:'CD Guadalajara',m:20,cr:93,fr:91,qr:59,tr:64,rr:43,rtr:89},
+      {n:'Javier Domínguez Arribas',t:'Mérida Asociación Deportiva',m:18,cr:53,fr:26,qr:18,tr:19,rr:36,rtr:54},
+      {n:'Javier Martínez Barrio',t:'CP Cacereño',m:15,cr:23,fr:26,qr:7,tr:47,rr:75,rtr:90},
+      {n:'Javier Rodríguez Lancho',t:'Mérida Asociación Deportiva',m:20,cr:13,fr:83,qr:25,tr:80,rr:39,rtr:88},
+      {n:'Jean-Sylvain  Babin',t:'Real Avilés Club de Fútbol',m:30,cr:35,fr:26,qr:46,tr:64,rr:15,rtr:42},
+      {n:'Joan Martínez Lozano',t:'Real Madrid Castilla',m:19,cr:80,fr:26,qr:93,tr:64,rr:69,rtr:36},
+      {n:'Jon García',t:'Real Murcia CF',m:9,cr:50,fr:75,qr:47,tr:null,rr:15,rtr:13},
+      {n:'Jon de Luis Suescun',t:'Bilbao Athletic',m:15,cr:69,fr:83,qr:17,tr:92,rr:97,rtr:97},
+      {n:'Jorge Casado Rodríguez',t:'CD Guadalajara',m:13,cr:84,fr:26,qr:27,tr:19,rr:63,rtr:35},
+      {n:'Jorge Mier Martínez',t:'Real Murcia CF',m:8,cr:99,fr:97,qr:45,tr:64,rr:88,rtr:86},
+      {n:'Jorge Sanchez',t:'Real Murcia CF',m:8,cr:39,fr:79,qr:63,tr:null,rr:4,rtr:13},
+      {n:'Josep Antoni Gayá Martínez',t:'CD Lugo',m:8,cr:83,fr:26,qr:97,tr:19,rr:54,rtr:72},
+      {n:'José León Bernal',t:'CD Tenerife',m:18,cr:19,fr:58,qr:94,tr:19,rr:75,rtr:30},
+      {n:'José Manuel Rodríguez Benito',t:'Racing Club de Ferrol',m:8,cr:29,fr:98,qr:85,tr:null,rr:97,rtr:13},
+      {n:'José María Amo Torres',t:'CD Lugo',m:25,cr:8,fr:26,qr:50,tr:19,rr:70,rtr:27},
+      {n:'José María Pérez García',t:'CD Unionistas de Salamanca CF',m:14,cr:6,fr:26,qr:73,tr:19,rr:33,rtr:56},
+      {n:'Lamini Domingos Fati Joao',t:'Real Madrid Castilla',m:12,cr:85,fr:26,qr:80,tr:47,rr:54,rtr:94},
+      {n:'Luca Lohr',t:'CD Arenteiro',m:9,cr:97,fr:26,qr:61,tr:92,rr:83,rtr:48},
+      {n:'Luis Miguel Luengo Herrera',t:'Zamora CF',m:19,cr:82,fr:60,qr:78,tr:19,rr:28,rtr:72},
+      {n:'Luis Pareja Álvarez',t:'Mérida Asociación Deportiva',m:13,cr:35,fr:74,qr:24,tr:19,rr:10,rtr:70},
+      {n:'Mario Rivas Lago',t:'Real Madrid Castilla',m:10,cr:27,fr:71,qr:90,tr:92,rr:54,rtr:35},
+      {n:'Markel Arana Mateo',t:'Barakaldo CF',m:22,cr:72,fr:26,qr:47,tr:64,rr:19,rtr:58},
+      {n:'Markel Artetxe Artetxe',t:'Racing Club de Ferrol',m:8,cr:43,fr:26,qr:65,tr:19,rr:28,rtr:46},
+      {n:'Matías Barboza Van Hoeckel',t:'Atlético Madrid B',m:5,cr:1,fr:90,qr:54,tr:null,rr:97,rtr:13},
+      {n:'Miguel Prado del Barrio',t:'Ourense CF',m:9,cr:40,fr:26,qr:15,tr:92,rr:83,rtr:42},
+      {n:'Miquel Codina Sayol',t:'Zamora CF',m:11,cr:100,fr:92,qr:83,tr:41,rr:21,rtr:99},
+      {n:'Pablo García Ruiz',t:'Arenas Club de Getxo',m:8,cr:30,fr:100,qr:62,tr:19,rr:15,rtr:67},
+      {n:'Pablo González Meixús',t:'Real Club Celta de Vigo B',m:24,cr:51,fr:89,qr:98,tr:77,rr:72,rtr:49},
+      {n:'Pablo Trigueros Estrada',t:'CD Lugo',m:6,cr:38,fr:26,qr:87,tr:92,rr:80,rtr:85},
+      {n:'Paul Álvarez Plazaola',t:'Arenas Club de Getxo',m:11,cr:60,fr:26,qr:51,tr:null,rr:97,rtr:13},
+      {n:'Pedro Alejandro Zalaya Galardón',t:'Racing Club de Ferrol',m:18,cr:22,fr:26,qr:12,tr:77,rr:87,rtr:79},
+      {n:'Rodriguez Alvarez Anxo',t:'Real Club Celta de Vigo B',m:25,cr:49,fr:87,qr:100,tr:19,rr:63,rtr:58},
+      {n:'Saúl García Cabrero',t:'Racing Club de Ferrol',m:7,cr:77,fr:26,qr:96,tr:64,rr:32,rtr:82},
+      {n:'Sergi Molina Pagés',t:'Talavera CF',m:15,cr:20,fr:26,qr:12,tr:92,rr:54,rtr:40},
+      {n:'Unai  Santos Mañeru',t:'CA Osasuna B',m:5,cr:3,fr:26,qr:11,tr:19,rr:28,rtr:83},
+      {n:'Unai Dufur Espelosín',t:'Barakaldo CF',m:19,cr:57,fr:62,qr:9,tr:null,rr:54,rtr:13},
+      {n:'Victor Rodríguez Sanchez',t:'CD Guadalajara',m:10,cr:45,fr:26,qr:51,tr:64,rr:92,rtr:81},
+      {n:'Víctor Valdepeñas Talavera',t:'Real Madrid Castilla',m:16,cr:92,fr:92,qr:85,tr:51,rr:25,rtr:84},
+      {n:'Álvaro González Soberón',t:'CD Tenerife',m:6,cr:25,fr:26,qr:38,tr:null,rr:97,rtr:13},
+      {n:'Álvaro López Palomino',t:'Talavera CF',m:11,cr:70,fr:26,qr:31,tr:null,rr:8,rtr:13},
+      {n:'Óscar Gil Osés',t:'Real Murcia CF',m:7,cr:78,fr:97,qr:58,tr:19,rr:28,rtr:53},
+    ],
+    'Full Back': [
+      {n:'Adrián Corral Alciturri',t:'Atlético Madrid B',m:6,cr:16,fr:61,qr:40,tr:7,rr:25,rtr:56},
+      {n:'Aleix Roig Martínez',t:'Talavera CF',m:11,cr:60,fr:12,qr:2,tr:22,rr:3,rtr:21},
+      {n:'Ander Vidorreta Larumbe',t:'Pontevedra CF',m:10,cr:48,fr:12,qr:31,tr:89,rr:17,rtr:22},
+      {n:'Ander Zoilo Cerdeira',t:'CD Tenerife',m:13,cr:98,fr:34,qr:10,tr:73,rr:72,rtr:39},
+      {n:'Andoni López Saratxo',t:'SD Ponferradina',m:24,cr:54,fr:12,qr:28,tr:11,rr:6,rtr:44},
+      {n:'Beñat de Jesús Domingo',t:'Barakaldo CF',m:12,cr:88,fr:94,qr:10,tr:38,rr:9,rtr:47},
+      {n:'Cristobal Jesús Romero Gómez',t:'Real Murcia CF',m:19,cr:96,fr:27,qr:83,tr:17,rr:74,rtr:27},
+      {n:'César Álvarez Abrante',t:'CD Tenerife',m:6,cr:57,fr:46,qr:61,tr:18,rr:2,rtr:65},
+      {n:'César Álvarez Abrante',t:'CD Tenerife',m:15,cr:94,fr:69,qr:40,tr:38,rr:62,rtr:85},
+      {n:'Daniel Gallardo Ruiz',t:'CD Guadalajara',m:18,cr:19,fr:29,qr:82,tr:81,rr:86,rtr:52},
+      {n:'Daniel Merchán Úbeda',t:'Zamora CF',m:12,cr:63,fr:67,qr:9,tr:38,rr:33,rtr:88},
+      {n:'David Jiménez Corredor',t:'Real Madrid Castilla',m:20,cr:10,fr:93,qr:93,tr:85,rr:79,rtr:50},
+      {n:'David Rodríguez Ramos',t:'CD Tenerife',m:12,cr:79,fr:30,qr:86,tr:11,rr:43,rtr:41},
+      {n:'David Rodríguez Ramos',t:'CD Tenerife',m:14,cr:30,fr:33,qr:77,tr:92,rr:60,rtr:32},
+      {n:'David Vicente Robles',t:'Real Murcia CF',m:22,cr:49,fr:78,qr:34,tr:35,rr:58,rtr:66},
+      {n:'Diego  Moreno Garbayo',t:'SD Ponferradina',m:15,cr:83,fr:77,qr:78,tr:27,rr:37,rtr:57},
+      {n:'Diego Aguado Facio',t:'Real Madrid Castilla',m:14,cr:41,fr:12,qr:63,tr:58,rr:73,rtr:9},
+      {n:'Diego Caballo Alonso',t:'CD Lugo',m:14,cr:6,fr:87,qr:85,tr:67,rr:91,rtr:44},
+      {n:'Diego Moreno Cledera',t:'CD Arenteiro',m:5,cr:50,fr:30,qr:43,tr:61,rr:74,rtr:62},
+      {n:'Eduard Campabadal Claros',t:'Real Avilés Club de Fútbol',m:16,cr:14,fr:38,qr:62,tr:45,rr:59,rtr:89},
+      {n:'Eduardo Gallardo Rodríguez',t:'Talavera CF',m:8,cr:60,fr:90,qr:23,tr:31,rr:75,rtr:98},
+      {n:'Emiliano Hernández Moreno',t:'CP Cacereño',m:27,cr:21,fr:60,qr:66,tr:29,rr:66,rtr:61},
+      {n:'Enol Coto Serrano',t:'Ourense CF',m:13,cr:50,fr:35,qr:85,tr:22,rr:94,rtr:31},
+      {n:'Eudald Vergés Comellas',t:'Mérida Asociación Deportiva',m:27,cr:91,fr:66,qr:81,tr:76,rr:48,rtr:92},
+      {n:'Felipe Alfonso Criado',t:'Mérida Asociación Deportiva',m:10,cr:75,fr:47,qr:15,tr:58,rr:63,rtr:38},
+      {n:'Frank Germain Jonathan Miller',t:'Real Club Celta de Vigo B',m:7,cr:34,fr:30,qr:41,tr:41,rr:45,rtr:54},
+      {n:'Gaizka Martínez Navarro',t:'Mérida Asociación Deportiva',m:6,cr:27,fr:12,qr:56,tr:58,rr:21,rtr:13},
+      {n:'Guzmán Ortega Sanjuan',t:'Real Avilés Club de Fútbol',m:9,cr:73,fr:45,qr:48,tr:3,rr:20,rtr:24},
+      {n:'Hugo  Sanz Pérez',t:'Ourense CF',m:25,cr:90,fr:54,qr:29,tr:86,rr:47,rtr:83},
+      {n:'Iago López Carracedo',t:'CD Lugo',m:12,cr:43,fr:91,qr:18,tr:79,rr:61,rtr:71},
+      {n:'Iker Alday Igartua',t:'Bilbao Athletic',m:13,cr:81,fr:12,qr:49,tr:48,rr:48,rtr:53},
+      {n:'Iker Pedernales Pereira',t:'Barakaldo CF',m:11,cr:33,fr:74,qr:7,tr:38,rr:55,rtr:70},
+      {n:'Jacobo Martí Rubio',t:'Mérida Asociación Deportiva',m:8,cr:64,fr:83,qr:74,tr:11,rr:40,rtr:33},
+      {n:'Jan Encuentra Martin',t:'CD Unionistas de Salamanca CF',m:6,cr:58,fr:30,qr:29,tr:null,rr:23,rtr:33},
+      {n:'Javier Boñar Franco',t:'Atlético Madrid B',m:28,cr:8,fr:84,qr:27,tr:71,rr:84,rtr:14},
+      {n:'Jesus Fortea Tejedo',t:'Real Madrid Castilla',m:10,cr:87,fr:72,qr:1,tr:16,rr:73,rtr:23},
+      {n:'Joel López Salguero',t:'Real Club Celta de Vigo B',m:6,cr:85,fr:89,qr:99,tr:96,rr:77,rtr:48},
+      {n:'Johaneko Louis-Jean',t:'Bilbao Athletic',m:5,cr:66,fr:63,qr:8,tr:17,rr:58,rtr:35},
+      {n:'Jon Sillero Monreal',t:'Arenas Club de Getxo',m:6,cr:9,fr:88,qr:98,tr:16,rr:85,rtr:52},
+      {n:'Jordan Sánchez Varela',t:'CD Arenteiro',m:6,cr:44,fr:61,qr:35,tr:41,rr:34,rtr:61},
+      {n:'Jorge Iglesias González',t:'SD Ponferradina',m:7,cr:4,fr:12,qr:98,tr:58,rr:69,rtr:19},
+      {n:'Jorge Mier Martínez',t:'Real Murcia CF',m:5,cr:70,fr:12,qr:48,tr:58,rr:81,rtr:4},
+      {n:'Jorge Mier Martínez',t:'Real Murcia CF',m:10,cr:100,fr:99,qr:95,tr:67,rr:65,rtr:75},
+      {n:'José Ramón de Diego Martín',t:'CP Cacereño',m:19,cr:52,fr:31,qr:50,tr:28,rr:30,rtr:17},
+      {n:'Julio Díaz Del Romo',t:'Atlético Madrid B',m:19,cr:95,fr:56,qr:43,tr:68,rr:70,rtr:40},
+      {n:'Julio Rafael Escorcia Martinez',t:'CD Guadalajara',m:14,cr:27,fr:35,qr:6,tr:14,rr:77,rtr:30},
+      {n:'Manuel Serrano Salazar',t:'Real Madrid Castilla',m:11,cr:37,fr:39,qr:75,tr:99,rr:99,rtr:6},
+      {n:'Mario Jorrín González',t:'SD Ponferradina',m:6,cr:36,fr:12,qr:58,tr:3,rr:5,rtr:5},
+      {n:'Miguel Barandalla Ostiz',t:'Bilbao Athletic',m:11,cr:71,fr:52,qr:32,tr:11,rr:69,rtr:18},
+      {n:'Miguel Cuesta Gutiérrez',t:'Pontevedra CF',m:20,cr:77,fr:81,qr:44,tr:50,rr:23,rtr:81},
+      {n:'Miguel Prado del Barrio',t:'Ourense CF',m:10,cr:19,fr:12,qr:69,tr:58,rr:24,rtr:34},
+      {n:'Miguel Ángel García Cera',t:'CD Guadalajara',m:5,cr:53,fr:30,qr:31,tr:41,rr:58,rtr:43},
+      {n:'Miguel Ángel Leal Díaz',t:'Racing Club de Ferrol',m:16,cr:34,fr:48,qr:52,tr:22,rr:92,rtr:77},
+      {n:'Miquel Codina Sayol',t:'Zamora CF',m:13,cr:92,fr:36,qr:25,tr:76,rr:90,rtr:20},
+      {n:'Oier López Gómez',t:'Barakaldo CF',m:17,cr:46,fr:95,qr:11,tr:73,rr:44,rtr:69},
+      {n:'Pablo Gavián Alonso',t:'Real Club Celta de Vigo B',m:20,cr:35,fr:80,qr:81,tr:65,rr:49,rtr:91},
+      {n:'Pere Haro Crespo',t:'CD Lugo',m:7,cr:45,fr:85,qr:47,tr:89,rr:54,rtr:99},
+      {n:'Raúl Chasco Ruiz',t:'CA Osasuna B',m:10,cr:40,fr:40,qr:16,tr:52,rr:38,rtr:90},
+      {n:'Rufino Lucero',t:'Zamora CF',m:12,cr:51,fr:82,qr:24,tr:78,rr:11,rtr:94},
+      {n:'Saúl García Cabrero',t:'Racing Club de Ferrol',m:5,cr:35,fr:30,qr:61,tr:41,rr:26,rtr:58},
+      {n:'Sergio López Revilla',t:'Zamora CF',m:5,cr:32,fr:30,qr:23,tr:52,rr:24,rtr:38},
+      {n:'Victor Manuel Eimil García',t:'Pontevedra CF',m:11,cr:94,fr:50,qr:69,tr:31,rr:78,rtr:43},
+      {n:'Víctor Díaz Suárez',t:'Real Avilés Club de Fútbol',m:5,cr:39,fr:12,qr:42,tr:99,rr:69,rtr:1},
+      {n:'Víctor Olmedo Sellès',t:'CD Unionistas de Salamanca CF',m:8,cr:15,fr:96,qr:30,tr:84,rr:56,rtr:95},
+      {n:'Xabier Irurita Larrayoz',t:'Bilbao Athletic',m:8,cr:72,fr:12,qr:55,tr:58,rr:26,rtr:15},
+      {n:'Yago Rodríguez Pérez',t:'CD Lugo',m:7,cr:56,fr:12,qr:80,tr:83,rr:93,rtr:42},
+      {n:'Álvaro Mardones Espluguez',t:'Racing Club de Ferrol',m:7,cr:69,fr:60,qr:92,tr:98,rr:95,rtr:93},
+      {n:'Álvaro Ramón Álvarez',t:'Racing Club de Ferrol',m:27,cr:84,fr:58,qr:88,tr:46,rr:86,rtr:65},
+      {n:'Ángel Arcos Cadilla',t:'Real Club Celta de Vigo B',m:6,cr:98,fr:49,qr:12,tr:22,rr:89,rtr:85},
+      {n:'Óscar Menéndez Carracedo',t:'Real Avilés Club de Fútbol',m:17,cr:15,fr:32,qr:51,tr:58,rr:53,rtr:35},
+    ],
+    'Midfield': [
+      {n:'Adrià Capdevila Puigmal',t:'Real Club Celta de Vigo B',m:12,cr:67,fr:96,qr:22,tr:45,rr:33,rtr:22},
+      {n:'Adrián Gómez Ramírez',t:'Real Avilés Club de Fútbol',m:18,cr:15,fr:4,qr:28,tr:19,rr:29,rtr:35},
+      {n:'Adrián Rodríguez Sojo',t:'Arenas Club de Getxo',m:9,cr:23,fr:86,qr:78,tr:45,rr:17,rtr:13},
+      {n:'Aitor Gelardo Vegara',t:'Racing Club de Ferrol',m:6,cr:49,fr:57,qr:12,tr:91,rr:18,rtr:81},
+      {n:'Aitor Sanz Martín',t:'CD Tenerife',m:16,cr:7,fr:25,qr:52,tr:76,rr:42,rtr:31},
+      {n:'Alain Ribeiro De Aguiar',t:'Pontevedra CF',m:16,cr:55,fr:61,qr:9,tr:45,rr:57,rtr:82},
+      {n:'Alejandro Carbonell Vallés',t:'CD Lugo',m:9,cr:31,fr:42,qr:61,tr:98,rr:98,rtr:30},
+      {n:'Alejandro Gallar Falguera',t:'CD Lugo',m:5,cr:58,fr:67,qr:58,tr:5,rr:21,rtr:62},
+      {n:'Alejandro Monserrate Pueyo',t:'Atlético Madrid B',m:10,cr:28,fr:52,qr:6,tr:45,rr:41,rtr:55},
+      {n:'Alexander Hidalgo',t:'Arenas Club de Getxo',m:11,cr:83,fr:70,qr:31,tr:45,rr:25,rtr:47},
+      {n:'Ander Gorostidi García',t:'Racing Club de Ferrol',m:21,cr:35,fr:73,qr:45,tr:86,rr:96,rtr:9},
+      {n:'Ander Vidorreta Larumbe',t:'Pontevedra CF',m:14,cr:26,fr:5,qr:71,tr:27,rr:64,rtr:20},
+      {n:'Andrés Antanon Vieites',t:'Real Club Celta de Vigo B',m:13,cr:81,fr:97,qr:30,tr:45,rr:34,rtr:26},
+      {n:'Antonio Calvo Martin',t:'CD Guadalajara',m:7,cr:86,fr:70,qr:38,tr:19,rr:11,rtr:78},
+      {n:'Antonio David Moreno Moreno',t:'Real Murcia CF',m:7,cr:6,fr:9,qr:94,tr:89,rr:98,rtr:42},
+      {n:'Antonio Perera Calderón',t:'CD Lugo',m:6,cr:2,fr:55,qr:90,tr:98,rr:100,rtr:24},
+      {n:'Benjamin Dibrani',t:'Mérida Asociación Deportiva',m:13,cr:77,fr:75,qr:18,tr:54,rr:22,rtr:95},
+      {n:'Brais Val Alonso',t:'CD Arenteiro',m:8,cr:26,fr:25,qr:82,tr:45,rr:3,rtr:10},
+      {n:'Carlos Doncel Ordoñez',t:'Mérida Asociación Deportiva',m:5,cr:100,fr:99,qr:1,tr:19,rr:1,rtr:100},
+      {n:'Carlos Ramos Blanco',t:'Zamora CF',m:27,cr:21,fr:37,qr:74,tr:69,rr:15,rtr:60},
+      {n:'Cristian David Perea Cajiao',t:'Real Madrid Castilla',m:10,cr:13,fr:18,qr:69,tr:91,rr:99,rtr:33},
+      {n:'César Moreno Meca',t:'Ourense CF',m:16,cr:12,fr:49,qr:14,tr:45,rr:53,rtr:39},
+      {n:'David De La Iglesia Rey',t:'Real Club Celta de Vigo B',m:8,cr:42,fr:17,qr:77,tr:2,rr:95,rtr:3},
+      {n:'David Muñoz Torres',t:'Ourense CF',m:7,cr:99,fr:69,qr:7,tr:11,rr:34,rtr:49},
+      {n:'Diego  Gutiérrez Chinea',t:'CP Cacereño',m:10,cr:34,fr:16,qr:49,tr:7,rr:18,rtr:35},
+      {n:'Djanbou Sekou',t:'Real Murcia CF',m:10,cr:59,fr:11,qr:62,tr:19,rr:23,rtr:15},
+      {n:'Eder García Artuna',t:'Bilbao Athletic',m:21,cr:77,fr:53,qr:53,tr:52,rr:31,rtr:68},
+      {n:'Ekain Zenitagoia Arana',t:'Real Murcia CF',m:10,cr:54,fr:91,qr:10,tr:70,rr:38,rtr:94},
+      {n:'Ekaitz Molina Aretxabaleta',t:'Barakaldo CF',m:10,cr:4,fr:2,qr:39,tr:98,rr:59,rtr:2},
+      {n:'Eneko Aguilar Elizalde',t:'SD Ponferradina',m:8,cr:52,fr:19,qr:42,tr:25,rr:52,rtr:45},
+      {n:'Eneko Undabarrena Ubillos',t:'SD Ponferradina',m:9,cr:55,fr:14,qr:77,tr:2,rr:1,rtr:6},
+      {n:'Enrique Márquez Climent',t:'Zamora CF',m:14,cr:90,fr:89,qr:15,tr:31,rr:39,rtr:99},
+      {n:'Eugene Adjei Frimpong',t:'SD Ponferradina',m:17,cr:86,fr:47,qr:24,tr:60,rr:7,rtr:54},
+      {n:'Eñaut Lete Larrañaga',t:'Bilbao Athletic',m:12,cr:40,fr:71,qr:43,tr:72,rr:91,rtr:56},
+      {n:'Fabio González Estupiñan',t:'Racing Club de Ferrol',m:12,cr:7,fr:41,qr:91,tr:11,rr:73,rtr:66},
+      {n:'Fabricio Assis de Souza Barbosa',t:'CD Tenerife',m:17,cr:88,fr:56,qr:90,tr:36,rr:30,rtr:89},
+      {n:'Federico San Emeterio Díaz',t:'SD Ponferradina',m:11,cr:2,fr:6,qr:44,tr:null,rr:97,rtr:1},
+      {n:'Fernando Pérez Quijada',t:'CP Cacereño',m:9,cr:5,fr:21,qr:57,tr:86,rr:30,rtr:70},
+      {n:'Geovanny Miguel Bastos Almeida',t:'Mérida Asociación Deportiva',m:7,cr:70,fr:81,qr:29,tr:2,rr:2,rtr:5},
+      {n:'Hugo Burcio García',t:'Real Club Celta de Vigo B',m:19,cr:60,fr:79,qr:69,tr:76,rr:75,rtr:21},
+      {n:'Ibon Ignacio Sánchez Océn',t:'Bilbao Athletic',m:15,cr:65,fr:83,qr:40,tr:32,rr:70,rtr:63},
+      {n:'Ignacio Castillo Ameyugo',t:'Ourense CF',m:5,cr:2,fr:94,qr:43,tr:2,rr:5,rtr:43},
+      {n:'Isaac Gómez Sánchez',t:'Real Murcia CF',m:10,cr:24,fr:31,qr:86,tr:98,rr:59,rtr:18},
+      {n:'Isaiah Navarro Díaz',t:'Talavera CF',m:13,cr:10,fr:46,qr:67,tr:82,rr:80,rtr:43},
+      {n:'Iván Castillo Jiménez',t:'Barakaldo CF',m:13,cr:23,fr:30,qr:23,tr:91,rr:89,rtr:40},
+      {n:'Jairo Noriega Figueroa',t:'Racing Club de Ferrol',m:20,cr:91,fr:93,qr:41,tr:82,rr:56,rtr:65},
+      {n:'Javier Ajenjo Hyjek',t:'CP Cacereño',m:20,cr:96,fr:65,qr:62,tr:67,rr:43,rtr:66},
+      {n:'Javier Morcillo Rodrigalvarez',t:'Atlético Madrid B',m:9,cr:19,fr:28,qr:73,tr:98,rr:62,rtr:2},
+      {n:'Javier Serrano Martínez',t:'Atlético Madrid B',m:21,cr:47,fr:2,qr:86,tr:76,rr:55,rtr:9},
+      {n:'Jerín Marcolino Ramos Santos',t:'Ourense CF',m:22,cr:37,fr:90,qr:67,tr:75,rr:82,rtr:86},
+      {n:'Jorge Cestero Sancho',t:'Real Madrid Castilla',m:24,cr:44,fr:77,qr:64,tr:72,rr:48,rtr:14},
+      {n:'Josep Miquel Fernández Codina',t:'SD Ponferradina',m:9,cr:14,fr:59,qr:21,tr:24,rr:38,rtr:91},
+      {n:'José Manuel López Plaza',t:'CD Unionistas de Salamanca CF',m:13,cr:76,fr:67,qr:58,tr:19,rr:53,rtr:50},
+      {n:'José Pascual Alba Seva',t:'Racing Club de Ferrol',m:7,cr:93,fr:36,qr:2,tr:67,rr:72,rtr:85},
+      {n:'João Pedro Gomes Palmberg',t:'Real Murcia CF',m:12,cr:57,fr:74,qr:37,tr:79,rr:93,rtr:93},
+      {n:'Juan Carlos Real Ruiz',t:'Real Murcia CF',m:9,cr:90,fr:99,qr:8,tr:8,rr:20,rtr:94},
+      {n:'Juan Jesús Rodríguez Rodríguez',t:'CD Unionistas de Salamanca CF',m:15,cr:36,fr:63,qr:26,tr:91,rr:51,rtr:58},
+      {n:'Juan José Sánchez Romero',t:'CD Tenerife',m:20,cr:54,fr:17,qr:49,tr:72,rr:94,rtr:17},
+      {n:'Julen Huidobro Betolaza',t:'Barakaldo CF',m:20,cr:34,fr:30,qr:33,tr:55,rr:43,rtr:73},
+      {n:'Kevin Bautista Ramírez',t:'Real Avilés Club de Fútbol',m:25,cr:98,fr:65,qr:65,tr:29,rr:44,rtr:51},
+      {n:'Kevin Presa Duarte',t:'CD Lugo',m:12,cr:79,fr:33,qr:66,tr:76,rr:58,rtr:38},
+      {n:'Luis Sánchez Marcos',t:'Talavera CF',m:6,cr:13,fr:34,qr:80,tr:85,rr:81,rtr:24},
+      {n:'Manuel Ángel Morán Ibáñez',t:'Real Madrid Castilla',m:24,cr:82,fr:85,qr:54,tr:79,rr:65,rtr:48},
+      {n:'Mario  García Parada',t:'Zamora CF',m:9,cr:92,fr:39,qr:19,tr:6,rr:25,rtr:53},
+      {n:'Markel Lozano Llona',t:'Zamora CF',m:26,cr:21,fr:31,qr:78,tr:80,rr:69,rtr:59},
+      {n:'Martín Bellotti',t:'Atlético Madrid B',m:32,cr:94,fr:82,qr:22,tr:12,rr:6,rtr:50},
+      {n:'Martín Solar Ruiz',t:'Mérida Asociación Deportiva',m:29,cr:51,fr:66,qr:85,tr:45,rr:67,rtr:65},
+      {n:'Mauro Echegoyen Berrozpe',t:'CA Osasuna B',m:12,cr:95,fr:75,qr:76,tr:32,rr:49,rtr:83},
+      {n:'Miguel Auría Olazábal',t:'CA Osasuna B',m:9,cr:71,fr:23,qr:18,tr:45,rr:82,rtr:75},
+      {n:'Miguel Muñoz Bellas',t:'CD Guadalajara',m:8,cr:25,fr:7,qr:99,tr:98,rr:66,rtr:10},
+      {n:'Mikel Zabala Ojeda',t:'Arenas Club de Getxo',m:6,cr:31,fr:14,qr:30,tr:5,rr:10,rtr:70},
+      {n:'Neco Celorio García',t:'CD Lugo',m:11,cr:67,fr:94,qr:31,tr:58,rr:39,rtr:91},
+      {n:'Nicolas Conesa Ibañez',t:'CP Cacereño',m:12,cr:27,fr:12,qr:32,tr:91,rr:68,rtr:26},
+      {n:'Oscar Marcos',t:'Real Club Celta de Vigo B',m:6,cr:43,fr:49,qr:48,tr:66,rr:67,rtr:46},
+      {n:'Pablo Rojo Garralón',t:'CD Guadalajara',m:5,cr:58,fr:41,qr:47,tr:14,rr:23,rtr:39},
+      {n:'Pedro Luis Capó Payeras',t:'Talavera CF',m:5,cr:30,fr:37,qr:51,tr:85,rr:88,rtr:26},
+      {n:'Pol Fortuny Aubareda',t:'Real Madrid Castilla',m:8,cr:63,fr:87,qr:13,tr:45,rr:14,rtr:87},
+      {n:'Rayane Belaid Khelil',t:'Atlético Madrid B',m:17,cr:69,fr:90,qr:13,tr:19,rr:35,rtr:55},
+      {n:'Raúl Beneit Romero',t:'Mérida Asociación Deportiva',m:17,cr:30,fr:37,qr:34,tr:58,rr:22,rtr:67},
+      {n:'Raúl Sanchís Mahiques',t:'CP Cacereño',m:5,cr:29,fr:36,qr:59,tr:69,rr:54,rtr:72},
+      {n:'Raúl Tavares Pulido',t:'CD Guadalajara',m:20,cr:62,fr:74,qr:95,tr:86,rr:91,rtr:36},
+      {n:'Roberto Doncel García',t:'Talavera CF',m:15,cr:13,fr:8,qr:89,tr:34,rr:46,rtr:87},
+      {n:'Rubén López Durán',t:'Pontevedra CF',m:5,cr:39,fr:32,qr:74,tr:48,rr:67,rtr:35},
+      {n:'Samuel Mayo Ceínos',t:'CD Guadalajara',m:10,cr:18,fr:46,qr:39,tr:72,rr:77,rtr:41},
+      {n:'Sergio Dueñas Ruiz',t:'Real Murcia CF',m:11,cr:61,fr:91,qr:46,tr:25,rr:9,rtr:53},
+      {n:'Sergio Tejera Rodríguez',t:'Racing Club de Ferrol',m:16,cr:46,fr:50,qr:29,tr:29,rr:90,rtr:31},
+      {n:'Thiago Pitarch Pinar',t:'Real Madrid Castilla',m:7,cr:82,fr:50,qr:51,tr:45,rr:79,rtr:59},
+      {n:'Tiago Rodríguez López',t:'Pontevedra CF',m:13,cr:81,fr:97,qr:36,tr:14,rr:37,rtr:69},
+      {n:'Unai Naveira Talavera',t:'Barakaldo CF',m:10,cr:19,fr:5,qr:50,tr:45,rr:45,rtr:7},
+      {n:'Vicente Esquerdo Santas',t:'SD Ponferradina',m:11,cr:33,fr:15,qr:84,tr:82,rr:73,rtr:62},
+      {n:'Victor Corral Herranz',t:'Mérida Asociación Deportiva',m:7,cr:38,fr:33,qr:34,tr:null,rr:27,rtr:1},
+      {n:'Víctor San Bartolomé Prieto',t:'Barakaldo CF',m:5,cr:73,fr:67,qr:14,tr:48,rr:31,rtr:73},
+      {n:'Yelko Pino Caride',t:'Pontevedra CF',m:28,cr:29,fr:61,qr:79,tr:9,rr:27,rtr:82},
+      {n:'Álex Balboa Bandeira',t:'CD Lugo',m:16,cr:72,fr:62,qr:5,tr:13,rr:36,rtr:25},
+      {n:'Álvaro Bastida Moya',t:'CD Arenteiro',m:8,cr:42,fr:26,qr:47,tr:45,rr:71,rtr:45},
+      {n:'Álvaro Gutiérrez Gete',t:'Real Avilés Club de Fútbol',m:15,cr:20,fr:35,qr:33,tr:58,rr:61,rtr:89},
+      {n:'Álvaro Gómez Martín',t:'CD Unionistas de Salamanca CF',m:5,cr:71,fr:45,qr:43,tr:14,rr:35,rtr:48},
+      {n:'Álvaro Muñoz Yuste Coronado',t:'Ourense CF',m:6,cr:27,fr:59,qr:53,tr:82,rr:83,rtr:74},
+      {n:'Álvaro Peña Herrero',t:'Racing Club de Ferrol',m:10,cr:16,fr:78,qr:74,tr:83,rr:88,rtr:84},
+      {n:'Óscar Gil Osés',t:'Real Murcia CF',m:8,cr:9,fr:66,qr:92,tr:19,rr:14,rtr:72},
+    ],
+    'Wide Attacker': [
+      {n:'Aarón Piñán De La Fuente',t:'CD Unionistas de Salamanca CF',m:5,cr:20,fr:52,qr:24,tr:49,rr:32,rtr:29},
+      {n:'Abdelilah Damar',t:'CD Unionistas de Salamanca CF',m:13,cr:41,fr:52,qr:17,tr:11,rr:53,rtr:10},
+      {n:'Abdoulaye Keita Keita',t:'SD Ponferradina',m:6,cr:42,fr:86,qr:39,tr:54,rr:43,rtr:62},
+      {n:'Adrian  Guerrero Mouriz',t:'Ourense CF',m:18,cr:71,fr:5,qr:45,tr:2,rr:28,rtr:55},
+      {n:'Adrián Pérez Sordo',t:'Bilbao Athletic',m:5,cr:37,fr:68,qr:96,tr:80,rr:29,rtr:14},
+      {n:'Adrián Pérez Sordo',t:'Bilbao Athletic',m:10,cr:2,fr:63,qr:77,tr:97,rr:69,rtr:9},
+      {n:'Alassan Manjam Gutiérrez',t:'CD Tenerife',m:12,cr:91,fr:21,qr:49,tr:17,rr:2,rtr:35},
+      {n:'Alberto Cayarga Fernández',t:'Real Avilés Club de Fútbol',m:17,cr:27,fr:53,qr:78,tr:78,rr:48,rtr:82},
+      {n:'Alberto Gil Barea',t:'Pontevedra CF',m:6,cr:24,fr:54,qr:88,tr:17,rr:90,rtr:58},
+      {n:'Alberto Gil Barea',t:'CD Guadalajara',m:5,cr:26,fr:30,qr:61,tr:34,rr:38,rtr:52},
+      {n:'Alejandro Domingo Gómez',t:'CD Guadalajara',m:14,cr:5,fr:81,qr:92,tr:38,rr:14,rtr:28},
+      {n:'Alejandro Gallar Falguera',t:'CD Lugo',m:5,cr:8,fr:52,qr:63,tr:57,rr:42,rtr:66},
+      {n:'Alejandro González Marañón',t:'Pontevedra CF',m:6,cr:50,fr:17,qr:47,tr:80,rr:80,rtr:3},
+      {n:'Alejandro Monerris Verdú',t:'Zamora CF',m:8,cr:83,fr:69,qr:4,tr:89,rr:6,rtr:2},
+      {n:'Ander Yoldi Aizagar',t:'CA Osasuna B',m:8,cr:48,fr:74,qr:10,tr:54,rr:33,rtr:33},
+      {n:'Arnau Ortiz Sánchez',t:'Atlético Madrid B',m:31,cr:83,fr:29,qr:28,tr:75,rr:11,rtr:23},
+      {n:'Babacar Diocou Ndiaye',t:'Arenas Club de Getxo',m:5,cr:39,fr:64,qr:1,tr:13,rr:15,rtr:37},
+      {n:'Borja Valle Balonga',t:'SD Ponferradina',m:19,cr:7,fr:27,qr:91,tr:83,rr:78,rtr:17},
+      {n:'Borja Vázquez Doña',t:'SD Ponferradina',m:6,cr:80,fr:49,qr:21,tr:2,rr:94,rtr:32},
+      {n:'Borja Vázquez Doña',t:'SD Ponferradina',m:8,cr:100,fr:32,qr:58,tr:68,rr:70,rtr:83},
+      {n:'Brais Abelenda Negreira',t:'Pontevedra CF',m:6,cr:6,fr:70,qr:61,tr:95,rr:86,rtr:7},
+      {n:'Carlos Doncel Ordoñez',t:'Mérida Asociación Deportiva',m:9,cr:63,fr:97,qr:56,tr:12,rr:37,rtr:80},
+      {n:'César Palacios Pérez',t:'Real Madrid Castilla',m:17,cr:12,fr:83,qr:73,tr:59,rr:72,rtr:5},
+      {n:'Daniel Yáñez Barla',t:'Real Madrid Castilla',m:17,cr:14,fr:28,qr:35,tr:27,rr:84,rtr:6},
+      {n:'Elijah Gift Izobodo John',t:'Bilbao Athletic',m:5,cr:64,fr:28,qr:10,tr:68,rr:46,rtr:20},
+      {n:'Endika Buján de Rueda',t:'Bilbao Athletic',m:8,cr:33,fr:65,qr:27,tr:32,rr:32,rtr:86},
+      {n:'Enrique Márquez Climent',t:'Zamora CF',m:8,cr:44,fr:85,qr:97,tr:84,rr:74,rtr:88},
+      {n:'Enrique Márquez Climent',t:'Zamora CF',m:5,cr:33,fr:53,qr:41,tr:27,rr:48,rtr:49},
+      {n:'Eric Perez Albarran',t:'Barakaldo CF',m:9,cr:99,fr:41,qr:6,tr:54,rr:61,rtr:53},
+      {n:'Francisco Javier Areso Blanco',t:'Mérida Asociación Deportiva',m:14,cr:57,fr:45,qr:72,tr:17,rr:17,rtr:50},
+      {n:'Hugo González Sotos',t:'Real Club Celta de Vigo B',m:15,cr:59,fr:95,qr:70,tr:72,rr:57,rtr:64},
+      {n:'Ignacio Gil de Pareja Vicent',t:'CD Tenerife',m:17,cr:60,fr:76,qr:32,tr:43,rr:81,rtr:17},
+      {n:'Iker Luque Sierra',t:'Atlético Madrid B',m:26,cr:90,fr:44,qr:65,tr:20,rr:3,rtr:24},
+      {n:'Jaime Sancho González',t:'Zamora CF',m:11,cr:97,fr:19,qr:46,tr:36,rr:12,rtr:6},
+      {n:'Jaume Alberto Cuéllar Mendoza',t:'CD Arenteiro',m:7,cr:11,fr:60,qr:81,tr:89,rr:89,rtr:36},
+      {n:'Joel Jorquera Romero',t:'Real Murcia CF',m:10,cr:46,fr:38,qr:33,tr:27,rr:34,rtr:94},
+      {n:'Jorge González Méndez',t:'CD Lugo',m:6,cr:62,fr:14,qr:50,tr:23,rr:20,rtr:35},
+      {n:'Josep Miquel Fernández Codina',t:'SD Ponferradina',m:5,cr:10,fr:2,qr:63,tr:80,rr:94,rtr:70},
+      {n:'José Alejandro de León Gómez',t:'Barakaldo CF',m:7,cr:69,fr:34,qr:15,tr:86,rr:96,rtr:77},
+      {n:'José Pascual Alba Seva',t:'Racing Club de Ferrol',m:10,cr:25,fr:61,qr:31,tr:9,rr:18,rtr:16},
+      {n:'José Pascual Alba Seva',t:'Racing Club de Ferrol',m:5,cr:62,fr:2,qr:50,tr:89,rr:22,rtr:56},
+      {n:'João Pedro Moreira Resende',t:'Pontevedra CF',m:5,cr:38,fr:71,qr:87,tr:98,rr:98,rtr:81},
+      {n:'Júnior Wakalibille Lago',t:'CD Lugo',m:6,cr:40,fr:42,qr:64,tr:40,rr:39,rtr:65},
+      {n:'Miguel Berlanga Petisco',t:'CP Cacereño',m:7,cr:16,fr:23,qr:68,tr:54,rr:95,rtr:61},
+      {n:'Miguel Berlanga Petisco',t:'CP Cacereño',m:14,cr:18,fr:8,qr:62,tr:69,rr:82,rtr:91},
+      {n:'Noel López de la Fuente',t:'CD Tenerife',m:5,cr:59,fr:33,qr:53,tr:60,rr:62,rtr:51},
+      {n:'Omar  Ouhdadi',t:'Ourense CF',m:13,cr:43,fr:61,qr:50,tr:44,rr:50,rtr:50},
+      {n:'Oscar Marcos',t:'Real Club Celta de Vigo B',m:8,cr:49,fr:84,qr:89,tr:46,rr:92,rtr:59},
+      {n:'Oscar Marcos',t:'Real Club Celta de Vigo B',m:5,cr:32,fr:57,qr:58,tr:49,rr:66,rtr:41},
+      {n:'Pablo  Muñoz Crespo',t:'CD Guadalajara',m:6,cr:78,fr:47,qr:85,tr:74,rr:31,rtr:85},
+      {n:'Pedro Benito Ponomar',t:'Real Murcia CF',m:16,cr:53,fr:79,qr:29,tr:70,rr:52,rtr:72},
+      {n:'Pol Fortuny Aubareda',t:'Real Madrid Castilla',m:6,cr:8,fr:72,qr:95,tr:6,rr:36,rtr:22},
+      {n:'Quicala Bari',t:'Real Avilés Club de Fútbol',m:12,cr:94,fr:55,qr:34,tr:34,rr:10,rtr:84},
+      {n:'Raúl Hernández Grados',t:'Real Avilés Club de Fútbol',m:8,cr:21,fr:28,qr:56,tr:40,rr:59,rtr:52},
+      {n:'Raúl Hernández Grados',t:'Real Avilés Club de Fútbol',m:9,cr:13,fr:39,qr:84,tr:54,rr:44,rtr:30},
+      {n:'Rubén Valdera Martínez',t:'CP Cacereño',m:5,cr:22,fr:31,qr:50,tr:60,rr:46,rtr:43},
+      {n:'Rául Dacosta Cerqueda',t:'Racing Club de Ferrol',m:12,cr:61,fr:75,qr:60,tr:40,rr:63,rtr:67},
+      {n:'Saliou Mandiang',t:'Barakaldo CF',m:11,cr:87,fr:30,qr:19,tr:93,rr:85,rtr:41},
+      {n:'Unax Alvarez Oyanguren',t:'CD Guadalajara',m:7,cr:54,fr:96,qr:24,tr:35,rr:5,rtr:99},
+      {n:'Valentín Gómez Mirón',t:'Talavera CF',m:6,cr:57,fr:32,qr:47,tr:27,rr:10,rtr:63},
+      {n:'Victor Pastrana Carrasco',t:'CD Lugo',m:11,cr:21,fr:51,qr:55,tr:8,rr:21,rtr:12},
+      {n:'Álvaro Bustos Sandoval',t:'Real Murcia CF',m:5,cr:39,fr:29,qr:54,tr:73,rr:59,rtr:36},
+      {n:'Álvaro Gómez Martín',t:'CD Unionistas de Salamanca CF',m:8,cr:26,fr:36,qr:13,tr:23,rr:55,rtr:38},
+      {n:'Álvaro Juan De la Torre Sánchez',t:'Racing Club de Ferrol',m:13,cr:66,fr:7,qr:36,tr:21,rr:73,rtr:51},
+      {n:'Álvaro Juan De la Torre Sánchez',t:'Racing Club de Ferrol',m:6,cr:75,fr:30,qr:22,tr:49,rr:47,rtr:63},
+      {n:'Ángel Arcos Cadilla',t:'Real Club Celta de Vigo B',m:8,cr:74,fr:16,qr:79,tr:60,rr:39,rtr:44},
+      {n:'Íñigo Muñoz Cuevas',t:'Barakaldo CF',m:5,cr:26,fr:30,qr:29,tr:49,rr:37,rtr:56},
+      {n:'Íñigo Muñoz Cuevas',t:'Barakaldo CF',m:6,cr:27,fr:34,qr:42,tr:63,rr:32,rtr:42},
+      {n:'Óscar Castellano Zamora',t:'Mérida Asociación Deportiva',m:23,cr:81,fr:33,qr:94,tr:62,rr:83,rtr:98},
+    ],
+    'Center Forward': [
+      {n:'Aitor Galarza Altuna',t:'Barakaldo CF',m:21,cr:56,fr:30,qr:48,tr:97,rr:91,rtr:40},
+      {n:'Aitor Uzkudun Arruti',t:'Real Avilés Club de Fútbol',m:8,cr:3,fr:85,qr:30,tr:67,rr:79,rtr:81},
+      {n:'Alejandro Comparada González',t:'Pontevedra CF',m:14,cr:34,fr:45,qr:37,tr:54,rr:52,rtr:37},
+      {n:'Alexander Valiño Navasal',t:'Barakaldo CF',m:5,cr:54,fr:56,qr:13,tr:33,rr:31,rtr:53},
+      {n:'Amin Abaradan Bouzaig',t:'Ourense CF',m:12,cr:66,fr:72,qr:41,tr:38,rr:34,rtr:70},
+      {n:'Antón Escobar Tapias',t:'Racing Club de Ferrol',m:12,cr:43,fr:83,qr:26,tr:26,rr:31,rtr:88},
+      {n:'Bernard Somuah',t:'Real Club Celta de Vigo B',m:8,cr:62,fr:55,qr:22,tr:26,rr:7,rtr:63},
+      {n:'Borja Vázquez Doña',t:'SD Ponferradina',m:13,cr:100,fr:20,qr:84,tr:90,rr:55,rtr:66},
+      {n:'Brais Abelenda Negreira',t:'Pontevedra CF',m:9,cr:52,fr:95,qr:94,tr:58,rr:44,rtr:83},
+      {n:'César Gómez Díaz',t:'CP Cacereño',m:5,cr:52,fr:71,qr:40,tr:13,rr:14,rtr:34},
+      {n:'Daniel González Flores',t:'CA Osasuna B',m:7,cr:26,fr:35,qr:71,tr:66,rr:33,rtr:93},
+      {n:'David Amigo Calamardo',t:'CD Guadalajara',m:9,cr:90,fr:74,qr:45,tr:47,rr:10,rtr:58},
+      {n:'David Flakus Bosilj',t:'Real Murcia CF',m:24,cr:79,fr:58,qr:19,tr:43,rr:16,rtr:43},
+      {n:'Diego Gómez Muñoz',t:'CP Cacereño',m:18,cr:83,fr:65,qr:70,tr:69,rr:53,rtr:72},
+      {n:'Ekain Zenitagoia Arana',t:'Real Murcia CF',m:6,cr:29,fr:70,qr:87,tr:34,rr:57,rtr:30},
+      {n:'Elijah Gift Izobodo John',t:'Bilbao Athletic',m:5,cr:77,fr:53,qr:37,tr:91,rr:44,rtr:30},
+      {n:'Enric Gallego Puigsech',t:'CD Tenerife',m:25,cr:17,fr:23,qr:72,tr:50,rr:45,rtr:59},
+      {n:'Gastón Joaquín Valles Velázquez',t:'CD Unionistas de Salamanca CF',m:9,cr:21,fr:30,qr:34,tr:65,rr:77,rtr:57},
+      {n:'Gastón Nicolás Reniero',t:'CD Lugo',m:15,cr:38,fr:64,qr:64,tr:52,rr:60,rtr:51},
+      {n:'Gonzalo Ignacio Di Renzo',t:'Talavera CF',m:9,cr:42,fr:78,qr:21,tr:17,rr:90,rtr:19},
+      {n:'Ibai Sanz Bancalero',t:'Bilbao Athletic',m:17,cr:63,fr:47,qr:50,tr:98,rr:26,rtr:36},
+      {n:'Iker Unzueta Arregui',t:'CD Lugo',m:19,cr:51,fr:49,qr:66,tr:30,rr:48,rtr:22},
+      {n:'Iván Fernández Tamayo',t:'CP Cacereño',m:5,cr:87,fr:40,qr:85,tr:90,rr:100,rtr:91},
+      {n:'Jacobo Ortega Conde',t:'Real Madrid Castilla',m:5,cr:46,fr:55,qr:15,tr:75,rr:49,rtr:53},
+      {n:'Javier Carbonell Piserra',t:'Zamora CF',m:9,cr:97,fr:69,qr:79,tr:100,rr:95,rtr:78},
+      {n:'Javier Eslava Carrasco',t:'Zamora CF',m:14,cr:15,fr:29,qr:56,tr:54,rr:63,rtr:65},
+      {n:'Jesus Vizcay Hurtado',t:'Bilbao Athletic',m:5,cr:9,fr:53,qr:32,tr:81,rr:91,rtr:46},
+      {n:'Jesús de Miguel Alameda',t:'CD Tenerife',m:16,cr:59,fr:41,qr:97,tr:64,rr:84,rtr:71},
+      {n:'Joshua Farrell',t:'Zamora CF',m:5,cr:8,fr:17,qr:43,tr:34,rr:97,rtr:35},
+      {n:'José Luis Cortés Sen',t:'SD Ponferradina',m:14,cr:92,fr:79,qr:24,tr:22,rr:8,rtr:74},
+      {n:'João Pedro Moreira Resende',t:'Pontevedra CF',m:5,cr:67,fr:15,qr:51,tr:38,rr:52,rtr:57},
+      {n:'Juan Artola Canales',t:'Mérida Asociación Deportiva',m:5,cr:9,fr:15,qr:41,tr:54,rr:52,rtr:47},
+      {n:'Lorenzo Zúñiga Owono',t:'Real Madrid Castilla',m:16,cr:41,fr:10,qr:29,tr:3,rr:29,rtr:7},
+      {n:'Marcos Moreno Gómez',t:'Talavera CF',m:9,cr:48,fr:7,qr:67,tr:80,rr:86,rtr:79},
+      {n:'Mario Losada Laguna',t:'Zamora CF',m:12,cr:19,fr:8,qr:31,tr:56,rr:50,rtr:50},
+      {n:'Martín Ochoa Ruiz',t:'CD Arenteiro',m:12,cr:64,fr:22,qr:1,tr:34,rr:6,rtr:77},
+      {n:'Miguel Llorente Cubo',t:'Atlético Madrid B',m:13,cr:53,fr:6,qr:14,tr:8,rr:21,rtr:2},
+      {n:'Omar Janneh Susso',t:'Atlético Madrid B',m:10,cr:10,fr:77,qr:3,tr:34,rr:35,rtr:8},
+      {n:'Oscar Marcos',t:'Real Club Celta de Vigo B',m:5,cr:80,fr:80,qr:98,tr:70,rr:64,rtr:31},
+      {n:'Pau Ferrer Besalduch',t:'SD Ponferradina',m:6,cr:7,fr:53,qr:7,tr:98,rr:83,rtr:41},
+      {n:'Rachad Fettal Dhimi',t:'Real Madrid Castilla',m:5,cr:19,fr:42,qr:11,tr:29,rr:38,rtr:47},
+      {n:'Rafael Nicolás Llorente Sanz',t:'Atlético Madrid B',m:9,cr:84,fr:93,qr:62,tr:5,rr:13,rtr:56},
+      {n:'Raúl Rubio Romero',t:'Real Avilés Club de Fútbol',m:15,cr:74,fr:43,qr:5,tr:7,rr:2,rtr:28},
+      {n:'Sabin Merino Zuloaga',t:'Barakaldo CF',m:6,cr:27,fr:1,qr:86,tr:17,rr:38,rtr:69},
+      {n:'Salifo  Caropitche',t:'CD Guadalajara',m:10,cr:85,fr:91,qr:8,tr:28,rr:14,rtr:73},
+      {n:'Sergio Benito Crujera',t:'SD Ponferradina',m:9,cr:67,fr:87,qr:6,tr:62,rr:92,rtr:16},
+      {n:'Sigurdur Bjartur Hallsson',t:'Mérida Asociación Deportiva',m:8,cr:78,fr:67,qr:52,tr:2,rr:47,rtr:3},
+      {n:'Víctor García Mingo',t:'CD Arenteiro',m:5,cr:30,fr:5,qr:20,tr:90,rr:3,rtr:5},
+      {n:'Álvaro García Arana',t:'Mérida Asociación Deportiva',m:17,cr:55,fr:37,qr:53,tr:45,rr:41,rtr:97},
+      {n:'Álvaro Giménez Candela',t:'Racing Club de Ferrol',m:22,cr:9,fr:63,qr:49,tr:59,rr:71,rtr:60},
+      {n:'Álvaro Marín Sesma',t:'Real Club Celta de Vigo B',m:18,cr:28,fr:2,qr:55,tr:81,rr:70,rtr:10},
+      {n:'Álvaro Santamaría Arenas',t:'Real Avilés Club de Fútbol',m:18,cr:94,fr:98,qr:93,tr:41,rr:62,rtr:67},
+    ],
+  };
+
 
   // Grupos de métricas por tab
   const _OBE_TAB = {
@@ -12585,10 +12972,11 @@
                 const act = _profilePossView===vk;
                 return `<button onclick="_profilePossView='${vk}';openPlayerProfile(${p.d})" style="padding:5px 16px;border-radius:6px;border:1px solid ${act?col:'var(--border)'};background:${act?col+'22':'var(--bg2)'};color:${act?col:'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${act?700:500};transition:all .15s">${lbl}</button>`;
               };
-              const _pTogBar2 = '<div style="display:flex;gap:8px;margin-bottom:16px">' +
+              const _pTogBar2 = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">' +
                 _pTog2('tabla','📋 Tabla','var(--accent)') +
                 _pTog2('radar','◎ Radar','#58a6ff') +
                 _pTog2('scatter','📈 Dispersión','#3fb950') +
+                _pTog2('comparar','⚖️ Comparar','#d2a8ff') +
                 '</div>';
 
               const _pPosSelect = _possPD.length > 1 ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' +
@@ -12646,15 +13034,6 @@
                 }).join('');
                 const _rdots = _angs.map((a,i) => { const d=_pdat[_possMets[i].k]; if(!d||d.r==null)return ''; const r2=_Rv*d.r/100; return `<circle cx="${(r2*Math.cos(a)).toFixed(1)}" cy="${(r2*Math.sin(a)).toFixed(1)}" r="4" fill="${_possMets[i].col}" stroke="#0d1117" stroke-width="2"/>`; }).join('');
                 const _pctLbls=[25,50,75].map(pct=>{const r2=_Rv*pct/100;return `<text x="3" y="${(-r2+3).toFixed(1)}" font-size="7" fill="${pct===50?'rgba(255,255,255,0.4)':'rgba(255,255,255,0.2)'}" text-anchor="start">${pct}</text>`;}).join('');
-                // Polígonos de compañeros en la misma posición SkillCorner
-                const _sqPaths = Object.entries(_POSS_DATA).map(([k,ents]) => {
-                  if(k===_runKey||!ents.length) return '';
-                  const e=ents.find(e2=>e2.pos===_pdat.pos)||null;
-                  if(!e) return '';
-                  const path=_angs.map((a,i)=>{const d=e[_possMets[i].k];const r2=d&&d.r!=null?_Rv*d.r/100:0;return(i===0?'M':'L')+(r2*Math.cos(a)).toFixed(1)+','+(r2*Math.sin(a)).toFixed(1);}).join(' ')+' Z';
-                  return `<path d="${path}" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>`;
-                }).join('');
-                const _hasSqComp=_sqPaths.replace(/\s/g,'').length>0;
                 const _radarSvg = `<svg viewBox="-148 -148 296 296" style="width:100%;max-width:360px;display:block;margin:0 auto">
                   <defs><filter id="prglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
                   <rect x="-148" y="-148" width="296" height="296" fill="#0d1117" rx="10"/>
@@ -12663,22 +13042,17 @@
                   <path d="${_hxP(50)}"  fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="4,3"/>
                   <path d="${_hxP(25)}"  fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
                   ${_axLns}
-                  ${_sqPaths}
                   <path d="${_plrP}" fill="rgba(200,169,110,0.15)" stroke="#c8a96e" stroke-width="2.5" filter="url(#prglow)"/>
                   ${_pctLbls}
                   ${_rdots}
                   ${_radarLbls}
                 </svg>`;
-                const _rdrLegend = _hasSqComp
-                  ? `<div style="display:flex;gap:18px;margin-top:9px;justify-content:center;font-size:10px;color:var(--text3);align-items:center">
-                      <span style="display:flex;align-items:center;gap:5px"><svg width="20" height="8" style="overflow:visible"><line x1="0" y1="4" x2="20" y2="4" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/></svg>Compañero (${_pPosMap[_pdat.pos]||_pdat.pos})</span>
-                      <span style="display:flex;align-items:center;gap:5px"><svg width="20" height="8" style="overflow:visible"><line x1="0" y1="4" x2="20" y2="4" stroke="#c8a96e" stroke-width="2.5"/></svg>${p.name.split(' ').slice(-1)[0]}</span>
-                    </div>` : '';
-                return _pTogBar2 + _pPosSelect + _radarSvg + _rdrLegend +
+                return _pTogBar2 + _pPosSelect + _radarSvg +
                   `<div style="font-size:9px;color:var(--text3);margin-top:10px;text-align:center">SkillCorner · 1ª RFEF 25/26 · percentil vs. misma posición · ${_pdat.m} partidos</div>`;
               }
 
               // ── DISPERSIÓN ───────────────────────────────────────────────────────
+              if (_profilePossView === 'scatter') {
               const _pScPresets = [
                 {lbl:'Conducción',  x:'carries',  y:'fwd'},
                 {lbl:'Pase rápido', x:'qpasses',  y:'retained'},
@@ -12804,6 +13178,86 @@
                   <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f85149;margin-right:3px;vertical-align:middle"></span>Bajo en ambos</span>
                 </div>` +
                 _scDesc;
+              }
+
+              // ── COMPARAR CON JUGADORES DE LIGA ──────────────────────────────────
+              const _ligaPos = _pdat.pos;
+              const _ligaArr = (_LIGA_POSS||{})[_ligaPos] || [];
+              // Resetear selección si cambia posición
+              if (_profilePossCompPos !== _ligaPos) { _profilePossCompIdxs=[]; _profilePossCompPos=_ligaPos; _profilePossCompTeam=''; }
+              if (_profilePossView === 'comparar') {
+                const _compCols = ['#58a6ff','#3fb950','#d2a8ff'];
+                const _compFill = ['rgba(88,166,255,0.08)','rgba(63,185,80,0.08)','rgba(210,168,255,0.08)'];
+                const _Rc=100, _Nc=6;
+                const _angC = _possMets.map((_,i) => i*2*Math.PI/_Nc - Math.PI/2);
+                const _hxPC = pct => { const r2=_Rc*pct/100; return _angC.map((a,i)=>(i===0?'M':'L')+(r2*Math.cos(a)).toFixed(1)+','+(r2*Math.sin(a)).toFixed(1)).join(' ')+' Z'; };
+                // Polígono del jugador actual
+                const _plrPC = _angC.map((a,i)=>{ const d=_pdat[_possMets[i].k]; const r2=d&&d.r!=null?_Rc*d.r/100:0; return(i===0?'M':'L')+(r2*Math.cos(a)).toFixed(1)+','+(r2*Math.sin(a)).toFixed(1); }).join(' ')+' Z';
+                // Polígonos de comparados
+                const _selEntC = _profilePossCompIdxs.map(i=>_ligaArr[i]).filter(Boolean);
+                const _compPaths = _selEntC.map((ent,si) => {
+                  const ranks=[ent.cr,ent.fr,ent.qr,ent.tr,ent.rr,ent.rtr];
+                  const path=_angC.map((a,i)=>{const r2=ranks[i]!=null?_Rc*ranks[i]/100:0;return(i===0?'M':'L')+(r2*Math.cos(a)).toFixed(1)+','+(r2*Math.sin(a)).toFixed(1);}).join(' ')+' Z';
+                  return `<path d="${path}" fill="${_compFill[si]}" stroke="${_compCols[si]}" stroke-width="2"/>`;
+                }).join('');
+                // Labels ejes (neutros en esta vista)
+                const _cAxLns = _angC.map(a=>`<line x1="0" y1="0" x2="${(_Rc*Math.cos(a)).toFixed(1)}" y2="${(_Rc*Math.sin(a)).toFixed(1)}" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>`).join('');
+                const _cLbls = _angC.map((a,i)=>{ const rl=_Rc+28; const lx=(rl*Math.cos(a)).toFixed(1); const ly=(rl*Math.sin(a)).toFixed(1); const wds=_possMets[i].short.split(' '); const lns=wds.length<=2?[_possMets[i].short]:[wds.slice(0,2).join(' '),wds.slice(2).join(' ')]; return lns.map((ln,li)=>`<text x="${lx}" y="${(parseFloat(ly)+(li-lns.length/2+0.5)*11).toFixed(1)}" font-size="9.5" fill="var(--text3)" text-anchor="middle" dominant-baseline="middle" font-weight="500">${ln}</text>`).join(''); }).join('');
+                const _cPctLbls=[25,50,75].map(pct=>{const r2=_Rc*pct/100;return`<text x="3" y="${(-r2+3).toFixed(1)}" font-size="7" fill="${pct===50?'rgba(255,255,255,0.4)':'rgba(255,255,255,0.2)'}" text-anchor="start">${pct}</text>`;}).join('');
+                const _cDots = _angC.map((a,i)=>{ const d=_pdat[_possMets[i].k]; if(!d||d.r==null)return''; const r2=_Rc*d.r/100; return`<circle cx="${(r2*Math.cos(a)).toFixed(1)}" cy="${(r2*Math.sin(a)).toFixed(1)}" r="4" fill="#c8a96e" stroke="#0d1117" stroke-width="2"/>`;}).join('');
+                const _cRadar=`<svg viewBox="-148 -148 296 296" style="width:100%;max-width:360px;display:block;margin:0 auto">
+                  <defs><filter id="pcglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                  <rect x="-148" y="-148" width="296" height="296" fill="#0d1117" rx="10"/>
+                  <path d="${_hxPC(100)}" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                  <path d="${_hxPC(75)}"  fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+                  <path d="${_hxPC(50)}"  fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="4,3"/>
+                  <path d="${_hxPC(25)}"  fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+                  ${_cAxLns}${_compPaths}
+                  <path d="${_plrPC}" fill="rgba(200,169,110,0.12)" stroke="#c8a96e" stroke-width="2.5" filter="url(#pcglow)"/>
+                  ${_cPctLbls}${_cDots}${_cLbls}
+                </svg>`;
+                // Leyenda
+                const _cLegend = `<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;justify-content:center;font-size:10px;align-items:center">
+                  <span style="display:flex;align-items:center;gap:4px"><svg width="18" height="8" style="overflow:visible"><line x1="0" y1="4" x2="18" y2="4" stroke="#c8a96e" stroke-width="2.5"/></svg><strong style="color:#c8a96e">${p.name.split(' ').slice(-1)[0]}</strong></span>
+                  ${_selEntC.map((e,si)=>`<span style="display:flex;align-items:center;gap:4px"><svg width="18" height="8" style="overflow:visible"><line x1="0" y1="4" x2="18" y2="4" stroke="${_compCols[si]}" stroke-width="2"/></svg><span style="color:${_compCols[si]}">${e.n.split(' ').slice(-1)[0]}</span></span>`).join('')}
+                </div>`;
+                // Chips de jugadores seleccionados
+                const _cChips = _profilePossCompIdxs.length > 0
+                  ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">` +
+                    _profilePossCompIdxs.map((idx,si)=>{ const e=_ligaArr[idx]; if(!e)return''; const col=_compCols[si]; return `<span style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:16px;border:1px solid ${col};background:${col}18;font-size:11px"><span style="color:${col};font-weight:600">${e.n.split(' ').slice(-1)[0]}</span><span style="color:var(--text3);font-size:10px"> · ${e.t.split(' ').slice(-1)[0]}</span><button onclick="_profilePossCompIdxs=_profilePossCompIdxs.filter(x=>x!==${idx});openPlayerProfile(${p.d})" style="background:none;border:none;color:${col};cursor:pointer;font-size:13px;padding:0;margin-left:2px;line-height:1">×</button></span>`; }).join('') +
+                    `<button onclick="_profilePossCompIdxs=[];openPlayerProfile(${p.d})" style="padding:4px 10px;border-radius:16px;border:1px solid var(--border);background:var(--bg2);color:var(--text3);font-size:10px;cursor:pointer">Borrar todo</button></div>`
+                  : '';
+                // Filtro por equipo
+                const _allTeams = [...new Set(_ligaArr.map(e=>e.t))].sort();
+                const _teamPills = `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+                  <button onclick="_profilePossCompTeam='';openPlayerProfile(${p.d})" style="padding:3px 9px;border-radius:12px;border:1px solid ${!_profilePossCompTeam?'#d2a8ff':'var(--border)'};background:${!_profilePossCompTeam?'rgba(210,168,255,0.18)':'var(--bg2)'};color:${!_profilePossCompTeam?'#d2a8ff':'var(--text3)'};font-size:9px;cursor:pointer">Todos</button>
+                  ${_allTeams.map(t=>{ const act=_profilePossCompTeam===t; return `<button onclick="_profilePossCompTeam='${t.replace(/'/g,"\\'")}';openPlayerProfile(${p.d})" style="padding:3px 9px;border-radius:12px;border:1px solid ${act?'#d2a8ff':'var(--border)'};background:${act?'rgba(210,168,255,0.18)':'var(--bg2)'};color:${act?'#d2a8ff':'var(--text3)'};font-size:9px;cursor:pointer">${t.replace('SD ','').replace('CD ','').replace('CF ','').replace('Club de Fútbol','').replace('Racing Club de','Racing').trim()}</button>`; }).join('')}
+                </div>`;
+                // Lista de jugadores disponibles
+                const _avail = _ligaArr.map((e,i)=>({e,i}))
+                  .filter(({e,i}) => !_profilePossCompIdxs.includes(i) && e.m >= 5
+                    && (!_profilePossCompTeam || e.t === _profilePossCompTeam));
+                const _canAdd = _profilePossCompIdxs.length < 3;
+                const _listH = _avail.map(({e,i}) => {
+                  const comb=((e.cr||0)+(e.fr||0)+(e.qr||0)+(e.tr||0)+(e.rr||0)+(e.rtr||0))/6;
+                  const cc=comb>=75?'#3fb950':comb>=50?'#c8a96e':comb>=25?'#f0883e':'#f85149';
+                  return `<div onclick="${_canAdd?`_profilePossCompIdxs.push(${i});openPlayerProfile(${p.d})`:'void(0)'}" style="display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:${_canAdd?'pointer':'default'};border-bottom:1px solid rgba(255,255,255,0.04);transition:background .1s" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background=''">
+                    <span style="font-size:11px;color:var(--text2);flex:1">${e.n}</span>
+                    <span style="font-size:10px;color:var(--text3)">${e.t.replace('SD ','').replace('CD ','').replace('Real ','').trim()}</span>
+                    <span style="font-size:10px;color:var(--text3);min-width:20px;text-align:right">${e.m}p</span>
+                    <span style="font-size:9px;font-weight:700;color:${cc};min-width:22px;text-align:right">P${Math.round(comb)}</span>
+                    ${_canAdd?`<span style="color:var(--text3);font-size:11px">+</span>`:''}
+                  </div>`;
+                }).join('');
+                return _pTogBar2 + _pPosSelect +
+                  (_profilePossCompIdxs.length===0?`<div style="font-size:11px;color:var(--text3);margin-bottom:12px">Selecciona hasta 3 jugadores de la liga para compararlos en el radar. Posición: <strong style="color:var(--text2)">${_pPosMap[_ligaPos]||_ligaPos}</strong> (${_ligaArr.length} jugadores)</div>`:'') +
+                  _cChips + _cRadar + _cLegend +
+                  `<div style="margin-top:14px;margin-bottom:6px;font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Añadir jugador</div>` +
+                  _teamPills +
+                  `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:260px;overflow-y:auto">${_listH||'<div style="padding:14px;text-align:center;color:var(--text3);font-size:11px">Sin jugadores disponibles</div>'}</div>` +
+                  `<div style="font-size:9px;color:var(--text3);margin-top:8px">SkillCorner · 1ª RFEF 25/26 · percentil vs. misma posición</div>`;
+              }
+
             })() : (() => {
               const keys   = _OBE_TAB[_profileTab] || [];
               const pCol   = p => p >= 75 ? '#3fb950' : p >= 50 ? '#c8a96e' : p >= 25 ? '#f0883e' : '#f85149';
