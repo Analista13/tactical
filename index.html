@@ -11657,10 +11657,11 @@
   let _profilePasesScatterY = 'pct_ok';
   let _profilePasesScatterPreset = 0;
   let _profilePasesScatterCustom = false;
-  let _profilePossView = 'bars';     // 'bars' | 'radar' | 'scatter'
+  let _profilePossView = 'tabla';    // 'tabla' | 'radar' | 'scatter'
   let _profilePossScatterX = 'carries';
   let _profilePossScatterY = 'retained';
   let _profilePossPosIdx = 0;
+  let _profilePossScatterPreset = 0;
 
   // Mapeo nombre plantilla → clave _OBE_DATA (solo si difieren)
   const _OBE_KEY_MAP = {
@@ -11804,7 +11805,7 @@
               ].map(([id,lbl]) => {
                 const act = _profileTab === id;
                 const tabCol = id==='carreras' ? '#f0883e' : id==='pases' ? '#58a6ff' : id==='posesion' ? '#3fb950' : 'var(--accent)';
-                return `<button onclick="_profileTab='${id}';_profileObeView='tabla';_profileRunView='tabla';_profilePasesView='tabla';_profilePossView='bars';_profilePossPosIdx=0;openPlayerProfile(${p.d})"
+                return `<button onclick="_profileTab='${id}';_profileObeView='tabla';_profileRunView='tabla';_profilePasesView='tabla';_profilePossView='tabla';_profilePossPosIdx=0;openPlayerProfile(${p.d})"
                   style="background:transparent;border:none;border-bottom:2px solid ${act?tabCol:'transparent'};
                          color:${act?tabCol:'var(--text2)'};padding:8px 18px;
                          font-family:'DM Sans',sans-serif;font-size:13px;font-weight:${act?700:500};
@@ -12570,22 +12571,22 @@
               const _pdat = _possPD[_profilePossPosIdx];
 
               const _possMets = [
-                {k:'carries',  lbl:'Conducciones >8m',    short:'Cond. >8m',  u:'p30',col:'#f0883e'},
-                {k:'fwd',      lbl:'Momentos adelante',   short:'Mom. ad.',   u:'p30',col:'#58a6ff'},
-                {k:'qpasses',  lbl:'Pases rápidos',       short:'Pases rap.', u:'p30',col:'#c8a96e'},
-                {k:'tspace',   lbl:'% Recep. esp. ajust.',short:'% Esp.aj.',  u:'%',  col:'#3fb950'},
-                {k:'retained', lbl:'% Retención',         short:'% Reten.',   u:'%',  col:'#d2a8ff'},
-                {k:'rec_tight',lbl:'Rec. esp. ajust.',    short:'Rec.aj.',    u:'p30',col:'#79c0ff'},
+                {k:'carries',  lbl:'Conducciones >8m',           short:'Cond. >8m',       u:'p30', col:'#f0883e'},
+                {k:'fwd',      lbl:'Momentos adelante',          short:'Mom. adelante',   u:'p30', col:'#58a6ff'},
+                {k:'qpasses',  lbl:'Pases rápidos',              short:'Pases rápidos',   u:'p30', col:'#c8a96e'},
+                {k:'tspace',   lbl:'% Recepciones esp. ajustado',short:'% Esp. ajustado', u:'%',   col:'#3fb950'},
+                {k:'retained', lbl:'% Retención bajo presión',   short:'% Retención',     u:'%',   col:'#d2a8ff'},
+                {k:'rec_tight',lbl:'Recepciones esp. ajustado',  short:'Rec. esp. aj.',   u:'p30', col:'#79c0ff'},
               ];
               const _pPC = r => r==null?'var(--text3)':r>=75?'#3fb950':r>=50?'#c8a96e':r>=25?'#f0883e':'#f85149';
               const _pPosMap = {'Central Defender':'DC','Full Back':'Lateral','Midfield':'MC','Wide Attacker':'Extremo','Center Forward':'Delantero'};
 
               const _pTog2 = (vk,lbl,col) => {
                 const act = _profilePossView===vk;
-                return `<button onclick="_profilePossView='${vk}';openPlayerProfile(${p.d})" style="padding:5px 14px;border-radius:6px;border:1px solid ${act?col:'var(--border)'};background:${act?col+'22':'var(--bg2)'};color:${act?col:'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${act?700:500};transition:all .15s">${lbl}</button>`;
+                return `<button onclick="_profilePossView='${vk}';openPlayerProfile(${p.d})" style="padding:5px 16px;border-radius:6px;border:1px solid ${act?col:'var(--border)'};background:${act?col+'22':'var(--bg2)'};color:${act?col:'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${act?700:500};transition:all .15s">${lbl}</button>`;
               };
               const _pTogBar2 = '<div style="display:flex;gap:8px;margin-bottom:16px">' +
-                _pTog2('bars','📊 Barras','#c8a96e') +
+                _pTog2('tabla','📋 Tabla','var(--accent)') +
                 _pTog2('radar','◎ Radar','#58a6ff') +
                 _pTog2('scatter','📈 Dispersión','#3fb950') +
                 '</div>';
@@ -12594,92 +12595,168 @@
                 _possPD.map((e,i) => { const act=i===_profilePossPosIdx; return `<button onclick="_profilePossPosIdx=${i};openPlayerProfile(${p.d})" style="padding:3px 10px;border-radius:16px;border:1px solid ${act?'#c8a96e':'var(--border)'};background:${act?'rgba(200,169,110,0.18)':'var(--bg2)'};color:${act?'#c8a96e':'var(--text3)'};font-size:10px;cursor:pointer">${_pPosMap[e.pos]||e.pos} <span style="opacity:0.6">${e.m}p</span></button>`; }).join('') +
                 '</div>' : '';
 
-              const _pFoot = `<div style="font-size:9px;color:var(--text3);margin-top:12px">SkillCorner · 1ª RFEF 25/26 · percentil vs. misma posición · ${_pdat.m} partidos</div>`;
-
-              // ── BARRAS ──────────────────────────────────────────────────────────
-              if (_profilePossView === 'bars') {
-                const _bars = _possMets.map(m => {
+              // ── TABLA ─────────────────────────────────────────────────────────────
+              if (_profilePossView === 'tabla') {
+                const _pCol2 = r => r>=75?'#3fb950':r>=50?'#c8a96e':r>=25?'#f0883e':'#f85149';
+                const _rows2 = _possMets.map(m => {
                   const d = _pdat[m.k];
-                  if (!d || d.r==null) return `<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:11px;color:var(--text2)">${m.lbl}</span><span style="font-size:10px;color:var(--text3)">—</span></div><div style="height:24px;border-radius:5px;background:var(--bg3)"></div></div>`;
-                  const col2 = _pPC(d.r);
-                  const val2 = m.u==='%' ? d.v.toFixed(1)+'%' : d.v.toFixed(2);
-                  return `<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:11px;color:var(--text2)">${m.lbl}</span><span style="font-size:10px;color:var(--text3)">${val2}</span></div><div style="position:relative;height:24px;border-radius:5px;background:var(--bg3);overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:${d.r}%;background:${col2};opacity:0.22;border-radius:5px"></div><div style="position:absolute;inset:0;display:flex;align-items:center;padding:0 10px"><span style="font-size:12px;font-weight:800;color:${col2}">P${d.r}</span></div></div></div>`;
+                  if (!d || d.r==null) return `<tr><td style="padding:9px 12px;font-size:12px;color:var(--text2);border-bottom:1px solid rgba(255,255,255,0.04);white-space:nowrap">${m.lbl}</td><td style="padding:6px 12px;border-bottom:1px solid rgba(255,255,255,0.04)"><div style="position:relative;height:28px;border-radius:5px;background:var(--bg3);overflow:hidden"><div style="position:absolute;inset:0;display:flex;align-items:center;padding:0 10px"><span style="font-size:11px;color:var(--text3)">—</span></div></div></td></tr>`;
+                  const col2 = _pCol2(d.r);
+                  const valStr = m.u==='%' ? d.v.toFixed(1)+'%' : d.v.toFixed(2)+' /30min';
+                  return `<tr onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background=''">
+                    <td style="padding:9px 12px;font-size:12px;color:var(--text2);border-bottom:1px solid rgba(255,255,255,0.04);white-space:nowrap">${m.lbl}</td>
+                    <td style="padding:6px 12px;border-bottom:1px solid rgba(255,255,255,0.04);min-width:200px">
+                      <div style="position:relative;height:28px;border-radius:5px;background:var(--bg3);overflow:hidden">
+                        <div style="position:absolute;left:0;top:0;bottom:0;width:${d.r}%;background:${col2};opacity:0.25;border-radius:5px"></div>
+                        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px">
+                          <span style="font-size:13px;font-weight:800;color:${col2}">P${d.r}</span>
+                          <span style="font-size:11px;color:var(--text3)">${valStr}</span>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>`;
                 }).join('');
-                return _pTogBar2 + _pPosSelect + _bars + _pFoot;
+                return _pTogBar2 + _pPosSelect +
+                  `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+                    <table style="width:100%;border-collapse:collapse">
+                      <thead><tr style="border-bottom:1px solid var(--border);background:var(--bg3)">
+                        <th style="padding:7px 12px;font-size:9px;color:var(--text3);text-align:left;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Métrica</th>
+                        <th style="padding:7px 12px;font-size:9px;color:var(--text3);text-align:left;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Percentil liga</th>
+                      </tr></thead>
+                      <tbody>${_rows2}</tbody>
+                    </table>
+                    <div style="padding:8px 12px;font-size:9px;color:var(--text3);border-top:1px solid var(--border)">SkillCorner · 1ª RFEF 25/26 · percentil vs. misma posición · ${_pdat.m} partidos</div>
+                  </div>`;
               }
 
               // ── RADAR ────────────────────────────────────────────────────────────
               if (_profilePossView === 'radar') {
-                const _Rv=85, _Nv=6;
+                const _Rv=100, _Nv=6;
                 const _angs = _possMets.map((_,i) => i*2*Math.PI/_Nv - Math.PI/2);
                 const _hxP = pct => { const r2=_Rv*pct/100; return _angs.map((a,i)=>(i===0?'M':'L')+(r2*Math.cos(a)).toFixed(1)+','+(r2*Math.sin(a)).toFixed(1)).join(' ')+' Z'; };
                 const _plrP = _angs.map((a,i) => { const d=_pdat[_possMets[i].k]; const r2=d&&d.r!=null?_Rv*d.r/100:0; return (i===0?'M':'L')+(r2*Math.cos(a)).toFixed(1)+','+(r2*Math.sin(a)).toFixed(1); }).join(' ')+' Z';
-                const _axLns = _angs.map(a => `<line x1="0" y1="0" x2="${(_Rv*Math.cos(a)).toFixed(1)}" y2="${(_Rv*Math.sin(a)).toFixed(1)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>`).join('');
+                const _axLns = _angs.map(a => `<line x1="0" y1="0" x2="${(_Rv*Math.cos(a)).toFixed(1)}" y2="${(_Rv*Math.sin(a)).toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>`).join('');
                 const _radarLbls = _angs.map((a,i) => {
-                  const rl=_Rv+20; const lx=(rl*Math.cos(a)).toFixed(1); const ly=(rl*Math.sin(a)).toFixed(1);
+                  const rl=_Rv+28; const lx=(rl*Math.cos(a)).toFixed(1); const ly=(rl*Math.sin(a)).toFixed(1);
+                  const d2=_pdat[_possMets[i].k];
+                  const lc=d2&&d2.r!=null?_pPC(d2.r):'var(--text3)';
                   const wds=_possMets[i].short.split(' ');
-                  if(wds.length<=2) return `<text x="${lx}" y="${ly}" font-size="8" fill="var(--text3)" text-anchor="middle" dominant-baseline="middle">${_possMets[i].short}</text>`;
-                  return `<text x="${lx}" y="${(parseFloat(ly)-5).toFixed(1)}" font-size="8" fill="var(--text3)" text-anchor="middle" dominant-baseline="middle">${wds.slice(0,2).join(' ')}</text><text x="${lx}" y="${(parseFloat(ly)+5).toFixed(1)}" font-size="8" fill="var(--text3)" text-anchor="middle" dominant-baseline="middle">${wds.slice(2).join(' ')}</text>`;
+                  const lns=wds.length<=2?[_possMets[i].short]:[wds.slice(0,2).join(' '),wds.slice(2).join(' ')];
+                  return lns.map((ln,li)=>`<text x="${lx}" y="${(parseFloat(ly)+(li-lns.length/2+0.5)*11).toFixed(1)}" font-size="9.5" fill="${lc}" text-anchor="middle" dominant-baseline="middle" font-weight="600">${ln}</text>`).join('');
                 }).join('');
-                const _rdots = _angs.map((a,i) => { const d=_pdat[_possMets[i].k]; if(!d||d.r==null)return ''; const r2=_Rv*d.r/100; return `<circle cx="${(r2*Math.cos(a)).toFixed(1)}" cy="${(r2*Math.sin(a)).toFixed(1)}" r="3.5" fill="${_possMets[i].col}" stroke="var(--bg1)" stroke-width="1.5"/>`; }).join('');
-                const _radarSvg = `<svg viewBox="-120 -120 240 240" style="width:100%;max-width:300px;display:block;margin:0 auto">
-                  <path d="${_hxP(100)}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
-                  <path d="${_hxP(75)}"  fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
-                  <path d="${_hxP(50)}"  fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1" stroke-dasharray="3,2"/>
-                  <path d="${_hxP(25)}"  fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+                const _rdots = _angs.map((a,i) => { const d=_pdat[_possMets[i].k]; if(!d||d.r==null)return ''; const r2=_Rv*d.r/100; return `<circle cx="${(r2*Math.cos(a)).toFixed(1)}" cy="${(r2*Math.sin(a)).toFixed(1)}" r="4" fill="${_possMets[i].col}" stroke="#0d1117" stroke-width="2"/>`; }).join('');
+                const _pctLbls=[25,50,75].map(pct=>{const r2=_Rv*pct/100;return `<text x="3" y="${(-r2+3).toFixed(1)}" font-size="7" fill="${pct===50?'rgba(255,255,255,0.4)':'rgba(255,255,255,0.2)'}" text-anchor="start">${pct}</text>`;}).join('');
+                const _radarSvg = `<svg viewBox="-148 -148 296 296" style="width:100%;max-width:360px;display:block;margin:0 auto">
+                  <defs><filter id="prglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                  <rect x="-148" y="-148" width="296" height="296" fill="#0d1117" rx="10"/>
+                  <path d="${_hxP(100)}" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                  <path d="${_hxP(75)}"  fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+                  <path d="${_hxP(50)}"  fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="4,3"/>
+                  <path d="${_hxP(25)}"  fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
                   ${_axLns}
-                  <path d="${_plrP}" fill="rgba(200,169,110,0.18)" stroke="#c8a96e" stroke-width="2"/>
-                  <text x="4" y="${(-_Rv*0.5+2).toFixed(1)}" font-size="6" fill="rgba(255,255,255,0.28)" text-anchor="start">50</text>
+                  <path d="${_plrP}" fill="rgba(200,169,110,0.15)" stroke="#c8a96e" stroke-width="2.5" filter="url(#prglow)"/>
+                  ${_pctLbls}
                   ${_rdots}
                   ${_radarLbls}
                 </svg>`;
-                return _pTogBar2 + _pPosSelect + _radarSvg + _pFoot;
+                return _pTogBar2 + _pPosSelect + _radarSvg +
+                  `<div style="font-size:9px;color:var(--text3);margin-top:10px;text-align:center">SkillCorner · 1ª RFEF 25/26 · percentil vs. misma posición · ${_pdat.m} partidos</div>`;
               }
 
-              // ── SCATTER ──────────────────────────────────────────────────────────
+              // ── DISPERSIÓN ───────────────────────────────────────────────────────
+              const _pScPresets = [
+                {lbl:'Conducción',  x:'carries',  y:'fwd'},
+                {lbl:'Pase rápido', x:'qpasses',  y:'retained'},
+                {lbl:'Espacio',     x:'tspace',   y:'rec_tight'},
+                {lbl:'Perfil',      x:'carries',  y:'retained'},
+              ];
+              if (_profilePossScatterPreset>=0&&_pScPresets[_profilePossScatterPreset]) {
+                _profilePossScatterX=_pScPresets[_profilePossScatterPreset].x;
+                _profilePossScatterY=_pScPresets[_profilePossScatterPreset].y;
+              }
               const _pxMet = _possMets.find(m=>m.k===_profilePossScatterX)||_possMets[0];
               const _pyMet = _possMets.find(m=>m.k===_profilePossScatterY)||_possMets[4];
-              const _axBtns2 = (axis, mets2) => mets2.map(m => {
-                const curK = axis==='x'?_profilePossScatterX:_profilePossScatterY;
-                const act = curK===m.k;
-                const vn2 = axis==='x'?'_profilePossScatterX':'_profilePossScatterY';
-                const ac2 = axis==='x'?'#ffa657':'#58a6ff';
-                const bg2 = act?(axis==='x'?'rgba(255,166,87,0.18)':'rgba(88,166,255,0.18)'):'var(--bg2)';
-                return `<button onclick="${vn2}='${m.k}';openPlayerProfile(${p.d})" style="padding:3px 8px;border-radius:12px;border:1px solid ${act?ac2:'var(--border)'};background:${bg2};color:${act?ac2:'var(--text2)'};font-size:10px;cursor:pointer;transition:all .15s">${m.short}</button>`;
-              }).join('');
-              const _SW=300,_SH=210,_SPL=30,_SPB=22,_SPT=10,_SPR=8;
-              const _spw=_SW-_SPL-_SPR, _sph=_SH-_SPT-_SPB;
-              const _sX = r => _SPL+(r/100)*_spw;
-              const _sY = r => _SPT+_sph-(r/100)*_sph;
-              let _sdots='', _slbls='';
+
+              const _pPresetBar = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+                <span style="font-size:10px;color:var(--text3);margin-right:2px">Presets:</span>` +
+                _pScPresets.map((pr,pi)=>{const act=_profilePossScatterPreset===pi;return `<button onclick="_profilePossScatterPreset=${pi};openPlayerProfile(${p.d})" style="padding:3px 10px;border-radius:12px;border:1px solid ${act?'#3fb950':'var(--border)'};background:${act?'rgba(63,185,80,0.18)':'var(--bg2)'};color:${act?'#3fb950':'var(--text2)'};font-size:10px;cursor:pointer;transition:all .15s">${pr.lbl}</button>`;}).join('') +
+                `<button onclick="_profilePossScatterPreset=-1;openPlayerProfile(${p.d})" style="padding:3px 10px;border-radius:12px;border:1px solid ${_profilePossScatterPreset<0?'var(--accent)':'var(--border)'};background:${_profilePossScatterPreset<0?'rgba(200,169,110,0.18)':'var(--bg2)'};color:${_profilePossScatterPreset<0?'var(--accent)':'var(--text3)'};font-size:10px;cursor:pointer">✏️ Personalizar</button></div>`;
+
+              const _pAxBtns = (axis) => `<div style="margin-bottom:7px;display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-size:10px;color:var(--text3);min-width:40px">Eje ${axis==='x'?'X':'Y'}:</span>` +
+                _possMets.map(m => {
+                  const curK=axis==='x'?_profilePossScatterX:_profilePossScatterY;
+                  const act=curK===m.k; const ac2=axis==='x'?'#ffa657':'#58a6ff';
+                  const bg2=act?(axis==='x'?'rgba(255,166,87,0.18)':'rgba(88,166,255,0.18)'):'var(--bg2)';
+                  const vn2=axis==='x'?'_profilePossScatterX':'_profilePossScatterY';
+                  return `<button onclick="${vn2}='${m.k}';_profilePossScatterPreset=-1;openPlayerProfile(${p.d})" style="padding:3px 8px;border-radius:12px;border:1px solid ${act?ac2:'var(--border)'};background:${bg2};color:${act?ac2:'var(--text2)'};font-size:10px;cursor:pointer;transition:all .15s">${m.short}</button>`;
+                }).join('') + '</div>';
+              const _customPanel = _profilePossScatterPreset<0 ? `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px">${_pAxBtns('x')}${_pAxBtns('y')}</div>` : '';
+
+              const SW=580,SH=340,ML=52,MR=20,MT=18,MB=46;
+              const _scW=SW-ML-MR, _scH=SH-MT-MB;
+              const _scX=r=>ML+(r/100)*_scW, _scY=r=>MT+_scH-(r/100)*_scH;
+
+              const _myXD=_pdat[_profilePossScatterX], _myYD=_pdat[_profilePossScatterY];
+              const _myXR=_myXD&&_myXD.r!=null?_myXD.r:50, _myYR=_myYD&&_myYD.r!=null?_myYD.r:50;
+              const _mySX=_scX(_myXR), _mySY=_scY(_myYR);
+              const _qI=(_myXR>=50?1:0)+(_myYR>=50?2:0);
+
+              let _scDots='';
               Object.entries(_POSS_DATA).forEach(([k,ents]) => {
                 if(!ents.length) return;
                 const e0=ents[0];
-                const xd2=e0[_profilePossScatterX]; const yd2=e0[_profilePossScatterY];
-                if(!xd2||xd2.r==null||!yd2||yd2.r==null) return;
-                const sx2=_sX(xd2.r); const sy2=_sY(yd2.r);
-                const isMe = k===_runKey;
-                const c2=isMe?'#c8a96e':'rgba(88,166,255,0.65)';
-                const r3=isMe?6:4; const sw3=isMe?2:0;
-                _sdots+=`<circle cx="${sx2.toFixed(1)}" cy="${sy2.toFixed(1)}" r="${r3}" fill="${c2}" stroke="${isMe?'var(--bg1)':'none'}" stroke-width="${sw3}"><title>${k} · P${xd2.r} / P${yd2.r}</title></circle>`;
-                if(isMe) _slbls+=`<text x="${(sx2+8).toFixed(1)}" y="${(sy2+4).toFixed(1)}" font-size="9" fill="#c8a96e" font-weight="700">${p.name.split(' ')[0]}</text>`;
+                const xd=e0[_profilePossScatterX], yd=e0[_profilePossScatterY];
+                if(!xd||xd.r==null||!yd||yd.r==null||k===_runKey) return;
+                const comb=(xd.r+yd.r)/2;
+                const cc=comb>=75?'#3fb950':comb>=50?'#c8a96e':comb>=25?'#f0883e':'#f85149';
+                _scDots+=`<circle cx="${_scX(xd.r).toFixed(1)}" cy="${_scY(yd.r).toFixed(1)}" r="5" fill="${cc}" fill-opacity="0.75" style="cursor:pointer"><title>${k}\nP${xd.r} / P${yd.r}</title></circle>`;
               });
-              const _sgrid=[25,50,75].map(pct => {
-                const gx=_sX(pct),gy=_sY(pct);
-                const op=pct===50?0.12:0.06, wd=pct===50?1:0.5, da=pct===50?'4,2':'2,2';
-                return `<line x1="${gx.toFixed(1)}" y1="${_SPT}" x2="${gx.toFixed(1)}" y2="${(_SPT+_sph).toFixed(1)}" stroke="rgba(255,255,255,${op})" stroke-width="${wd}" stroke-dasharray="${da}"/><line x1="${_SPL}" y1="${gy.toFixed(1)}" x2="${(_SPL+_spw).toFixed(1)}" y2="${gy.toFixed(1)}" stroke="rgba(255,255,255,${op})" stroke-width="${wd}" stroke-dasharray="${da}"/>`;
-              }).join('');
-              const _scatterSvg = `<svg viewBox="0 0 ${_SW} ${_SH}" style="width:100%;border-radius:8px;background:var(--bg3)">
-                ${_sgrid}
-                <rect x="${_SPL}" y="${_SPT}" width="${_spw}" height="${_sph}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-                ${_sdots}${_slbls}
-                <text x="${(_SPL+_spw/2).toFixed(1)}" y="${(_SH-4).toFixed(1)}" font-size="8.5" fill="var(--text3)" text-anchor="middle">${_pxMet.short} (P)</text>
-                <text x="9" y="${(_SPT+_sph/2).toFixed(1)}" font-size="8.5" fill="var(--text3)" text-anchor="middle" transform="rotate(-90,9,${(_SPT+_sph/2).toFixed(1)})">${_pyMet.short} (P)</text>
+
+              const _qLbls=[
+                {x:ML+_scW*0.25,y:MT+_scH*0.75,lbl:'Bajo en ambos',   col:'#f85149'},
+                {x:ML+_scW*0.75,y:MT+_scH*0.75,lbl:'Alto '+_pxMet.short, col:'#f0883e'},
+                {x:ML+_scW*0.25,y:MT+_scH*0.25,lbl:'Alto '+_pyMet.short, col:'#f0883e'},
+                {x:ML+_scW*0.75,y:MT+_scH*0.25,lbl:'Alto en ambos',   col:'#3fb950'},
+              ];
+
+              const _ticksX=[0,25,50,75,100].map(v=>`<line x1="${_scX(v).toFixed(1)}" y1="${(MT+_scH).toFixed(1)}" x2="${_scX(v).toFixed(1)}" y2="${(MT+_scH+5).toFixed(1)}" stroke="rgba(255,255,255,0.3)" stroke-width="1"/><text x="${_scX(v).toFixed(1)}" y="${(MT+_scH+15).toFixed(1)}" font-size="9" fill="rgba(255,255,255,0.45)" text-anchor="middle">${v}</text>`).join('');
+              const _ticksY=[0,25,50,75,100].map(v=>`<line x1="${(ML-5).toFixed(1)}" y1="${_scY(v).toFixed(1)}" x2="${ML}" y2="${_scY(v).toFixed(1)}" stroke="rgba(255,255,255,0.3)" stroke-width="1"/><text x="${(ML-8).toFixed(1)}" y="${_scY(v).toFixed(1)}" font-size="9" fill="rgba(255,255,255,0.45)" text-anchor="end" dominant-baseline="middle">${v}</text>`).join('');
+
+              const _scSVG=`<svg viewBox="0 0 ${SW} ${SH}" style="width:100%;border-radius:10px;display:block">
+                <defs><filter id="pscglow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                <rect width="${SW}" height="${SH}" fill="#0d1117" rx="10"/>
+                <rect x="${ML}" y="${MT}" width="${_scW}" height="${_scH}" fill="#0b1a0b"/>
+                <line x1="${_scX(50).toFixed(1)}" y1="${MT}" x2="${_scX(50).toFixed(1)}" y2="${(MT+_scH).toFixed(1)}" stroke="rgba(255,255,255,0.16)" stroke-width="1" stroke-dasharray="5,4"/>
+                <line x1="${ML}" y1="${_scY(50).toFixed(1)}" x2="${(ML+_scW).toFixed(1)}" y2="${_scY(50).toFixed(1)}" stroke="rgba(255,255,255,0.16)" stroke-width="1" stroke-dasharray="5,4"/>
+                ${_qLbls.map((q,qi)=>`<text x="${q.x.toFixed(1)}" y="${q.y.toFixed(1)}" font-size="9" fill="${q.col}" text-anchor="middle" font-style="italic" opacity="${qi===_qI?'0.88':'0.28'}">${q.lbl}</text>`).join('')}
+                ${_scDots}
+                <circle cx="${_mySX.toFixed(1)}" cy="${_mySY.toFixed(1)}" r="8" fill="#ffa657" filter="url(#pscglow)" stroke="#0d1117" stroke-width="2"/>
+                <text x="${(_mySX>ML+_scW*0.8?_mySX-10:_mySX+12).toFixed(1)}" y="${(_mySY+4).toFixed(1)}" font-size="10" fill="#ffa657" font-weight="700" text-anchor="${_mySX>ML+_scW*0.8?'end':'start'}">${p.name.split(' ').slice(-1)[0]}</text>
+                ${_ticksX}${_ticksY}
+                <text x="${(ML+_scW/2).toFixed(1)}" y="${(MT+_scH+36).toFixed(1)}" font-size="10" fill="rgba(255,255,255,0.55)" text-anchor="middle">${_pxMet.lbl} (percentil)</text>
+                <text x="${(ML-40).toFixed(1)}" y="${(MT+_scH/2).toFixed(1)}" font-size="10" fill="rgba(255,255,255,0.55)" text-anchor="middle" transform="rotate(-90,${(ML-40).toFixed(1)},${(MT+_scH/2).toFixed(1)})">${_pyMet.lbl} (percentil)</text>
               </svg>`;
-              return _pTogBar2 +
-                `<div style="margin-bottom:8px"><div style="font-size:10px;color:var(--text3);margin-bottom:5px">Eje X:</div><div style="display:flex;gap:5px;flex-wrap:wrap">${_axBtns2('x',_possMets)}</div></div>` +
-                `<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--text3);margin-bottom:5px">Eje Y:</div><div style="display:flex;gap:5px;flex-wrap:wrap">${_axBtns2('y',_possMets)}</div></div>` +
-                _scatterSvg + _pFoot;
+
+              const _qTxt=[
+                `<strong>${p.name}</strong> se sitúa <strong style="color:#f85149">bajo en ambos ejes</strong> respecto a su posición en la liga — percentil ${_myXR} en ${_pxMet.lbl} y percentil ${_myYR} en ${_pyMet.lbl}.`,
+                `<strong>${p.name}</strong> destaca en <strong style="color:#f0883e">${_pxMet.lbl}</strong> (P${_myXR}) pero se mantiene por debajo de la media en ${_pyMet.lbl} (P${_myYR}).`,
+                `<strong>${p.name}</strong> destaca en <strong style="color:#f0883e">${_pyMet.lbl}</strong> (P${_myYR}) pero se mantiene por debajo de la media en ${_pxMet.lbl} (P${_myXR}).`,
+                `<strong>${p.name}</strong> se sitúa <strong style="color:#3fb950">alto en ambos ejes</strong> — percentil ${_myXR} en ${_pxMet.lbl} y percentil ${_myYR} en ${_pyMet.lbl} respecto a su posición en la liga.`,
+              ];
+              const _scDesc=`<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:10px 14px;margin-top:10px">
+                <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">📖 Lectura del gráfico</div>
+                <div style="font-size:12px;color:var(--text2);line-height:1.6">${_qTxt[_qI]}</div>
+              </div>`;
+
+              return _pTogBar2 + _pPosSelect + _pPresetBar + _customPanel +
+                `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">${_scSVG}</div>` +
+                `<div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
+                  <span style="color:rgba(255,255,255,0.25)">- - P50 liga</span>
+                  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffa657;margin-right:3px;vertical-align:middle"></span>${p.name}</span>
+                  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3fb950;margin-right:3px;vertical-align:middle"></span>Alto en ambos</span>
+                  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f85149;margin-right:3px;vertical-align:middle"></span>Bajo en ambos</span>
+                </div>` +
+                _scDesc;
             })() : (() => {
               const keys   = _OBE_TAB[_profileTab] || [];
               const pCol   = p => p >= 75 ? '#3fb950' : p >= 50 ? '#c8a96e' : p >= 25 ? '#f0883e' : '#f85149';
