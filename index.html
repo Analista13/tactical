@@ -12646,6 +12646,15 @@
                 }).join('');
                 const _rdots = _angs.map((a,i) => { const d=_pdat[_possMets[i].k]; if(!d||d.r==null)return ''; const r2=_Rv*d.r/100; return `<circle cx="${(r2*Math.cos(a)).toFixed(1)}" cy="${(r2*Math.sin(a)).toFixed(1)}" r="4" fill="${_possMets[i].col}" stroke="#0d1117" stroke-width="2"/>`; }).join('');
                 const _pctLbls=[25,50,75].map(pct=>{const r2=_Rv*pct/100;return `<text x="3" y="${(-r2+3).toFixed(1)}" font-size="7" fill="${pct===50?'rgba(255,255,255,0.4)':'rgba(255,255,255,0.2)'}" text-anchor="start">${pct}</text>`;}).join('');
+                // Polígonos de compañeros en la misma posición SkillCorner
+                const _sqPaths = Object.entries(_POSS_DATA).map(([k,ents]) => {
+                  if(k===_runKey||!ents.length) return '';
+                  const e=ents.find(e2=>e2.pos===_pdat.pos)||null;
+                  if(!e) return '';
+                  const path=_angs.map((a,i)=>{const d=e[_possMets[i].k];const r2=d&&d.r!=null?_Rv*d.r/100:0;return(i===0?'M':'L')+(r2*Math.cos(a)).toFixed(1)+','+(r2*Math.sin(a)).toFixed(1);}).join(' ')+' Z';
+                  return `<path d="${path}" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>`;
+                }).join('');
+                const _hasSqComp=_sqPaths.replace(/\s/g,'').length>0;
                 const _radarSvg = `<svg viewBox="-148 -148 296 296" style="width:100%;max-width:360px;display:block;margin:0 auto">
                   <defs><filter id="prglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
                   <rect x="-148" y="-148" width="296" height="296" fill="#0d1117" rx="10"/>
@@ -12654,12 +12663,18 @@
                   <path d="${_hxP(50)}"  fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="4,3"/>
                   <path d="${_hxP(25)}"  fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
                   ${_axLns}
+                  ${_sqPaths}
                   <path d="${_plrP}" fill="rgba(200,169,110,0.15)" stroke="#c8a96e" stroke-width="2.5" filter="url(#prglow)"/>
                   ${_pctLbls}
                   ${_rdots}
                   ${_radarLbls}
                 </svg>`;
-                return _pTogBar2 + _pPosSelect + _radarSvg +
+                const _rdrLegend = _hasSqComp
+                  ? `<div style="display:flex;gap:18px;margin-top:9px;justify-content:center;font-size:10px;color:var(--text3);align-items:center">
+                      <span style="display:flex;align-items:center;gap:5px"><svg width="20" height="8" style="overflow:visible"><line x1="0" y1="4" x2="20" y2="4" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/></svg>Compañero (${_pPosMap[_pdat.pos]||_pdat.pos})</span>
+                      <span style="display:flex;align-items:center;gap:5px"><svg width="20" height="8" style="overflow:visible"><line x1="0" y1="4" x2="20" y2="4" stroke="#c8a96e" stroke-width="2.5"/></svg>${p.name.split(' ').slice(-1)[0]}</span>
+                    </div>` : '';
+                return _pTogBar2 + _pPosSelect + _radarSvg + _rdrLegend +
                   `<div style="font-size:9px;color:var(--text3);margin-top:10px;text-align:center">SkillCorner · 1ª RFEF 25/26 · percentil vs. misma posición · ${_pdat.m} partidos</div>`;
               }
 
@@ -12712,11 +12727,19 @@
                 _scDots+=`<circle cx="${_scX(xd.r).toFixed(1)}" cy="${_scY(yd.r).toFixed(1)}" r="5" fill="${cc}" fill-opacity="0.75" style="cursor:pointer"><title>${k}\nP${xd.r} / P${yd.r}</title></circle>`;
               });
 
+              // Etiquetas de cuadrante según preset
+              const _pQlblMap=[
+                ['Sin progresión',  'Portador lateral',   'Vertical selectivo', 'Explosivo vertical'],
+                ['Sin fluidez',     'Circulación rápida', 'Sólido',             'Fluido y sólido'],
+                ['Espacio abierto', 'Alta proporción',    'Buscador',           'Maestro del espacio'],
+                ['Perfil discreto', 'Portador',           'Sólido',             'Dominador'],
+              ];
+              const _qLblsTxt=_profilePossScatterPreset>=0&&_pQlblMap[_profilePossScatterPreset]?_pQlblMap[_profilePossScatterPreset]:['Bajo en ambos','Alto '+_pxMet.short,'Alto '+_pyMet.short,'Alto en ambos'];
               const _qLbls=[
-                {x:ML+_scW*0.25,y:MT+_scH*0.75,lbl:'Bajo en ambos',   col:'#f85149'},
-                {x:ML+_scW*0.75,y:MT+_scH*0.75,lbl:'Alto '+_pxMet.short, col:'#f0883e'},
-                {x:ML+_scW*0.25,y:MT+_scH*0.25,lbl:'Alto '+_pyMet.short, col:'#f0883e'},
-                {x:ML+_scW*0.75,y:MT+_scH*0.25,lbl:'Alto en ambos',   col:'#3fb950'},
+                {x:ML+_scW*0.25,y:MT+_scH*0.75,lbl:_qLblsTxt[0],col:'#f85149'},
+                {x:ML+_scW*0.75,y:MT+_scH*0.75,lbl:_qLblsTxt[1],col:'#f0883e'},
+                {x:ML+_scW*0.25,y:MT+_scH*0.25,lbl:_qLblsTxt[2],col:'#f0883e'},
+                {x:ML+_scW*0.75,y:MT+_scH*0.25,lbl:_qLblsTxt[3],col:'#3fb950'},
               ];
 
               const _ticksX=[0,25,50,75,100].map(v=>`<line x1="${_scX(v).toFixed(1)}" y1="${(MT+_scH).toFixed(1)}" x2="${_scX(v).toFixed(1)}" y2="${(MT+_scH+5).toFixed(1)}" stroke="rgba(255,255,255,0.3)" stroke-width="1"/><text x="${_scX(v).toFixed(1)}" y="${(MT+_scH+15).toFixed(1)}" font-size="9" fill="rgba(255,255,255,0.45)" text-anchor="middle">${v}</text>`).join('');
@@ -12737,15 +12760,39 @@
                 <text x="${(ML-40).toFixed(1)}" y="${(MT+_scH/2).toFixed(1)}" font-size="10" fill="rgba(255,255,255,0.55)" text-anchor="middle" transform="rotate(-90,${(ML-40).toFixed(1)},${(MT+_scH/2).toFixed(1)})">${_pyMet.lbl} (percentil)</text>
               </svg>`;
 
-              const _qTxt=[
-                `<strong>${p.name}</strong> se sitúa <strong style="color:#f85149">bajo en ambos ejes</strong> respecto a su posición en la liga — percentil ${_myXR} en ${_pxMet.lbl} y percentil ${_myYR} en ${_pyMet.lbl}.`,
-                `<strong>${p.name}</strong> destaca en <strong style="color:#f0883e">${_pxMet.lbl}</strong> (P${_myXR}) pero se mantiene por debajo de la media en ${_pyMet.lbl} (P${_myYR}).`,
-                `<strong>${p.name}</strong> destaca en <strong style="color:#f0883e">${_pyMet.lbl}</strong> (P${_myYR}) pero se mantiene por debajo de la media en ${_pxMet.lbl} (P${_myXR}).`,
-                `<strong>${p.name}</strong> se sitúa <strong style="color:#3fb950">alto en ambos ejes</strong> — percentil ${_myXR} en ${_pxMet.lbl} y percentil ${_myYR} en ${_pyMet.lbl} respecto a su posición en la liga.`,
+              // Interpretaciones tácticas por preset × cuadrante
+              const _pInterpMap=[
+                [ // preset 0: Conducción (carries vs fwd)
+                  `<strong>${p.name}</strong> registra <strong style="color:#f85149">baja actividad en conducción</strong> — P${_myXR} en conducciones largas y P${_myYR} en impulso hacia adelante. Su rol en posesión es predominantemente de primer toque: no progresa con el balón en los pies.`,
+                  `<strong>${p.name}</strong> acumula conducciones largas (P${_myXR}) pero <strong style="color:#f0883e">sin verticalidad</strong> (P${_myYR} en impulso adelante). Conduce mucho, pero lateralmente o en repliegue — sin amenazar con el balón la línea defensiva rival.`,
+                  `<strong>${p.name}</strong> conduce poco (P${_myXR}) pero cuando lo hace <strong style="color:#f0883e">va hacia adelante</strong> (P${_myYR}). Selectivo y directo: elige el momento y busca la profundidad. Su valor no está en el volumen sino en la orientación de sus conducciones.`,
+                  `<strong>${p.name}</strong> es un <strong style="color:#3fb950">portador vertical</strong> — P${_myXR} en conducciones y P${_myYR} en impulso adelante. Combina volumen y orientación: conduce mucho y hacia la línea rival, generando progresión por sí mismo.`,
+                ],
+                [ // preset 1: Pase rápido (qpasses vs retained)
+                  `<strong>${p.name}</strong> presenta <strong style="color:#f85149">dificultades bajo presión</strong> — P${_myXR} en pases rápidos y P${_myYR} en retención. El equipo pierde el balón o se ve forzado a perderlo hacia atrás cuando le presionan.`,
+                  `<strong>${p.name}</strong> distribuye con rapidez (P${_myXR}), pero la <strong style="color:#f0883e">retención bajo presión es limitada</strong> (P${_myYR}). Acelera el juego, pero sin garantizar la posesión cuando le aprietan.`,
+                  `<strong>${p.name}</strong> destaca por <strong style="color:#f0883e">solidez bajo presión</strong> (P${_myYR} en retención) más que por velocidad de distribución (P${_myXR} en pases rápidos). Aguanta y protege el balón, pero no accelera el juego.`,
+                  `<strong>${p.name}</strong> combina <strong style="color:#3fb950">velocidad de circulación y solidez</strong> — P${_myXR} en pases rápidos y P${_myYR} en retención. Recibe apretado, controla y distribuye con criterio: el perfil ideal para acelerar sin comprometer la posesión.`,
+                ],
+                [ // preset 2: Espacio (tspace vs rec_tight)
+                  `<strong>${p.name}</strong> <strong style="color:#f85149">evita recibir en zonas congestionadas</strong> — P${_myXR} en proporción y P${_myYR} en volumen de recepciones en espacio ajustado. Necesita espacio para ser efectivo: no se ofrece cuando el rival está encima.`,
+                  `<strong>${p.name}</strong> tiene alta <strong style="color:#f0883e">proporción</strong> de recepciones en espacio ajustado (P${_myXR}) pero en volumen bajo (P${_myYR}). Cuando recibe, frecuentemente lo hace en congestión — aunque pocas veces se ofrece en esa situación.`,
+                  `<strong>${p.name}</strong> es <strong style="color:#f0883e">activo receptor</strong> en zonas apretadas (P${_myYR} en volumen), aunque la tasa relativa es más moderada (P${_myXR}). Se busca mucho bajo presión, con más compañeros también disputando esa zona.`,
+                  `<strong>${p.name}</strong> es un <strong style="color:#3fb950">referente en el espacio ajustado</strong> — P${_myXR} en proporción y P${_myYR} en volumen de recepciones bajo presión. Se ofrece en congestión y las resuelve: el compañero ideal para salir de la presión.`,
+                ],
+                [ // preset 3: Perfil (carries vs retained)
+                  `<strong>${p.name}</strong> muestra un <strong style="color:#f85149">perfil discreto en posesión activa</strong> — P${_myXR} en conducciones largas y P${_myYR} en retención bajo presión. Su rol está orientado al primer toque, sin protagonismo directo en la conducción ni en la resistencia a la presión.`,
+                  `<strong>${p.name}</strong> genera progresión conduciendo (P${_myXR}), pero la <strong style="color:#f0883e">retención bajo presión es mejorable</strong> (P${_myYR}). Activo en espacios abiertos, pero pierde la posesión con más frecuencia cuando el rival presiona de cerca.`,
+                  `<strong>${p.name}</strong> muestra <strong style="color:#f0883e">gran solidez bajo presión</strong> (P${_myYR} en retención), aunque el protagonismo en conducción es limitado (P${_myXR}). No progresa con el balón por sí mismo, pero lo mantiene cuando le aprietan: fiable en la conservación.`,
+                  `<strong>${p.name}</strong> es un <strong style="color:#3fb950">dominador del balón</strong> — P${_myXR} en conducciones y P${_myYR} en retención bajo presión. Progresa por sí mismo y mantiene el balón cuando le aprietan: un recurso clave en la construcción y las transiciones.`,
+                ],
               ];
+              const _pInterpTxt = _profilePossScatterPreset>=0&&_pInterpMap[_profilePossScatterPreset]
+                ? _pInterpMap[_profilePossScatterPreset][_qI]
+                : `<strong>${p.name}</strong> — P${_myXR} en ${_pxMet.lbl}${_myXR>=50?' <span style="color:#3fb950">↑</span>':' <span style="color:#f85149">↓</span>'} · P${_myYR} en ${_pyMet.lbl}${_myYR>=50?' <span style="color:#3fb950">↑</span>':' <span style="color:#f85149">↓</span>'}${_qI===3?' · <strong style="color:#3fb950">Alto en ambos ejes.</strong>':_qI===0?' · <strong style="color:#f85149">Bajo en ambos ejes.</strong>':''} vs. ${_pPosMap[_pdat.pos]||_pdat.pos}s de 1ª RFEF.`;
               const _scDesc=`<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:10px 14px;margin-top:10px">
                 <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">📖 Lectura del gráfico</div>
-                <div style="font-size:12px;color:var(--text2);line-height:1.6">${_qTxt[_qI]}</div>
+                <div style="font-size:12px;color:var(--text2);line-height:1.6">${_pInterpTxt}</div>
               </div>`;
 
               return _pTogBar2 + _pPosSelect + _pPresetBar + _customPanel +
