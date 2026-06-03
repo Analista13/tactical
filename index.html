@@ -14997,12 +14997,12 @@
   const SANCIONES_DATA = [
     {name:'Andújar',      pos:'CB',  amarillas:[{j:4,m:'Juego peligroso'},{j:5,m:'Conducta antideportiva'},{j:6,m:'Salir terreno sin autorización'},{j:11,m:'Conducta antideportiva'},{j:22,m:'Conducta antideportiva'}], acumulaciones:[], rojas:[{j:14,m:'Acumulación de amarillas'},{j:19,m:'Doble amarilla'}]},
     {name:'Undabarrena',  pos:'CB',  amarillas:[{j:1,m:'Conducta antideportiva'},{j:5,m:'Conducta antideportiva'},{j:12,m:'Infracción reglamentaria'},{j:13,m:'Juego peligroso'},{j:22,m:'Lenguaje ofensivo'},{j:23,m:'Conducta antideportiva'},{j:31,m:'Infracción reglamentaria'},{j:36,m:'Infracción reglamentaria'}], acumulaciones:[{j:20,m:'Suspensión: acumulación'},{j:32,m:'Suspensión: acumulación'}], rojas:[]},
-    {name:'Frimpong',     pos:'LM',  amarillas:[{j:15,m:'Conducta antideportiva'},{j:17,m:'Juego peligroso'},{j:24,m:'Infracción reglamentaria'},{j:28,m:'Juego peligroso'},{j:33,m:'Conducta antideportiva'},{j:35,m:'Juego peligroso'},{j:36,m:'Conducta antideportiva'}], acumulaciones:[{j:20,m:'Suspensión: acumulación'},{j:29,m:'Suspensión: acumulación'}], rojas:[]},
+    {name:'Frimpong',     pos:'LM',  amarillas:[{j:15,m:'Conducta antideportiva'},{j:17,m:'Juego peligroso'},{j:24,m:'Infracción reglamentaria'},{j:28,m:'Juego peligroso'},{j:33,m:'Conducta antideportiva'},{j:35,m:'Juego peligroso'},{j:36,m:'Conducta antideportiva'}], acumulaciones:[{j:20,m:'Suspensión: acumulación'},{j:29,m:'Suspensión: acumulación'},{j:38,m:'Suspensión: acumulación'}], rojas:[]},
     {name:'A. López',     pos:'LB',  amarillas:[{j:2,m:'Juego peligroso'},{j:4,m:'Juego peligroso'},{j:11,m:'Conducta antideportiva'},{j:14,m:'Juego peligroso'},{j:26,m:'Salir terreno sin autorización'},{j:30,m:'Conducta antideportiva'},{j:32,m:'Infracción reglamentaria'}], acumulaciones:[], rojas:[]},
     {name:'Fede S.',      pos:'DM',  amarillas:[{j:4,m:'Infracción reglamentaria'},{j:6,m:'Infracción reglamentaria'},{j:7,m:'Juego peligroso'},{j:8,m:'Juego peligroso'},{j:21,m:'Juego peligroso'},{j:36,m:'Salir terreno sin autorización'},{j:37,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
     {name:'Cortés',       pos:'CF',  amarillas:[{j:6,m:'Conducta antideportiva'},{j:14,m:'Juego peligroso'},{j:17,m:'Juego peligroso'},{j:29,m:'Juego peligroso'},{j:34,m:'Salir terreno sin autorización'},{j:35,m:'Conducta antideportiva'}], acumulaciones:[], rojas:[]},
     {name:'J. Fernández', pos:'DM',  amarillas:[{j:9,m:'Infracción reglamentaria'},{j:11,m:'Juego peligroso'},{j:12,m:'Infracción reglamentaria'},{j:15,m:'Conducta antideportiva'},{j:35,m:'Juego peligroso'},{j:36,m:'Salir terreno sin autorización'}], acumulaciones:[], rojas:[]},
-    {name:'Keita',        pos:'RW',  amarillas:[{j:6,m:'Conducta antideportiva'},{j:9,m:'Infracción reglamentaria'},{j:19,m:'Juego peligroso'},{j:35,m:'Juego peligroso'}], acumulaciones:[{j:21,m:'Suspensión: acumulación'}], rojas:[{j:29,m:'Doble amarilla'}]},
+    {name:'Keita',        pos:'RW',  amarillas:[{j:6,m:'Conducta antideportiva'},{j:9,m:'Infracción reglamentaria'},{j:19,m:'Juego peligroso'},{j:35,m:'Juego peligroso'},{j:38,m:'Juego peligroso'}], acumulaciones:[{j:21,m:'Suspensión: acumulación'}], rojas:[{j:29,m:'Doble amarilla'}]},
     {name:'Borja Valle',  pos:'LW',  amarillas:[{j:13,m:'Juego peligroso'},{j:19,m:'Juego peligroso'},{j:20,m:'Juego peligroso'},{j:26,m:'Conducta antideportiva'},{j:34,m:'Salir terreno sin autorización'}], acumulaciones:[], rojas:[]},
     {name:'Calderón',     pos:'CM',  amarillas:[{j:29,m:'Infracción reglamentaria'},{j:34,m:'Infracción reglamentaria'},{j:35,m:'Conducta antideportiva'},{j:37,m:'Incumplir instrucciones'}], acumulaciones:[{j:26,m:'Suspensión: acumulación'}], rojas:[]},
     {name:'Novoa',        pos:'CB',  amarillas:[{j:7,m:'Juego peligroso'},{j:8,m:'Juego peligroso'},{j:15,m:'Infracción reglamentaria'},{j:23,m:'Conducta antideportiva'},{j:30,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
@@ -15031,7 +15031,7 @@
     const totalAm = SANCIONES_DATA.reduce((s,p) => s + p.amarillas.length, 0);
     const totalRo = SANCIONES_DATA.reduce((s,p) => s + p.rojas.length, 0);
     const totalAc = SANCIONES_DATA.reduce((s,p) => s + p.acumulaciones.length, 0);
-    const lastJ = 37;
+    const lastJ = 38;
 
     const sorted = [...SANCIONES_DATA].sort((a,b) =>
       (b.rojas.length*10 + b.amarillas.length + b.acumulaciones.length) -
