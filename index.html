@@ -12551,7 +12551,7 @@
               }).join('');
               const tabDesc = _profileTab === 'defensiva'
                 ? '<strong style="color:var(--text1)">OBE (Out of Possession Ball Engagement)</strong> mide cada vez que un jugador interviene activamente sobre el balón cuando su equipo <em>no</em> lo tiene: intercepciones, duelos defensivos, coberturas y recuperaciones. Aquí se muestra <strong style="color:var(--text1)">dónde</strong> se producen esas intervenciones (bloque alto/medio/bajo o en transición) y <strong style="color:var(--text1)">qué resultado</strong> generan (recuperación, disrupción, línea afectada…).'
-                : 'Métricas de <strong style="color:var(--text1)">pressing</strong>: con qué frecuencia y de qué forma el jugador presiona al rival cuando su equipo no tiene el balón. Presión directa = presión inmediata al portador; Contrapresión = presión tras pérdida; Presión cadena = pressing organizado en bloque; Presión atrás = recuperación de posición.';
+                : 'Métricas de <strong style="color:var(--text1)">pressing</strong>: con qué frecuencia y de qué forma el jugador presiona al rival cuando su equipo no tiene el balón. Presión directa = presión inmediata al poseedor; Contrapresión = presión tras pérdida; Presión cadena = pressing organizado en bloque; Presión atrás = recuperación de posición.';
 
               // ── Subtab toggle (Tabla / Distribución) ──────────────────────────────
               const _obeTog = `<div style="display:flex;gap:8px;margin-bottom:14px">
@@ -12829,10 +12829,10 @@
                 const _ln  = p.name.split(' ').slice(-1)[0];
                 const _presetInterpretations = [
                   [// 0: OBE vs Pressing — TR, TL, BR, BL
-                    `<strong>${_ln}</strong> · <em>Omnipresente</em>: plena activación defensiva en ambas vertientes — alto volumen de acciones en fase de no posesión (P${_pX}) y presión directa al portador frecuente (P${_pY}). Se implica tanto en el bloque como saliendo a cerrar líneas de pase al rival.`,
-                    `<strong>${_ln}</strong> · <em>Presionador</em>: destaca por el cierre agresivo al portador (P${_pY}) más que por el volumen global de acciones defensivas (P${_pX}). Sale a cortar la circulación, fuerza el error en campo contrario y prioriza el acoso individual sobre el posicionamiento en el bloque.`,
-                    `<strong>${_ln}</strong> · <em>Posicional</em>: alto volumen de acciones defensivas en fase de no posesión (P${_pX}), con presión directa al portador moderada (P${_pY}). Ocupa bien las líneas de pase, intercepta y defiende en zona sin necesidad de salir a presionar individualmente.`,
-                    `<strong>${_ln}</strong> · <em>Discreto</em>: por debajo de la media tanto en acciones defensivas en fase de no posesión (P${_pX}) como en presión directa al portador (P${_pY}). Margen de mejora claro en la activación durante la fase sin balón.`,
+                    `<strong>${_ln}</strong> · <em>Omnipresente</em>: plena activación defensiva en ambas vertientes — alto volumen de acciones en fase de no posesión (P${_pX}) y presión directa al poseedor frecuente (P${_pY}). Se implica tanto en el bloque como saliendo a cerrar líneas de pase al rival.`,
+                    `<strong>${_ln}</strong> · <em>Presionador</em>: destaca por el cierre agresivo al poseedor (P${_pY}) más que por el volumen global de acciones defensivas (P${_pX}). Sale a cortar la circulación, fuerza el error en campo contrario y prioriza el acoso individual sobre el posicionamiento en el bloque.`,
+                    `<strong>${_ln}</strong> · <em>Posicional</em>: alto volumen de acciones defensivas en fase de no posesión (P${_pX}), con presión directa al poseedor moderada (P${_pY}). Ocupa bien las líneas de pase, intercepta y defiende en zona sin necesidad de salir a presionar individualmente.`,
+                    `<strong>${_ln}</strong> · <em>Discreto</em>: por debajo de la media tanto en acciones defensivas en fase de no posesión (P${_pX}) como en presión directa al poseedor (P${_pY}). Margen de mejora claro en la activación durante la fase sin balón.`,
                   ],
                   [// 1: Zona de intervención — TR, TL, BR, BL
                     `<strong>${_ln}</strong> · <em>Integral</em>: se implica en todas las fases defensivas — alto volumen de acciones en el bloque bajo (P${_pX}) y en la transición defensiva inmediata (P${_pY}). Activo tanto en defensa organizada como en la reacción tras perder el balón.`,
@@ -12843,7 +12843,7 @@
                   [// 2: Resultados defensivos — TR, TL, BR, BL
                     `<strong>${_ln}</strong> · <em>Muy efectivo</em>: el perfil defensivo sin balón más productivo — alta capacidad de interrumpir la circulación rival (P${_pX}) y gran volumen de recuperaciones directas de balón (P${_pY}). Sus intervenciones generan transiciones positivas concretas para el equipo.`,
                     `<strong>${_ln}</strong> · <em>Recuperador</em>: especialista en la recuperación de balón (P${_pY}): intercepta, gana la segunda jugada y se queda con el balón suelto. Su capacidad de interrumpir activamente la circulación rival es menor (P${_pX}), pero lo compensa con criterio posicional.`,
-                    `<strong>${_ln}</strong> · <em>Perturbador</em>: activo en el acoso al portador y la interrupción de la salida de balón rival (P${_pX}), aunque no siempre concluye recuperando él la pelota (P${_pY}). Genera congestión y fuerza errores — el fruto a veces lo recoge el compañero.`,
+                    `<strong>${_ln}</strong> · <em>Perturbador</em>: activo en el acoso al poseedor y la interrupción de la salida de balón rival (P${_pX}), aunque no siempre concluye recuperando él la pelota (P${_pY}). Genera congestión y fuerza errores — el fruto a veces lo recoge el compañero.`,
                     `<strong>${_ln}</strong> · <em>Sin impacto</em>: por debajo de la media en capacidad de interrumpir el juego rival (P${_pX}) y en recuperaciones directas de balón (P${_pY}). Sus acciones en fase de no posesión tienen escasa incidencia en el resultado defensivo del equipo.`,
                   ],
                   [// 3: Vulnerabilidades — TR=malo, TL, BR, BL=bueno
@@ -12853,10 +12853,10 @@
                     `<strong>${_ln}</strong> · <em>Muy fiable</em>: sólido en ambas situaciones defensivas — raramente superado por desmarques sin balón (P${_pX}) ni con el rival en posesión (P${_pY}). Difícil de batir en los duelos individuales, tanto de frente como a la espalda.`,
                   ],
                   [// 4: Pressing detallado — TR, TL, BR, BL
-                    `<strong>${_ln}</strong> · <em>Pressing total</em>: máxima intensidad en ambas líneas de presión — ejerce pressing efectivo sobre el portador (P${_pX}) y contrapresiona con inmediatez tras perder el balón (P${_pY}). Referente en la intensidad defensiva del equipo, tanto en posesión rival como en las transiciones.`,
+                    `<strong>${_ln}</strong> · <em>Pressing total</em>: máxima intensidad en ambas líneas de presión — ejerce pressing efectivo sobre el poseedor (P${_pX}) y contrapresiona con inmediatez tras perder el balón (P${_pY}). Referente en la intensidad defensiva del equipo, tanto en posesión rival como en las transiciones.`,
                     `<strong>${_ln}</strong> · <em>Contrapresor</em>: su principal aporte es la contrapresión inmediata tras pérdida (P${_pY}): reacciona rápido, cierra las líneas de pase y trata de recuperar el balón antes de que el rival organice el ataque. El pressing directo en fase defensiva organizada es más moderado (P${_pX}).`,
-                    `<strong>${_ln}</strong> · <em>Presionador</em>: activo en el pressing al portador durante la fase defensiva (P${_pX}), aunque la reacción en la transición negativa es más contenida (P${_pY}). Presiona bien en el bloque, pero da algo más de tiempo al rival cuando su equipo pierde el balón.`,
-                    `<strong>${_ln}</strong> · <em>Retraído</em>: baja participación en pressing al portador (P${_pX}) y en contrapresión tras pérdida (P${_pY}). Prefiere replegarse a posiciones defensivas antes de salir a presionar en campo contrario.`,
+                    `<strong>${_ln}</strong> · <em>Presionador</em>: activo en el pressing al poseedor durante la fase defensiva (P${_pX}), aunque la reacción en la transición negativa es más contenida (P${_pY}). Presiona bien en el bloque, pero da algo más de tiempo al rival cuando su equipo pierde el balón.`,
+                    `<strong>${_ln}</strong> · <em>Retraído</em>: baja participación en pressing al poseedor (P${_pX}) y en contrapresión tras pérdida (P${_pY}). Prefiere replegarse a posiciones defensivas antes de salir a presionar en campo contrario.`,
                   ],
                 ];
                 let _scDesc = '';
