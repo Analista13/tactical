@@ -203,8 +203,8 @@
       logo: 'primera_fed_logo.png',
       season: '2025/26',
       teams: [
-        { id:923, name:'SD Ponferradina', escudo:'https://tmssl.akamaized.net/images/wappen/head/4032.png', partidos:31, active:true },
-        { id:null, name:'Celta Fortuna',  escudo:'img/escudos/celta-fortuna.png', partidos:0, active:false, initials:'CF', color:'#6BB5E8' },
+        { id:923,  name:'SD Ponferradina', escudo:'https://tmssl.akamaized.net/images/wappen/head/4032.png', partidos:31, active:true },
+        { id:8733, name:'RC Celta Fortuna', escudo:'img/escudos/celta-fortuna.png', partidos:0, active:true, initials:'CF', color:'#6BB5E8' },
         { id:null, name:'CE Europa',      escudo:'', partidos:0, active:false, initials:'CE', color:'#E8B06B' },
       ]
     }
@@ -561,6 +561,7 @@
 
   // Dorsales por equipo y player_id (fuente: Transfermarkt 2025-26)
   const PLAYER_DORSALES_MAP_D = {
+    8733: {}, // RC Celta Fortuna — sin datos de partido aún
     2908: { // Pontevedra CF
       890502:13, // R. Marqueta
       751468: 2, // Víctor Eimil
@@ -613,6 +614,7 @@
   let PLAYER_DORSALES = PLAYER_DORSALES_MAP_D[923];
 
   const PARTIDOS_MAP = {
+    8733: [], // RC Celta Fortuna — partidos se añadirán próximamente
     2908: [
       {j:'J1',  f:'30/08/2025', local:'Pontevedra CF',    vis:'Cacereño',        id:2040850, s:'1-1'},
       {j:'J2',  f:'06/09/2025', local:'Ponferradina',     vis:'Pontevedra CF',   id:2040906, s:'0-1'},
@@ -3450,6 +3452,18 @@
     const lvVis   = document.getElementById('lv-visitante');
     if (lvLocal) lvLocal.style.display = tab === 'bloque' ? 'none' : '';
     if (lvVis)   lvVis.style.display   = tab === 'bloque' ? 'none' : '';
+    // Para equipos sin datos de análisis, mostrar placeholder excepto en Plantilla
+    if (currentTeam.id !== 923 && tab !== 'plantilla') {
+      document.getElementById('content').innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:420px;gap:18px">
+          <img src="${currentTeam.escudo}" style="width:64px;height:64px;object-fit:contain;opacity:0.45;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4))">
+          <div style="font-size:15px;font-weight:700;color:var(--text2)">Datos no disponibles</div>
+          <div style="font-size:12px;color:var(--text3);text-align:center;max-width:300px;line-height:1.6">
+            Los datos de análisis de <strong style="color:var(--text2)">${currentTeam.name}</strong> estarán disponibles próximamente.
+          </div>
+        </div>`;
+      return;
+    }
     if(tab === 'redpases')          loadRedPases();
     else if(tab === 'bloque')       loadBloque();
     else if(tab === 'pases')        loadPases();
@@ -11446,6 +11460,44 @@
     ],
   };
 
+  // ── Plantilla RC Celta Fortuna 2025-26 (fuente: Transfermarkt) ───────────────
+  const PLANTILLA_8733 = {
+    porteros: [
+      { d:1,  img:'img/jugadores/celta/01_koke_carrillo.png',   name:'Coke Carrillo',        pos:'Portero',      age:24, val:'200k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:13, img:'img/jugadores/celta/13_caio_barone.png',     name:'Caio Barone',           pos:'Portero',      age:20, val:'—',     dob:'—', foot:'—', h:'—', nat:'Brasil'  },
+      { d:25, img:'img/jugadores/celta/25_marcos_gonzalez.png', name:'Marcos González',       pos:'Portero',      age:20, val:'—',     dob:'—', foot:'—', h:'—', nat:'España'  },
+    ],
+    defensas: [
+      { d:2,  img:'img/jugadores/celta/02_pablo_gavian.png',    name:'Pablo Gavián',          pos:'Lateral der.', age:20, val:'300k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:3,  img:'img/jugadores/celta/03_quique_ribes.png',    name:'Kike Ribes',            pos:'Def. central', age:22, val:'150k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:4,  img:'img/jugadores/celta/04_jaime_vazquez.png',   name:'Jaime Vázquez',         pos:'Def. central', age:20, val:'150k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:6,  img:'img/jugadores/celta/06_pablo_meixus.png',    name:'Pablo Meixús',          pos:'Def. central', age:23, val:'200k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:6,  img:'img/jugadores/celta/06_vicente_nunes.png',   name:'Vicente Nunes',         pos:'Def. central', age:22, val:'—',     dob:'—', foot:'—', h:'—', nat:'Portugal'},
+      { d:14, img:'img/jugadores/celta/14_jan_oliveras.png',    name:'Jan Oliveras',          pos:'Lateral izq.', age:21, val:'50k€',  dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:18, img:'img/jugadores/celta/18_joel_lopez.png',      name:'Joel López',            pos:'Lateral izq.', age:24, val:'200k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:22, img:'img/jugadores/celta/22_mbaye.png',           name:'Seyni Mbaye Ndiaye',    pos:'Def. central', age:21, val:'50k€',  dob:'—', foot:'—', h:'—', nat:'Senegal' },
+      { d:26, img:'img/jugadores/celta/26_anxo.png',            name:'Anxo Rodríguez',        pos:'Def. central', age:19, val:'500k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:29, img:'img/jugadores/celta/29_yoel_lago.png',       name:'Yoel Lago',             pos:'Lateral der.', age:21, val:'—',     dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:32, img:'img/jugadores/celta/32_javi_rodriguez.png',  name:'Javi Rodríguez',        pos:'Def. central', age:22, val:'—',     dob:'—', foot:'—', h:'—', nat:'España'  },
+    ],
+    centrocampistas: [
+      { d:5,  img:'img/jugadores/celta/05_hugo_burcia.png',     name:'Hugo Burcio',           pos:'Mediocentro',  age:19, val:'300k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:8,  img:'img/jugadores/celta/08_andres.png',          name:'Andrés Antañón',        pos:'Mediocentro',  age:19, val:'300k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:10, img:'img/jugadores/celta/10_david_de_la.png',     name:'David de la Iglesia',   pos:'Mediocentro',  age:23, val:'200k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:16, img:'img/jugadores/celta/16_adria_capdevilla.png',name:'Adrià Capdevila',       pos:'Mediocentro',  age:22, val:'150k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:19, img:'img/jugadores/celta/19_oscar_marcos.png',    name:'Óscar Marcos',          pos:'MC ofensivo',  age:20, val:'800k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+    ],
+    delanteros: [
+      { d:7,  img:'img/jugadores/celta/07_hugo_gonzalez.png',   name:'Hugo González',         pos:'Extremo der.', age:23, val:'500k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:9,  img:'img/jugadores/celta/09_alvaro_marin.png',    name:'Álvaro Marín',          pos:'Delantero',    age:23, val:'200k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:11, img:'img/jugadores/celta/11_angel_arcos.png',     name:'Ángel Arcos',           pos:'Extremo izq.', age:20, val:'500k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:17, img:'img/jugadores/celta/17_somuah.png',          name:'Bernard Somuah',        pos:'Extremo izq.', age:20, val:'200k€', dob:'—', foot:'—', h:'—', nat:'Ghana'   },
+      { d:21, img:'img/jugadores/celta/21_luis_bilbao.png',     name:'Luis Bilbao',           pos:'Extremo izq.', age:23, val:'200k€', dob:'—', foot:'—', h:'—', nat:'España'  },
+      { d:23, img:'img/jugadores/celta/23_miller.png',          name:'Germain Miller',        pos:'Extremo der.', age:20, val:'100k€', dob:'—', foot:'—', h:'—', nat:'Camerún' },
+      { d:39, img:'img/jugadores/celta/39_jones.png',           name:'Jones',                 pos:'Delantero',    age:21, val:'—',     dob:'—', foot:'—', h:'—', nat:'España'  },
+    ],
+  };
+
   function loadPlantillaTab() {
     document.getElementById('content').innerHTML = '<div class="loading"><div class="spinner"></div><span>Cargando plantilla...</span></div>';
     setTimeout(renderPlantillaTab, 0);
@@ -11456,7 +11508,7 @@
     const PCOL = {
       'Portero':'#f0883e','Def. central':'#58a6ff','Lateral izq.':'#58a6ff',
       'Lateral der.':'#58a6ff','Mediocentro':'#e3b341','MC ofensivo':'#e3b341',
-      'Extremo izq.':'#3fb950','Extremo der.':'#3fb950','Delantero':'#3fb950',
+      'Mediapunta':'#e3b341','Extremo izq.':'#3fb950','Extremo der.':'#3fb950','Delantero':'#3fb950',
     };
     const card = p => {
       const col = PCOL[p.pos] || 'var(--text2)';
@@ -11488,15 +11540,18 @@
       </div>`;
     if (plantillaView === 'fichajes') { renderFichajesTab(); return; }
 
-    const d = PLANTILLA_923;
+    const PLANTILLA_MAP = { 923: PLANTILLA_923, 8733: PLANTILLA_8733 };
+    const d = PLANTILLA_MAP[currentTeam.id] || PLANTILLA_923;
     const total = d.porteros.length + d.defensas.length + d.centrocampistas.length + d.delanteros.length;
 
+    // Mostrar botón Fichajes solo para equipos con datos de fichajes
+    const hasFichajes = currentTeam.id === 923;
     // ── Tab switcher ───────────────────────────────────────────────────
-    const tabSwitch = `
+    const tabSwitch = hasFichajes ? `
       <div style="display:inline-flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:3px;margin-bottom:20px">
         <button onclick="plantillaView='plantilla';renderPlantillaTab()" style="padding:6px 20px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:var(--accent);color:#0d1117">Plantilla</button>
         <button onclick="plantillaView='fichajes';renderPlantillaTab()" style="padding:6px 20px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:transparent;color:var(--text2)">Fichajes</button>
-      </div>`;
+      </div>` : '';
 
     cont.innerHTML = `
       <div style="padding:20px 24px">
@@ -11520,6 +11575,18 @@
   // ═══════════════════════════════════════════════════════════════════
   function renderFichajesTab() {
     const cont = document.getElementById('content');
+    // Solo SD Ponferradina tiene datos de fichajes por ahora
+    if (currentTeam.id !== 923) {
+      cont.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:420px;gap:18px">
+          <img src="${currentTeam.escudo}" style="width:64px;height:64px;object-fit:contain;opacity:0.45;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4))">
+          <div style="font-size:15px;font-weight:700;color:var(--text2)">Datos no disponibles</div>
+          <div style="font-size:12px;color:var(--text3);text-align:center;max-width:300px;line-height:1.6">
+            Los datos de fichajes de <strong style="color:var(--text2)">${currentTeam.name}</strong> estarán disponibles próximamente.
+          </div>
+        </div>`;
+      return;
+    }
     const PCOL = {
       'Portero':'#f0883e','Def. central':'#58a6ff','Lateral izq.':'#58a6ff',
       'Lateral der.':'#58a6ff','Mediocentro':'#e3b341','MC ofensivo':'#e3b341',
@@ -12100,9 +12167,11 @@
   };
 
   function openPlayerProfile(dorsal) {
+    const PLANTILLA_MAP2 = { 923: PLANTILLA_923, 8733: PLANTILLA_8733 };
+    const _plantilla = PLANTILLA_MAP2[currentTeam.id] || PLANTILLA_923;
     const ALL = [
-      ...PLANTILLA_923.porteros, ...PLANTILLA_923.defensas,
-      ...PLANTILLA_923.centrocampistas, ...PLANTILLA_923.delanteros
+      ..._plantilla.porteros, ..._plantilla.defensas,
+      ..._plantilla.centrocampistas, ..._plantilla.delanteros
     ];
     const p = ALL.find(x => x.d === dorsal);
     if (!p) return;
