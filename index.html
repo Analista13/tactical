@@ -17409,14 +17409,14 @@
     }
     function blockBar(d){
       return '<div style="display:flex;gap:1px;height:7px;border-radius:3px;overflow:hidden">'
-        +'<div style="width:'+d.hb+'%;background:#f85149"></div>'
-        +'<div style="width:'+d.mb+'%;background:#e3b341"></div>'
         +'<div style="width:'+d.lb+'%;background:#58a6ff"></div>'
+        +'<div style="width:'+d.mb+'%;background:#e3b341"></div>'
+        +'<div style="width:'+d.hb+'%;background:#f85149"></div>'
         +'</div>'
         +'<div style="display:flex;gap:6px;margin-top:3px">'
-          +'<span style="font-size:8px;color:#f85149">Alto '+d.hb+'%</span>'
-          +'<span style="font-size:8px;color:#e3b341">Medio '+d.mb+'%</span>'
           +'<span style="font-size:8px;color:#58a6ff">Bajo '+d.lb+'%</span>'
+          +'<span style="font-size:8px;color:#e3b341">Medio '+d.mb+'%</span>'
+          +'<span style="font-size:8px;color:#f85149">Alto '+d.hb+'%</span>'
         +'</div>';
     }
     var cards=data.map(function(d){
