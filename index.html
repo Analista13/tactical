@@ -11657,10 +11657,41 @@
   let _profilePasesScatterY = 'pct_ok';
   let _profilePasesScatterPreset = 0;
   let _profilePasesScatterCustom = false;
+  let _profilePossView = 'bars';     // 'bars' | 'radar' | 'scatter'
+  let _profilePossScatterX = 'carries';
+  let _profilePossScatterY = 'retained';
+  let _profilePossPosIdx = 0;
 
   // Mapeo nombre plantilla → clave _OBE_DATA (solo si difieren)
   const _OBE_KEY_MAP = {
     'Germán Nóvoa': 'Germán Novoa',
+  };
+
+  // Datos de posesión SkillCorner · 1ª RFEF 25/26 (keyed by runKey = csvName || name)
+  const _POSS_DATA = {
+    'B. Moltenis':        [{pos:'Central Defender',m:9, carries:{v:0.66,r:17},fwd:{v:0.0,r:26}, qpasses:{v:7.84,r:33},tspace:{v:0.0, r:19},  retained:{v:50.0,r:54}, rec_tight:{v:0.13,r:40}}],
+    'Borja Vázquez':      [{pos:'Center Forward',  m:13,carries:{v:5.41,r:100},fwd:{v:0.75,r:20},qpasses:{v:3.0, r:84},tspace:{v:66.67,r:90}, retained:{v:47.5,r:55}, rec_tight:{v:2.1, r:66}},
+                           {pos:'Wide Attacker',   m:8, carries:{v:6.22,r:100},fwd:{v:0.71,r:32},qpasses:{v:3.73,r:58},tspace:{v:57.5, r:68}, retained:{v:55.04,r:70},rec_tight:{v:3.02,r:83}},
+                           {pos:'Wide Attacker',   m:6, carries:{v:3.23,r:80}, fwd:{v:0.99,r:49},qpasses:{v:2.23,r:21},tspace:{v:16.67,r:2},  retained:{v:63.33,r:94},rec_tight:{v:1.74,r:32}}],
+    'Diego Moreno':       [{pos:'Full Back',       m:15,carries:{v:3.0, r:83}, fwd:{v:0.29,r:77},qpasses:{v:8.41,r:78},tspace:{v:35.42,r:27}, retained:{v:42.22,r:37},rec_tight:{v:1.26,r:57}}],
+    'Borja Valle':        [{pos:'Wide Attacker',   m:19,carries:{v:1.02,r:7},  fwd:{v:0.63,r:27},qpasses:{v:6.81,r:91},tspace:{v:67.59,r:83}, retained:{v:58.02,r:78},rec_tight:{v:1.41,r:17}}],
+    'Fede San Emeterio':  [{pos:'Midfield',        m:11,carries:{v:0.0, r:2},  fwd:{v:0.37,r:6}, qpasses:{v:7.03,r:44},tspace:{v:null,r:null}, retained:{v:83.33,r:97},rec_tight:{v:0.0, r:1}}],
+    'Mario Jorrín':       [{pos:'Full Back',       m:6, carries:{v:1.73,r:36}, fwd:{v:0.0, r:12},qpasses:{v:7.16,r:58},tspace:{v:0.0, r:3},   retained:{v:27.78,r:5}, rec_tight:{v:0.49,r:5}}],
+    'David Andújar':      [{pos:'Central Defender',m:11,carries:{v:1.17,r:62}, fwd:{v:0.0, r:26},qpasses:{v:7.04,r:28},tspace:{v:100.0,r:92}, retained:{v:100.0,r:97},rec_tight:{v:0.17,r:47}}],
+    'Andoni López':       [{pos:'Full Back',       m:24,carries:{v:2.09,r:54}, fwd:{v:0.0, r:12},qpasses:{v:5.63,r:28},tspace:{v:25.0, r:11}, retained:{v:28.07,r:6}, rec_tight:{v:1.07,r:44}}],
+    'Eneko Undabarrena':  [{pos:'Central Defender',m:16,carries:{v:0.67,r:19}, fwd:{v:0.0, r:26},qpasses:{v:8.0, r:37},tspace:{v:null,r:null}, retained:{v:50.0,r:54}, rec_tight:{v:0.0, r:13}},
+                           {pos:'Midfield',        m:9, carries:{v:1.2, r:55}, fwd:{v:0.51,r:14},qpasses:{v:9.59,r:77},tspace:{v:0.0, r:2},   retained:{v:28.57,r:1}, rec_tight:{v:0.34,r:6}}],
+    'Vicente Esquerdo':   [{pos:'Midfield',        m:11,carries:{v:0.71,r:33}, fwd:{v:0.53,r:15},qpasses:{v:10.84,r:84},tspace:{v:75.0,r:82}, retained:{v:63.33,r:73},rec_tight:{v:1.24,r:62}}],
+    'P. Ferrer':          [{pos:'Center Forward',  m:6, carries:{v:0.41,r:7},  fwd:{v:1.24,r:53},qpasses:{v:0.83,r:7}, tspace:{v:75.0, r:98}, retained:{v:54.29,r:83},rec_tight:{v:1.65,r:41}}],
+    'A. Keita':           [{pos:'Wide Attacker',   m:6, carries:{v:2.34,r:42}, fwd:{v:2.01,r:86},qpasses:{v:3.01,r:39},tspace:{v:50.0, r:54}, retained:{v:46.67,r:43},rec_tight:{v:2.34,r:62}}],
+    'Xemi Fernández':     [{pos:'Midfield',        m:9, carries:{v:0.43,r:14}, fwd:{v:1.28,r:59},qpasses:{v:5.11,r:21},tspace:{v:36.11,r:24}, retained:{v:53.33,r:38},rec_tight:{v:2.13,r:91}},
+                           {pos:'Wide Attacker',   m:5, carries:{v:1.14,r:10}, fwd:{v:0.0, r:2}, qpasses:{v:4.19,r:63},tspace:{v:66.67,r:80}, retained:{v:64.51,r:94},rec_tight:{v:2.67,r:70}}],
+    'Eneko Aguilar':      [{pos:'Midfield',        m:8, carries:{v:1.15,r:52}, fwd:{v:0.58,r:19},qpasses:{v:6.91,r:42},tspace:{v:37.5, r:25}, retained:{v:58.1, r:52},rec_tight:{v:0.96,r:45}}],
+    'E. Frimpong':        [{pos:'Midfield',        m:17,carries:{v:2.1, r:86}, fwd:{v:1.05,r:47},qpasses:{v:5.44,r:24},tspace:{v:57.14,r:60}, retained:{v:41.04,r:7}, rec_tight:{v:1.15,r:54}}],
+    'Koke':               [{pos:'Full Back',       m:7, carries:{v:0.73,r:4},  fwd:{v:0.0, r:12},qpasses:{v:13.96,r:98},tspace:{v:50.0,r:58}, retained:{v:50.0,r:69}, rec_tight:{v:0.73,r:19}}],
+    'Germán Novoa':       [{pos:'Central Defender',m:25,carries:{v:2.06,r:90}, fwd:{v:0.19,r:82},qpasses:{v:9.05,r:55},tspace:{v:0.0, r:19}, retained:{v:25.0,r:15}, rec_tight:{v:0.12,r:37}}],
+    'Sergio Benito':      [{pos:'Center Forward',  m:9, carries:{v:1.86,r:67}, fwd:{v:1.86,r:87},qpasses:{v:0.74,r:6}, tspace:{v:50.0, r:62}, retained:{v:58.44,r:92},rec_tight:{v:1.11,r:16}}],
+    'José Luis Cortés':   [{pos:'Center Forward',  m:14,carries:{v:2.78,r:92}, fwd:{v:1.62,r:79},qpasses:{v:1.27,r:24},tspace:{v:33.33,r:22}, retained:{v:32.71,r:8}, rec_tight:{v:2.2, r:74}}],
   };
 
   // Grupos de métricas por tab
@@ -11697,6 +11728,8 @@
     // _runData === undefined → cache not loaded yet; null → loaded, player not found
     // Pases season data
     const _pasesData = window._pasesSeasonCache ? (window._pasesSeasonCache[_runKey] || null) : undefined;
+    // Posesión SkillCorner data
+    const _possData = _POSS_DATA[_runKey] || null;
     // Si se llama desde un click de tab, respetar _profileTab; si es nuevo jugador, reset
     // (se resetea desde el card click)
 
@@ -11767,10 +11800,11 @@
                 ...(obeData ? [['defensiva','Acciones defensivas'],['presion','Presión']] : []),
                 ...(_runData !== null ? [['carreras','🏃 Carreras']] : []),
                 ...(_pasesData !== null ? [['pases','🎯 Pases']] : []),
+                ...(_possData ? [['posesion','⚽ Posesión']] : []),
               ].map(([id,lbl]) => {
                 const act = _profileTab === id;
-                const tabCol = id==='carreras' ? '#f0883e' : id==='pases' ? '#58a6ff' : 'var(--accent)';
-                return `<button onclick="_profileTab='${id}';_profileObeView='tabla';_profileRunView='tabla';_profilePasesView='tabla';openPlayerProfile(${p.d})"
+                const tabCol = id==='carreras' ? '#f0883e' : id==='pases' ? '#58a6ff' : id==='posesion' ? '#3fb950' : 'var(--accent)';
+                return `<button onclick="_profileTab='${id}';_profileObeView='tabla';_profileRunView='tabla';_profilePasesView='tabla';_profilePossView='bars';_profilePossPosIdx=0;openPlayerProfile(${p.d})"
                   style="background:transparent;border:none;border-bottom:2px solid ${act?tabCol:'transparent'};
                          color:${act?tabCol:'var(--text2)'};padding:8px 18px;
                          font-family:'DM Sans',sans-serif;font-size:13px;font-weight:${act?700:500};
@@ -12528,6 +12562,124 @@
                   </table>
                   <div style="padding:6px 10px;font-size:9px;color:var(--text3);border-top:1px solid var(--border)">${_pd.matches} partidos · ${Math.round(_pd.minutes)} min</div>
                 </div>`);
+            })() : _profileTab === 'posesion' ? (() => {
+              // ── POSESIÓN (SkillCorner) TAB ──────────────────────────────────────
+              const _possPD = _POSS_DATA[_runKey] || null;
+              if (!_possPD) return '<div style="padding:30px;text-align:center;color:var(--text3);font-size:12px">Sin datos de posesión para este jugador</div>';
+              if (_profilePossPosIdx >= _possPD.length) _profilePossPosIdx = 0;
+              const _pdat = _possPD[_profilePossPosIdx];
+
+              const _possMets = [
+                {k:'carries',  lbl:'Conducciones >8m',    short:'Cond. >8m',  u:'p30',col:'#f0883e'},
+                {k:'fwd',      lbl:'Momentos adelante',   short:'Mom. ad.',   u:'p30',col:'#58a6ff'},
+                {k:'qpasses',  lbl:'Pases rápidos',       short:'Pases rap.', u:'p30',col:'#c8a96e'},
+                {k:'tspace',   lbl:'% Recep. esp. ajust.',short:'% Esp.aj.',  u:'%',  col:'#3fb950'},
+                {k:'retained', lbl:'% Retención',         short:'% Reten.',   u:'%',  col:'#d2a8ff'},
+                {k:'rec_tight',lbl:'Rec. esp. ajust.',    short:'Rec.aj.',    u:'p30',col:'#79c0ff'},
+              ];
+              const _pPC = r => r==null?'var(--text3)':r>=75?'#3fb950':r>=50?'#c8a96e':r>=25?'#f0883e':'#f85149';
+              const _pPosMap = {'Central Defender':'DC','Full Back':'Lateral','Midfield':'MC','Wide Attacker':'Extremo','Center Forward':'Delantero'};
+
+              const _pTog2 = (vk,lbl,col) => {
+                const act = _profilePossView===vk;
+                return `<button onclick="_profilePossView='${vk}';openPlayerProfile(${p.d})" style="padding:5px 14px;border-radius:6px;border:1px solid ${act?col:'var(--border)'};background:${act?col+'22':'var(--bg2)'};color:${act?col:'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${act?700:500};transition:all .15s">${lbl}</button>`;
+              };
+              const _pTogBar2 = '<div style="display:flex;gap:8px;margin-bottom:16px">' +
+                _pTog2('bars','📊 Barras','#c8a96e') +
+                _pTog2('radar','◎ Radar','#58a6ff') +
+                _pTog2('scatter','📈 Dispersión','#3fb950') +
+                '</div>';
+
+              const _pPosSelect = _possPD.length > 1 ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' +
+                _possPD.map((e,i) => { const act=i===_profilePossPosIdx; return `<button onclick="_profilePossPosIdx=${i};openPlayerProfile(${p.d})" style="padding:3px 10px;border-radius:16px;border:1px solid ${act?'#c8a96e':'var(--border)'};background:${act?'rgba(200,169,110,0.18)':'var(--bg2)'};color:${act?'#c8a96e':'var(--text3)'};font-size:10px;cursor:pointer">${_pPosMap[e.pos]||e.pos} <span style="opacity:0.6">${e.m}p</span></button>`; }).join('') +
+                '</div>' : '';
+
+              const _pFoot = `<div style="font-size:9px;color:var(--text3);margin-top:12px">SkillCorner · 1ª RFEF 25/26 · percentil vs. misma posición · ${_pdat.m} partidos</div>`;
+
+              // ── BARRAS ──────────────────────────────────────────────────────────
+              if (_profilePossView === 'bars') {
+                const _bars = _possMets.map(m => {
+                  const d = _pdat[m.k];
+                  if (!d || d.r==null) return `<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:11px;color:var(--text2)">${m.lbl}</span><span style="font-size:10px;color:var(--text3)">—</span></div><div style="height:24px;border-radius:5px;background:var(--bg3)"></div></div>`;
+                  const col2 = _pPC(d.r);
+                  const val2 = m.u==='%' ? d.v.toFixed(1)+'%' : d.v.toFixed(2);
+                  return `<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:11px;color:var(--text2)">${m.lbl}</span><span style="font-size:10px;color:var(--text3)">${val2}</span></div><div style="position:relative;height:24px;border-radius:5px;background:var(--bg3);overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:${d.r}%;background:${col2};opacity:0.22;border-radius:5px"></div><div style="position:absolute;inset:0;display:flex;align-items:center;padding:0 10px"><span style="font-size:12px;font-weight:800;color:${col2}">P${d.r}</span></div></div></div>`;
+                }).join('');
+                return _pTogBar2 + _pPosSelect + _bars + _pFoot;
+              }
+
+              // ── RADAR ────────────────────────────────────────────────────────────
+              if (_profilePossView === 'radar') {
+                const _Rv=85, _Nv=6;
+                const _angs = _possMets.map((_,i) => i*2*Math.PI/_Nv - Math.PI/2);
+                const _hxP = pct => { const r2=_Rv*pct/100; return _angs.map((a,i)=>(i===0?'M':'L')+(r2*Math.cos(a)).toFixed(1)+','+(r2*Math.sin(a)).toFixed(1)).join(' ')+' Z'; };
+                const _plrP = _angs.map((a,i) => { const d=_pdat[_possMets[i].k]; const r2=d&&d.r!=null?_Rv*d.r/100:0; return (i===0?'M':'L')+(r2*Math.cos(a)).toFixed(1)+','+(r2*Math.sin(a)).toFixed(1); }).join(' ')+' Z';
+                const _axLns = _angs.map(a => `<line x1="0" y1="0" x2="${(_Rv*Math.cos(a)).toFixed(1)}" y2="${(_Rv*Math.sin(a)).toFixed(1)}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>`).join('');
+                const _radarLbls = _angs.map((a,i) => {
+                  const rl=_Rv+20; const lx=(rl*Math.cos(a)).toFixed(1); const ly=(rl*Math.sin(a)).toFixed(1);
+                  const wds=_possMets[i].short.split(' ');
+                  if(wds.length<=2) return `<text x="${lx}" y="${ly}" font-size="8" fill="var(--text3)" text-anchor="middle" dominant-baseline="middle">${_possMets[i].short}</text>`;
+                  return `<text x="${lx}" y="${(parseFloat(ly)-5).toFixed(1)}" font-size="8" fill="var(--text3)" text-anchor="middle" dominant-baseline="middle">${wds.slice(0,2).join(' ')}</text><text x="${lx}" y="${(parseFloat(ly)+5).toFixed(1)}" font-size="8" fill="var(--text3)" text-anchor="middle" dominant-baseline="middle">${wds.slice(2).join(' ')}</text>`;
+                }).join('');
+                const _rdots = _angs.map((a,i) => { const d=_pdat[_possMets[i].k]; if(!d||d.r==null)return ''; const r2=_Rv*d.r/100; return `<circle cx="${(r2*Math.cos(a)).toFixed(1)}" cy="${(r2*Math.sin(a)).toFixed(1)}" r="3.5" fill="${_possMets[i].col}" stroke="var(--bg1)" stroke-width="1.5"/>`; }).join('');
+                const _radarSvg = `<svg viewBox="-120 -120 240 240" style="width:100%;max-width:300px;display:block;margin:0 auto">
+                  <path d="${_hxP(100)}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+                  <path d="${_hxP(75)}"  fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+                  <path d="${_hxP(50)}"  fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1" stroke-dasharray="3,2"/>
+                  <path d="${_hxP(25)}"  fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+                  ${_axLns}
+                  <path d="${_plrP}" fill="rgba(200,169,110,0.18)" stroke="#c8a96e" stroke-width="2"/>
+                  <text x="4" y="${(-_Rv*0.5+2).toFixed(1)}" font-size="6" fill="rgba(255,255,255,0.28)" text-anchor="start">50</text>
+                  ${_rdots}
+                  ${_radarLbls}
+                </svg>`;
+                return _pTogBar2 + _pPosSelect + _radarSvg + _pFoot;
+              }
+
+              // ── SCATTER ──────────────────────────────────────────────────────────
+              const _pxMet = _possMets.find(m=>m.k===_profilePossScatterX)||_possMets[0];
+              const _pyMet = _possMets.find(m=>m.k===_profilePossScatterY)||_possMets[4];
+              const _axBtns2 = (axis, mets2) => mets2.map(m => {
+                const curK = axis==='x'?_profilePossScatterX:_profilePossScatterY;
+                const act = curK===m.k;
+                const vn2 = axis==='x'?'_profilePossScatterX':'_profilePossScatterY';
+                const ac2 = axis==='x'?'#ffa657':'#58a6ff';
+                const bg2 = act?(axis==='x'?'rgba(255,166,87,0.18)':'rgba(88,166,255,0.18)'):'var(--bg2)';
+                return `<button onclick="${vn2}='${m.k}';openPlayerProfile(${p.d})" style="padding:3px 8px;border-radius:12px;border:1px solid ${act?ac2:'var(--border)'};background:${bg2};color:${act?ac2:'var(--text2)'};font-size:10px;cursor:pointer;transition:all .15s">${m.short}</button>`;
+              }).join('');
+              const _SW=300,_SH=210,_SPL=30,_SPB=22,_SPT=10,_SPR=8;
+              const _spw=_SW-_SPL-_SPR, _sph=_SH-_SPT-_SPB;
+              const _sX = r => _SPL+(r/100)*_spw;
+              const _sY = r => _SPT+_sph-(r/100)*_sph;
+              let _sdots='', _slbls='';
+              Object.entries(_POSS_DATA).forEach(([k,ents]) => {
+                if(!ents.length) return;
+                const e0=ents[0];
+                const xd2=e0[_profilePossScatterX]; const yd2=e0[_profilePossScatterY];
+                if(!xd2||xd2.r==null||!yd2||yd2.r==null) return;
+                const sx2=_sX(xd2.r); const sy2=_sY(yd2.r);
+                const isMe = k===_runKey;
+                const c2=isMe?'#c8a96e':'rgba(88,166,255,0.65)';
+                const r3=isMe?6:4; const sw3=isMe?2:0;
+                _sdots+=`<circle cx="${sx2.toFixed(1)}" cy="${sy2.toFixed(1)}" r="${r3}" fill="${c2}" stroke="${isMe?'var(--bg1)':'none'}" stroke-width="${sw3}"><title>${k} · P${xd2.r} / P${yd2.r}</title></circle>`;
+                if(isMe) _slbls+=`<text x="${(sx2+8).toFixed(1)}" y="${(sy2+4).toFixed(1)}" font-size="9" fill="#c8a96e" font-weight="700">${p.name.split(' ')[0]}</text>`;
+              });
+              const _sgrid=[25,50,75].map(pct => {
+                const gx=_sX(pct),gy=_sY(pct);
+                const op=pct===50?0.12:0.06, wd=pct===50?1:0.5, da=pct===50?'4,2':'2,2';
+                return `<line x1="${gx.toFixed(1)}" y1="${_SPT}" x2="${gx.toFixed(1)}" y2="${(_SPT+_sph).toFixed(1)}" stroke="rgba(255,255,255,${op})" stroke-width="${wd}" stroke-dasharray="${da}"/><line x1="${_SPL}" y1="${gy.toFixed(1)}" x2="${(_SPL+_spw).toFixed(1)}" y2="${gy.toFixed(1)}" stroke="rgba(255,255,255,${op})" stroke-width="${wd}" stroke-dasharray="${da}"/>`;
+              }).join('');
+              const _scatterSvg = `<svg viewBox="0 0 ${_SW} ${_SH}" style="width:100%;border-radius:8px;background:var(--bg3)">
+                ${_sgrid}
+                <rect x="${_SPL}" y="${_SPT}" width="${_spw}" height="${_sph}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+                ${_sdots}${_slbls}
+                <text x="${(_SPL+_spw/2).toFixed(1)}" y="${(_SH-4).toFixed(1)}" font-size="8.5" fill="var(--text3)" text-anchor="middle">${_pxMet.short} (P)</text>
+                <text x="9" y="${(_SPT+_sph/2).toFixed(1)}" font-size="8.5" fill="var(--text3)" text-anchor="middle" transform="rotate(-90,9,${(_SPT+_sph/2).toFixed(1)})">${_pyMet.short} (P)</text>
+              </svg>`;
+              return _pTogBar2 +
+                `<div style="margin-bottom:8px"><div style="font-size:10px;color:var(--text3);margin-bottom:5px">Eje X:</div><div style="display:flex;gap:5px;flex-wrap:wrap">${_axBtns2('x',_possMets)}</div></div>` +
+                `<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--text3);margin-bottom:5px">Eje Y:</div><div style="display:flex;gap:5px;flex-wrap:wrap">${_axBtns2('y',_possMets)}</div></div>` +
+                _scatterSvg + _pFoot;
             })() : (() => {
               const keys   = _OBE_TAB[_profileTab] || [];
               const pCol   = p => p >= 75 ? '#3fb950' : p >= 50 ? '#c8a96e' : p >= 25 ? '#f0883e' : '#f85149';
