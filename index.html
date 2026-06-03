@@ -183,6 +183,7 @@
 <div id="mapaPassTip" style="display:none;position:fixed;z-index:9999;pointer-events:none"></div>
 
 <main>
+  <div id="team-switcher-bar" style="display:none;border-bottom:1px solid var(--border);padding:7px 24px;background:var(--bg2);gap:8px;align-items:center;flex-shrink:0"></div>
   <div class="content" id="content"></div>
 </main>
 
@@ -394,9 +395,37 @@
     switchTab(currentMainTab || 'redpases');
   }
 
+  function renderTeamSwitcherBar() {
+    var bar = document.getElementById('team-switcher-bar');
+    if (!bar) return;
+    var activeTeams = LEAGUES_CFG.filter(function(l){ return l.active; });
+    if (activeTeams.length < 2) { bar.style.display='none'; return; }
+    var pills = activeTeams.map(function(t) {
+      var on = currentTeam.id === t.id;
+      var c  = t.color || '#58a6ff';
+      return '<button onclick="quickSwitchTeam('+t.id+')" style="display:inline-flex;align-items:center;gap:6px;background:'
+        +(on?'rgba(88,166,255,0.1)':'transparent')
+        +';border:1px solid '+(on?c:'var(--border)')
+        +';color:'+(on?c:'var(--text3)')
+        +';font-size:12px;font-weight:'+(on?'700':'500')
+        +';padding:5px 12px;border-radius:20px;cursor:pointer;font-family:inherit">'
+        +'<img src="'+t.escudo+'" style="width:16px;height:16px;object-fit:contain;'+(on?'':'opacity:0.45')+'" onerror="this.style.display=\'none\'"/>'
+        +t.name+'</button>';
+    }).join('');
+    bar.style.display = 'flex';
+    bar.innerHTML = '<span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-right:4px">Equipo</span>'+pills;
+  }
+
+  function quickSwitchTeam(id) {
+    var t = LEAGUES_CFG.find(function(l){ return l.id===id; });
+    if (t) openTeam(t.id, t.name, t.escudo);
+  }
+
   function goHome() {
     appState = 'home';
     currentLeague = null;
+    var bar = document.getElementById('team-switcher-bar');
+    if (bar) bar.style.display = 'none';
     renderAside();
     renderHomeContent();
   }
@@ -3445,6 +3474,7 @@
   }
 
   function switchTab(tab) {
+    renderTeamSwitcherBar();
     currentMainTab = tab;
     // Actualiza nav items del sidebar
     document.querySelectorAll('.nav-item[data-tab]').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
@@ -17324,254 +17354,123 @@
     var domC = domT==='ALTO'?'#f85149':domT==='MEDIO'?'#e3b341':'#58a6ff';
     var domV = domT==='ALTO'?avgHb:domT==='MEDIO'?avgMb:avgLb;
 
-    // ── Pitch visualization ───────────────────────────────────────────
-    var lineas = data.map(function(d){ return 52.5+d.lineX; });
-    var minLinea = +Math.min.apply(null,lineas).toFixed(1);
-    var maxLinea = +Math.max.apply(null,lineas).toFixed(1);
-    var lineRange = maxLinea - minLinea || 1;
+    // ── Mini pitch per match ──────────────────────────────────────────
+    var LIGA_AVG_M = 32.18;   // league average defensive line (m from own goal)
 
-    // Pitch SVG: 105m × 68m aspect, left = own goal
-    var PW=560, PH=Math.round(560*68/105); // 560×363
-    var SC=PW/105;
-    var mx=function(m){ return +(m*SC).toFixed(2); };
-    var my=function(m){ return +(m*SC).toFixed(2); };
+    // Color helpers
+    var rcSolid=function(r){ return r==='W'?'#3fb950':r==='D'?'#e3b341':r==='L'?'#f85149':'#8b949e'; };
+    var resLabel=function(r){ return r==='W'?'G':r==='D'?'E':r==='L'?'P':'?'; };
 
-    // Key positions
-    var X_PA   = mx(16.5);               // own penalty area depth
-    var X_CTR  = mx(52.5);               // center line
-    var X_OPA  = mx(88.5);               // opp penalty area start
-    var Y_MID  = PH/2;
-    var Y_PA_T = my((68-40.32)/2);       // penalty area top
-    var Y_PA_B = PH - Y_PA_T;
-    var Y_GA_T = my((68-18.32)/2);       // 6-yard box top
-    var Y_GA_B = PH - Y_GA_T;
-    var R_CIRC = mx(9.15);               // center circle radius
+    // Mini pitch dimensions: 230×149px (105m×68m scale)
+    var CPW=230, CPH=Math.round(230*68/105), CS=230/105;
 
-    // Defensive line x on SVG
-    var lineToX = function(lineX){ return mx(52.5+lineX); };
-    var avgX    = lineToX(avgLineX);
-    var avgBallX= mx(avgLinea + avgDelta);
-
-    // Result color
-    var rc=function(r){
-      return r==='W'?'rgba(63,185,80,0.7)':r==='D'?'rgba(227,179,65,0.7)':r==='L'?'rgba(248,81,73,0.7)':'rgba(139,148,158,0.55)';
-    };
-
-    // 1 ─ Grass stripes
-    var stripes='';
-    for(var si=0;si<10;si++){
-      stripes+='<rect x="'+mx(si*10.5)+'" y="0" width="'+mx(10.5)+'" height="'+PH
-              +'" fill="'+(si%2===0?'#1d5228':'#195023')+'"/>';
+    function buildMiniPitch(d){
+      var matchX=+((52.5+d.lineX)*CS).toFixed(1);
+      var ligaX=+(LIGA_AVG_M*CS).toFixed(1);
+      var col=rcSolid(d.res);
+      var paX=+(16.5*CS).toFixed(1);
+      var ctrX=+(52.5*CS).toFixed(1);
+      var opaX=+(88.5*CS).toFixed(1);
+      var midY=+(CPH/2).toFixed(1);
+      var paT=+((68-40.32)/2*CS).toFixed(1), paB=+(CPH-paT).toFixed(1);
+      var gaT=+((68-18.32)/2*CS).toFixed(1), gaB=+(CPH-gaT).toFixed(1);
+      var rC=+(9.15*CS).toFixed(1);
+      var sw=+(10.5*CS).toFixed(1);
+      var stripes='';
+      for(var si=0;si<10;si++) stripes+='<rect x="'+(+(si*10.5*CS).toFixed(1))+'" y="0" width="'+sw+'" height="'+CPH+'" fill="'+(si%2===0?'#1d5228':'#195023')+'"/>';
+      var marks=''
+        +'<rect x="1" y="1" width="'+(CPW-2)+'" height="'+(CPH-2)+'" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1"/>'
+        +'<rect x="0" y="'+paT+'" width="'+paX+'" height="'+(paB-paT)+'" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1"/>'
+        +'<rect x="0" y="'+gaT+'" width="'+(+(5.5*CS).toFixed(1))+'" height="'+(gaB-gaT)+'" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="0.8"/>'
+        +'<line x1="'+ctrX+'" y1="0" x2="'+ctrX+'" y2="'+CPH+'" stroke="rgba(255,255,255,0.65)" stroke-width="1"/>'
+        +'<circle cx="'+ctrX+'" cy="'+midY+'" r="'+rC+'" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1"/>'
+        +'<rect x="'+opaX+'" y="'+paT+'" width="'+(CPW-opaX)+'" height="'+(paB-paT)+'" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1"/>';
+      return '<svg width="'+CPW+'" height="'+CPH+'" style="display:block">'
+        +stripes+marks
+        +'<line x1="'+ligaX+'" y1="0" x2="'+ligaX+'" y2="'+CPH+'" stroke="rgba(200,200,200,0.7)" stroke-width="1.5" stroke-dasharray="4,3"/>'
+        +'<line x1="'+matchX+'" y1="0" x2="'+matchX+'" y2="'+CPH+'" stroke="'+col+'" stroke-width="2.5"/>'
+        +'</svg>';
     }
-
-    // 2 ─ Pitch markings (below defensive lines)
-    var marks=''
-      // outer boundary
-      +'<rect x="1" y="1" width="'+(PW-2)+'" height="'+(PH-2)
-        +'" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>'
-      // own penalty area
-      +'<rect x="0" y="'+Y_PA_T+'" width="'+X_PA+'" height="'+(Y_PA_B-Y_PA_T)
-        +'" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>'
-      // own 6-yard box
-      +'<rect x="0" y="'+Y_GA_T+'" width="'+mx(5.5)+'" height="'+(Y_GA_B-Y_GA_T)
-        +'" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.2"/>'
-      // own goal line (thick)
-      +'<line x1="2" y1="'+Y_GA_T+'" x2="2" y2="'+Y_GA_B
-        +'" stroke="white" stroke-width="4"/>'
-      // own penalty spot
-      +'<circle cx="'+mx(11)+'" cy="'+Y_MID+'" r="2.5" fill="rgba(255,255,255,0.7)"/>'
-      // center line
-      +'<line x1="'+X_CTR+'" y1="0" x2="'+X_CTR+'" y2="'+PH
-        +'" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>'
-      // center circle
-      +'<circle cx="'+X_CTR+'" cy="'+Y_MID+'" r="'+R_CIRC
-        +'" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>'
-      // center spot
-      +'<circle cx="'+X_CTR+'" cy="'+Y_MID+'" r="3" fill="rgba(255,255,255,0.75)"/>'
-      // opp penalty area
-      +'<rect x="'+X_OPA+'" y="'+Y_PA_T+'" width="'+(PW-X_OPA)+'" height="'+(Y_PA_B-Y_PA_T)
-        +'" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>'
-      // opp 6-yard
-      +'<rect x="'+(PW-mx(5.5))+'" y="'+Y_GA_T+'" width="'+mx(5.5)+'" height="'+(Y_GA_B-Y_GA_T)
-        +'" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.2"/>'
-      // opp goal line
-      +'<line x1="'+(PW-2)+'" y1="'+Y_GA_T+'" x2="'+(PW-2)+'" y2="'+Y_GA_B
-        +'" stroke="white" stroke-width="4"/>'
-      // opp penalty spot
-      +'<circle cx="'+mx(94)+'" cy="'+Y_MID+'" r="2.5" fill="rgba(255,255,255,0.7)"/>';
-
-    // 3 ─ Range zone (min–max band, subtle)
-    var rangeMinX = lineToX(Math.min.apply(null,data.map(function(d){return d.lineX;})));
-    var rangeMaxX = lineToX(Math.max.apply(null,data.map(function(d){return d.lineX;})));
-    var rangeZone='<rect x="'+rangeMinX+'" y="0" width="'+(rangeMaxX-rangeMinX)+'" height="'+PH
-                  +'" fill="rgba(255,255,255,0.04)"/>';
-
-    // 4 ─ Gap zone (avg line → avg ball)
-    var gapZone='<rect x="'+avgX+'" y="0" width="'+(avgBallX-avgX)+'" height="'+PH
-                +'" fill="rgba(88,166,255,0.07)"/>';
-
-    // 5 ─ Individual match lines
-    var matchLines=data.map(function(d){
-      var x=lineToX(d.lineX);
-      return '<line x1="'+x+'" y1="0" x2="'+x+'" y2="'+PH+'" stroke="'+rc(d.res)
-             +'" stroke-width="2"><title>'+d.j+' vs '+d.rival+' ('+d.score
-             +') · Línea: '+(52.5+d.lineX).toFixed(1)+'m · Gap: '+d.delta+'m</title></line>';
-    }).join('');
-
-    // 6 ─ Average ball position (dashed)
-    var ballLine='<line x1="'+avgBallX+'" y1="14" x2="'+avgBallX+'" y2="'+(PH-14)
-                 +'" stroke="rgba(227,179,65,0.85)" stroke-width="2" stroke-dasharray="5,4"/>';
-
-    // 7 ─ Average defensive line (glow + solid)
-    var avgGlow='<line x1="'+avgX+'" y1="0" x2="'+avgX+'" y2="'+PH
-                +'" stroke="rgba(88,166,255,0.25)" stroke-width="10"/>';
-    var avgLine='<line x1="'+avgX+'" y1="0" x2="'+avgX+'" y2="'+PH
-                +'" stroke="#58a6ff" stroke-width="2.5"/>';
-
-    // 8 ─ Annotations (above and below pitch, in extended viewBox)
-    var ABOVE=20, BELOW=26;
-    var annot=''
-      // ── above pitch ──
-      // "PORTERÍA PROPIA" label left
-      +'<text x="4" y="-6" font-size="9" fill="rgba(255,255,255,0.35)" font-family="inherit">◀ Portería propia</text>'
-      // "CAMPO RIVAL" label right
-      +'<text x="'+(PW-4)+'" y="-6" font-size="9" fill="rgba(255,255,255,0.35)" text-anchor="end" font-family="inherit">Campo rival ▶</text>'
-      // avg line label above
-      +'<text x="'+avgX+'" y="-7" font-size="10" fill="#58a6ff" text-anchor="middle" font-weight="bold" font-family="inherit">MEDIA</text>'
-      // ball label above
-      +'<text x="'+avgBallX+'" y="-7" font-size="10" fill="rgba(227,179,65,0.85)" text-anchor="middle" font-family="inherit">BALÓN</text>'
-      // ── below pitch ──
-      // penalty area reference
-      +'<text x="'+X_PA+'" y="'+(PH+14)+'" font-size="9" fill="rgba(255,255,255,0.3)" text-anchor="middle" font-family="inherit">Á.PENALTI</text>'
-      +'<line x1="'+X_PA+'" y1="'+PH+'" x2="'+X_PA+'" y2="'+(PH+5)+'" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>'
-      // center reference
-      +'<text x="'+X_CTR+'" y="'+(PH+14)+'" font-size="9" fill="rgba(255,255,255,0.3)" text-anchor="middle" font-family="inherit">CENTRO</text>'
-      +'<line x1="'+X_CTR+'" y1="'+PH+'" x2="'+X_CTR+'" y2="'+(PH+5)+'" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>'
-      // avg line distance below
-      +'<line x1="'+avgX+'" y1="'+PH+'" x2="'+avgX+'" y2="'+(PH+18)+'" stroke="rgba(88,166,255,0.5)" stroke-width="1.5"/>'
-      +'<text x="'+avgX+'" y="'+(PH+14)+'" font-size="11" fill="#58a6ff" text-anchor="middle" font-weight="bold" font-family="inherit">'+avgLinea+'m</text>'
-      // ball distance below
-      +'<line x1="'+avgBallX+'" y1="'+PH+'" x2="'+avgBallX+'" y2="'+(PH+18)+'" stroke="rgba(227,179,65,0.4)" stroke-width="1"/>'
-      +'<text x="'+avgBallX+'" y="'+(PH+14)+'" font-size="10" fill="rgba(227,179,65,0.7)" text-anchor="middle" font-family="inherit">'+(avgLinea+avgDelta).toFixed(1)+'m</text>';
-
-    var pitchSVG='<svg width="100%" viewBox="0 -'+ABOVE+' '+PW+' '+(PH+ABOVE+BELOW)
-      +'" style="display:block;overflow:visible">'
-      +stripes+marks+rangeZone+gapZone+matchLines+ballLine+avgGlow+avgLine+annot
-      +'</svg>';
-
-    // ── Stat card helper ─────────────────────────────────────────────
-    function card(label,val,unit,col,sub){
-      return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 16px;flex:1;min-width:100px">'
-        +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">'+label+'</div>'
-        +'<div style="font-size:22px;font-weight:800;color:'+col+';font-family:\'Bebas Neue\',sans-serif;line-height:1">'
-          +val+'<span style="font-size:11px;font-weight:500;color:var(--text3);margin-left:2px">'+unit+'</span>'
-        +'</div>'
-        +(sub?'<div style="font-size:10px;color:var(--text3);margin-top:2px">'+sub+'</div>':'')
+    function resTag(r){
+      var c=rcSolid(r);
+      var bg=r==='W'?'rgba(63,185,80,0.12)':r==='D'?'rgba(227,179,65,0.12)':r==='L'?'rgba(248,81,73,0.12)':'rgba(139,148,158,0.1)';
+      var bc=r==='W'?'rgba(63,185,80,0.3)':r==='D'?'rgba(227,179,65,0.3)':r==='L'?'rgba(248,81,73,0.3)':'rgba(139,148,158,0.25)';
+      return '<span style="display:inline-block;background:'+bg+';color:'+c+';border:1px solid '+bc+';font-size:10px;font-weight:800;padding:2px 5px;border-radius:4px">'+resLabel(r)+'</span>';
+    }
+    function blockBar(d){
+      return '<div style="display:flex;gap:1px;height:4px;border-radius:2px;overflow:hidden">'
+        +'<div style="width:'+d.hb+'%;background:#f85149"></div>'
+        +'<div style="width:'+d.mb+'%;background:#e3b341"></div>'
+        +'<div style="width:'+d.lb+'%;background:#58a6ff"></div>'
         +'</div>';
     }
-
-    // ── Per-match table rows ─────────────────────────────────────────
-    function resTag(r){
-      return r==='W'?'<span style="background:rgba(63,185,80,0.12);color:#3fb950;font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;border:1px solid rgba(63,185,80,0.25)">G</span>'
-            :r==='D'?'<span style="background:rgba(227,179,65,0.12);color:#e3b341;font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;border:1px solid rgba(227,179,65,0.25)">E</span>'
-            :r==='L'?'<span style="background:rgba(248,81,73,0.12);color:#f85149;font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;border:1px solid rgba(248,81,73,0.25)">P</span>'
-            :'<span style="color:var(--text3);font-size:10px">—</span>';
-    }
-    var rows=data.map(function(d){
-      var linea=(52.5+d.lineX).toFixed(1);
-      var lineaPct=Math.round((+linea-minLinea)/lineRange*100);
-      var lineCol=d.res==='W'?'#3fb950':d.res==='D'?'#e3b341':d.res==='L'?'#f85149':'#8b949e';
+    var cards=data.map(function(d){
+      var lm=(52.5+d.lineX).toFixed(1);
       var db=d.hb>d.mb&&d.hb>d.lb?{t:'Alto',c:'#f85149',v:d.hb}:d.mb>=d.hb&&d.mb>=d.lb?{t:'Medio',c:'#e3b341',v:d.mb}:{t:'Bajo',c:'#58a6ff',v:d.lb};
-      return '<tr style="border-bottom:1px solid var(--border)">'
-        +'<td style="padding:7px 10px;font-weight:800;color:var(--accent);font-family:\'Bebas Neue\',sans-serif;letter-spacing:1px;font-size:13px;white-space:nowrap">'+d.j+'</td>'
-        +'<td style="padding:7px 8px;font-size:12px;color:var(--text2);white-space:nowrap">'+(d.loc==='L'?'🏠':'✈️')+' '+d.rival+'</td>'
-        +'<td style="padding:7px 8px;text-align:center;font-size:12px;color:var(--text3)">'+d.score+'</td>'
-        +'<td style="padding:7px 8px;text-align:center">'+resTag(d.res)+'</td>'
-        // Mini pitch bar for line position
-        +'<td style="padding:7px 12px;min-width:130px">'
-          +'<div style="display:flex;align-items:center;gap:7px">'
-            +'<div style="flex:1;background:var(--bg3);border-radius:3px;height:5px;position:relative;overflow:hidden">'
-              +'<div style="position:absolute;left:0;top:0;width:'+lineaPct+'%;height:100%;background:'+lineCol+';border-radius:3px;transition:width .2s"></div>'
-            +'</div>'
-            +'<span style="font-size:12px;font-weight:700;color:var(--text1);white-space:nowrap">'+linea+'m</span>'
+      return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
+        +'<div style="padding:7px 10px;background:var(--bg3);display:flex;align-items:center;justify-content:space-between;gap:6px">'
+          +'<div style="display:flex;align-items:center;gap:5px;min-width:0;overflow:hidden">'
+            +'<span style="font-size:11px;font-weight:800;color:var(--accent);font-family:\'Bebas Neue\',sans-serif;letter-spacing:1px;flex-shrink:0">'+d.j+'</span>'
+            +'<span style="font-size:10px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(d.loc==='L'?'🏠':'✈️')+' '+d.rival+'</span>'
           +'</div>'
-        +'</td>'
-        +'<td style="padding:7px 8px;text-align:center;font-size:11px;color:var(--text3);white-space:nowrap">'+d.delta+'m</td>'
-        +'<td style="padding:7px 10px">'
-          +'<div style="display:flex;gap:1px;height:5px;border-radius:3px;overflow:hidden;width:56px">'
-            +'<div style="width:'+d.hb+'%;background:#f85149"></div>'
-            +'<div style="width:'+d.mb+'%;background:#e3b341"></div>'
-            +'<div style="width:'+d.lb+'%;background:#58a6ff"></div>'
+          +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
+            +'<span style="font-size:10px;color:var(--text3)">'+d.score+'</span>'
+            +resTag(d.res)
           +'</div>'
-          +'<span style="font-size:9px;color:'+db.c+'">'+db.t+' '+db.v+'%</span>'
-        +'</td>'
-        +'</tr>';
+        +'</div>'
+        +'<div style="background:#163520;line-height:0">'+buildMiniPitch(d)+'</div>'
+        +'<div style="padding:7px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px">'
+          +'<div style="flex:1;min-width:0">'
+            +blockBar(d)
+            +'<div style="font-size:9px;color:'+db.c+';margin-top:3px">'+db.t+' '+db.v+'%</div>'
+          +'</div>'
+          +'<div style="text-align:right;flex-shrink:0">'
+            +'<div style="font-size:16px;font-weight:800;color:'+rcSolid(d.res)+';font-family:\'Bebas Neue\',sans-serif;line-height:1">'+lm+'<span style="font-size:9px;font-weight:500;color:var(--text3)">m</span></div>'
+            +'<div style="font-size:9px;color:var(--text3)">Gap '+d.delta+'m</div>'
+          +'</div>'
+        +'</div>'
+      +'</div>';
     }).join('');
 
     cont.innerHTML=
       '<div style="padding:20px 24px 36px">'
-        // Header
-        +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">'
-          +'<img src="'+currentTeam.escudo+'" style="width:38px;height:38px;object-fit:contain"/>'
+        +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">'
+          +'<img src="'+currentTeam.escudo+'" style="width:34px;height:34px;object-fit:contain"/>'
           +'<div>'
-            +'<div style="font-size:18px;font-weight:800;color:var(--text1);letter-spacing:-.3px">LÍNEA DEFENSIVA</div>'
+            +'<div style="font-size:17px;font-weight:800;color:var(--text1);letter-spacing:-.3px">LÍNEA DEFENSIVA</div>'
             +'<div style="font-size:11px;color:var(--text3)">SkillCorner · '+N+' partidos · Temporada 2024-25</div>'
           +'</div>'
         +'</div>'
-        // Main layout: pitch left, stats right
-        +'<div style="display:grid;grid-template-columns:1fr 210px;gap:18px;margin-bottom:22px;align-items:start">'
-          // Pitch
-          +'<div>'
-            +'<div style="background:#163520;border-radius:10px;padding:12px 10px;overflow:hidden">'
-              +pitchSVG
-            +'</div>'
-            +'<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;padding:0 2px">'
-              +'<span style="font-size:11px;color:rgba(63,185,80,0.85)">━ Victoria</span>'
-              +'<span style="font-size:11px;color:rgba(227,179,65,0.85)">━ Empate</span>'
-              +'<span style="font-size:11px;color:rgba(248,81,73,0.85)">━ Derrota</span>'
-              +'<span style="font-size:11px;color:#58a6ff;font-weight:600">━ Línea media</span>'
-              +'<span style="font-size:11px;color:rgba(227,179,65,0.7)">╌ Posición media balón</span>'
-            +'</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">'
+          +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 14px">'
+            +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Línea media</div>'
+            +'<div style="font-size:20px;font-weight:800;color:#58a6ff;font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+avgLinea+'<span style="font-size:10px;font-weight:500;color:var(--text3);margin-left:2px">m</span></div>'
+            +'<div style="font-size:9px;color:var(--text3)">desde portería propia</div>'
           +'</div>'
-          // Stats column
-          +'<div style="display:flex;flex-direction:column;gap:10px">'
-            +card('Línea media',avgLinea,'m','#58a6ff','desde portería propia')
-            +card('Gap al balón',avgDelta,'m','#e3b341','distancia línea–balón')
-            +card('Bloque dom.',domT,'',domC,domV+'% de acciones')
-            +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 16px">'
-              +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Distribución bloque</div>'
-              +'<div style="display:flex;gap:1px;height:10px;border-radius:4px;overflow:hidden">'
-                +'<div style="width:'+avgHb+'%;background:#f85149"></div>'
-                +'<div style="width:'+avgMb+'%;background:#e3b341"></div>'
-                +'<div style="width:'+avgLb+'%;background:#58a6ff"></div>'
-              +'</div>'
-              +'<div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">'
-                +'<span style="font-size:10px;color:#f85149">▪ Alto '+avgHb+'%</span>'
-                +'<span style="font-size:10px;color:#e3b341">▪ Medio '+avgMb+'%</span>'
-                +'<span style="font-size:10px;color:#58a6ff">▪ Bajo '+avgLb+'%</span>'
-              +'</div>'
-            +'</div>'
-            +'<div style="font-size:10px;color:var(--text3);padding:4px 2px;line-height:1.7">'
-              +'Rango: <strong style="color:var(--text2)">'+minLinea+'</strong> – <strong style="color:var(--text2)">'+maxLinea+'m</strong><br>'
-              +'<span style="color:var(--text3)">('+N+' partidos analizados)</span>'
-            +'</div>'
+          +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 14px">'
+            +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Media liga</div>'
+            +'<div style="font-size:20px;font-weight:800;color:rgba(200,200,200,0.85);font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+LIGA_AVG_M+'<span style="font-size:10px;font-weight:500;color:var(--text3);margin-left:2px">m</span></div>'
+            +'<div style="font-size:9px;color:var(--text3)">línea ref. liga</div>'
+          +'</div>'
+          +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 14px">'
+            +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Gap al balón</div>'
+            +'<div style="font-size:20px;font-weight:800;color:#e3b341;font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+avgDelta+'<span style="font-size:10px;font-weight:500;color:var(--text3);margin-left:2px">m</span></div>'
+            +'<div style="font-size:9px;color:var(--text3)">distancia línea–balón</div>'
+          +'</div>'
+          +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 14px">'
+            +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Bloque dom.</div>'
+            +'<div style="font-size:20px;font-weight:800;color:'+domC+';font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+domT+'</div>'
+            +'<div style="font-size:9px;color:var(--text3)">'+domV+'% de acciones</div>'
           +'</div>'
         +'</div>'
-        // Table
-        +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Detalle por partido</div>'
-        +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
-          +'<table style="width:100%;border-collapse:collapse">'
-            +'<thead><tr style="background:var(--bg3);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px">'
-              +'<th style="padding:8px 10px;text-align:left;font-weight:600">J</th>'
-              +'<th style="padding:8px 8px;text-align:left;font-weight:600">Rival</th>'
-              +'<th style="padding:8px 8px;text-align:center;font-weight:600">Res.</th>'
-              +'<th style="padding:8px 8px;text-align:center;font-weight:600"></th>'
-              +'<th style="padding:8px 12px;text-align:left;font-weight:600">Línea defensiva</th>'
-              +'<th style="padding:8px 8px;text-align:center;font-weight:600">Gap</th>'
-              +'<th style="padding:8px 10px;text-align:left;font-weight:600">Bloque</th>'
-            +'</tr></thead>'
-            +'<tbody>'+rows+'</tbody>'
-          +'</table>'
+        +'<div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:16px">'
+          +'<span style="font-size:10px;color:rgba(200,200,200,0.75)">┄ Media liga ('+LIGA_AVG_M+'m)</span>'
+          +'<span style="font-size:10px;color:#3fb950">━ Victoria</span>'
+          +'<span style="font-size:10px;color:#e3b341">━ Empate</span>'
+          +'<span style="font-size:10px;color:#f85149">━ Derrota</span>'
+        +'</div>'
+        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px">'
+          +cards
         +'</div>'
       +'</div>';
   }
