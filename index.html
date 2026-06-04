@@ -18253,6 +18253,37 @@
         +'</div>'
       +'</div>'
     +'</div>';
+    // ── Per-match blurb ─────────────────────────────────────────────────────
+    function matchBlurb(d, zp, rPct) {
+      var tot2=d.pressing+d.counter_press+d.recovery_press+d.pressure;
+      var types=[
+        {name:'pressing organizado',val:d.pressing,col:'#58a6ff'},
+        {name:'counter-press',val:d.counter_press,col:'#f85149'},
+        {name:'recovery press',val:d.recovery_press,col:'#3fb950'},
+        {name:'presi\xf3n b\xe1sica',val:d.pressure,col:'#e3b341'}
+      ];
+      var dom=types.reduce(function(a,b){return b.val>a.val?b:a;});
+      var domPct=tot2?Math.round(dom.val/tot2*100):0;
+      var s1='La acci\xf3n dominante fue el <strong style="color:'+dom.col+'">'+dom.name+'</strong> ('+domPct+'%). ';
+      if(dom.name==='counter-press') s1+='El equipo respondi\xf3 con intensidad inmediata tras las p\xe9rdidas.';
+      else if(dom.name==='pressing organizado') s1+='Pressing coordinado y sistem\xe1tico a lo largo del partido.';
+      else if(dom.name==='recovery press') s1+='La presi\xf3n fue mayoritariamente individual mientras el bloque se reorden\xf3.';
+      else s1+='Enfoque predominantemente individual sobre el portador, sin coordinaci\xf3n colectiva.';
+      var s2='';
+      if(zp) {
+        var ph=zp.ph, phStr=(ph>0?'+':'')+ph+'m';
+        if(ph>5) s2=' Altura media <strong style="color:#3fb950">'+phStr+'</strong> — pressing alto en campo rival.';
+        else if(ph>0) s2=' Altura media <strong style="color:#e3b341">'+phStr+'</strong> — pressing alrededor del mediocampo.';
+        else s2=' Altura media <strong style="color:#f85149">'+phStr+'</strong> — pressing iniciado en campo propio.';
+      }
+      var s3='';
+      if(d.chain_n>0) {
+        if(rPct>=50) s3=' <strong style="color:#3fb950">'+rPct+'%</strong> de cadenas terminaron en recuperaci\xf3n — pressing colectivo efectivo.';
+        else if(rPct>=30) s3=' Cadenas con efectividad moderada ('+rPct+'% de recuperaciones).';
+        else s3=' La mayor\xeda de cadenas terminaron en disrupci\xf3n sin recuperar ('+rPct+'% recup.).';
+      }
+      return s1+s2+s3;
+    }
     // ── Match cards ─────────────────────────────────────────────────────────
     var cards=merged.map(function(d){
       var col=rcSolid(d.res);
@@ -18309,6 +18340,8 @@
             +'<div style="font-size:8px;color:var(--text3)">recup.</div>'
           +'</div>'
         +'</div>'
+        // Per-match blurb
+        +'<div style="padding:6px 10px 9px;border-top:1px solid var(--border);font-size:10.5px;color:var(--text3);line-height:1.6">'+matchBlurb(d,zp,rPct)+'</div>'
       +'</div>';
     }).join('');
     cont.innerHTML=
