@@ -18427,9 +18427,9 @@
     });
     var worstRival=Object.keys(rivalMap).reduce(function(best,k){return rivalMap[k].llb>rivalMap[best].llb?k:best;},Object.keys(rivalMap)[0]);
     var wRD=rivalMap[worstRival].llb_d, wRI=rivalMap[worstRival].llb_i, wRTh=rivalMap[worstRival].llb_th;
-    var wRMaxCarril=wRD>=wRI&&wRD>=wRTh?'Carril Derecho':wRI>=wRD&&wRI>=wRTh?'Carril Izquierdo':'zona central';
+    var wRMaxCarril=wRD>=wRI&&wRD>=wRTh?'Carril Derecho':wRI>=wRD&&wRI>=wRTh?'Carril Izquierdo':'centro';
     var mainThreatVal=Math.max(tot.llb_d,tot.llb_i,tot.llb_th);
-    var mainThreat=mainThreatVal===tot.llb_d?'Carril Derecho':mainThreatVal===tot.llb_i?'Carril Izquierdo':'zona central';
+    var mainThreat=mainThreatVal===tot.llb_d?'Carril Derecho':mainThreatVal===tot.llb_i?'Carril Izquierdo':'centro';
     // Helper: result color & tag
     var rcSolid=function(r){return r==='W'?'#3fb950':r==='D'?'#e3b341':r==='L'?'#f85149':'#8b949e';};
     var resLabel=function(r){return r==='W'?'G':r==='D'?'E':r==='L'?'P':'?';};
