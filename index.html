@@ -446,6 +446,7 @@
   let jugSubTab     = 'mapa';
   let jugCalorPlayer = null;  // null=grid, 'name'=individual
   let jugCaloPhase   = 'off'; // 'off' = ofensiva | 'def' = defensiva
+  let regatesPlayer  = null;  // selected player in regates tab
   let telaranaMode  = 'todos'; // 'todos' | 'titulares'
   let perdidasPart  = 'total'; // 'total' | '1' | '2'
   let _redRenderSeq = 0;       // cancel stale async renders
@@ -2858,9 +2859,166 @@
 
   // ── barra de subtabs de Jugadores ──────────────────────────────────────────
   function jugSubTabBar() {
-    const tabs=[['mapa','Mapa de Pases'],['asoc','Asociaciones'],['telarana','Telaraña'],['metricas','Métricas'],['calor','Mapas de Calor']];
+    const tabs=[['mapa','Mapa de Pases'],['asoc','Asociaciones'],['telarana','Telaraña'],['metricas','Métricas'],['calor','Mapas de Calor'],['regates','Regates']];
     return `<div style="display:flex;gap:2px;margin-bottom:20px;border-bottom:1px solid var(--border)">
       ${tabs.map(([id,lbl])=>`<button onclick="setJugSubTab('${id}')" style="background:transparent;border:none;border-bottom:2px solid ${jugSubTab===id?'var(--accent)':'transparent'};color:${jugSubTab===id?'var(--accent)':'var(--text2)'};padding:10px 20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${lbl}</button>`).join('')}
+    </div>`;
+  }
+
+  function setRegatesPlayer(name) {
+    regatesPlayer = name;
+    const cont = document.getElementById('redCont');
+    if(!cont) return;
+    const tid = currentTeam.id;
+    cont.innerHTML = jugSubTabBar() + buildRegatesHTML(tid);
+  }
+
+  function buildDribblePitch(locs) {
+    const W=480, H=320, SX=W/120, SY=H/80;
+    // Pitch background stripes
+    let stripes='';
+    for(let i=0;i<12;i++) stripes+=`<rect x="${i*W/12}" y="0" width="${W/12}" height="${H}" fill="${i%2===0?'#1d5228':'#195023'}"/>`;
+    // Pitch markings (StatsBomb: 120×80)
+    const cx=W/2, cy=H/2;
+    const paLX=18*SX, paRX=(120-18)*SX, paT=(80-40.32)/2*SY, paB=(80-(80-40.32)/2)*SY;
+    const gaLX=6*SX, gaRX=(120-6)*SX, gaT=(80-18.32)/2*SY, gaB=(80-(80-18.32)/2)*SY;
+    const marks=`
+      <rect x="1" y="1" width="${W-2}" height="${H-2}" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.2"/>
+      <line x1="${cx}" y1="0" x2="${cx}" y2="${H}" stroke="rgba(255,255,255,0.55)" stroke-width="1"/>
+      <circle cx="${cx}" cy="${cy}" r="${9.15*SX}" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1"/>
+      <rect x="0" y="${paT}" width="${paLX}" height="${paB-paT}" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1"/>
+      <rect x="0" y="${gaT}" width="${gaLX}" height="${gaB-gaT}" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="0.8"/>
+      <rect x="${paRX}" y="${paT}" width="${W-paRX}" height="${paB-paT}" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1"/>
+      <rect x="${gaRX}" y="${gaT}" width="${W-gaRX}" height="${gaB-gaT}" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="0.8"/>
+    `;
+    // Third dividers
+    const dividers=`
+      <line x1="${40*SX}" y1="0" x2="${40*SX}" y2="${H}" stroke="rgba(255,255,255,0.12)" stroke-width="0.8" stroke-dasharray="4,3"/>
+      <line x1="${80*SX}" y1="0" x2="${80*SX}" y2="${H}" stroke="rgba(255,255,255,0.12)" stroke-width="0.8" stroke-dasharray="4,3"/>
+    `;
+    // Labels
+    const labels=`
+      <text x="${20*SX}" y="12" font-size="8" fill="rgba(255,255,255,0.3)" text-anchor="middle" font-family="inherit">DEF</text>
+      <text x="${60*SX}" y="12" font-size="8" fill="rgba(255,255,255,0.3)" text-anchor="middle" font-family="inherit">MED</text>
+      <text x="${100*SX}" y="12" font-size="8" fill="rgba(255,255,255,0.3)" text-anchor="middle" font-family="inherit">ATQ</text>
+    `;
+    // Dots
+    const dots = locs.map(([x,y,ok])=>{
+      const px=(x*SX).toFixed(1), py=(y*SY).toFixed(1);
+      const col = ok ? 'rgba(63,185,80,0.85)' : 'rgba(248,81,73,0.75)';
+      const str = ok ? 'rgba(63,185,80,1)' : 'rgba(248,81,73,1)';
+      return `<circle cx="${px}" cy="${py}" r="4" fill="${col}" stroke="${str}" stroke-width="0.8"/>`;
+    }).join('');
+    return `<svg width="${W}" height="${H}" style="display:block;border-radius:6px">${stripes}${marks}${dividers}${labels}${dots}</svg>`;
+  }
+
+  function buildRegatesHTML(tid) {
+    const DR_MAP = {923: DR_923, 8733: DR_8733};
+    const data = DR_MAP[tid] || [];
+    if(!data.length) return '<div style="padding:40px;text-align:center;color:var(--text3)">Sin datos de regates</div>';
+    const teamName = currentTeam.name || '';
+    const totAtt  = data.reduce((s,p)=>s+p.att,0);
+    const totComp = data.reduce((s,p)=>s+p.comp,0);
+    const totPct  = totAtt ? Math.round(totComp/totAtt*100) : 0;
+
+    if(regatesPlayer) {
+      const p = data.find(d=>d.name===regatesPlayer);
+      if(!p) { regatesPlayer=null; return buildRegatesHTML(tid); }
+      const pctCol = p.pct>=70?'#3fb950':p.pct>=50?'#e3b341':'#f85149';
+      return `
+        <div style="padding:0 0 30px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+            <button onclick="setRegatesPlayer(null)" style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 14px;color:var(--text2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">← Todos</button>
+            <div>
+              <div style="font-size:16px;font-weight:700;color:var(--text1)">${p.name}</div>
+              <div style="font-size:11px;color:var(--text3)">${p.pos} · StatsBomb · 2025/26</div>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:14px;align-items:center">
+              <div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--text1);font-family:'Bebas Neue',sans-serif">${p.att}</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase">Intentos</div></div>
+              <div style="text-align:center"><div style="font-size:22px;font-weight:800;color:#3fb950;font-family:'Bebas Neue',sans-serif">${p.comp}</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase">Completados</div></div>
+              <div style="text-align:center"><div style="font-size:22px;font-weight:800;color:${pctCol};font-family:'Bebas Neue',sans-serif">${p.pct}%</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase">Éxito</div></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:flex-start">
+            <div>${buildDribblePitch(p.locs)}</div>
+            <div style="flex:1">
+              <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Por tercio del campo</div>
+              ${[['DEF',p.def,'rgba(248,81,73,0.7)'],['MED',p.mid,'rgba(227,179,65,0.7)'],['ATQ',p.att_z,'rgba(63,185,80,0.7)']].map(([lbl,val,col])=>{
+                const pctZ = p.att ? Math.round(val/p.att*100) : 0;
+                return `<div style="margin-bottom:10px">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+                    <span style="font-size:11px;color:var(--text2)">${lbl}</span>
+                    <span style="font-size:11px;color:var(--text3)">${val} (${pctZ}%)</span>
+                  </div>
+                  <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+                    <div style="height:100%;width:${pctZ}%;background:${col};border-radius:3px"></div>
+                  </div>
+                </div>`;
+              }).join('')}
+              <div style="margin-top:20px;display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:center;gap:6px"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="rgba(63,185,80,0.85)" stroke="rgba(63,185,80,1)" stroke-width="0.8"/></svg><span style="font-size:11px;color:var(--text3)">Verde = regate completado</span></div>
+                <div style="display:flex;align-items:center;gap:6px"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="rgba(248,81,73,0.75)" stroke="rgba(248,81,73,1)" stroke-width="0.8"/></svg><span style="font-size:11px;color:var(--text3)">Rojo = regate fallado</span></div>
+                <div style="font-size:10px;color:var(--text3);margin-top:6px">Fuente: StatsBomb · Temporada 2025/26 · Primera Div. RFEF</div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // ── Grid view ─────────────────────────────────────────────────────────────
+    const maxAtt = data[0].att || 1;
+    const rows = data.map((p,i)=>{
+      const pctCol = p.pct>=70?'#3fb950':p.pct>=50?'#e3b341':'#f85149';
+      const barW = Math.round(p.att/maxAtt*100);
+      return `<tr onclick="setRegatesPlayer('${p.name.replace(/'/g,"\\'")}')" style="cursor:pointer;border-bottom:1px solid var(--border)" onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background=''">
+        <td style="padding:8px 10px;font-size:12px;color:var(--text3);font-family:'Bebas Neue',sans-serif">${i+1}</td>
+        <td style="padding:8px 4px">
+          <div style="font-size:12px;font-weight:600;color:var(--text1)">${p.name}</div>
+          <div style="font-size:10px;color:var(--text3)">${p.pos}</div>
+        </td>
+        <td style="padding:8px 10px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:80px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">
+              <div style="height:100%;width:${barW}%;background:var(--accent);border-radius:3px"></div>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:var(--text1);font-family:'Bebas Neue',sans-serif">${p.att}</span>
+          </div>
+        </td>
+        <td style="padding:8px 10px;font-size:12px;color:#3fb950;font-weight:700;font-family:'Bebas Neue',sans-serif">${p.comp}</td>
+        <td style="padding:8px 10px;font-size:12px;font-weight:800;color:${pctCol};font-family:'Bebas Neue',sans-serif">${p.pct}%</td>
+        <td style="padding:8px 10px;font-size:10px;color:var(--text3)">${p.att_z} ATQ · ${p.mid} MED · ${p.def} DEF</td>
+      </tr>`;
+    }).join('');
+
+    return `<div style="padding:0 0 30px">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+        <img src="${currentTeam.escudo}" style="width:30px;height:30px;object-fit:contain" onerror="this.style.display='none'"/>
+        <div>
+          <div style="font-size:16px;font-weight:800;color:var(--text1)">REGATES — ${teamName.toUpperCase()}</div>
+          <div style="font-size:11px;color:var(--text3)">StatsBomb · Temporada 2025/26 · Primera División RFEF</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:16px">
+          <div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--text1);font-family:'Bebas Neue',sans-serif">${totAtt}</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase">Total intentos</div></div>
+          <div style="text-align:center"><div style="font-size:22px;font-weight:800;color:#3fb950;font-family:'Bebas Neue',sans-serif">${totComp}</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase">Completados</div></div>
+          <div style="text-align:center"><div style="font-size:22px;font-weight:800;color:${totPct>=60?'#3fb950':totPct>=45?'#e3b341':'#f85149'};font-family:'Bebas Neue',sans-serif">${totPct}%</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase">Éxito global</div></div>
+        </div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);background:var(--bg3)">
+              <th style="padding:8px 10px;text-align:left;font-size:9px;color:var(--text3);letter-spacing:.5px">#</th>
+              <th style="padding:8px 4px;text-align:left;font-size:9px;color:var(--text3);letter-spacing:.5px">JUGADOR</th>
+              <th style="padding:8px 10px;text-align:left;font-size:9px;color:var(--text3);letter-spacing:.5px">INTENTOS</th>
+              <th style="padding:8px 10px;text-align:left;font-size:9px;color:var(--text3);letter-spacing:.5px">COMP.</th>
+              <th style="padding:8px 10px;text-align:left;font-size:9px;color:var(--text3);letter-spacing:.5px">ÉXITO</th>
+              <th style="padding:8px 10px;text-align:left;font-size:9px;color:var(--text3);letter-spacing:.5px">POR ZONA</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:8px;text-align:right">Haz clic en un jugador para ver su mapa de regates en el campo</div>
     </div>`;
   }
 
@@ -2869,6 +3027,12 @@
     const tid=currentTeam.id, mid=redMatchId;
     const cont=document.getElementById('redCont');
     if(!cont) return;
+    // Regates tab uses season data — no match needed
+    if(jugSubTab==='regates') {
+      regatesPlayer=null;
+      cont.innerHTML=jugSubTabBar()+buildRegatesHTML(tid);
+      return;
+    }
     if(!mid){
       cont.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>`;
       return;
@@ -18037,6 +18201,11 @@
     {j:'J36',ph:-5.24,z:[[23,31,21,20,14],[25,50,24,27,20],[16,10,10,15,7]]},
     {j:'J37',ph:2.14,z:[[7,19,21,14,7],[26,38,36,29,33],[12,21,20,22,12]]},
   ];
+
+  // ── StatsBomb Dribble data — season 2025/26 Primera División RFEF ──────────
+  // locs: [x, y, ok] — StatsBomb pitch coords (120×80), x=0 own goal, x=120 opp goal
+  const DR_923 = [{"name":"Borja Vázquez  Doña","pos":"Right Wing","att":76,"comp":37,"pct":49,"def":8,"mid":30,"att_z":38,"locs":[[92,75,1],[73,54,0],[86,76,1],[104,70,1],[101,16,1],[88,14,1],[28,27,1],[29,26,0],[107,25,1],[104,8,1],[111,24,1],[81,5,0],[30,6,0],[107,15,1],[88,56,1],[103,4,0],[43,5,0],[30,59,0],[89,4,0],[106,61,1],[74,58,0],[114,74,1],[117,58,0],[41,77,0],[68,75,0],[76,78,1],[98,78,0],[70,77,1],[102,56,1],[91,68,0],[113,13,0],[74,79,0],[111,62,1],[87,70,1],[99,59,1],[70,58,0],[110,11,0],[98,4,0],[71,3,1],[45,8,0],[119,7,0],[110,16,1],[65,63,1],[57,4,1],[47,68,1],[67,54,0],[44,77,0],[78,63,0],[27,68,0],[63,2,0],[99,9,0],[58,73,1],[99,11,0],[48,76,1],[94,78,0],[106,70,1],[93,64,0],[64,3,1],[34,23,0],[55,12,0],[68,2,0],[90,4,1],[97,69,0],[34,39,0],[78,48,1],[92,14,1],[16,37,1],[71,75,1],[112,13,1],[75,78,0],[49,70,1],[77,52,0],[106,7,0],[43,54,1],[96,77,1],[77,4,0]]},{"name":"Abdoulaye Keita Keita","pos":"Right Midfield","att":46,"comp":24,"pct":52,"def":2,"mid":16,"att_z":28,"locs":[[83,78,1],[84,76,1],[96,54,1],[97,62,1],[95,54,0],[50,56,1],[99,73,1],[107,66,0],[55,76,1],[119,68,1],[67,19,1],[78,29,0],[71,43,0],[65,56,0],[79,68,0],[87,39,0],[108,22,0],[115,69,0],[51,74,0],[107,71,1],[118,70,0],[74,78,0],[96,77,1],[98,76,0],[108,25,0],[49,32,0],[118,64,1],[101,27,0],[13,77,1],[18,76,0],[103,6,0],[46,33,1],[65,4,1],[59,4,1],[114,3,0],[95,75,1],[107,77,0],[96,7,1],[97,8,1],[106,33,1],[69,5,0],[95,9,1],[119,15,0],[85,58,1],[78,61,1],[74,57,1]]},{"name":"José Luis Cortés Sen","pos":"Left Center Forward","att":34,"comp":14,"pct":41,"def":1,"mid":12,"att_z":21,"locs":[[94,27,1],[80,10,1],[51,19,0],[118,10,0],[115,72,0],[102,15,0],[93,14,0],[97,6,0],[69,3,0],[87,16,0],[107,6,0],[90,3,0],[118,4,0],[22,7,1],[96,26,1],[49,77,1],[58,77,0],[96,15,1],[72,3,0],[92,21,0],[64,68,1],[119,20,0],[68,77,1],[117,5,0],[61,75,1],[105,37,1],[80,76,0],[64,78,0],[95,18,1],[47,76,1],[90,19,1],[66,9,0],[63,12,1],[110,7,0]]},{"name":"Borja Valle Balonga","pos":"Center Attacking Midfield","att":34,"comp":21,"pct":62,"def":2,"mid":17,"att_z":15,"locs":[[66,45,0],[58,49,1],[36,57,1],[56,10,0],[79,8,1],[116,23,0],[115,4,1],[43,5,1],[59,49,1],[51,25,1],[79,3,0],[105,11,0],[86,20,1],[120,19,0],[83,35,1],[66,6,0],[91,38,1],[31,42,1],[100,16,1],[51,10,0],[49,51,0],[85,79,1],[99,39,1],[57,62,1],[81,4,1],[90,25,1],[53,39,0],[45,50,0],[77,51,1],[69,37,1],[85,50,1],[55,44,1],[103,31,0],[89,4,0]]},{"name":"Andoni López Saratxo","pos":"Left Back","att":28,"comp":21,"pct":75,"def":5,"mid":13,"att_z":10,"locs":[[31,15,1],[72,9,1],[11,15,1],[99,6,1],[63,8,0],[120,14,1],[80,4,0],[73,10,1],[88,5,1],[27,5,1],[50,11,1],[90,6,0],[105,13,1],[106,16,1],[65,8,0],[44,22,1],[50,14,1],[115,9,0],[65,11,0],[40,5,0],[47,10,1],[44,24,1],[54,40,1],[34,10,1],[34,13,1],[118,7,1],[85,14,1],[72,8,1]]},{"name":"Eugene Adjei Frimpong","pos":"Left Defensive Midfield","att":22,"comp":14,"pct":64,"def":1,"mid":16,"att_z":5,"locs":[[64,14,1],[69,61,0],[41,59,0],[39,26,1],[82,4,0],[99,40,0],[64,3,0],[59,58,1],[72,60,1],[109,9,0],[70,8,1],[45,51,0],[64,45,1],[75,37,1],[72,36,1],[72,43,1],[79,28,1],[68,38,1],[81,4,1],[72,16,1],[71,18,1],[100,8,0]]},{"name":"Diego Moreno Garbayo","pos":"Right Back","att":18,"comp":14,"pct":78,"def":0,"mid":7,"att_z":11,"locs":[[96,72,1],[108,75,1],[89,67,1],[66,72,0],[89,73,1],[94,74,0],[100,71,1],[69,20,1],[76,72,1],[65,49,1],[71,43,1],[84,25,1],[80,76,1],[57,76,0],[53,57,1],[104,64,1],[93,63,1],[117,76,0]]},{"name":"Josep Miguel Fernández Codina","pos":"Right Center Midfield","att":15,"comp":10,"pct":67,"def":3,"mid":6,"att_z":6,"locs":[[91,31,1],[88,30,1],[58,71,1],[98,76,1],[116,11,1],[32,65,1],[26,19,1],[88,6,1],[60,1,0],[50,18,0],[77,78,1],[34,17,0],[104,6,1],[64,38,0],[59,58,0]]},{"name":"Carlos Calderón López","pos":"Right Midfield","att":13,"comp":7,"pct":54,"def":1,"mid":5,"att_z":7,"locs":[[51,45,1],[67,79,0],[86,79,1],[69,76,0],[107,72,0],[85,78,0],[102,73,1],[100,64,1],[39,71,0],[70,61,1],[95,74,1],[118,72,1],[66,18,0]]},{"name":"Germán Novoa Enríquez","pos":"Right Center Back","att":11,"comp":6,"pct":55,"def":3,"mid":4,"att_z":4,"locs":[[42,65,1],[75,65,1],[83,63,1],[70,66,1],[93,77,0],[36,24,1],[31,72,0],[112,73,1],[4,17,0],[97,8,0],[57,13,0]]},{"name":"Pau Ferrer Besalduch","pos":"Center Forward","att":7,"comp":1,"pct":14,"def":0,"mid":4,"att_z":3,"locs":[[94,39,0],[112,18,0],[75,45,0],[68,11,0],[58,45,0],[68,30,1],[83,48,0]]},{"name":"Vicente Esquerdo Santas","pos":"Right Defensive Midfield","att":6,"comp":5,"pct":83,"def":0,"mid":3,"att_z":3,"locs":[[117,5,1],[116,25,0],[66,71,1],[66,71,1],[99,52,1],[50,54,1]]},{"name":"Alejandro Miguel Mula Sanchez","pos":"Left Wing","att":5,"comp":3,"pct":60,"def":1,"mid":0,"att_z":4,"locs":[[88,18,0],[91,37,0],[112,15,1],[111,7,1],[29,10,1]]},{"name":"Sergio Benito Crujera","pos":"Right Center Forward","att":5,"comp":2,"pct":40,"def":0,"mid":2,"att_z":3,"locs":[[110,36,1],[63,40,1],[119,12,0],[58,39,0],[85,68,0]]},{"name":"Vasco Pereira de Sousa","pos":"Left Wing Back","att":5,"comp":4,"pct":80,"def":2,"mid":2,"att_z":1,"locs":[[93,4,1],[76,7,1],[31,14,1],[57,3,1],[38,12,0]]},{"name":"Boris Sébastien Moltenis","pos":"Left Center Back","att":4,"comp":2,"pct":50,"def":1,"mid":2,"att_z":1,"locs":[[44,30,1],[51,14,1],[29,68,0],[101,3,0]]},{"name":"Eneko Undabarrena Ubillos","pos":"Left Defensive Midfield","att":4,"comp":3,"pct":75,"def":0,"mid":3,"att_z":1,"locs":[[66,56,1],[41,21,0],[103,26,1],[48,16,1]]},{"name":"David Andújar Jiménez","pos":"Right Center Back","att":3,"comp":3,"pct":100,"def":1,"mid":1,"att_z":1,"locs":[[82,57,1],[29,65,1],[42,46,1]]},{"name":"Jorge Iglesias González","pos":"Right Back","att":3,"comp":2,"pct":67,"def":0,"mid":1,"att_z":2,"locs":[[53,71,0],[95,74,1],[104,66,1]]},{"name":"Eneko Aguilar Elizalde","pos":"Left Defensive Midfield","att":2,"comp":1,"pct":50,"def":0,"mid":1,"att_z":1,"locs":[[79,15,1],[100,52,0]]}];
+  const DR_8733 = [{"name":"Ángel Arcos Cadilla","pos":"Center Forward","att":85,"comp":48,"pct":56,"def":4,"mid":21,"att_z":60,"locs":[[111,25,1],[89,21,1],[95,7,0],[51,79,0],[99,8,0],[60,5,0],[107,16,0],[89,14,1],[91,5,0],[106,24,0],[113,19,1],[3,2,0],[110,29,1],[103,18,1],[67,57,1],[111,8,1],[103,3,0],[51,25,0],[107,19,1],[76,20,1],[108,12,0],[88,16,0],[15,4,1],[97,29,1],[92,3,0],[110,8,1],[117,27,1],[102,24,0],[56,19,1],[109,10,0],[40,5,1],[62,18,0],[102,11,1],[101,26,1],[93,14,1],[100,23,1],[91,9,1],[45,12,1],[107,18,0],[105,25,1],[29,2,0],[71,5,0],[103,9,1],[101,22,1],[83,14,0],[73,4,0],[57,6,1],[101,14,1],[100,23,1],[36,4,1],[86,9,1],[99,21,0],[54,11,1],[107,12,0],[113,18,0],[80,9,0],[77,5,1],[83,14,1],[51,26,1],[72,32,1],[43,8,0],[46,15,0],[95,6,1],[118,18,1],[112,32,1],[110,23,1],[92,26,1],[91,37,1],[95,42,0],[73,46,0],[110,9,1],[118,4,1],[119,13,0],[78,12,1],[67,34,0],[110,22,0],[107,16,0],[103,12,0],[82,5,0],[100,20,1],[95,19,0],[90,25,1],[106,17,1],[101,26,1],[100,31,0]]},{"name":"Hugo González Sotos","pos":"Right Wing","att":58,"comp":37,"pct":64,"def":1,"mid":25,"att_z":32,"locs":[[47,61,1],[101,52,0],[52,66,0],[105,38,1],[102,20,0],[23,70,1],[55,62,1],[97,51,0],[65,38,1],[55,68,1],[40,47,1],[42,47,1],[71,76,1],[104,61,1],[43,73,1],[43,61,1],[101,51,0],[62,58,1],[109,28,1],[83,57,0],[88,70,1],[95,49,0],[113,76,0],[111,74,0],[92,67,1],[107,55,1],[52,64,1],[75,68,0],[110,2,1],[110,2,1],[83,62,1],[105,57,1],[58,52,1],[82,55,1],[102,51,0],[98,53,0],[106,23,1],[64,26,1],[79,63,1],[43,27,1],[52,5,0],[52,5,1],[62,63,1],[45,77,0],[100,74,1],[65,50,0],[74,67,0],[94,58,0],[70,77,1],[76,69,0],[98,4,1],[106,14,1],[106,50,0],[91,47,1],[95,67,0],[102,56,1],[101,60,1],[92,56,0]]},{"name":"Óscar Marcos Santamaría","pos":"Left Wing","att":51,"comp":30,"pct":59,"def":7,"mid":18,"att_z":26,"locs":[[45,4,0],[76,30,0],[99,18,0],[83,65,1],[56,43,0],[27,44,1],[25,54,0],[93,33,0],[63,22,0],[105,34,1],[100,76,1],[106,66,1],[105,54,0],[44,32,0],[46,9,1],[75,7,1],[92,27,1],[88,33,1],[100,39,1],[73,42,1],[71,28,1],[87,26,1],[101,15,1],[109,11,1],[97,34,0],[89,17,0],[33,9,1],[33,8,0],[112,21,0],[62,46,0],[66,34,1],[110,49,1],[91,28,1],[106,8,1],[57,14,1],[76,28,1],[90,38,1],[93,35,0],[90,6,1],[49,37,1],[104,15,1],[29,19,1],[117,7,0],[48,4,0],[28,38,0],[39,5,0],[94,21,1],[67,26,0],[104,18,0],[76,55,1],[61,25,1]]},{"name":"Hugo Burcio García","pos":"Right Center Midfield","att":37,"comp":24,"pct":65,"def":5,"mid":22,"att_z":10,"locs":[[100,54,0],[51,17,1],[48,55,1],[56,36,1],[74,42,1],[47,47,1],[47,26,1],[65,35,1],[106,23,0],[44,30,1],[43,78,1],[66,61,1],[14,7,1],[43,68,0],[68,21,1],[93,33,0],[74,45,1],[62,58,0],[113,18,0],[107,76,0],[33,27,0],[98,52,0],[32,53,0],[107,30,0],[81,57,0],[76,63,1],[58,41,0],[19,69,1],[98,58,1],[55,52,1],[67,54,1],[91,52,1],[56,45,1],[44,51,1],[44,47,1],[77,39,1],[30,27,1]]},{"name":"Frank Germain Jonathan Miller","pos":"Right Wing Back","att":29,"comp":17,"pct":59,"def":8,"mid":6,"att_z":15,"locs":[[49,77,0],[51,68,1],[51,60,1],[101,70,1],[21,77,1],[85,78,0],[76,27,1],[34,58,1],[38,78,1],[89,77,0],[86,3,1],[88,4,1],[107,58,1],[31,77,0],[118,58,1],[3,78,0],[99,65,0],[85,58,1],[65,44,1],[35,9,0],[34,68,0],[93,58,0],[113,70,0],[57,77,0],[84,59,1],[7,70,0],[103,53,1],[109,73,1],[115,69,1]]},{"name":"Andrés Antañón Vieites","pos":"Left Center Midfield","att":27,"comp":17,"pct":63,"def":2,"mid":9,"att_z":16,"locs":[[94,46,1],[90,41,1],[100,23,1],[80,32,0],[67,39,0],[70,53,1],[54,37,1],[88,35,0],[78,74,1],[32,12,1],[85,44,0],[104,54,0],[106,47,1],[81,77,1],[65,40,1],[89,35,0],[35,39,1],[93,72,1],[93,48,0],[58,6,1],[70,9,1],[92,75,0],[105,46,1],[69,70,1],[73,75,0],[80,59,0],[95,72,1]]},{"name":"Pablo Gavian Alonso","pos":"Right Back","att":27,"comp":15,"pct":56,"def":5,"mid":6,"att_z":16,"locs":[[104,62,1],[32,75,1],[35,79,1],[107,65,0],[85,74,0],[88,63,0],[48,58,1],[30,68,1],[43,52,1],[82,72,1],[100,75,0],[31,63,1],[98,48,0],[93,55,0],[106,67,0],[83,63,1],[102,67,0],[80,60,1],[72,75,1],[13,62,0],[110,57,0],[56,71,1],[63,52,1],[111,68,0],[110,76,1],[85,68,1],[66,77,0]]},{"name":"David De la Iglesia Rey","pos":"Right Center Midfield","att":22,"comp":12,"pct":55,"def":3,"mid":9,"att_z":10,"locs":[[69,41,1],[45,51,0],[85,28,1],[51,71,0],[56,53,0],[102,4,0],[111,64,0],[59,26,0],[40,26,1],[53,51,0],[100,28,1],[40,46,1],[69,40,1],[39,29,0],[34,13,0],[32,59,1],[89,37,1],[91,35,1],[102,32,0],[83,75,1],[89,68,1],[109,58,1]]},{"name":"Joel López Salguero","pos":"Left Wing Back","att":19,"comp":12,"pct":63,"def":8,"mid":3,"att_z":8,"locs":[[91,27,0],[34,10,1],[23,5,1],[37,3,0],[37,11,1],[69,35,0],[25,6,0],[31,21,0],[88,35,1],[90,36,1],[99,19,0],[11,12,1],[31,17,1],[56,9,1],[80,25,1],[94,26,1],[87,29,1],[89,7,0],[73,21,1]]},{"name":"Bernard Sarppong Somuah","pos":"Center Forward","att":17,"comp":13,"pct":76,"def":3,"mid":6,"att_z":8,"locs":[[109,32,1],[66,79,1],[57,47,1],[112,19,0],[80,49,1],[13,67,0],[71,75,1],[90,36,1],[16,56,1],[24,65,1],[103,28,1],[66,37,1],[78,26,1],[110,68,1],[64,54,0],[111,37,1],[90,55,0]]},{"name":"Adrià Capdevila Puigmal","pos":"Right Defensive Midfield","att":15,"comp":10,"pct":67,"def":0,"mid":9,"att_z":6,"locs":[[45,28,1],[85,38,0],[59,55,0],[88,61,1],[52,78,0],[102,54,1],[48,37,1],[44,8,1],[65,52,1],[65,52,1],[88,22,1],[47,29,1],[93,73,1],[89,26,0],[55,14,0]]},{"name":"Luis Bilbao Aréchaga","pos":"Right Attacking Midfield","att":14,"comp":5,"pct":36,"def":4,"mid":3,"att_z":7,"locs":[[97,54,0],[105,17,0],[44,24,0],[35,6,0],[99,5,1],[39,77,0],[42,4,0],[32,77,1],[37,75,0],[84,66,1],[92,43,1],[92,3,1],[73,78,0],[99,79,0]]},{"name":"Jan Oliveras Codina","pos":"Left Wing Back","att":14,"comp":10,"pct":71,"def":2,"mid":4,"att_z":8,"locs":[[6,5,0],[67,7,1],[20,7,1],[103,15,1],[105,10,0],[52,15,1],[115,7,1],[71,9,1],[110,24,1],[82,13,1],[111,73,0],[95,17,1],[62,3,1],[104,29,0]]},{"name":"Álvaro Marín Sesma","pos":"Center Forward","att":11,"comp":5,"pct":45,"def":1,"mid":2,"att_z":8,"locs":[[38,76,0],[91,11,0],[111,23,1],[56,22,1],[82,64,1],[110,8,1],[62,76,0],[97,34,0],[111,60,0],[101,32,1],[87,17,0]]},{"name":"Anthony Michel Khayat","pos":"Right Center Back","att":6,"comp":4,"pct":67,"def":2,"mid":3,"att_z":1,"locs":[[62,46,1],[54,63,1],[20,24,1],[67,10,1],[94,10,0],[27,55,0]]},{"name":"Aldrine Kipchirchir Kibet","pos":"Left Defensive Midfield","att":6,"comp":3,"pct":50,"def":0,"mid":3,"att_z":3,"locs":[[50,55,0],[100,55,1],[53,5,1],[94,74,1],[47,68,0],[86,67,0]]},{"name":"Anxo Rodriguez Alvarez","pos":"Center Back","att":5,"comp":5,"pct":100,"def":3,"mid":1,"att_z":1,"locs":[[11,24,1],[21,64,1],[24,68,1],[56,41,1],[95,43,1]]},{"name":"Pablo González Meixús","pos":"Left Center Back","att":5,"comp":4,"pct":80,"def":3,"mid":2,"att_z":0,"locs":[[12,17,1],[69,37,1],[44,11,0],[21,58,1],[10,57,1]]},{"name":"Enrique Ribes Recaj","pos":"Right Center Back","att":5,"comp":3,"pct":60,"def":1,"mid":3,"att_z":1,"locs":[[73,14,1],[48,50,1],[91,53,0],[22,78,0],[53,51,1]]},{"name":"Ianis Târbă","pos":"Center Forward","att":3,"comp":1,"pct":33,"def":0,"mid":0,"att_z":3,"locs":[[102,18,1],[94,78,0],[107,67,0]]},{"name":"Jorge Perez-Lafuente Rey","pos":"Center Forward","att":3,"comp":1,"pct":33,"def":0,"mid":2,"att_z":1,"locs":[[118,58,0],[49,68,1],[51,78,0]]},{"name":"Jaime Vázquez Cuervo-Arango","pos":"Left Center Back","att":2,"comp":1,"pct":50,"def":1,"mid":0,"att_z":1,"locs":[[95,16,0],[24,18,1]]}];
 
   function renderAccionesPress() {
     var MAP={923:AP_923,8733:AP_8733};
