@@ -17807,7 +17807,7 @@
     var resCol=res==='W'?'#3fb950':res==='D'?'#e3b341':res==='L'?'#f85149':'#8b949e';
     var resLbl=res==='W'?'Victoria':res==='D'?'Empate':res==='L'?'Derrota':'?';
     var insHtml=ins!=null
-      ?'<div style="border-top:1px solid var(--border);margin-top:5px;padding-top:5px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:9px;color:var(--text3)">Rival dentro del bloque</span><span style="font-size:11px;font-weight:700;color:'+(ins>=35?'#f85149':ins>=27?'#e3b341':'#3fb950')+'">'+ins+'%</span></div>'
+      ?'<div style="border-top:1px solid var(--border);margin-top:5px;padding-top:5px;display:flex;justify-content:space-between"><span style="font-size:9px;color:var(--text3)">Rival dentro del bloque</span><span style="font-size:11px;font-weight:700;color:'+(ins>=35?'#f85149':ins>=27?'#e3b341':'#3fb950')+'">'+ins+'%</span></div>'
       :'';
     tip.innerHTML=
       '<div style="font-size:10px;font-weight:700;color:var(--text1);margin-bottom:6px">'+j+' \xb7 '+rival+' <span style="font-size:9px;font-weight:400;color:var(--text3)">'+(loc==='L'?'Local':'Visit.')+'</span></div>'
@@ -17844,60 +17844,70 @@
     var avgIns=insVals.length?+(insVals.reduce(function(a,b){return a+b;},0)/insVals.length).toFixed(1):null;
     var rcSolid=function(r){return r==='W'?'#3fb950':r==='D'?'#e3b341':r==='L'?'#f85149':'#8b949e';};
 
-    // SVG stacked bar chart
-    var VW=900,VH=240,PL=42,PR=16,PT=22,PB=58;
+    // --- SVG 3-line chart ---
+    var VW=900, VH=240, PL=42, PR=58, PT=22, PB=58;
     var CW=VW-PL-PR, CH=VH-PT-PB;
-    var barSlot=CW/N, barW=Math.max(6,barSlot*0.78);
-    function bx(i){return +(PL+i*barSlot+barSlot*0.5-barW*0.5).toFixed(2);}
-    function byH(pct){return +(PT+CH*(1-pct/100)).toFixed(2);}
-    function bhH(pct){return +(CH*pct/100).toFixed(2);}
+    var YMIN=0, YMAX=100;
+    var xStep=N>1?CW/(N-1):0;
+    function px(i){return +(PL+i*xStep).toFixed(2);}
+    function py(v){return +(PT+CH-(v-YMIN)/(YMAX-YMIN)*CH).toFixed(2);}
 
-    // Grid lines
+    // Grid
     var grid='';
     [0,25,50,75,100].forEach(function(v){
-      var y=byH(v);
+      var y=py(v);
       grid+='<line x1="'+PL+'" y1="'+y+'" x2="'+(PL+CW)+'" y2="'+y+'" stroke="rgba(255,255,255,'+(v===0||v===100?'0.12':'0.06')+')" stroke-width="1"/>';
       grid+='<text x="'+(PL-5)+'" y="'+(y+3.5)+'" font-size="9" fill="rgba(255,255,255,0.3)" text-anchor="end" font-family="inherit">'+v+'%</text>';
     });
-
-    // Bars
-    var bars='';
-    data.forEach(function(d,i){
-      var x=bx(i);
-      var escRival=d.rival.replace(/'/g,"\\'");
-      var insVal=d.ins!=null?d.ins:'null';
-      var tArgs="event,'"+d.j+"','"+escRival+"','"+d.loc+"',"+d.lb+","+d.mb+","+d.hb+","+insVal+",'"+d.score+"','"+d.res+"'";
-      // lb (bottom, blue)
-      bars+='<rect x="'+x+'" y="'+byH(d.lb)+'" width="'+barW+'" height="'+bhH(d.lb)+'" fill="#58a6ff" onmouseover="showBloqueTip('+tArgs+')" onmouseleave="hideBloqueTip()" style="cursor:pointer"/>';
-      // mb (middle, yellow)
-      bars+='<rect x="'+x+'" y="'+byH(d.lb+d.mb)+'" width="'+barW+'" height="'+bhH(d.mb)+'" fill="#e3b341" onmouseover="showBloqueTip('+tArgs+')" onmouseleave="hideBloqueTip()" style="cursor:pointer"/>';
-      // hb (top, red)
-      bars+='<rect x="'+x+'" y="'+byH(100)+'" width="'+barW+'" height="'+bhH(d.hb)+'" fill="#f85149" onmouseover="showBloqueTip('+tArgs+')" onmouseleave="hideBloqueTip()" style="cursor:pointer"/>';
-    });
-
-    // Result tick marks below bars
-    var ticks='';
-    data.forEach(function(d,i){
-      var cx=+(bx(i)+barW/2).toFixed(2);
-      ticks+='<rect x="'+(cx-barW/2*0.6)+'" y="'+(PT+CH+3)+'" width="'+(barW*0.6)+'" height="3" rx="1" fill="'+rcSolid(d.res)+'"/>';
-    });
-
-    // Avg reference lines
-    var avgLines=''
-      +'<line x1="'+PL+'" y1="'+byH(avgLb)+'" x2="'+(PL+CW)+'" y2="'+byH(avgLb)+'" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>'
-      +'<line x1="'+PL+'" y1="'+byH(avgLb+avgMb)+'" x2="'+(PL+CW)+'" y2="'+byH(avgLb+avgMb)+'" stroke="#e3b341" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>';
+    grid+='<line x1="'+PL+'" y1="'+PT+'" x2="'+PL+'" y2="'+(PT+CH)+'" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>';
+    grid+='<line x1="'+PL+'" y1="'+(PT+CH)+'" x2="'+(PL+CW)+'" y2="'+(PT+CH)+'" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>';
 
     // X labels
     var xlabels='';
     data.forEach(function(d,i){
-      var x=+(bx(i)+barW/2).toFixed(2), y=PT+CH+10;
+      var x=px(i), y=PT+CH+10;
       xlabels+='<text x="'+x+'" y="'+y+'" font-size="8" fill="rgba(255,255,255,0.38)" text-anchor="end" font-family="inherit" transform="rotate(-65,'+x+','+y+')">'+d.j+'</text>';
     });
 
-    var chartTitle='<text x="'+PL+'" y="13" font-size="8" fill="rgba(255,255,255,0.28)" font-family="inherit" letter-spacing="0.8">DISTRIBUCIÓN DEL BLOQUE POR JORNADA (%)</text>';
+    // Average reference lines
+    var avgLines=''
+      +'<line x1="'+PL+'" y1="'+py(avgLb)+'" x2="'+(PL+CW)+'" y2="'+py(avgLb)+'" stroke="#58a6ff" stroke-width="1" stroke-dasharray="5,4" opacity="0.45"/>'
+      +'<line x1="'+PL+'" y1="'+py(avgMb)+'" x2="'+(PL+CW)+'" y2="'+py(avgMb)+'" stroke="#e3b341" stroke-width="1" stroke-dasharray="5,4" opacity="0.45"/>'
+      +'<line x1="'+PL+'" y1="'+py(avgHb)+'" x2="'+(PL+CW)+'" y2="'+py(avgHb)+'" stroke="#f85149" stroke-width="1" stroke-dasharray="5,4" opacity="0.45"/>';
+
+    // End labels
+    var lastX=px(N-1);
+    var endLabels=''
+      +'<text x="'+(lastX+7)+'" y="'+(py(data[N-1].lb)+4)+'" font-size="9" font-weight="700" fill="#58a6ff" font-family="inherit">Bajo</text>'
+      +'<text x="'+(lastX+7)+'" y="'+(py(data[N-1].mb)+4)+'" font-size="9" font-weight="700" fill="#e3b341" font-family="inherit">Medio</text>'
+      +'<text x="'+(lastX+7)+'" y="'+(py(data[N-1].hb)+4)+'" font-size="9" font-weight="700" fill="#f85149" font-family="inherit">Alto</text>';
+
+    // 3 line paths
+    var lbPath='M'+data.map(function(d,i){return px(i)+','+py(d.lb);}).join('L');
+    var mbPath='M'+data.map(function(d,i){return px(i)+','+py(d.mb);}).join('L');
+    var hbPath='M'+data.map(function(d,i){return px(i)+','+py(d.hb);}).join('L');
+
+    // Dots for each line
+    var lbDots='', mbDots='', hbDots='';
+    data.forEach(function(d,i){
+      var x=px(i);
+      var escRival=d.rival.replace(/'/g,"\\'");
+      var insVal=d.ins!=null?d.ins:'null';
+      var tArgs="event,'"+d.j+"','"+escRival+"','"+d.loc+"',"+d.lb+","+d.mb+","+d.hb+","+insVal+",'"+d.score+"','"+d.res+"'";
+      lbDots+='<circle cx="'+x+'" cy="'+py(d.lb)+'" r="4" fill="#58a6ff" stroke="var(--bg1)" stroke-width="1.5" style="cursor:pointer" onmouseover="showBloqueTip('+tArgs+')" onmouseleave="hideBloqueTip()"/>';
+      mbDots+='<circle cx="'+x+'" cy="'+py(d.mb)+'" r="4" fill="#e3b341" stroke="var(--bg1)" stroke-width="1.5" style="cursor:pointer" onmouseover="showBloqueTip('+tArgs+')" onmouseleave="hideBloqueTip()"/>';
+      hbDots+='<circle cx="'+x+'" cy="'+py(d.hb)+'" r="4" fill="#f85149" stroke="var(--bg1)" stroke-width="1.5" style="cursor:pointer" onmouseover="showBloqueTip('+tArgs+')" onmouseleave="hideBloqueTip()"/>';
+    });
+
+    var chartTitle='<text x="'+PL+'" y="13" font-size="8" fill="rgba(255,255,255,0.28)" font-family="inherit" letter-spacing="0.8">% BLOQUE DEFENSIVO POR JORNADA</text>';
 
     var svg='<svg viewBox="0 0 '+VW+' '+VH+'" style="width:100%;height:auto;display:block">'
-      +chartTitle+grid+bars+avgLines+ticks+xlabels+'</svg>';
+      +chartTitle+grid+xlabels+avgLines
+      +'<path d="'+lbPath+'" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linejoin="round"/>'
+      +'<path d="'+mbPath+'" fill="none" stroke="#e3b341" stroke-width="2" stroke-linejoin="round"/>'
+      +'<path d="'+hbPath+'" fill="none" stroke="#f85149" stroke-width="2" stroke-linejoin="round"/>'
+      +lbDots+mbDots+hbDots+endLabels
+      +'</svg>';
 
     cont.innerHTML=
       '<div style="padding:20px 24px 36px">'
@@ -17908,7 +17918,6 @@
             +'<div style="font-size:11px;color:var(--text3)">SkillCorner \xb7 '+N+' partidos \xb7 Temporada 2025-26</div>'
           +'</div>'
         +'</div>'
-        // Chips
         +'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">'
           +'<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid '+domC+';border-radius:8px;padding:8px 14px">'
             +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Bloque dom.</div>'
@@ -17916,17 +17925,17 @@
             +'<div style="font-size:9px;color:var(--text3)">media temporada</div>'
           +'</div>'
           +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 14px">'
-            +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">% Bajo (media)</div>'
+            +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Bajo (media)</div>'
             +'<div style="font-size:20px;font-weight:800;color:#58a6ff;font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+avgLb+'<span style="font-size:10px;font-weight:500;color:var(--text3)">%</span></div>'
             +'<div style="font-size:9px;color:var(--text3)">bloque bajo</div>'
           +'</div>'
           +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 14px">'
-            +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">% Medio (media)</div>'
+            +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Medio (media)</div>'
             +'<div style="font-size:20px;font-weight:800;color:#e3b341;font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+avgMb+'<span style="font-size:10px;font-weight:500;color:var(--text3)">%</span></div>'
             +'<div style="font-size:9px;color:var(--text3)">bloque medio</div>'
           +'</div>'
           +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 14px">'
-            +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">% Alto (media)</div>'
+            +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Alto (media)</div>'
             +'<div style="font-size:20px;font-weight:800;color:#f85149;font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+avgHb+'<span style="font-size:10px;font-weight:500;color:var(--text3)">%</span></div>'
             +'<div style="font-size:9px;color:var(--text3)">bloque alto</div>'
           +'</div>'
@@ -17937,22 +17946,19 @@
             +'<div style="font-size:9px;color:var(--text3)">dentro del bloque</div>'
           +'</div>':'')
         +'</div>'
-        // Legend
         +'<div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:10px">'
-          +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="14" height="14"><rect width="14" height="14" rx="2" fill="#58a6ff"/></svg><span style="font-size:10px;color:var(--text3)">Bloque bajo</span></span>'
-          +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="14" height="14"><rect width="14" height="14" rx="2" fill="#e3b341"/></svg><span style="font-size:10px;color:var(--text3)">Bloque medio</span></span>'
-          +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="14" height="14"><rect width="14" height="14" rx="2" fill="#f85149"/></svg><span style="font-size:10px;color:var(--text3)">Bloque alto</span></span>'
-          +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="20" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke="#58a6ff" stroke-width="1.2" stroke-dasharray="4,3" opacity="0.8"/></svg><span style="font-size:10px;color:var(--text3)">Media bajo/medio</span></span>'
-          +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="12" height="8"><rect width="12" height="8" rx="1" fill="#3fb950"/></svg><svg width="12" height="8" style="margin-left:2px"><rect width="12" height="8" rx="1" fill="#e3b341"/></svg><svg width="12" height="8" style="margin-left:2px"><rect width="12" height="8" rx="1" fill="#f85149"/></svg><span style="font-size:10px;color:var(--text3)">Resultado (G/E/P)</span></span>'
+          +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="#58a6ff" stroke-width="2.5"/></svg><span style="font-size:10px;color:var(--text3)">Bloque bajo</span></span>'
+          +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="#e3b341" stroke-width="2.5"/></svg><span style="font-size:10px;color:var(--text3)">Bloque medio</span></span>'
+          +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="#f85149" stroke-width="2.5"/></svg><span style="font-size:10px;color:var(--text3)">Bloque alto</span></span>'
+          +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="rgba(200,200,200,0.45)" stroke-width="1.2" stroke-dasharray="5,3"/></svg><span style="font-size:10px;color:var(--text3)">Media temporada</span></span>'
         +'</div>'
-        // Chart
         +'<div id="bloque-chart-wrap" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px 6px;margin-bottom:8px;position:relative">'
           +svg
           +'<div id="bloque-tip" style="display:none;position:absolute;background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:9px 12px;pointer-events:none;min-width:155px;box-shadow:0 4px 16px rgba(0,0,0,0.45);z-index:10"></div>'
         +'</div>'
-        +'<div style="font-size:10px;color:var(--text3);text-align:center;margin-bottom:20px">Pasa el rat\xf3n sobre las barras para ver el detalle de cada partido</div>'
       +'</div>';
   }
+
 
   // INIT
   renderAside();
