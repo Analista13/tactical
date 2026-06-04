@@ -18059,18 +18059,28 @@
       // Line path
       var path='M'+cfg.data.map(function(d,i){return px(i)+','+py(cfg.yval(d));}).join('L');
 
+      // Alert vertical lines for danger-zone jornadas
+      var alertLines='';
+      cfg.data.forEach(function(d,i){
+        if(cfg.yval(d)<cfg.threshold) return;
+        var x=px(i);
+        alertLines+='<line x1="'+x+'" y1="'+PT+'" x2="'+x+'" y2="'+(PT+CH)+'" stroke="'+cfg.lineColor+'" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.55"/>';
+        alertLines+='<text x="'+x+'" y="'+(PT-4)+'" font-size="7" font-weight="700" fill="'+cfg.lineColor+'" text-anchor="middle" font-family="inherit" opacity="0.85">'+d.j+'</text>';
+      });
+
       // Dots
       var dots='';
       cfg.data.forEach(function(d,i){
         var x=px(i),y=py(cfg.yval(d));
         var resC=rc(d.res);
+        var isAlert=cfg.yval(d)>=cfg.threshold;
         var escR=d.rival.replace(/'/g,"\\'");
         var args="event,'"+d.j+"','"+escR+"','"+d.loc+"',"+d.xloss+","+d.xshot+",'"+d.score+"','"+d.res+"'";
-        dots+='<circle cx="'+x+'" cy="'+y+'" r="4.5" fill="'+cfg.lineColor+'" stroke="'+resC+'" stroke-width="2" style="cursor:pointer" onmouseover="showXlossTip('+args+')" onmouseleave="hideXlossTip()"/>';
+        dots+='<circle cx="'+x+'" cy="'+y+'" r="'+(isAlert?6:4.5)+'" fill="'+cfg.lineColor+'" stroke="'+resC+'" stroke-width="'+(isAlert?2.5:2)+'" style="cursor:pointer" onmouseover="showXlossTip('+args+')" onmouseleave="hideXlossTip()"/>';
       });
 
       return '<svg viewBox="0 0 '+VW+' '+VH+'" style="width:100%;height:auto;display:block">'
-        +ctitle+bands+grid+xlabels+avgLine
+        +ctitle+bands+grid+alertLines+xlabels+avgLine
         +'<path d="'+path+'" fill="none" stroke="'+cfg.lineColor+'" stroke-width="2.2" stroke-linejoin="round" opacity="0.9"/>'
         +dots+'</svg>';
     }
@@ -18086,12 +18096,12 @@
       {from:0.00,to:0.05,fill:'rgba(63,185,80,0.06)',labelCol:'#3fb950',label:'CONTROLADO'}
     ];
 
-    var svgXL=makeChart({data:data,yMin:0.22,yMax:0.38,avg:avgXL,
+    var svgXL=makeChart({data:data,yMin:0.22,yMax:0.38,avg:avgXL,threshold:0.33,
       yTicks:[0.22,0.25,0.28,0.31,0.34,0.37],
       lineColor:'#f87171',zones:xlossZones,
       yval:function(d){return d.xloss;},
       title:'xLOSS MAX — PROBABILIDAD MEDIA DE CONCEDER GOL POR POSESI\xd3N RIVAL'});
-    var svgXS=makeChart({data:data,yMin:0,yMax:0.12,avg:avgXS,
+    var svgXS=makeChart({data:data,yMin:0,yMax:0.12,avg:avgXS,threshold:0.07,
       yTicks:[0,0.03,0.06,0.09,0.12],
       lineColor:'#a78bfa',zones:xshotZones,
       yval:function(d){return d.xshot;},
