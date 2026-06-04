@@ -17952,9 +17952,63 @@
           +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="#f85149" stroke-width="2.5"/></svg><span style="font-size:10px;color:var(--text3)">Bloque alto</span></span>'
           +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="rgba(200,200,200,0.45)" stroke-width="1.2" stroke-dasharray="5,3"/></svg><span style="font-size:10px;color:var(--text3)">Media temporada</span></span>'
         +'</div>'
-        +'<div id="bloque-chart-wrap" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px 6px;margin-bottom:8px;position:relative">'
+        +'<div id="bloque-chart-wrap" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px 6px;margin-bottom:20px;position:relative">'
           +svg
           +'<div id="bloque-tip" style="display:none;position:absolute;background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:9px 12px;pointer-events:none;min-width:155px;box-shadow:0 4px 16px rgba(0,0,0,0.45);z-index:10"></div>'
+        +'</div>'
+        // Mini pitch cards grid
+        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px">'
+          +data.map(function(d){
+            var domBlock=d.hb>d.mb&&d.hb>d.lb?'ALTO':d.mb>=d.hb&&d.mb>=d.lb?'MEDIO':'BAJO';
+            var domCol=domBlock==='ALTO'?'#f85149':domBlock==='MEDIO'?'#e3b341':'#58a6ff';
+            var resCol=rcSolid(d.res);
+            var resLbl=d.res==='W'?'G':d.res==='D'?'E':d.res==='L'?'P':'?';
+            var resBg=d.res==='W'?'rgba(63,185,80,0.12)':d.res==='D'?'rgba(227,179,65,0.12)':'rgba(248,81,73,0.12)';
+            var resBc=d.res==='W'?'rgba(63,185,80,0.3)':d.res==='D'?'rgba(227,179,65,0.3)':'rgba(248,81,73,0.3)';
+            var resTag='<span style="display:inline-block;background:'+resBg+';color:'+resCol+';border:1px solid '+resBc+';font-size:10px;font-weight:800;padding:2px 5px;border-radius:4px">'+resLbl+'</span>';
+            return '<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid '+domCol+';border-radius:10px;overflow:hidden">'
+              // Header
+              +'<div style="padding:7px 10px;background:var(--bg3);display:flex;align-items:center;justify-content:space-between;gap:6px">'
+                +'<div style="display:flex;align-items:center;gap:5px;min-width:0;overflow:hidden">'
+                  +'<span style="font-size:11px;font-weight:800;color:var(--accent);font-family:\'Bebas Neue\',sans-serif;letter-spacing:1px;flex-shrink:0">'+d.j+'</span>'
+                  +'<span style="font-size:10px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(d.loc==='L'?'🏠':'✈️')+' '+d.rival+'</span>'
+                +'</div>'
+                +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
+                  +'<span style="font-size:10px;color:var(--text3)">'+d.score+'</span>'
+                  +resTag
+                +'</div>'
+              +'</div>'
+              // Mini pitch
+              +'<div style="background:#163520;line-height:0">'+buildMiniPitch(d)+'</div>'
+              // Block bar + dominant label
+              +'<div style="padding:7px 10px">'
+                +'<div style="display:flex;gap:1px;height:7px;border-radius:3px;overflow:hidden;margin-bottom:3px">'
+                  +'<div style="width:'+d.lb+'%;background:#58a6ff"></div>'
+                  +'<div style="width:'+d.mb+'%;background:#e3b341"></div>'
+                  +'<div style="width:'+d.hb+'%;background:#f85149"></div>'
+                +'</div>'
+                +'<div style="display:flex;justify-content:space-between;align-items:center">'
+                  +'<div style="display:flex;gap:6px">'
+                    +'<span style="font-size:8px;color:#58a6ff">B '+d.lb+'%</span>'
+                    +'<span style="font-size:8px;color:#e3b341">M '+d.mb+'%</span>'
+                    +'<span style="font-size:8px;color:#f85149">A '+d.hb+'%</span>'
+                  +'</div>'
+                  +'<span style="font-size:9px;font-weight:800;color:'+domCol+';font-family:\'Bebas Neue\',sans-serif;letter-spacing:.5px">'+domBlock+'</span>'
+                +'</div>'
+              +'</div>'
+              // ins bar
+              +(d.ins!=null?
+              '<div style="padding:0 10px 8px">'
+                +'<div style="display:flex;justify-content:space-between;margin-bottom:2px">'
+                  +'<span style="font-size:8px;color:var(--text3)">Rival dentro del bloque</span>'
+                  +'<span style="font-size:8px;font-weight:700;color:'+(d.ins>=35?'#f85149':d.ins>=27?'#e3b341':'#3fb950')+'">'+d.ins+'%</span>'
+                +'</div>'
+                +'<div style="background:var(--bg3);border-radius:3px;height:4px;overflow:hidden">'
+                  +'<div style="width:'+d.ins+'%;height:100%;background:'+(d.ins>=35?'#f85149':d.ins>=27?'#e3b341':'#3fb950')+';border-radius:3px"></div>'
+                +'</div>'
+              +'</div>':'')
+            +'</div>';
+          }).join('')
         +'</div>'
       +'</div>';
   }
