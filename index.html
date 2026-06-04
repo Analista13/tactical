@@ -18008,84 +18008,125 @@
     var maxXL=data.reduce(function(a,b){return b.xloss>a.xloss?b:a;});
     var minXL=data.reduce(function(a,b){return b.xloss<a.xloss?b:a;});
     var maxXS=data.reduce(function(a,b){return b.xshot>a.xshot?b:a;});
+    var dangerGames=data.filter(function(d){return d.xloss>=0.33;}).length;
+    var safeGames=data.filter(function(d){return d.xloss<0.30;}).length;
     var xlc=function(v){return v>=0.33?'#f85149':v>=0.30?'#e3b341':'#3fb950';};
     var xsc=function(v){return v>=0.07?'#f85149':v>=0.05?'#e3b341':'#3fb950';};
+    var rc=function(r){return r==='W'?'#3fb950':r==='D'?'#e3b341':'#f85149';};
 
-    // ── dual line chart ──
-    var VW=900,VH=240,PL=48,PR=58,PT=22,PB=58,CW=VW-PL-PR,CH=VH-PT-PB;
-    var N2=N;
-    var xStep=N2>1?CW/(N2-1):0;
-    function px(i){return +(PL+i*xStep).toFixed(2);}
+    // ── build one chart (reusable) ──────────────────────────────────────────
+    function makeChart(cfg){
+      // cfg: {data, yMin, yMax, yTicks, lineColor, zones, tipFn, idSuffix, title}
+      var VW=900,VH=220,PL=48,PR=58,PT=28,PB=52,CW=VW-PL-PR,CH=VH-PT-PB;
+      var N2=cfg.data.length;
+      var xStep=N2>1?CW/(N2-1):0;
+      function px(i){return +(PL+i*xStep).toFixed(2);}
+      function py(v){return +(PT+CH-(v-cfg.yMin)/(cfg.yMax-cfg.yMin)*CH).toFixed(2);}
 
-    // Two separate y-scales
-    var YLmin=0.22,YLmax=0.38;
-    var YSmin=0,YSmax=0.12;
-    function pyL(v){return +(PT+CH-(v-YLmin)/(YLmax-YLmin)*CH).toFixed(2);}
-    function pyS(v){return +(PT+CH-(v-YSmin)/(YSmax-YSmin)*CH).toFixed(2);}
+      // Zone bands (background)
+      var bands='';
+      cfg.zones.forEach(function(z){
+        var y1=py(z.to),y2=py(z.from);
+        bands+='<rect x="'+PL+'" y="'+y1+'" width="'+CW+'" height="'+(y2-y1)+'" fill="'+z.fill+'"/>';
+        bands+='<text x="'+(PL+CW+4)+'" y="'+(+(py(z.from+( z.to-z.from)/2)+3.5).toFixed(1))+'" font-size="7.5" fill="'+z.labelCol+'" font-family="inherit" opacity="0.7">'+z.label+'</text>';
+      });
 
-    // Grid (shared x, left axis = xloss)
-    var grid='';
-    [0.22,0.25,0.28,0.31,0.34,0.37].forEach(function(v){
-      var y=pyL(v);
-      grid+='<line x1="'+PL+'" y1="'+y+'" x2="'+(PL+CW)+'" y2="'+y+'" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>';
-      grid+='<text x="'+(PL-5)+'" y="'+(y+3.5)+'" font-size="8" fill="rgba(255,255,255,0.25)" text-anchor="end" font-family="inherit">'+v.toFixed(2)+'</text>';
-    });
-    // right axis labels (xshot)
-    [0,0.03,0.06,0.09,0.12].forEach(function(v){
-      var y=pyS(v);
-      grid+='<text x="'+(PL+CW+5)+'" y="'+(y+3.5)+'" font-size="8" fill="rgba(167,139,250,0.5)" text-anchor="start" font-family="inherit">'+v.toFixed(2)+'</text>';
-    });
-    grid+='<line x1="'+PL+'" y1="'+PT+'" x2="'+PL+'" y2="'+(PT+CH)+'" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>';
-    grid+='<line x1="'+PL+'" y1="'+(PT+CH)+'" x2="'+(PL+CW)+'" y2="'+(PT+CH)+'" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>';
+      // Grid lines
+      var grid='';
+      cfg.yTicks.forEach(function(v){
+        var y=py(v);
+        grid+='<line x1="'+PL+'" y1="'+y+'" x2="'+(PL+CW)+'" y2="'+y+'" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>';
+        grid+='<text x="'+(PL-5)+'" y="'+(y+3.5)+'" font-size="8" fill="rgba(255,255,255,0.3)" text-anchor="end" font-family="inherit">'+v.toFixed(2)+'</text>';
+      });
+      grid+='<line x1="'+PL+'" y1="'+PT+'" x2="'+PL+'" y2="'+(PT+CH)+'" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>';
+      grid+='<line x1="'+PL+'" y1="'+(PT+CH)+'" x2="'+(PL+CW)+'" y2="'+(PT+CH)+'" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>';
 
-    // X labels
-    var xlabels='';
-    data.forEach(function(d,i){
-      var x=px(i),y=PT+CH+10;
-      xlabels+='<text x="'+x+'" y="'+y+'" font-size="8" fill="rgba(255,255,255,0.38)" text-anchor="end" font-family="inherit" transform="rotate(-65,'+x+','+y+')">'+d.j+'</text>';
-    });
+      // Title inside chart
+      var ctitle='<text x="'+PL+'" y="18" font-size="8" fill="rgba(255,255,255,0.3)" font-family="inherit" letter-spacing="0.8">'+cfg.title+'</text>';
 
-    // Avg reference lines
-    var avgLines=''
-      +'<line x1="'+PL+'" y1="'+pyL(avgXL)+'" x2="'+(PL+CW)+'" y2="'+pyL(avgXL)+'" stroke="#f87171" stroke-width="1" stroke-dasharray="5,4" opacity="0.4"/>'
-      +'<line x1="'+PL+'" y1="'+pyS(avgXS)+'" x2="'+(PL+CW)+'" y2="'+pyS(avgXS)+'" stroke="#a78bfa" stroke-width="1" stroke-dasharray="5,4" opacity="0.4"/>';
+      // X labels
+      var xlabels='';
+      cfg.data.forEach(function(d,i){
+        var x=px(i),y=PT+CH+10;
+        xlabels+='<text x="'+x+'" y="'+y+'" font-size="8" fill="rgba(255,255,255,0.38)" text-anchor="end" font-family="inherit" transform="rotate(-65,'+x+','+y+')">'+d.j+'</text>';
+      });
 
-    // Paths
-    var xlPath='M'+data.map(function(d,i){return px(i)+','+pyL(d.xloss);}).join('L');
-    var xsPath='M'+data.map(function(d,i){return px(i)+','+pyS(d.xshot);}).join('L');
+      // Avg dashed line
+      var avgY=py(cfg.avg);
+      var avgLine='<line x1="'+PL+'" y1="'+avgY+'" x2="'+(PL+CW)+'" y2="'+avgY+'" stroke="'+cfg.lineColor+'" stroke-width="1" stroke-dasharray="5,4" opacity="0.45"/>'
+        +'<text x="'+(PL+4)+'" y="'+(avgY-3)+'" font-size="7.5" fill="'+cfg.lineColor+'" font-family="inherit" opacity="0.65">media '+cfg.avg.toFixed(3)+'</text>';
 
-    // Dots coloured by result
-    var xlDots='',xsDots='';
-    data.forEach(function(d,i){
-      var x=px(i);
-      var rc=d.res==='W'?'#3fb950':d.res==='D'?'#e3b341':'#f85149';
-      var escR=d.rival.replace(/'/g,"\\'");
-      var args="event,'"+d.j+"','"+escR+"','"+d.loc+"',"+d.xloss+","+d.xshot+",'"+d.score+"','"+d.res+"'";
-      xlDots+='<circle cx="'+x+'" cy="'+pyL(d.xloss)+'" r="4.5" fill="#f87171" stroke="'+rc+'" stroke-width="2" style="cursor:pointer" onmouseover="showXlossTip('+args+')" onmouseleave="hideXlossTip()"/>';
-      xsDots+='<circle cx="'+x+'" cy="'+pyS(d.xshot)+'" r="4.5" fill="#a78bfa" stroke="'+rc+'" stroke-width="2" style="cursor:pointer" onmouseover="showXlossTip('+args+')" onmouseleave="hideXlossTip()"/>';
-    });
+      // Line path
+      var path='M'+cfg.data.map(function(d,i){return px(i)+','+py(cfg.yval(d));}).join('L');
 
-    // End labels
-    var lastX=px(N2-1);
-    var endLabels=''
-      +'<text x="'+(lastX+7)+'" y="'+(pyL(data[N2-1].xloss)+4)+'" font-size="9" font-weight="700" fill="#f87171" font-family="inherit">xLoss</text>'
-      +'<text x="'+(lastX+7)+'" y="'+(pyS(data[N2-1].xshot)+4)+'" font-size="9" font-weight="700" fill="#a78bfa" font-family="inherit">xShot</text>';
+      // Dots
+      var dots='';
+      cfg.data.forEach(function(d,i){
+        var x=px(i),y=py(cfg.yval(d));
+        var resC=rc(d.res);
+        var escR=d.rival.replace(/'/g,"\\'");
+        var args="event,'"+d.j+"','"+escR+"','"+d.loc+"',"+d.xloss+","+d.xshot+",'"+d.score+"','"+d.res+"'";
+        dots+='<circle cx="'+x+'" cy="'+y+'" r="4.5" fill="'+cfg.lineColor+'" stroke="'+resC+'" stroke-width="2" style="cursor:pointer" onmouseover="showXlossTip('+args+')" onmouseleave="hideXlossTip()"/>';
+      });
 
-    var chartTitle='<text x="'+PL+'" y="13" font-size="8" fill="rgba(255,255,255,0.28)" font-family="inherit" letter-spacing="0.8">xLoss MAX · xShot MAX — MEDIA POR POSESIÓN RIVAL</text>';
-    var svg='<svg viewBox="0 0 '+VW+' '+VH+'" style="width:100%;height:auto;display:block">'
-      +chartTitle+grid+xlabels+avgLines
-      +'<path d="'+xlPath+'" fill="none" stroke="#f87171" stroke-width="2" stroke-linejoin="round" opacity="0.85"/>'
-      +'<path d="'+xsPath+'" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linejoin="round" opacity="0.85"/>'
-      +xlDots+xsDots+endLabels
-      +'</svg>';
+      return '<svg viewBox="0 0 '+VW+' '+VH+'" style="width:100%;height:auto;display:block">'
+        +ctitle+bands+grid+xlabels+avgLine
+        +'<path d="'+path+'" fill="none" stroke="'+cfg.lineColor+'" stroke-width="2.2" stroke-linejoin="round" opacity="0.9"/>'
+        +dots+'</svg>';
+    }
+
+    var xlossZones=[
+      {from:0.33,to:0.38,fill:'rgba(248,81,73,0.08)',labelCol:'#f85149',label:'PELIGRO ALTO'},
+      {from:0.30,to:0.33,fill:'rgba(227,179,65,0.07)',labelCol:'#e3b341',label:'MODERADO'},
+      {from:0.22,to:0.30,fill:'rgba(63,185,80,0.06)',labelCol:'#3fb950',label:'CONTROLADO'}
+    ];
+    var xshotZones=[
+      {from:0.07,to:0.12,fill:'rgba(248,81,73,0.08)',labelCol:'#f85149',label:'PELIGRO ALTO'},
+      {from:0.05,to:0.07,fill:'rgba(227,179,65,0.07)',labelCol:'#e3b341',label:'MODERADO'},
+      {from:0.00,to:0.05,fill:'rgba(63,185,80,0.06)',labelCol:'#3fb950',label:'CONTROLADO'}
+    ];
+
+    var svgXL=makeChart({data:data,yMin:0.22,yMax:0.38,avg:avgXL,
+      yTicks:[0.22,0.25,0.28,0.31,0.34,0.37],
+      lineColor:'#f87171',zones:xlossZones,
+      yval:function(d){return d.xloss;},
+      title:'xLOSS MAX — PROBABILIDAD MEDIA DE CONCEDER GOL POR POSESI\xd3N RIVAL'});
+    var svgXS=makeChart({data:data,yMin:0,yMax:0.12,avg:avgXS,
+      yTicks:[0,0.03,0.06,0.09,0.12],
+      lineColor:'#a78bfa',zones:xshotZones,
+      yval:function(d){return d.xshot;},
+      title:'xSHOT MAX — PROBABILIDAD MEDIA DE TIRO EN CONTRA POR POSESI\xd3N RIVAL'});
+
+    // ── Dynamic analysis text ────────────────────────────────────────────────
+    var teamName=currentTeam.nombre||currentTeam.name||'El equipo';
+    var xlAnalysis=(function(){
+      var hi=dangerGames, lo=safeGames;
+      var trend='';
+      var last6=data.slice(-6); var avg6=last6.reduce(function(a,b){return a+b.xloss;},0)/last6.length;
+      if(avg6>avgXL+0.01) trend='La tendencia reciente es <strong>al alza</strong> — los \xfaltimos partidos presentan mayor exposici\xf3n.';
+      else if(avg6<avgXL-0.01) trend='La tendencia reciente es <strong>a la baja</strong> — la defensa est\xe1 siendo m\xe1s s\xf3lida en los \xfaltimos partidos.';
+      else trend='La tendencia es <strong>estable</strong> a lo largo de la temporada.';
+      return 'El rival alcanz\xf3 zona de <strong>peligro alto</strong> (xLoss ≥0.33) en <strong>'+hi+' de '+N+' partidos</strong>. '
+        +'En otros <strong>'+lo+'</strong> el ataque rival fue bien contenido (xLoss &lt;0.30). '
+        +'El partido m\xe1s expuesto fue <strong>'+maxXL.j+' vs '+maxXL.rival+'</strong> (xLoss '+maxXL.xloss.toFixed(3)+', '+maxXL.score+' — '+( maxXL.res==='W'?'victoria':maxXL.res==='D'?'empate':'derrota')+'), '
+        +'y el mejor defensivamente fue <strong>'+minXL.j+' vs '+minXL.rival+'</strong> (xLoss '+minXL.xloss.toFixed(3)+'). '+trend;
+    })();
+    var xsAnalysis=(function(){
+      var hi=data.filter(function(d){return d.xshot>=0.07;}).length;
+      var lo=data.filter(function(d){return d.xshot<0.05;}).length;
+      return 'El rival gener\xf3 posesiones con <strong>alta probabilidad de tiro</strong> (xShot ≥0.07) en <strong>'+hi+' partidos</strong>. '
+        +'En <strong>'+lo+' partidos</strong> el equipo fue muy compacto y apenas concedi\xf3 opciones de disparo. '
+        +'El pico de xShot se dio en <strong>'+maxXS.j+' vs '+maxXS.rival+'</strong> ('+maxXS.xshot.toFixed(3)+').';
+    })();
 
     cont.innerHTML=
       '<div style="padding:20px 24px 36px">'
+        // Header
         +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">'
           +'<img src="'+currentTeam.escudo+'" style="width:34px;height:34px;object-fit:contain"/>'
           +'<div>'
             +'<div style="font-size:17px;font-weight:800;color:var(--text1);letter-spacing:-.3px">xLOSS / xSHOT DEFENSIVO</div>'
-            +'<div style="font-size:11px;color:var(--text3)">SkillCorner \xb7 '+N+' partidos \xb7 Temporada 2025-26</div>'
+            +'<div style="font-size:11px;color:var(--text3)">SkillCorner \xb7 '+N+' partidos \xb7 Temporada 2025–26</div>'
           +'</div>'
         +'</div>'
         // Chips
@@ -18101,66 +18142,85 @@
             +'<div style="font-size:9px;color:var(--text3)">media temporada</div>'
           +'</div>'
           +'<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid #f85149;border-radius:8px;padding:8px 14px">'
+            +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Partidos peligro alto</div>'
+            +'<div style="font-size:20px;font-weight:800;color:#f85149;font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+dangerGames+'<span style="font-size:10px;font-weight:400;color:var(--text3)"> / '+N+'</span></div>'
+            +'<div style="font-size:9px;color:var(--text3)">xLoss ≥0.33</div>'
+          +'</div>'
+          +'<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid #3fb950;border-radius:8px;padding:8px 14px">'
+            +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Partidos controlados</div>'
+            +'<div style="font-size:20px;font-weight:800;color:#3fb950;font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+safeGames+'<span style="font-size:10px;font-weight:400;color:var(--text3)"> / '+N+'</span></div>'
+            +'<div style="font-size:9px;color:var(--text3)">xLoss &lt;0.30</div>'
+          +'</div>'
+          +'<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid #f85149;border-radius:8px;padding:8px 14px">'
             +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">M\xe1s peligroso</div>'
             +'<div style="font-size:20px;font-weight:800;color:#f85149;font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+maxXL.xloss.toFixed(3)+'</div>'
             +'<div style="font-size:9px;color:var(--text3)">'+maxXL.j+' vs '+maxXL.rival+'</div>'
           +'</div>'
           +'<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid #3fb950;border-radius:8px;padding:8px 14px">'
-            +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Menos peligroso</div>'
+            +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Mejor defensivo</div>'
             +'<div style="font-size:20px;font-weight:800;color:#3fb950;font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+minXL.xloss.toFixed(3)+'</div>'
             +'<div style="font-size:9px;color:var(--text3)">'+minXL.j+' vs '+minXL.rival+'</div>'
           +'</div>'
-          +'<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid #a78bfa;border-radius:8px;padding:8px 14px">'
-            +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Mayor xShot</div>'
-            +'<div style="font-size:20px;font-weight:800;color:#a78bfa;font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+maxXS.xshot.toFixed(3)+'</div>'
-            +'<div style="font-size:9px;color:var(--text3)">'+maxXS.j+' vs '+maxXS.rival+'</div>'
-          +'</div>'
         +'</div>'
-        // Legend
-        +'<div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:10px">'
-          +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="#f87171" stroke-width="2.5"/></svg><span style="font-size:10px;color:var(--text3)">xLoss (eje izq.)</span></span>'
-          +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="#a78bfa" stroke-width="2.5"/></svg><span style="font-size:10px;color:var(--text3)">xShot (eje der.)</span></span>'
-          +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="#555" stroke="#3fb950" stroke-width="2"/></svg><span style="font-size:10px;color:var(--text3)">Victoria</span></span>'
-          +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="#555" stroke="#e3b341" stroke-width="2"/></svg><span style="font-size:10px;color:var(--text3)">Empate</span></span>'
-          +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="#555" stroke="#f85149" stroke-width="2"/></svg><span style="font-size:10px;color:var(--text3)">Derrota</span></span>'
-          +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="rgba(255,255,255,0.35)" stroke-width="1.2" stroke-dasharray="5,3"/></svg><span style="font-size:10px;color:var(--text3)">Media</span></span>'
+        // ── xLoss chart + explanation ──
+        +'<div style="font-size:12px;font-weight:700;color:var(--text1);margin-bottom:8px;display:flex;align-items:center;gap:8px">'
+          +'<span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#f87171"></span>xLoss — Exposici\xf3n defensiva'
         +'</div>'
-        // Chart
-        +'<div id="xloss-chart-wrap" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px 6px;margin-bottom:20px;position:relative">'
-          +svg
-          +'<div id="xloss-tip" style="display:none;position:absolute;background:#0d1117;border:1px solid rgba(255,255,255,0.14);border-radius:8px;padding:9px 12px;pointer-events:none;min-width:155px;box-shadow:0 6px 20px rgba(0,0,0,0.7);z-index:10"></div>'
+        +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px 6px;margin-bottom:10px;position:relative" id="xloss-chart-wrap">'
+          +svgXL
+          +'<div id="xloss-tip" style="display:none;position:absolute;background:#0d1117;border:1px solid rgba(255,255,255,0.14);border-radius:8px;padding:9px 12px;pointer-events:none;min-width:160px;box-shadow:0 6px 20px rgba(0,0,0,0.7);z-index:10"></div>'
         +'</div>'
-        // Cards
-        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:28px">'
+        +'<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid #f87171;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:11px;color:var(--text2);line-height:1.7">'+xlAnalysis+'</div>'
+        // ── xShot chart + explanation ──
+        +'<div style="font-size:12px;font-weight:700;color:var(--text1);margin-bottom:8px;display:flex;align-items:center;gap:8px">'
+          +'<span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#a78bfa"></span>xShot — Posesiones que terminaron en amenaza de tiro'
+        +'</div>'
+        +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px 6px;margin-bottom:10px;position:relative">'
+          +svgXS
+        +'</div>'
+        +'<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid #a78bfa;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:11px;color:var(--text2);line-height:1.7">'+xsAnalysis+'</div>'
+        // ── Legend ──
+        +'<div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:20px">'
+          +'<span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="#555" stroke="#3fb950" stroke-width="2"/></svg><span style="font-size:10px;color:var(--text3)">Victoria</span></span>'
+          +'<span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="#555" stroke="#e3b341" stroke-width="2"/></svg><span style="font-size:10px;color:var(--text3)">Empate</span></span>'
+          +'<span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="#555" stroke="#f85149" stroke-width="2"/></svg><span style="font-size:10px;color:var(--text3)">Derrota</span></span>'
+          +'<span style="display:inline-flex;align-items:center;gap:6px"><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="rgba(255,255,255,0.4)" stroke-width="1.2" stroke-dasharray="5,3"/></svg><span style="font-size:10px;color:var(--text3)">Media temporada</span></span>'
+          +'<span style="display:inline-flex;align-items:center;gap:6px"><svg width="22" height="10"><rect width="22" height="10" rx="2" fill="rgba(248,81,73,0.15)"/></svg><span style="font-size:10px;color:#f85149">Zona peligro alto</span></span>'
+          +'<span style="display:inline-flex;align-items:center;gap:6px"><svg width="22" height="10"><rect width="22" height="10" rx="2" fill="rgba(63,185,80,0.15)"/></svg><span style="font-size:10px;color:#3fb950">Zona controlada</span></span>'
+        +'</div>'
+        // ── Match cards ──
+        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:28px">'
           +data.map(function(d){
-            var rc=d.res==='W'?'#3fb950':d.res==='D'?'#e3b341':'#f85149';
+            var resC=rc(d.res); var rl=d.res==='W'?'G':d.res==='D'?'E':'P';
             var rbg=d.res==='W'?'rgba(63,185,80,0.12)':d.res==='D'?'rgba(227,179,65,0.12)':'rgba(248,81,73,0.12)';
             var rbc=d.res==='W'?'rgba(63,185,80,0.3)':d.res==='D'?'rgba(227,179,65,0.3)':'rgba(248,81,73,0.3)';
-            var rl=d.res==='W'?'G':d.res==='D'?'E':'P';
-            var xlPct=Math.round((d.xloss-0.22)/(0.38-0.22)*100);
-            var xsPct=Math.round(d.xshot/0.12*100);
-            return '<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid '+xlc(d.xloss)+';border-radius:8px;padding:10px 12px">'
-              +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
-                +'<div style="display:flex;align-items:center;gap:6px">'
+            var xlPct=Math.min(100,Math.round((d.xloss-0.22)/(0.38-0.22)*100));
+            var xsPct=Math.min(100,Math.round(d.xshot/0.12*100));
+            var dangerLabel=d.xloss>=0.33?'ALTO':d.xloss>=0.30?'MOD.':'OK';
+            var dangerC=xlc(d.xloss);
+            return '<div style="background:var(--bg2);border:1px solid var(--border);border-top:3px solid '+dangerC+';border-radius:8px;padding:10px 12px">'
+              +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
+                +'<div>'
                   +'<span style="font-size:11px;font-weight:800;color:var(--accent);font-family:\'Bebas Neue\',sans-serif;letter-spacing:1px">'+d.j+'</span>'
-                  +'<span style="font-size:9px;color:var(--text3)">'+(d.loc==='L'?'🏠':'✈️')+' '+d.rival+'</span>'
+                  +' <span style="font-size:8px;color:var(--text3)">'+(d.loc==='L'?'🏠':'✈️')+'</span>'
+                  +'<div style="font-size:9px;color:var(--text2);margin-top:1px">'+d.rival+'</div>'
                 +'</div>'
-                +'<div style="display:flex;align-items:center;gap:4px">'
-                  +'<span style="font-size:9px;color:var(--text3)">'+d.score+'</span>'
-                  +'<span style="display:inline-block;background:'+rbg+';color:'+rc+';border:1px solid '+rbc+';font-size:9px;font-weight:800;padding:1px 4px;border-radius:3px">'+rl+'</span>'
+                +'<div style="text-align:right">'
+                  +'<span style="display:inline-block;background:'+rbg+';color:'+resC+';border:1px solid '+rbc+';font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px">'+rl+'</span>'
+                  +'<div style="font-size:8px;color:var(--text3);margin-top:2px">'+d.score+'</div>'
                 +'</div>'
               +'</div>'
-              // xLoss bar
-              +'<div style="margin-bottom:6px">'
+              // xLoss
+              +'<div style="margin-bottom:5px">'
                 +'<div style="display:flex;justify-content:space-between;margin-bottom:2px">'
                   +'<span style="font-size:8px;color:#f87171">xLoss</span>'
-                  +'<span style="font-size:9px;font-weight:700;color:'+xlc(d.xloss)+'">'+d.xloss.toFixed(3)+'</span>'
+                  +'<span style="font-size:9px;font-weight:700;color:'+dangerC+'">'+d.xloss.toFixed(3)+' <span style="font-size:7px">'+dangerLabel+'</span></span>'
                 +'</div>'
                 +'<div style="background:var(--bg3);border-radius:3px;height:5px;overflow:hidden">'
-                  +'<div style="width:'+xlPct+'%;height:100%;background:'+xlc(d.xloss)+';border-radius:3px"></div>'
+                  +'<div style="width:'+xlPct+'%;height:100%;background:'+dangerC+';border-radius:3px"></div>'
                 +'</div>'
               +'</div>'
-              // xShot bar
+              // xShot
               +'<div>'
                 +'<div style="display:flex;justify-content:space-between;margin-bottom:2px">'
                   +'<span style="font-size:8px;color:#a78bfa">xShot</span>'
@@ -18173,21 +18233,21 @@
             +'</div>';
           }).join('')
         +'</div>'
-        // Glosario
+        // ── Glosario ──
         +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 20px">'
-          +'<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Terminolog\xeda</div>'
+          +'<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">C\xf3mo leer estas m\xe9tricas</div>'
           +'<div style="display:flex;flex-direction:column;gap:10px">'
             +'<div style="display:flex;gap:10px;align-items:flex-start">'
               +'<span style="flex-shrink:0;margin-top:2px;width:10px;height:10px;border-radius:2px;background:#f87171;display:inline-block"></span>'
-              +'<div><span style="font-size:11px;font-weight:700;color:#f87171">xLoss (Expected Loss)</span><span style="font-size:11px;color:var(--text2)"> — Probabilidad media de que el equipo conceda un gol durante las posesiones del rival. El valor m\xe1ximo de cada posesi\xf3n (xloss_max) indica el pico de peligro alcanzado. Cuanto m\xe1s alto, m\xe1s expuesta qued\xf3 la defensa.</span></div>'
+              +'<div><span style="font-size:11px;font-weight:700;color:#f87171">xLoss</span><span style="font-size:11px;color:var(--text2)"> — Probabilidad de que una posesi\xf3n rival acabe en gol en contra. Se muestra el valor m\xe1ximo alcanzado en cada posesi\xf3n y se promedia por partido. Un xLoss bajo indica que el equipo defendi\xf3 bien y no permiti\xf3 que las posesiones rivales llegaran a zonas peligrosas.</span></div>'
             +'</div>'
             +'<div style="display:flex;gap:10px;align-items:flex-start">'
               +'<span style="flex-shrink:0;margin-top:2px;width:10px;height:10px;border-radius:2px;background:#a78bfa;display:inline-block"></span>'
-              +'<div><span style="font-size:11px;font-weight:700;color:#a78bfa">xShot (Expected Shot Against)</span><span style="font-size:11px;color:var(--text2)"> — Probabilidad media de que una posesi\xf3n rival acabe en tiro. Complementa al xLoss: un xShot alto con xLoss bajo indica tiros poco probables de gol; ambos altos indica peligro real.</span></div>'
+              +'<div><span style="font-size:11px;font-weight:700;color:#a78bfa">xShot</span><span style="font-size:11px;color:var(--text2)"> — Probabilidad de que una posesi\xf3n rival genere un tiro en contra. Cuando xShot es alto pero xLoss es bajo, el rival lleg\xf3 a disparar pero desde posiciones poco peligrosas. Si ambos son altos, el rival no solo tir\xf3 sino que lo hizo desde zonas comprometidas.</span></div>'
             +'</div>'
             +'<div style="display:flex;gap:10px;align-items:flex-start">'
-              +'<span style="flex-shrink:0;margin-top:2px;width:10px;height:10px;border-radius:2px;background:rgba(139,148,158,0.5);display:inline-block"></span>'
-              +'<div><span style="font-size:11px;font-weight:700;color:var(--text2)">Referencia de colores</span><span style="font-size:11px;color:var(--text2)"> — Verde: xLoss &lt;0.30 / xShot &lt;0.05 (baja peligrosidad). Amarillo: valores intermedios. Rojo: xLoss ≥0.33 / xShot ≥0.07 (alta peligrosidad). El borde del resultado (verde/amarillo/rojo) es el resultado del partido, no el peligro.</span></div>'
+              +'<span style="flex-shrink:0;margin-top:2px;width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,0.2);display:inline-block"></span>'
+              +'<div><span style="font-size:11px;font-weight:700;color:var(--text2)">Zonas del gr\xe1fico</span><span style="font-size:11px;color:var(--text2)"> — Fondo verde: peligro controlado. Fondo amarillo: zona de atenci\xf3n. Fondo rojo: peligro alto. El borde de cada punto indica el resultado del partido (verde=victoria, amarillo=empate, rojo=derrota).</span></div>'
             +'</div>'
           +'</div>'
         +'</div>'
