@@ -17245,6 +17245,85 @@
   //  ACCIONES DEFENSIVAS
   // ══════════════════════════════════════════════════════════════════════
 
+  const PPDA_923 = [
+    {j:'J01',rival:'Real Avilés',loc:'V',score:'3-0',res:'W',ppda:9.84,ppdaR:7.21},
+    {j:'J02',rival:'Pontevedra',loc:'L',score:'0-1',res:'L',ppda:7.91,ppdaR:14.17},
+    {j:'J03',rival:'Racing Ferrol',loc:'V',score:'1-2',res:'L',ppda:10.35,ppdaR:15.67},
+    {j:'J04',rival:'Guadalajara',loc:'L',score:'1-3',res:'L',ppda:6.7,ppdaR:9.76},
+    {j:'J05',rival:'Osasuna Promesas',loc:'V',score:'0-0',res:'D',ppda:6.08,ppdaR:9.87},
+    {j:'J06',rival:'Real Madrid Castilla',loc:'L',score:'2-3',res:'L',ppda:6.38,ppdaR:9.53},
+    {j:'J07',rival:'Talavera CF',loc:'V',score:'1-0',res:'W',ppda:7.81,ppdaR:9.42},
+    {j:'J08',rival:'Zamora',loc:'L',score:'2-0',res:'W',ppda:6.36,ppdaR:6.86},
+    {j:'J09',rival:'Mérida AD',loc:'V',score:'0-0',res:'D',ppda:11.38,ppdaR:10.62},
+    {j:'J10',rival:'Caceréño',loc:'L',score:'2-0',res:'W',ppda:10.23,ppdaR:8.0},
+    {j:'J11',rival:'Barakaldo',loc:'V',score:'0-0',res:'D',ppda:7.94,ppdaR:10.0},
+    {j:'J12',rival:'Lugo',loc:'L',score:'1-1',res:'D',ppda:10.31,ppdaR:8.13},
+    {j:'J13',rival:'Celta Fortuna',loc:'V',score:'0-2',res:'L',ppda:8.08,ppdaR:9.95},
+    {j:'J14',rival:'Arenas Club',loc:'L',score:'1-2',res:'L',ppda:5.84,ppdaR:17.06},
+    {j:'J15',rival:'Unionistas de Salamanca',loc:'V',score:'2-2',res:'D',ppda:8.06,ppdaR:6.03},
+    {j:'J16',rival:'Arenteiro',loc:'L',score:'1-3',res:'L',ppda:7.36,ppdaR:7.91},
+    {j:'J17',rival:'Tenerife',loc:'V',score:'0-2',res:'L',ppda:7.33,ppdaR:5.93},
+    {j:'J18',rival:'Athletic Bilbao',loc:'V',score:'0-1',res:'L',ppda:8.34,ppdaR:13.63},
+    {j:'J19',rival:'Ourense CF',loc:'L',score:'2-0',res:'W',ppda:8.06,ppdaR:7.67},
+    {j:'J20',rival:'Racing Ferrol',loc:'L',score:'3-0',res:'W',ppda:14.11,ppdaR:9.25},
+    {j:'J21',rival:'Guadalajara',loc:'V',score:'1-0',res:'W',ppda:7.72,ppdaR:9.14},
+    {j:'J22',rival:'Lugo',loc:'V',score:'2-0',res:'W',ppda:16.41,ppdaR:8.52},
+    {j:'J23',rival:'Celta Fortuna',loc:'L',score:'0-0',res:'D',ppda:11.63,ppdaR:10.04},
+    {j:'J24',rival:'Arenas Club',loc:'V',score:'1-0',res:'W',ppda:6.68,ppdaR:8.0},
+    {j:'J25',rival:'Talavera CF',loc:'L',score:'1-0',res:'W',ppda:9.82,ppdaR:7.33},
+    {j:'J26',rival:'Real Madrid Castilla',loc:'V',score:'1-0',res:'W',ppda:9.94,ppdaR:5.69},
+    {j:'J27',rival:'Osasuna Promesas',loc:'L',score:'0-1',res:'L',ppda:5.09,ppdaR:8.22},
+    {j:'J28',rival:'Caceréño',loc:'V',score:'0-0',res:'D',ppda:6.07,ppdaR:8.47},
+    {j:'J29',rival:'Unionistas de Salamanca',loc:'L',score:'3-1',res:'W',ppda:8.66,ppdaR:6.89},
+    {j:'J30',rival:'Ourense CF',loc:'V',score:'0-0',res:'D',ppda:8.05,ppdaR:13.68},
+    {j:'J31',rival:'Mérida AD',loc:'L',score:'4-1',res:'W',ppda:9.63,ppdaR:7.07},
+    {j:'J32',rival:'Pontevedra',loc:'V',score:'1-3',res:'L',ppda:10.29,ppdaR:7.8},
+    {j:'J33',rival:'Barakaldo',loc:'L',score:'1-0',res:'W',ppda:7.52,ppdaR:4.5},
+    {j:'J34',rival:'Tenerife',loc:'L',score:'1-1',res:'D',ppda:12.4,ppdaR:4.24},
+    {j:'J35',rival:'Zamora',loc:'V',score:'0-3',res:'L',ppda:11.59,ppdaR:8.0},
+    {j:'J36',rival:'Real Avilés',loc:'L',score:'3-1',res:'W',ppda:6.78,ppdaR:9.03},
+    {j:'J37',rival:'Arenteiro',loc:'V',score:'1-0',res:'W',ppda:10.13,ppdaR:12.29},
+    {j:'J38',rival:'Athletic Bilbao',loc:'L',score:'1-0',res:'W',ppda:8.28,ppdaR:11.85}
+  ];
+  const PPDA_8733 = [
+    {j:'J01',rival:'Zamora',loc:'V',score:'0-0',res:'D',ppda:8.85,ppdaR:7.54},
+    {j:'J02',rival:'Mérida AD',loc:'V',score:'4-2',res:'W',ppda:9.04,ppdaR:7.61},
+    {j:'J03',rival:'Arenas Club',loc:'L',score:'2-0',res:'W',ppda:15.08,ppdaR:15.52},
+    {j:'J04',rival:'Arenteiro',loc:'L',score:'2-1',res:'W',ppda:13.88,ppdaR:7.86},
+    {j:'J05',rival:'Unionistas de Salamanca',loc:'V',score:'2-0',res:'W',ppda:12.15,ppdaR:5.73},
+    {j:'J06',rival:'Ourense CF',loc:'L',score:'0-0',res:'D',ppda:7.65,ppdaR:9.52},
+    {j:'J07',rival:'Lugo',loc:'V',score:'0-2',res:'L',ppda:10.55,ppdaR:8.71},
+    {j:'J08',rival:'Racing Ferrol',loc:'L',score:'2-1',res:'W',ppda:9.88,ppdaR:10.81},
+    {j:'J09',rival:'Osasuna Promesas',loc:'V',score:'1-1',res:'D',ppda:6.52,ppdaR:12.23},
+    {j:'J10',rival:'Talavera CF',loc:'L',score:'4-3',res:'W',ppda:9.35,ppdaR:7.77},
+    {j:'J11',rival:'Tenerife',loc:'V',score:'0-4',res:'L',ppda:12.3,ppdaR:7.59},
+    {j:'J12',rival:'Ponferradina',loc:'L',score:'2-0',res:'W',ppda:9.95,ppdaR:8.08},
+    {j:'J13',rival:'Real Avilés',loc:'V',score:'1-1',res:'D',ppda:5.96,ppdaR:8.67},
+    {j:'J14',rival:'Pontevedra',loc:'L',score:'1-2',res:'L',ppda:5.71,ppdaR:12.15},
+    {j:'J15',rival:'Athletic Bilbao',loc:'V',score:'2-1',res:'W',ppda:9.39,ppdaR:8.83},
+    {j:'J16',rival:'Real Madrid Castilla',loc:'L',score:'1-0',res:'W',ppda:12.07,ppdaR:8.0},
+    {j:'J17',rival:'Caceréño',loc:'V',score:'3-2',res:'W',ppda:10.0,ppdaR:8.15},
+    {j:'J18',rival:'Barakaldo',loc:'L',score:'1-2',res:'L',ppda:10.35,ppdaR:8.6},
+    {j:'J19',rival:'Talavera CF',loc:'V',score:'1-1',res:'D',ppda:4.83,ppdaR:11.03},
+    {j:'J20',rival:'Zamora',loc:'L',score:'3-3',res:'D',ppda:8.41,ppdaR:6.96},
+    {j:'J21',rival:'Unionistas de Salamanca',loc:'L',score:'2-0',res:'W',ppda:7.35,ppdaR:10.28},
+    {j:'J22',rival:'Ponferradina',loc:'V',score:'0-0',res:'D',ppda:10.04,ppdaR:11.63},
+    {j:'J23',rival:'Real Avilés',loc:'L',score:'4-2',res:'W',ppda:7.44,ppdaR:9.69},
+    {j:'J24',rival:'Racing Ferrol',loc:'V',score:'2-1',res:'W',ppda:7.14,ppdaR:14.45},
+    {j:'J25',rival:'Mérida AD',loc:'L',score:'1-1',res:'D',ppda:7.78,ppdaR:8.72},
+    {j:'J26',rival:'Guadalajara',loc:'V',score:'0-3',res:'L',ppda:9.36,ppdaR:13.58},
+    {j:'J27',rival:'Tenerife',loc:'L',score:'1-1',res:'D',ppda:16.55,ppdaR:7.0},
+    {j:'J28',rival:'Arenteiro',loc:'V',score:'1-1',res:'D',ppda:10.93,ppdaR:10.14},
+    {j:'J29',rival:'Athletic Bilbao',loc:'L',score:'2-1',res:'W',ppda:13.33,ppdaR:14.96},
+    {j:'J30',rival:'Real Madrid Castilla',loc:'V',score:'1-5',res:'L',ppda:9.84,ppdaR:10.58},
+    {j:'J31',rival:'Arenas Club',loc:'V',score:'5-0',res:'W',ppda:12.67,ppdaR:17.4},
+    {j:'J32',rival:'Caceréño',loc:'L',score:'3-0',res:'W',ppda:10.52,ppdaR:16.96},
+    {j:'J33',rival:'Pontevedra',loc:'V',score:'1-1',res:'D',ppda:9.87,ppdaR:8.4},
+    {j:'J34',rival:'Osasuna Promesas',loc:'L',score:'0-1',res:'L',ppda:7.9,ppdaR:11.36},
+    {j:'J35',rival:'Ourense CF',loc:'V',score:'4-2',res:'W',ppda:13.41,ppdaR:9.3},
+    {j:'J36',rival:'Lugo',loc:'L',score:'0-1',res:'L',ppda:10.8,ppdaR:14.74},
+    {j:'J37',rival:'Barakaldo',loc:'V',score:'1-1',res:'D',ppda:16.83,ppdaR:6.08}
+  ];
   const LINEA_DEF_923 = [
     {j:'J01',rival:'Real Avilés',loc:'V',score:'3-0',res:'W',lineX:-26.9,delta:16.2,hb:7.4,mb:32.3,lb:60.2,n:435,ins:25.5,ppda:9.84,ppdaR:7.21},
     {j:'J02',rival:'Pontevedra',loc:'L',score:'0-1',res:'L',lineX:-19.0,delta:17.7,hb:12.8,mb:56.4,lb:30.8,n:231,ins:34.6,ppda:7.91,ppdaR:14.17},
@@ -17514,19 +17593,57 @@
       +'</div>';
   }
 
+  function _ppdaTipColor(p){return p<=7.5?'#3fb950':p<=10?'#e3b341':'#f85149';}
+  function showPpdaTip(evt,j,rival,loc,ppda,ppdaR,score,res){
+    var tip=document.getElementById('ppda-tip');
+    if(!tip)return;
+    var wrap=document.getElementById('ppda-chart-wrap');
+    var rect=wrap.getBoundingClientRect();
+    var x=evt.clientX-rect.left, y=evt.clientY-rect.top;
+    var resCol=res==='W'?'#3fb950':res==='D'?'#e3b341':res==='L'?'#f85149':'#8b949e';
+    var resLbl=res==='W'?'Victoria':res==='D'?'Empate':res==='L'?'Derrota':'?';
+    var locLbl=loc==='L'?'Local':'Visitante';
+    tip.innerHTML=
+      '<div style="font-size:10px;font-weight:700;color:var(--text1);margin-bottom:6px">'+j+' \xb7 '+rival+' <span style="color:var(--text3);font-weight:400">('+locLbl+')</span></div>'
+      +'<div style="display:flex;flex-direction:column;gap:4px">'
+        +'<div style="display:flex;justify-content:space-between;gap:16px;align-items:center">'
+          +'<span style="font-size:9px;color:#58a6ff">Equipo</span>'
+          +'<span style="font-size:13px;font-weight:800;color:'+_ppdaTipColor(ppda)+';font-family:\'Bebas Neue\',sans-serif">'+ppda+'</span>'
+        +'</div>'
+        +'<div style="display:flex;justify-content:space-between;gap:16px;align-items:center">'
+          +'<span style="font-size:9px;color:#e6832b">Rival</span>'
+          +'<span style="font-size:13px;font-weight:800;color:'+_ppdaTipColor(ppdaR)+';font-family:\'Bebas Neue\',sans-serif">'+ppdaR+'</span>'
+        +'</div>'
+      +'</div>'
+      +'<div style="border-top:1px solid var(--border);margin-top:6px;padding-top:5px;display:flex;justify-content:space-between;align-items:center">'
+        +'<span style="font-size:10px;color:var(--text3)">'+score+'</span>'
+        +'<span style="font-size:9px;font-weight:700;color:'+resCol+'">'+resLbl+'</span>'
+      +'</div>';
+    tip.style.display='block';
+    var lft=x+14, top=y-10;
+    if(lft+160>wrap.offsetWidth) lft=x-170;
+    if(top<0) top=4;
+    tip.style.left=lft+'px';
+    tip.style.top=top+'px';
+  }
+  function hidePpdaTip(){
+    var tip=document.getElementById('ppda-tip');
+    if(tip) tip.style.display='none';
+  }
+
   function renderPresion() {
+    var PPDA_MAP = {923: PPDA_923, 8733: PPDA_8733};
     var LINEA_MAP = {923: LINEA_DEF_923, 8733: LINEA_DEF_8733};
-    var data = LINEA_MAP[currentTeam.id] || [];
+    var pts = PPDA_MAP[currentTeam.id] || [];
+    var linData = LINEA_MAP[currentTeam.id] || [];
     var cont = document.getElementById('subtab-content');
-    if (!data.length) {
+    if (!pts.length) {
       cont.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:380px;color:var(--text3);font-size:14px">Sin datos disponibles</div>';
       return;
     }
-    var rcSolid=function(r){ return r==='W'?'#3fb950':r==='D'?'#e3b341':r==='L'?'#f85149':'#8b949e'; };
     var ppdaColor=function(p){ return p<=7.5?'#3fb950':p<=10?'#e3b341':'#f85149'; };
+    var rcSolid=function(r){ return r==='W'?'#3fb950':r==='D'?'#e3b341':r==='L'?'#f85149':'#8b949e'; };
 
-    // Filter matches with both ppda values
-    var pts=data.filter(function(d){return d.ppda!=null&&d.ppdaR!=null;});
     var N=pts.length;
     var sumP=pts.reduce(function(a,b){return a+b.ppda;},0);
     var avgPpda=+(sumP/N).toFixed(2);
@@ -17538,36 +17655,35 @@
     var PL=40, PR=58, PT=22, PB=38;
     var CW=VW-PL-PR, CH=VH-PT-PB;
     var YMIN=4, YMAX=19;
-    var xStep=pts.length>1?CW/(pts.length-1):0;
-    function px(i){return PL+i*xStep;}
-    function py(v){return PT+CH-(v-YMIN)/(YMAX-YMIN)*CH;}
+    var xStep=N>1?CW/(N-1):0;
+    function px(i){return +(PL+i*xStep).toFixed(2);}
+    function py(v){return +(PT+CH-(v-YMIN)/(YMAX-YMIN)*CH).toFixed(2);}
 
-    // Grid lines
+    // Grid
     var grid='';
     [6,8,10,12,14,16].forEach(function(v){
       var y=py(v);
       grid+='<line x1="'+PL+'" y1="'+y+'" x2="'+(PL+CW)+'" y2="'+y+'" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>';
       grid+='<text x="'+(PL-5)+'" y="'+(y+3.5)+'" font-size="9" fill="rgba(255,255,255,0.32)" text-anchor="end" font-family="inherit">'+v+'</text>';
     });
-    // Axis
     grid+='<line x1="'+PL+'" y1="'+PT+'" x2="'+PL+'" y2="'+(PT+CH)+'" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>';
     grid+='<line x1="'+PL+'" y1="'+(PT+CH)+'" x2="'+(PL+CW)+'" y2="'+(PT+CH)+'" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>';
 
-    // X labels (jornada)
+    // X labels
     var xlabels='';
     pts.forEach(function(d,i){
-      if(i%4===0||i===pts.length-1){
+      if(i%4===0||i===N-1){
         xlabels+='<text x="'+px(i)+'" y="'+(PT+CH+14)+'" font-size="8" fill="rgba(255,255,255,0.32)" text-anchor="middle" font-family="inherit">'+d.j+'</text>';
       }
     });
 
-    // Average reference line
+    // Avg reference line
     var avgY=py(avgPpda);
     var avgLine='<line x1="'+PL+'" y1="'+avgY+'" x2="'+(PL+CW)+'" y2="'+avgY+'" stroke="rgba(200,200,200,0.45)" stroke-width="1.2" stroke-dasharray="5,4"/>';
 
-    // Fill areas (segment by segment)
+    // Fill areas
     var fills='';
-    for(var i=0;i<pts.length-1;i++){
+    for(var i=0;i<N-1;i++){
       var x1=px(i),x2=px(i+1);
       var ty1=py(pts[i].ppda),ty2=py(pts[i+1].ppda);
       var ry1=py(pts[i].ppdaR),ry2=py(pts[i+1].ppdaR);
@@ -17577,30 +17693,27 @@
       fills+='<polygon points="'+x1+','+ty1+' '+x2+','+ty2+' '+x2+','+ry2+' '+x1+','+ry1+'" fill="'+fc+'"/>';
     }
 
-    // Team line
+    // Lines
     var teamPath='M'+pts.map(function(d,i){return px(i)+','+py(d.ppda);}).join('L');
-    // Rival line
     var rivalPath='M'+pts.map(function(d,i){return px(i)+','+py(d.ppdaR);}).join('L');
 
-    // Dots + titles
+    // Dots with hover
     var teamDots='',rivalDots='';
     pts.forEach(function(d,i){
-      var x=px(i),ty=py(d.ppda),ry=py(d.ppdaR);
-      var col=rcSolid(d.res);
-      teamDots+='<circle cx="'+x+'" cy="'+ty+'" r="3.5" fill="#58a6ff" stroke="var(--bg1)" stroke-width="1.5"><title>'+d.j+' vs '+d.rival+'\nEquipo PPDA: '+d.ppda+'</title></circle>';
-      rivalDots+='<circle cx="'+x+'" cy="'+ry+'" r="3.5" fill="#e6832b" stroke="var(--bg1)" stroke-width="1.5"><title>'+d.j+' vs '+d.rival+'\nRival PPDA: '+d.ppdaR+'</title></circle>';
+      var x=px(i);
+      var escRival=d.rival.replace(/'/g,"\\'");
+      var tArgs="event,'"+d.j+"','"+escRival+"','"+d.loc+"',"+d.ppda+","+d.ppdaR+",'"+d.score+"','"+d.res+"'";
+      teamDots+='<circle cx="'+x+'" cy="'+py(d.ppda)+'" r="4" fill="#58a6ff" stroke="var(--bg1)" stroke-width="1.5" style="cursor:pointer" onmouseover="showPpdaTip('+tArgs+')" onmouseleave="hidePpdaTip()"/>';
+      rivalDots+='<circle cx="'+x+'" cy="'+py(d.ppdaR)+'" r="4" fill="#e6832b" stroke="var(--bg1)" stroke-width="1.5" style="cursor:pointer" onmouseover="showPpdaTip('+tArgs+')" onmouseleave="hidePpdaTip()"/>';
     });
 
     // End labels
-    var lastX=px(pts.length-1);
-    var lastTY=py(pts[pts.length-1].ppda);
-    var lastRY=py(pts[pts.length-1].ppdaR);
-    var teamLabel=currentTeam.id===923?'Ponf':'Celta';
+    var lastX=px(N-1);
+    var teamName=currentTeam.id===923?'Ponf':'Celta';
     var endLabels=''
-      +'<text x="'+(lastX+6)+'" y="'+(lastTY+4)+'" font-size="9" font-weight="700" fill="#58a6ff" font-family="inherit">'+teamLabel+'</text>'
-      +'<text x="'+(lastX+6)+'" y="'+(lastRY+4)+'" font-size="9" font-weight="700" fill="#e6832b" font-family="inherit">Rival</text>';
+      +'<text x="'+(lastX+7)+'" y="'+(py(pts[N-1].ppda)+4)+'" font-size="9" font-weight="700" fill="#58a6ff" font-family="inherit">'+teamName+'</text>'
+      +'<text x="'+(lastX+7)+'" y="'+(py(pts[N-1].ppdaR)+4)+'" font-size="9" font-weight="700" fill="#e6832b" font-family="inherit">Rival</text>';
 
-    // Title
     var chartTitle='<text x="'+PL+'" y="12" font-size="8" fill="rgba(255,255,255,0.28)" text-anchor="start" font-family="inherit" letter-spacing="0.8">PPDA POR JORNADA</text>';
 
     var svg='<svg viewBox="0 0 '+VW+' '+VH+'" style="width:100%;height:auto;display:block">'
@@ -17610,8 +17723,22 @@
       +teamDots+rivalDots+endLabels
       +'</svg>';
 
-    // Summary chips
-    var avgCol=ppdaColor(avgPpda);
+    // Analysis (uses full dataset)
+    var sumR=pts.reduce(function(a,b){return a+b.ppdaR;},0);
+    var avgR=+(sumR/N).toFixed(2);
+    var diff=+(avgPpda-avgR).toFixed(2);
+    var pressMas=pts.filter(function(d){return d.ppda<d.ppdaR;}).length;
+    var is923=currentTeam.id===923;
+    var teamFullName=is923?'Ponferradina':'Celta Fortuna';
+    var analisis, conclusion;
+    if(is923){
+      analisis='Con un PPDA medio de <strong style="color:'+ppdaColor(avgPpda)+'">'+avgPpda+'</strong>, Ponferradina se sit\xfaa en un pressing moderado-intenso dentro de la categor\xeda. En <strong style="color:var(--text1)">'+pressMas+' de '+N+' partidos</strong> presion\xf3 m\xe1s que su rival, con una diferencia media de <strong style="color:'+(diff<0?'#3fb950':'#f85149')+'">'+(diff<0?diff:'+'+diff)+'</strong> respecto al PPDA rival ('+avgR+'). El equipo alterna jornadas de pressing muy alto — como en '+minD.j+' (PPDA '+minD.ppda+') — con partidos de bloque bajo donde cede el juego al rival, como en '+maxD.j+' (PPDA '+maxD.ppda+'). En conjunto, el balance de pressing es ligeramente favorable al equipo.';
+      conclusion='El perfil es el de un equipo que no busca el pressing estructural como identidad, sino que adapta la intensidad defensiva seg\xfan el rival y el contexto del partido.';
+    } else {
+      analisis='Con un PPDA medio de <strong style="color:'+ppdaColor(avgPpda)+'">'+avgPpda+'</strong>, Celta Fortuna muestra un pressing moderado-bajo, con un balance casi neutro respecto a sus rivales (diferencia media de <strong style="color:'+(diff<0?'#3fb950':'#f85149')+'">'+(diff<0?diff:'+'+diff)+'</strong>). En <strong style="color:var(--text1)">'+pressMas+' de '+N+' partidos</strong> presion\xf3 m\xe1s que el rival. El valor m\xednimo de '+minD.ppda+' ('+minD.j+' vs '+minD.rival+') refleja jornadas muy agresivas, mientras que el pico de '+maxD.ppda+' ('+maxD.j+' vs '+maxD.rival+') indica jornadas donde el equipo opt\xf3 claramente por el bloque.';
+      conclusion='El equipo no muestra un pressing alto como caracter\xedstica sistem\xe1tica: su PPDA medio supera el 10, lo que lo sit\xfaa dentro del perfil de equipos que priorizan el orden defensivo sobre la presi\xf3n sobre el portador.';
+    }
+
     cont.innerHTML=
       '<div style="padding:20px 24px 36px">'
         +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">'
@@ -17624,7 +17751,7 @@
         +'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">'
           +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 14px">'
             +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">PPDA medio</div>'
-            +'<div style="font-size:20px;font-weight:800;color:'+avgCol+';font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+avgPpda+'</div>'
+            +'<div style="font-size:20px;font-weight:800;color:'+ppdaColor(avgPpda)+';font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+avgPpda+'</div>'
             +'<div style="font-size:9px;color:var(--text3)">media temporada</div>'
           +'</div>'
           +'<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid #3fb950;border-radius:8px;padding:8px 14px">'
@@ -17638,7 +17765,6 @@
             +'<div style="font-size:9px;color:var(--text3)">'+maxD.j+' vs '+maxD.rival+'</div>'
           +'</div>'
         +'</div>'
-        // Legend
         +'<div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:10px">'
           +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="#58a6ff" stroke-width="2.5"/></svg><span style="font-size:10px;color:var(--text3)">Equipo</span></span>'
           +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="#e6832b" stroke-width="2.5"/></svg><span style="font-size:10px;color:var(--text3)">Rival</span></span>'
@@ -17646,55 +17772,29 @@
           +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="12" height="10"><rect width="12" height="10" rx="2" fill="rgba(63,185,80,0.35)"/></svg><span style="font-size:10px;color:var(--text3)">Equipo presion\xe1 m\xe1s</span></span>'
           +'<span style="display:inline-flex;align-items:center;gap:5px"><svg width="12" height="10"><rect width="12" height="10" rx="2" fill="rgba(248,81,73,0.3)"/></svg><span style="font-size:10px;color:var(--text3)">Rival presion\xf3 m\xe1s</span></span>'
         +'</div>'
-        // Chart
-        +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px 6px;margin-bottom:20px">'
+        +'<div id="ppda-chart-wrap" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px 6px;margin-bottom:20px;position:relative">'
           +svg
+          +'<div id="ppda-tip" style="display:none;position:absolute;background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:9px 12px;pointer-events:none;min-width:150px;box-shadow:0 4px 16px rgba(0,0,0,0.45);z-index:10"></div>'
         +'</div>'
-        // Team analysis block
-        +(function(){
-          var sumR=pts.reduce(function(a,b){return a+b.ppdaR;},0);
-          var avgR=+(sumR/N).toFixed(2);
-          var diff=+(avgPpda-avgR).toFixed(2);
-          var pressMas=pts.filter(function(d){return d.ppda<d.ppdaR;}).length;
-          var is923=currentTeam.id===923;
-          var teamName=is923?'Ponferradina':'Celta Fortuna';
-          var analisis, conclusion;
-          if(is923){
-            analisis='Con un PPDA medio de <strong style="color:'+ppdaColor(avgPpda)+'">'+avgPpda+'</strong>, Ponferradina se sit\xfaa en un pressing moderado-intenso dentro de la categor\xeda. En <strong style="color:var(--text1)">'+pressMas+' de '+N+' partidos</strong> presion\xf3 m\xe1s que su rival, con una diferencia media de <strong style="color:'+(diff<0?'#3fb950':'#f85149')+'">'+(diff<0?diff:'+'+diff)+'</strong> respecto al PPDA rival ('+avgR+'). El equipo alterna jornadas de pressing muy alto — como en J27 (PPDA '+minD.ppda+') — con partidos de bloque bajo donde cede el juego al rival, como en J22 (PPDA '+maxD.ppda+'). En conjunto, el balance de pressing es ligeramente favorable al equipo: presiona un poco m\xe1s de lo que le presionan.';
-            conclusion='El perfil es el de un equipo que no busca el pressing estructural como identidad, sino que adapta la intensidad defensiva seg\xfan el rival y el contexto del partido.';
-          } else {
-            analisis='Con un PPDA medio de <strong style="color:'+ppdaColor(avgPpda)+'">'+avgPpda+'</strong>, Celta Fortuna muestra un pressing moderado-bajo, con un balance casi neutro respecto a sus rivales (diferencia media de <strong style="color:'+(diff<0?'#3fb950':'#f85149')+'">'+(diff<0?diff:'+'+diff)+'</strong>). En <strong style="color:var(--text1)">'+pressMas+' de '+N+' partidos</strong> presion\xf3 m\xe1s que el rival. El valor m\xednimo de '+minD.ppda+' (J'+minD.j.replace('J','')+' vs '+minD.rival+') refleja jornadas muy agresivas, mientras que el pico de '+maxD.ppda+' ('+maxD.j+' vs '+maxD.rival+') indica jornadas donde el equipo opt\xf3 claramente por el bloque.';
-            conclusion='El equipo no muestra un pressing alto como caracter\xedstica sistem\xe1tica: su PPDA medio supera el 10, lo que lo sit\xfaa dentro del perfil de equipos que priorizan el orden defensivo sobre la presi\xf3n sobre el portador.';
-          }
-          return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:12px">'
-            +'<div style="font-size:11px;font-weight:700;color:var(--text1);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">An\xe1lisis — '+teamName+' vs rivales</div>'
-            +'<div style="font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:10px">'+analisis+'</div>'
-            +'<div style="font-size:12px;color:var(--text3);line-height:1.55;border-left:3px solid var(--border);padding-left:10px;font-style:italic">'+conclusion+'</div>'
-          +'</div>';
-        })()
-        // PPDA explanation
+        +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:12px">'
+          +'<div style="font-size:11px;font-weight:700;color:var(--text1);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">An\xe1lisis — '+teamFullName+' vs rivales</div>'
+          +'<div style="font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:10px">'+analisis+'</div>'
+          +'<div style="font-size:12px;color:var(--text3);line-height:1.55;border-left:3px solid var(--border);padding-left:10px;font-style:italic">'+conclusion+'</div>'
+        +'</div>'
         +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px">'
           +'<div style="font-size:11px;font-weight:700;color:var(--text1);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Qu\xe9 es el PPDA</div>'
           +'<div style="font-size:12px;color:var(--text2);line-height:1.6">'
             +'El <strong style="color:var(--text1)">PPDA</strong> (Passes Per Defensive Action) mide cu\xe1ntos pases completa el rival antes de que el equipo realice una acci\xf3n defensiva (entrada, intercepci\xf3n, recuperaci\xf3n). Un PPDA bajo indica un pressing m\xe1s agresivo e intenso.'
           +'</div>'
           +'<div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">'
-            +'<div style="display:flex;align-items:center;gap:6px">'
-              +'<div style="width:10px;height:10px;border-radius:50%;background:#3fb950;flex-shrink:0"></div>'
-              +'<span style="font-size:11px;color:var(--text2)"><strong style="color:#3fb950">PPDA ≤ 7.5</strong> — pressing muy intenso</span>'
-            +'</div>'
-            +'<div style="display:flex;align-items:center;gap:6px">'
-              +'<div style="width:10px;height:10px;border-radius:50%;background:#e3b341;flex-shrink:0"></div>'
-              +'<span style="font-size:11px;color:var(--text2)"><strong style="color:#e3b341">7.5 – 10</strong> — pressing moderado</span>'
-            +'</div>'
-            +'<div style="display:flex;align-items:center;gap:6px">'
-              +'<div style="width:10px;height:10px;border-radius:50%;background:#f85149;flex-shrink:0"></div>'
-              +'<span style="font-size:11px;color:var(--text2)"><strong style="color:#f85149">PPDA > 10</strong> — pressing bajo / bloque</span>'
-            +'</div>'
+            +'<div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#3fb950;flex-shrink:0"></div><span style="font-size:11px;color:var(--text2)"><strong style="color:#3fb950">PPDA ≤ 7.5</strong> — pressing muy intenso</span></div>'
+            +'<div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#e3b341;flex-shrink:0"></div><span style="font-size:11px;color:var(--text2)"><strong style="color:#e3b341">7.5 – 10</strong> — pressing moderado</span></div>'
+            +'<div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#f85149;flex-shrink:0"></div><span style="font-size:11px;color:var(--text2)"><strong style="color:#f85149">PPDA > 10</strong> — pressing bajo / bloque</span></div>'
           +'</div>'
         +'</div>'
       +'</div>';
   }
+
 
 
   // INIT
