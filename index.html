@@ -18501,25 +18501,48 @@
     +'</div>';
     // ── Summary pitch + analysis ────────────────────────────────────────────
     var summaryPitch=buildMiniPitchLB(avgEntry,mx);
-    var analisisText='<p style="color:var(--text2);font-size:13px;line-height:1.65;margin:0 0 8px">'
+    // Per-match rows for worst rival
+    var wRMatches=data.filter(function(d){return d.rival===worstRival;});
+    var wRMatchRows=wRMatches.map(function(d){
+      var mc=d.llb_d+d.llb_th+d.llb_i||1;
+      var pD=Math.round(d.llb_d/mc*100),pI=Math.round(d.llb_i/mc*100),pTh=100-pD-pI;
+      var col=rcSolid(d.res);
+      return '<span style="color:'+col+';font-weight:700">'+d.j+'</span>'
+        +' <span style="color:var(--text3)">('+d.score+')</span>:'
+        +' <strong style="color:#f85149">'+d.llb+'</strong> backline'
+        +' — D:<strong style="color:var(--text1)">'+d.llb_d+'</strong> ('+pD+'%)'
+        +' · C:<strong style="color:var(--text1)">'+d.llb_th+'</strong> ('+pTh+'%)'
+        +' · I:<strong style="color:var(--text1)">'+d.llb_i+'</strong> ('+pI+'%)';
+    }).join('<br style="margin-bottom:3px">');
+    // Worst single match carril breakdown
+    var wJClass=worstJ.llb_d+worstJ.llb_th+worstJ.llb_i||1;
+    var wJPctD=Math.round(worstJ.llb_d/wJClass*100),wJPctI=Math.round(worstJ.llb_i/wJClass*100),wJPctTh=100-wJPctD-wJPctI;
+    var analisisText='<p style="color:var(--text2);font-size:13px;line-height:1.65;margin:0 0 10px">'
       +'El rival ha roto la <strong style="color:#f85149">backline</strong> una media de '
       +'<strong style="color:var(--text1)">'+avgLlb+' veces por partido</strong>. '
-      +'La vía principal de entrada fue el <strong style="color:var(--text1)">'+mainThreat+'</strong> '
-      +'— Carril Dcho: <strong style="color:var(--text1)">'+pctDLlb+'%</strong>'
-      +' · Central: <strong style="color:var(--text1)">'+pctThLlb+'%</strong>'
-      +' · Carril Izdo: <strong style="color:var(--text1)">'+pctILlb+'%</strong>.'
+      +'Vía principal: <strong style="color:var(--text1)">'+mainThreat+'</strong> '
+      +'— D: <strong style="color:var(--text1)">'+pctDLlb+'%</strong>'
+      +' · C: <strong style="color:var(--text1)">'+pctThLlb+'%</strong>'
+      +' · I: <strong style="color:var(--text1)">'+pctILlb+'%</strong>.'
       +'</p>'
-      +'<p style="color:var(--text2);font-size:13px;line-height:1.65;margin:0 0 8px">'
-      +'El rival que más daño generó fue <strong style="color:var(--text1)">'+worstRival+'</strong> '
-      +'('+wR.n+(wR.n===1?' partido':' partidos')+'), con '
-      +'<strong style="color:#f85149">'+wR.llb+' rupturas de backline</strong>. '
-      +'Su carril dominante: <strong style="color:var(--text1)">'+wRMaxCarril+'</strong> '
-      +'(D: '+wRPctD+'% · C: '+wRPctTh+'% · I: '+wRPctI+'%).'
-      +'</p>'
-      +'<p style="color:var(--text2);font-size:13px;line-height:1.65;margin:0">'
-      +'Partido más expuesto: <strong style="color:var(--text1)">'+worstJ.j+' vs '+worstJ.rival+'</strong> — '
-      +'<strong style="color:#f85149">'+worstJ.llb+' rupturas de backline</strong> ('+worstJ.score+').'
-      +'</p>';
+      +'<div style="margin:0 0 10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-left:3px solid #f85149;border-radius:6px">'
+        +'<div style="font-size:10px;font-weight:700;color:#f85149;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">'
+          +'Rival más dañino · '+worstRival+' ('+wR.n+(wR.n===1?' partido':' partidos')+') · '+wR.llb+' rupt. backline total'
+        +'</div>'
+        +'<div style="font-size:12px;line-height:1.7;color:var(--text2)">'+wRMatchRows+'</div>'
+        +'<div style="font-size:11px;color:var(--text3);margin-top:5px">Carril dominante: <strong style="color:var(--text1)">'+wRMaxCarril+'</strong> · D: '+wRPctD+'% · C: '+wRPctTh+'% · I: '+wRPctI+'%</div>'
+      +'</div>'
+      +'<div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-left:3px solid #fb923c;border-radius:6px">'
+        +'<div style="font-size:10px;font-weight:700;color:#fb923c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">'
+          +'Partido más expuesto · '+worstJ.j+' vs '+worstJ.rival+' ('+worstJ.score+')'
+        +'</div>'
+        +'<div style="font-size:12px;color:var(--text2)">'
+          +'<strong style="color:#f85149">'+worstJ.llb+'</strong> rupturas backline'
+          +' — D: <strong style="color:var(--text1)">'+worstJ.llb_d+'</strong> ('+wJPctD+'%)'
+          +' · C: <strong style="color:var(--text1)">'+worstJ.llb_th+'</strong> ('+wJPctTh+'%)'
+          +' · I: <strong style="color:var(--text1)">'+worstJ.llb_i+'</strong> ('+wJPctI+'%)'
+        +'</div>'
+      +'</div>';
     var summarySection='<div style="display:flex;gap:20px;margin-bottom:24px;flex-wrap:wrap;align-items:flex-start">'
       +'<div style="flex-shrink:0">'
         +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Media temporada</div>'
