@@ -12494,10 +12494,11 @@
     const _pasesData = window._pasesSeasonCache ? (window._pasesSeasonCache[_runKey] || null) : undefined;
     // Posesión SkillCorner data
     const _possData = _POSS_DATA[_runKey] || null;
-    // Regates StatsBomb data — busca por nombre normalizado
-    const _drAll = {923: typeof DR_923!=='undefined'?DR_923:[], 8733: typeof DR_8733!=='undefined'?DR_8733:{}}[currentTeam.id]||[];
-    const _normName = n => n.replace(/\s+/g,' ').trim().toLowerCase();
-    const _drData = _drAll.find(d => _normName(d.name) === _normName(p.name)) || null;
+    // Regates StatsBomb data — busca por nombre fuzzy (sin acentos, sin apellidos extra)
+    const _drAll = {923: typeof DR_923!=='undefined'?DR_923:[], 8733: typeof DR_8733!=='undefined'?DR_8733:[]}[currentTeam.id]||[];
+    const _normDR = n => n.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
+    const _drFuzzy = (a, b) => { const na=_normDR(a),nb=_normDR(b); return na===nb||nb.includes(na)||na.includes(nb)||na.split(' ').every(w=>nb.includes(w)); };
+    const _drData = _drAll.find(d => _drFuzzy(p.name, d.name)) || null;
     // Si se llama desde un click de tab, respetar _profileTab; si es nuevo jugador, reset
     // (se resetea desde el card click)
 
