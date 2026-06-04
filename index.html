@@ -17909,13 +17909,69 @@
     if(tip) tip.style.display='none';
   }
 
-  // ── Acciones de Press data ─────────────────────────────────────────────────
-  // Structure per match: {j, rival, loc, score, res,
-  //   pressing, counter_press, recovery_press, pressure,   ← on_ball_engagement subtypes (counts)
-  //   chain_avg, chain_max,                                ← pressing_chain_length avg & max
-  //   chain_end_recovery, chain_end_disruption}            ← pressing_chain_end_type counts
-  const AP_923  = [];   // Ponferradina — pending CSV data
-  const AP_8733 = [];   // Celta Fortuna — pending CSV data
+  // ── Acciones de Press data — processed from on_ball_engagement + pressing_chain CSV fields ──
+  const AP_923 = [
+    {j:'J1',pressing:49,counter_press:45,recovery_press:96,pressure:152,chain_n:31,chain_avg:2.48,chain_max:4,chain_regain:6,chain_disrupt:5},
+    {j:'J2',pressing:39,counter_press:22,recovery_press:63,pressure:63,chain_n:16,chain_avg:3.25,chain_max:7,chain_regain:5,chain_disrupt:2},
+    {j:'J3',pressing:27,counter_press:37,recovery_press:85,pressure:145,chain_n:18,chain_avg:2.44,chain_max:5,chain_regain:3,chain_disrupt:3},
+    {j:'J4',pressing:71,counter_press:26,recovery_press:79,pressure:99,chain_n:27,chain_avg:3.26,chain_max:8,chain_regain:8,chain_disrupt:3},
+    {j:'J6',pressing:65,counter_press:28,recovery_press:81,pressure:71,chain_n:29,chain_avg:2.97,chain_max:6,chain_regain:12,chain_disrupt:4},
+    {j:'J7',pressing:64,counter_press:28,recovery_press:76,pressure:96,chain_n:27,chain_avg:3.04,chain_max:7,chain_regain:7,chain_disrupt:1},
+    {j:'J9',pressing:76,counter_press:34,recovery_press:86,pressure:96,chain_n:33,chain_avg:3.03,chain_max:6,chain_regain:12,chain_disrupt:4},
+    {j:'J10',pressing:86,counter_press:77,recovery_press:72,pressure:69,chain_n:48,chain_avg:2.73,chain_max:6,chain_regain:14,chain_disrupt:3},
+    {j:'J12',pressing:80,counter_press:20,recovery_press:83,pressure:131,chain_n:39,chain_avg:2.36,chain_max:4,chain_regain:8,chain_disrupt:1},
+    {j:'J13',pressing:133,counter_press:41,recovery_press:104,pressure:114,chain_n:52,chain_avg:3.13,chain_max:6,chain_regain:17,chain_disrupt:2},
+    {j:'J14',pressing:59,counter_press:24,recovery_press:106,pressure:91,chain_n:30,chain_avg:2.57,chain_max:5,chain_regain:8,chain_disrupt:2},
+    {j:'J15',pressing:63,counter_press:40,recovery_press:94,pressure:109,chain_n:30,chain_avg:2.83,chain_max:7,chain_regain:8,chain_disrupt:6},
+    {j:'J16',pressing:41,counter_press:19,recovery_press:53,pressure:68,chain_n:15,chain_avg:3.2,chain_max:7,chain_regain:7,chain_disrupt:0},
+    {j:'J17',pressing:71,counter_press:36,recovery_press:104,pressure:121,chain_n:30,chain_avg:2.77,chain_max:6,chain_regain:2,chain_disrupt:3},
+    {j:'J19',pressing:71,counter_press:37,recovery_press:79,pressure:113,chain_n:34,chain_avg:2.97,chain_max:7,chain_regain:12,chain_disrupt:3},
+    {j:'J20',pressing:38,counter_press:20,recovery_press:83,pressure:128,chain_n:20,chain_avg:2.85,chain_max:6,chain_regain:6,chain_disrupt:0},
+    {j:'J21',pressing:68,counter_press:37,recovery_press:92,pressure:108,chain_n:28,chain_avg:3.07,chain_max:7,chain_regain:10,chain_disrupt:0},
+    {j:'J22',pressing:86,counter_press:27,recovery_press:110,pressure:143,chain_n:36,chain_avg:2.75,chain_max:6,chain_regain:8,chain_disrupt:1},
+    {j:'J23',pressing:99,counter_press:37,recovery_press:103,pressure:117,chain_n:43,chain_avg:2.81,chain_max:8,chain_regain:6,chain_disrupt:3},
+    {j:'J24',pressing:75,counter_press:33,recovery_press:99,pressure:125,chain_n:34,chain_avg:3.03,chain_max:6,chain_regain:10,chain_disrupt:3},
+    {j:'J25',pressing:37,counter_press:31,recovery_press:77,pressure:126,chain_n:21,chain_avg:2.86,chain_max:6,chain_regain:6,chain_disrupt:3},
+    {j:'J26',pressing:91,counter_press:31,recovery_press:89,pressure:119,chain_n:36,chain_avg:2.92,chain_max:7,chain_regain:10,chain_disrupt:4},
+    {j:'J27',pressing:59,counter_press:25,recovery_press:69,pressure:72,chain_n:20,chain_avg:3.2,chain_max:10,chain_regain:9,chain_disrupt:0},
+    {j:'J28',pressing:45,counter_press:18,recovery_press:55,pressure:63,chain_n:17,chain_avg:3.0,chain_max:6,chain_regain:10,chain_disrupt:1},
+    {j:'J31',pressing:52,counter_press:29,recovery_press:76,pressure:59,chain_n:23,chain_avg:2.91,chain_max:7,chain_regain:8,chain_disrupt:4},
+    {j:'J32',pressing:86,counter_press:52,recovery_press:82,pressure:72,chain_n:34,chain_avg:3.56,chain_max:7,chain_regain:12,chain_disrupt:0},
+    {j:'J33',pressing:44,counter_press:33,recovery_press:72,pressure:93,chain_n:22,chain_avg:2.64,chain_max:6,chain_regain:7,chain_disrupt:2},
+    {j:'J34',pressing:59,counter_press:17,recovery_press:76,pressure:120,chain_n:23,chain_avg:3.09,chain_max:8,chain_regain:2,chain_disrupt:1},
+    {j:'J35',pressing:51,counter_press:31,recovery_press:79,pressure:79,chain_n:24,chain_avg:2.88,chain_max:6,chain_regain:5,chain_disrupt:3},
+    {j:'J36',pressing:94,counter_press:34,recovery_press:114,pressure:87,chain_n:40,chain_avg:3.33,chain_max:12,chain_regain:10,chain_disrupt:2},
+    {j:'J38',pressing:86,counter_press:41,recovery_press:81,pressure:105,chain_n:44,chain_avg:2.75,chain_max:5,chain_regain:11,chain_disrupt:2},
+    {j:'R1',pressing:31,counter_press:30,recovery_press:53,pressure:53,chain_n:17,chain_avg:2.94,chain_max:5,chain_regain:9,chain_disrupt:3},
+  ];
+  const AP_8733 = [
+    {j:'J1',pressing:48,counter_press:41,recovery_press:97,pressure:74,chain_n:27,chain_avg:2.74,chain_max:4,chain_regain:4,chain_disrupt:2},
+    {j:'J3',pressing:62,counter_press:42,recovery_press:91,pressure:92,chain_n:33,chain_avg:2.64,chain_max:7,chain_regain:8,chain_disrupt:3},
+    {j:'J4',pressing:106,counter_press:30,recovery_press:80,pressure:111,chain_n:41,chain_avg:3.15,chain_max:8,chain_regain:15,chain_disrupt:3},
+    {j:'J5',pressing:131,counter_press:48,recovery_press:91,pressure:77,chain_n:47,chain_avg:3.43,chain_max:15,chain_regain:15,chain_disrupt:4},
+    {j:'J7',pressing:35,counter_press:37,recovery_press:70,pressure:64,chain_n:21,chain_avg:2.57,chain_max:7,chain_regain:7,chain_disrupt:2},
+    {j:'J9',pressing:93,counter_press:33,recovery_press:96,pressure:139,chain_n:38,chain_avg:3.24,chain_max:10,chain_regain:9,chain_disrupt:1},
+    {j:'J11',pressing:33,counter_press:38,recovery_press:67,pressure:69,chain_n:17,chain_avg:2.88,chain_max:6,chain_regain:5,chain_disrupt:0},
+    {j:'J12',pressing:76,counter_press:42,recovery_press:89,pressure:85,chain_n:35,chain_avg:3.06,chain_max:6,chain_regain:16,chain_disrupt:4},
+    {j:'J13',pressing:45,counter_press:34,recovery_press:86,pressure:70,chain_n:26,chain_avg:2.62,chain_max:5,chain_regain:8,chain_disrupt:3},
+    {j:'J15',pressing:79,counter_press:28,recovery_press:83,pressure:84,chain_n:30,chain_avg:3.13,chain_max:7,chain_regain:13,chain_disrupt:1},
+    {j:'J17',pressing:150,counter_press:35,recovery_press:110,pressure:115,chain_n:50,chain_avg:3.48,chain_max:7,chain_regain:9,chain_disrupt:0},
+    {j:'J18',pressing:38,counter_press:33,recovery_press:45,pressure:77,chain_n:20,chain_avg:2.55,chain_max:4,chain_regain:7,chain_disrupt:2},
+    {j:'J19',pressing:42,counter_press:32,recovery_press:59,pressure:85,chain_n:20,chain_avg:2.95,chain_max:6,chain_regain:6,chain_disrupt:1},
+    {j:'J21',pressing:90,counter_press:42,recovery_press:103,pressure:94,chain_n:35,chain_avg:3.2,chain_max:7,chain_regain:8,chain_disrupt:3},
+    {j:'J23',pressing:79,counter_press:35,recovery_press:67,pressure:75,chain_n:32,chain_avg:3.16,chain_max:8,chain_regain:9,chain_disrupt:0},
+    {j:'J24',pressing:55,counter_press:44,recovery_press:97,pressure:104,chain_n:26,chain_avg:3.19,chain_max:8,chain_regain:8,chain_disrupt:0},
+    {j:'J25',pressing:28,counter_press:32,recovery_press:88,pressure:72,chain_n:16,chain_avg:3.31,chain_max:7,chain_regain:8,chain_disrupt:0},
+    {j:'J27',pressing:77,counter_press:37,recovery_press:70,pressure:72,chain_n:29,chain_avg:3.24,chain_max:10,chain_regain:12,chain_disrupt:2},
+    {j:'J28',pressing:69,counter_press:33,recovery_press:95,pressure:144,chain_n:34,chain_avg:2.56,chain_max:5,chain_regain:8,chain_disrupt:4},
+    {j:'J30',pressing:68,counter_press:36,recovery_press:66,pressure:61,chain_n:32,chain_avg:2.88,chain_max:5,chain_regain:9,chain_disrupt:4},
+    {j:'J31',pressing:113,counter_press:53,recovery_press:78,pressure:82,chain_n:41,chain_avg:3.34,chain_max:14,chain_regain:12,chain_disrupt:10},
+    {j:'J33',pressing:98,counter_press:50,recovery_press:76,pressure:54,chain_n:38,chain_avg:3.32,chain_max:7,chain_regain:10,chain_disrupt:3},
+    {j:'J34',pressing:83,counter_press:37,recovery_press:95,pressure:85,chain_n:34,chain_avg:3.44,chain_max:8,chain_regain:14,chain_disrupt:2},
+    {j:'J35',pressing:34,counter_press:38,recovery_press:67,pressure:69,chain_n:19,chain_avg:2.47,chain_max:4,chain_regain:6,chain_disrupt:2},
+    {j:'J36',pressing:60,counter_press:44,recovery_press:93,pressure:116,chain_n:30,chain_avg:2.7,chain_max:5,chain_regain:6,chain_disrupt:4},
+    {j:'J37',pressing:130,counter_press:48,recovery_press:73,pressure:66,chain_n:48,chain_avg:3.31,chain_max:9,chain_regain:16,chain_disrupt:4},
+  ];
 
   function renderAccionesPress() {
     var MAP={923:AP_923,8733:AP_8733};
@@ -17929,7 +17985,144 @@
       +'</div>';
       return;
     }
-    // Full render will go here once data is loaded
+    // Join AP data with LB data (same jornada tags) to get rival/score/res
+    var LB_MAP={923:LB_923,8733:LB_8733};
+    var lbRef=LB_MAP[currentTeam.id]||[];
+    var lbByJ={};
+    lbRef.forEach(function(d){lbByJ[d.j]=d;});
+    // Build merged dataset — only matches present in both AP and LB
+    var merged=data.map(function(d){
+      var lb=lbByJ[d.j]||{rival:'—',loc:'',score:'?',res:'D'};
+      return Object.assign({},d,{rival:lb.rival,loc:lb.loc,score:lb.score,res:lb.res});
+    });
+    var N=merged.length;
+    // Season totals
+    var totPress=0,totCP=0,totRP=0,totPres=0,totChain=0,sumChainAvg=0,totRegain=0,totDisrupt=0;
+    merged.forEach(function(d){
+      totPress+=d.pressing; totCP+=d.counter_press; totRP+=d.recovery_press; totPres+=d.pressure;
+      totChain+=d.chain_n; sumChainAvg+=d.chain_avg; totRegain+=d.chain_regain; totDisrupt+=d.chain_disrupt;
+    });
+    var avgTotal=+((totPress+totCP+totRP+totPres)/N).toFixed(1);
+    var avgPress=+(totPress/N).toFixed(1), avgCP=+(totCP/N).toFixed(1);
+    var avgRP=+(totRP/N).toFixed(1), avgPres=+(totPres/N).toFixed(1);
+    var avgChain=+(totChain/N).toFixed(1), avgChainLen=+(sumChainAvg/N).toFixed(2);
+    var chainWithEnd=totRegain+totDisrupt;
+    var regainPct=chainWithEnd>0?Math.round(totRegain/chainWithEnd*100):0;
+    var rcSolid=function(r){return r==='W'?'#3fb950':r==='D'?'#e3b341':r==='L'?'#f85149':'#8b949e';};
+    var resLabel=function(r){return r==='W'?'G':r==='D'?'E':r==='L'?'P':'?';};
+    function resTag(r){
+      var c=rcSolid(r);
+      var bg=r==='W'?'rgba(63,185,80,0.12)':r==='D'?'rgba(227,179,65,0.12)':'rgba(248,81,73,0.12)';
+      var bc=r==='W'?'rgba(63,185,80,0.3)':r==='D'?'rgba(227,179,65,0.3)':'rgba(248,81,73,0.3)';
+      return '<span style="display:inline-block;background:'+bg+';color:'+c+';border:1px solid '+bc+';font-size:10px;font-weight:800;padding:2px 5px;border-radius:4px">'+resLabel(r)+'</span>';
+    }
+    // Colors per subtype
+    var SC={pressing:'#58a6ff',counter_press:'#f85149',recovery_press:'#3fb950',pressure:'#e3b341'};
+    // Pressing type bar (4 segments)
+    function pressBar(d){
+      var tot2=d.pressing+d.counter_press+d.recovery_press+d.pressure; if(!tot2)return '';
+      var pP=Math.round(d.pressing/tot2*100), pCP=Math.round(d.counter_press/tot2*100);
+      var pRP=Math.round(d.recovery_press/tot2*100), pPres=100-pP-pCP-pRP;
+      return '<div style="display:flex;height:6px;border-radius:3px;overflow:hidden;gap:1px;background:var(--bg3)">'
+        +'<div style="width:'+pP+'%;background:'+SC.pressing+'"></div>'
+        +'<div style="width:'+pCP+'%;background:'+SC.counter_press+'"></div>'
+        +'<div style="width:'+pRP+'%;background:'+SC.recovery_press+'"></div>'
+        +'<div style="width:'+pPres+'%;background:'+SC.pressure+'"></div>'
+        +'</div>'
+        +'<div style="display:flex;gap:6px;margin-top:2px;flex-wrap:wrap">'
+        +'<span style="font-size:8px;color:'+SC.pressing+'">Press '+d.pressing+'</span>'
+        +'<span style="font-size:8px;color:'+SC.counter_press+'">CPress '+d.counter_press+'</span>'
+        +'<span style="font-size:8px;color:'+SC.recovery_press+'">Recov '+d.recovery_press+'</span>'
+        +'<span style="font-size:8px;color:'+SC.pressure+'">Presión '+d.pressure+'</span>'
+        +'</div>';
+    }
+    // KPI chips
+    var chips='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">'
+      +'<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid #58a6ff;border-radius:8px;padding:8px 14px">'
+        +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Total press / partido</div>'
+        +'<div style="font-size:20px;font-weight:800;color:#58a6ff;font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+avgTotal+'</div>'
+        +'<div style="font-size:9px;color:var(--text3)">acciones on-ball</div>'
+      +'</div>'
+      +'<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid #f85149;border-radius:8px;padding:8px 14px">'
+        +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Counter-press / partido</div>'
+        +'<div style="font-size:20px;font-weight:800;color:#f85149;font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+avgCP+'</div>'
+        +'<div style="font-size:9px;color:var(--text3)">inmediato tras pérdida</div>'
+      +'</div>'
+      +'<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid #3fb950;border-radius:8px;padding:8px 14px">'
+        +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Cadenas / partido</div>'
+        +'<div style="font-size:20px;font-weight:800;color:#3fb950;font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+avgChain+'</div>'
+        +'<div style="font-size:9px;color:var(--text3)">long. media '+avgChainLen+'</div>'
+      +'</div>'
+      +'<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid #e3b341;border-radius:8px;padding:8px 14px">'
+        +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Tasa recuperación</div>'
+        +'<div style="font-size:20px;font-weight:800;color:#e3b341;font-family:\'Bebas Neue\',sans-serif;line-height:1.1">'+regainPct+'<span style="font-size:11px;font-weight:500">%</span></div>'
+        +'<div style="font-size:9px;color:var(--text3)">cadenas que recuperan</div>'
+      +'</div>'
+    +'</div>';
+    // Legend
+    var legend='<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;align-items:center">'
+      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#58a6ff;display:inline-block"></span><span style="font-size:10px;color:#58a6ff">Pressing — presión activa organizada</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#f85149;display:inline-block"></span><span style="font-size:10px;color:#f85149">Counter-press — tras pérdida inmediata</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#3fb950;display:inline-block"></span><span style="font-size:10px;color:#3fb950">Recovery press — reposicionamiento</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#e3b341;display:inline-block"></span><span style="font-size:10px;color:#e3b341">Pressure — presión básica al poseedor</span></span>'
+    +'</div>';
+    // Match cards
+    var cards=merged.map(function(d){
+      var col=rcSolid(d.res);
+      var tot2=d.pressing+d.counter_press+d.recovery_press+d.pressure;
+      var chainEnd=d.chain_regain+d.chain_disrupt;
+      var rPct=chainEnd>0?Math.round(d.chain_regain/chainEnd*100):0;
+      return '<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;overflow:hidden">'
+        +'<div style="padding:7px 10px;background:var(--bg3);display:flex;align-items:center;justify-content:space-between;gap:6px">'
+          +'<div style="display:flex;align-items:center;gap:5px;min-width:0">'
+            +'<span style="font-size:11px;font-weight:800;color:var(--accent);font-family:\'Bebas Neue\',sans-serif;letter-spacing:1px;flex-shrink:0">'+d.j+'</span>'
+            +'<span style="font-size:10px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(d.loc==='L'?'🏠':'✈️')+' '+d.rival+'</span>'
+          +'</div>'
+          +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
+            +'<span style="font-size:10px;color:var(--text3)">'+d.score+'</span>'+resTag(d.res)
+          +'</div>'
+        +'</div>'
+        +'<div style="padding:8px 10px 10px">'
+          +'<div style="display:flex;justify-content:space-between;margin-bottom:3px">'
+            +'<span style="font-size:9px;color:var(--text3)">Acciones press</span>'
+            +'<span style="font-size:11px;font-weight:800;color:var(--text1);font-family:\'Bebas Neue\',sans-serif">'+tot2+'</span>'
+          +'</div>'
+          +pressBar(d)
+          +'<div style="display:flex;gap:6px;margin-top:8px;padding-top:7px;border-top:1px solid var(--border)">'
+            +'<div style="flex:1;text-align:center">'
+              +'<div style="font-size:13px;font-weight:800;color:#3fb950;font-family:\'Bebas Neue\',sans-serif;line-height:1">'+d.chain_n+'</div>'
+              +'<div style="font-size:8px;color:var(--text3)">cadenas</div>'
+            +'</div>'
+            +'<div style="flex:1;text-align:center">'
+              +'<div style="font-size:13px;font-weight:800;color:var(--text2);font-family:\'Bebas Neue\',sans-serif;line-height:1">'+d.chain_avg+'</div>'
+              +'<div style="font-size:8px;color:var(--text3)">long. media</div>'
+            +'</div>'
+            +'<div style="flex:1;text-align:center">'
+              +'<div style="font-size:13px;font-weight:800;color:var(--text2);font-family:\'Bebas Neue\',sans-serif;line-height:1">'+d.chain_max+'</div>'
+              +'<div style="font-size:8px;color:var(--text3)">long. max</div>'
+            +'</div>'
+            +'<div style="flex:1;text-align:center">'
+              +'<div style="font-size:13px;font-weight:800;color:#e3b341;font-family:\'Bebas Neue\',sans-serif;line-height:1">'+rPct+'%</div>'
+              +'<div style="font-size:8px;color:var(--text3)">recuperación</div>'
+            +'</div>'
+          +'</div>'
+        +'</div>'
+      +'</div>';
+    }).join('');
+    cont.innerHTML=
+      '<div style="padding:20px 24px 36px">'
+        +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">'
+          +'<img src="'+currentTeam.escudo+'" style="width:34px;height:34px;object-fit:contain" onerror="this.style.display=\'none\'"/>'
+          +'<div>'
+            +'<div style="font-size:17px;font-weight:800;color:var(--text1);letter-spacing:-.3px">ACCIONES DE PRESSING</div>'
+            +'<div style="font-size:11px;color:var(--text3)">SkillCorner · '+N+' partidos · Temporada 2024-25</div>'
+          +'</div>'
+        +'</div>'
+        +chips+legend
+        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px">'
+          +cards
+        +'</div>'
+      +'</div>';
   }
 
   function renderPresion() {
