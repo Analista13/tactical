@@ -17457,6 +17457,60 @@
       +'</svg>';
   }
 
+  // Bloque variant: adds lb/mb/hb coloured zone overlays on the pitch
+  function buildMiniPitchBloque(d){
+    var CPW=230,CPH=Math.round(230*68/105),CS=230/105;
+    var LIGA_AVG_M=32.18;
+    var rcSolid=function(r){return r==='W'?'#3fb950':r==='D'?'#e3b341':r==='L'?'#f85149':'#8b949e';};
+    var matchX=+((52.5+d.lineX)*CS).toFixed(1);
+    var ligaX=+(LIGA_AVG_M*CS).toFixed(1);
+    var col=rcSolid(d.res);
+    var paX=+(16.5*CS).toFixed(1);
+    var ctrX=+(52.5*CS).toFixed(1);
+    var opaX=+(88.5*CS).toFixed(1);
+    var midY=+(CPH/2).toFixed(1);
+    var paT=+((68-40.32)/2*CS).toFixed(1),paB=+(CPH-paT).toFixed(1);
+    var gaT=+((68-18.32)/2*CS).toFixed(1),gaB=+(CPH-gaT).toFixed(1);
+    var rC=+(9.15*CS).toFixed(1);
+    var sw=+(10.5*CS).toFixed(1);
+    var stripes='';
+    for(var si=0;si<10;si++) stripes+='<rect x="'+(+(si*10.5*CS).toFixed(1))+'" y="0" width="'+sw+'" height="'+CPH+'" fill="'+(si%2===0?'#1d5228':'#195023')+'"/>';
+    // Block zone overlays: lb (blue) near own goal, mb (yellow) centre, hb (red) high
+    var lbW=+(CPW*d.lb/100).toFixed(1);
+    var mbW=+(CPW*d.mb/100).toFixed(1);
+    var hbX=+(CPW*d.lb/100+CPW*d.mb/100).toFixed(1);
+    var hbW=+(CPW-hbX).toFixed(1);
+    var zones=''
+      +'<rect x="0" y="0" width="'+lbW+'" height="'+CPH+'" fill="rgba(88,166,255,0.22)"/>'
+      +'<rect x="'+lbW+'" y="0" width="'+mbW+'" height="'+CPH+'" fill="rgba(227,179,65,0.22)"/>'
+      +'<rect x="'+hbX+'" y="0" width="'+hbW+'" height="'+CPH+'" fill="rgba(248,81,73,0.22)"/>';
+    var marks=''
+      +'<rect x="1" y="1" width="'+(CPW-2)+'" height="'+(CPH-2)+'" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1"/>'
+      +'<rect x="0" y="'+paT+'" width="'+paX+'" height="'+(paB-paT)+'" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1"/>'
+      +'<rect x="0" y="'+gaT+'" width="'+(+(5.5*CS).toFixed(1))+'" height="'+(gaB-gaT)+'" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="0.8"/>'
+      +'<line x1="'+ctrX+'" y1="0" x2="'+ctrX+'" y2="'+CPH+'" stroke="rgba(255,255,255,0.65)" stroke-width="1"/>'
+      +'<circle cx="'+ctrX+'" cy="'+midY+'" r="'+rC+'" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1"/>'
+      +'<rect x="'+opaX+'" y="'+paT+'" width="'+(CPW-opaX)+'" height="'+(paB-paT)+'" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1"/>';
+    var labels=''
+      +'<text x="3" y="'+(CPH-4)+'" font-size="7" fill="rgba(255,255,255,0.28)" font-family="inherit">← portería</text>'
+      +'<text x="'+(CPW-3)+'" y="'+(CPH-4)+'" font-size="7" fill="rgba(255,255,255,0.28)" text-anchor="end" font-family="inherit">ataque →</text>';
+    // Zone labels at bottom
+    var zoneLabels=''
+      +'<text x="'+(lbW/2).toFixed(1)+'" y="'+(CPH-15)+'" font-size="6.5" font-weight="700" fill="rgba(88,166,255,0.75)" text-anchor="middle" font-family="inherit">B '+d.lb+'%</text>'
+      +'<text x="'+(parseFloat(lbW)+parseFloat(mbW)/2).toFixed(1)+'" y="'+(CPH-15)+'" font-size="6.5" font-weight="700" fill="rgba(227,179,65,0.75)" text-anchor="middle" font-family="inherit">M '+d.mb+'%</text>'
+      +'<text x="'+(parseFloat(hbX)+(CPW-parseFloat(hbX))/2).toFixed(1)+'" y="'+(CPH-15)+'" font-size="6.5" font-weight="700" fill="rgba(248,81,73,0.75)" text-anchor="middle" font-family="inherit">A '+d.hb+'%</text>';
+    var lm=(52.5+d.lineX).toFixed(1);
+    var ligaLine='<line x1="'+ligaX+'" y1="0" x2="'+ligaX+'" y2="'+CPH+'" stroke="rgba(200,200,200,0.7)" stroke-width="1.5" stroke-dasharray="4,3"/>';
+    var glow='<line x1="'+matchX+'" y1="0" x2="'+matchX+'" y2="'+CPH+'" stroke="'+col+'" stroke-width="9" stroke-opacity="0.15"/>';
+    var line='<line x1="'+matchX+'" y1="0" x2="'+matchX+'" y2="'+CPH+'" stroke="'+col+'" stroke-width="2.5"/>';
+    var lblX=parseFloat(matchX)+4;
+    var distLabel='<rect x="'+lblX+'" y="2" width="26" height="12" rx="2" fill="rgba(0,0,0,0.55)"/>'
+      +'<text x="'+(lblX+3)+'" y="11" font-size="8" font-weight="bold" fill="'+col+'" font-family="inherit">'+lm+'m</text>';
+    return '<svg width="'+CPW+'" height="'+CPH+'" style="display:block">'
+      +stripes+zones+marks+labels+zoneLabels+ligaLine+glow+line+distLabel
+      +'</svg>';
+  }
+
   function renderLineaDef() {
     var LINEA_MAP = {923: LINEA_DEF_923, 8733: LINEA_DEF_8733};
     var data = LINEA_MAP[currentTeam.id] || [];
@@ -17558,7 +17612,7 @@
             +resTag(d.res)
           +'</div>'
         +'</div>'
-        +'<div style="background:#163520;line-height:0">'+buildMiniPitch(d)+'</div>'
+        +'<div style="background:#163520;line-height:0">'+buildMiniPitchBloque(d)+'</div>'
         +'<div style="padding:7px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px">'
           +'<div style="flex:1;min-width:0">'
             +blockBar(d)
@@ -17847,17 +17901,17 @@
     var resCol=res==='W'?'#3fb950':res==='D'?'#e3b341':res==='L'?'#f85149':'#8b949e';
     var resLbl=res==='W'?'Victoria':res==='D'?'Empate':res==='L'?'Derrota':'?';
     var insHtml=ins!=null
-      ?'<div style="border-top:1px solid var(--border);margin-top:5px;padding-top:5px;display:flex;justify-content:space-between"><span style="font-size:9px;color:var(--text3)">Rival dentro del bloque</span><span style="font-size:11px;font-weight:700;color:'+(ins>=35?'#f85149':ins>=27?'#e3b341':'#3fb950')+'">'+ins+'%</span></div>'
+      ?'<div style="border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;padding-top:5px;display:flex;justify-content:space-between"><span style="font-size:9px;color:#8b949e">Rival dentro del bloque</span><span style="font-size:11px;font-weight:700;color:'+(ins>=35?'#f85149':ins>=27?'#e3b341':'#3fb950')+'">'+ins+'%</span></div>'
       :'';
     tip.innerHTML=
-      '<div style="font-size:10px;font-weight:700;color:var(--text1);margin-bottom:6px">'+j+' \xb7 '+rival+' <span style="font-size:9px;font-weight:400;color:var(--text3)">'+(loc==='L'?'Local':'Visit.')+'</span></div>'
+      '<div style="font-size:10px;font-weight:700;color:#e6edf3;margin-bottom:6px">'+j+' \xb7 '+rival+' <span style="font-size:9px;font-weight:400;color:#8b949e">'+(loc==='L'?'Local':'Visit.')+'</span></div>'
       +'<div style="display:flex;flex-direction:column;gap:3px">'
         +'<div style="display:flex;justify-content:space-between;gap:12px"><span style="font-size:9px;color:#58a6ff">Bajo</span><span style="font-size:12px;font-weight:800;color:#58a6ff;font-family:\'Bebas Neue\',sans-serif">'+lb+'%</span></div>'
         +'<div style="display:flex;justify-content:space-between;gap:12px"><span style="font-size:9px;color:#e3b341">Medio</span><span style="font-size:12px;font-weight:800;color:#e3b341;font-family:\'Bebas Neue\',sans-serif">'+mb+'%</span></div>'
         +'<div style="display:flex;justify-content:space-between;gap:12px"><span style="font-size:9px;color:#f85149">Alto</span><span style="font-size:12px;font-weight:800;color:#f85149;font-family:\'Bebas Neue\',sans-serif">'+hb+'%</span></div>'
       +'</div>'
       +insHtml
-      +'<div style="border-top:1px solid var(--border);margin-top:5px;padding-top:5px;display:flex;justify-content:space-between"><span style="font-size:10px;color:var(--text3)">'+score+'</span><span style="font-size:9px;font-weight:700;color:'+resCol+'">'+resLbl+'</span></div>';
+      +'<div style="border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;padding-top:5px;display:flex;justify-content:space-between"><span style="font-size:10px;color:#8b949e">'+score+'</span><span style="font-size:9px;font-weight:700;color:'+resCol+'">'+resLbl+'</span></div>';
     tip.style.display='block';
     var lft=x+12, top=y-10;
     if(lft+165>wrap.offsetWidth) lft=x-175;
@@ -17994,7 +18048,7 @@
         +'</div>'
         +'<div id="bloque-chart-wrap" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px 6px;margin-bottom:20px;position:relative">'
           +svg
-          +'<div id="bloque-tip" style="display:none;position:absolute;background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:9px 12px;pointer-events:none;min-width:155px;box-shadow:0 4px 16px rgba(0,0,0,0.45);z-index:10"></div>'
+          +'<div id="bloque-tip" style="display:none;position:absolute;background:#0d1117;border:1px solid rgba(255,255,255,0.14);border-radius:8px;padding:9px 12px;pointer-events:none;min-width:155px;box-shadow:0 6px 20px rgba(0,0,0,0.7);z-index:10"></div>'
         +'</div>'
         // Mini pitch cards grid
         +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px">'
