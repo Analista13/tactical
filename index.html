@@ -17651,8 +17651,8 @@
     var maxD=pts.reduce(function(a,b){return b.ppda>a.ppda?b:a;});
 
     // --- SVG line chart ---
-    var VW=900, VH=210;
-    var PL=40, PR=58, PT=22, PB=38;
+    var VW=900, VH=230;
+    var PL=40, PR=58, PT=22, PB=58;
     var CW=VW-PL-PR, CH=VH-PT-PB;
     var YMIN=4, YMAX=19;
     var xStep=N>1?CW/(N-1):0;
@@ -17669,12 +17669,11 @@
     grid+='<line x1="'+PL+'" y1="'+PT+'" x2="'+PL+'" y2="'+(PT+CH)+'" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>';
     grid+='<line x1="'+PL+'" y1="'+(PT+CH)+'" x2="'+(PL+CW)+'" y2="'+(PT+CH)+'" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>';
 
-    // X labels
+    // X labels — all jornadas rotated -65°
     var xlabels='';
     pts.forEach(function(d,i){
-      if(i%4===0||i===N-1){
-        xlabels+='<text x="'+px(i)+'" y="'+(PT+CH+14)+'" font-size="8" fill="rgba(255,255,255,0.32)" text-anchor="middle" font-family="inherit">'+d.j+'</text>';
-      }
+      var x=px(i), y=PT+CH+10;
+      xlabels+='<text x="'+x+'" y="'+y+'" font-size="8" fill="rgba(255,255,255,0.38)" text-anchor="end" font-family="inherit" transform="rotate(-65,'+x+','+y+')">'+d.j+'</text>';
     });
 
     // Avg reference line
