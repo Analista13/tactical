@@ -17972,6 +17972,71 @@
     {j:'J36',pressing:60,counter_press:44,recovery_press:93,pressure:116,chain_n:30,chain_avg:2.7,chain_max:5,chain_regain:6,chain_disrupt:4},
     {j:'J37',pressing:130,counter_press:48,recovery_press:73,pressure:66,chain_n:48,chain_avg:3.31,chain_max:9,chain_regain:16,chain_disrupt:4},
   ];
+  // ── Pressing zone heatmap data (3 thirds × 5 lanes) ─────────────────────────
+  // z[xz][yz]: xz=0 def / 1 mid / 2 att third; yz=0 right flank→4 left flank
+  // ph: pressing height avg (x_norm); positive=high press, negative=low
+  const ZP_923 = [
+    {j:'J1',ph:1.62,z:[[7,9,14,13,29],[22,47,26,51,27],[15,17,17,22,26]]},
+    {j:'J2',ph:-0.06,z:[[18,10,3,11,7],[21,20,10,27,18],[7,11,11,6,7]]},
+    {j:'J3',ph:2.13,z:[[13,12,11,11,18],[15,32,25,32,37],[20,25,12,15,16]]},
+    {j:'J4',ph:1.5,z:[[10,9,8,14,13],[25,27,24,29,52],[9,8,12,23,12]]},
+    {j:'J6',ph:3.06,z:[[2,11,12,8,16],[10,19,23,36,37],[4,23,18,14,12]]},
+    {j:'J7',ph:-1.54,z:[[15,15,10,12,28],[18,32,21,32,25],[9,13,14,10,10]]},
+    {j:'J9',ph:3.0,z:[[8,5,9,13,15],[34,26,14,46,35],[20,17,15,15,20]]},
+    {j:'J10',ph:-1.25,z:[[7,11,8,10,27],[42,38,13,42,50],[11,8,6,14,17]]},
+    {j:'J12',ph:1.8,z:[[9,6,12,13,19],[34,41,28,40,37],[18,16,15,14,12]]},
+    {j:'J13',ph:-6.94,z:[[22,34,31,30,17],[47,53,39,39,29],[9,16,10,9,7]]},
+    {j:'J14',ph:2.8,z:[[5,6,13,9,17],[32,36,23,30,38],[3,20,18,12,18]]},
+    {j:'J15',ph:-0.23,z:[[12,12,10,16,20],[26,36,31,39,41],[10,14,10,17,12]]},
+    {j:'J16',ph:-2.71,z:[[6,6,4,11,23],[12,9,17,30,28],[7,2,9,10,7]]},
+    {j:'J17',ph:-2.08,z:[[23,24,17,13,13],[36,35,24,33,37],[10,25,10,19,13]]},
+    {j:'J19',ph:6.36,z:[[7,6,9,11,11],[30,36,18,38,36],[22,30,11,13,22]]},
+    {j:'J20',ph:0.83,z:[[9,10,11,22,20],[17,26,19,31,20],[8,25,17,21,13]]},
+    {j:'J21',ph:-4.53,z:[[9,8,20,22,19],[29,41,44,42,32],[9,5,11,9,5]]},
+    {j:'J22',ph:0.66,z:[[15,8,15,17,23],[38,51,43,50,21],[15,22,17,12,19]]},
+    {j:'J23',ph:-0.81,z:[[13,19,21,23,18],[24,40,29,44,53],[8,10,11,21,22]]},
+    {j:'J24',ph:5.01,z:[[2,8,4,18,9],[28,51,51,56,22],[13,15,17,24,14]]},
+    {j:'J25',ph:1.9,z:[[12,9,5,15,23],[13,18,23,31,37],[15,18,13,16,23]]},
+    {j:'J26',ph:-1.03,z:[[11,22,11,25,18],[28,39,29,34,28],[19,23,17,18,8]]},
+    {j:'J27',ph:-5.42,z:[[5,9,5,16,23],[31,30,15,35,33],[4,4,4,7,4]]},
+    {j:'J28',ph:4.41,z:[[8,4,5,9,7],[19,25,10,9,27],[21,19,4,7,7]]},
+    {j:'J31',ph:1.94,z:[[6,5,10,12,14],[20,19,23,25,25],[11,17,3,15,11]]},
+    {j:'J32',ph:1.29,z:[[7,14,9,10,7],[28,52,42,36,22],[9,18,9,21,8]]},
+    {j:'J33',ph:-8.58,z:[[12,22,10,24,17],[19,49,30,21,10],[8,5,4,3,8]]},
+    {j:'J34',ph:0.14,z:[[15,14,5,9,15],[26,37,27,34,28],[11,10,9,15,17]]},
+    {j:'J35',ph:-2.47,z:[[7,14,9,23,15],[8,32,13,28,42],[7,10,9,11,12]]},
+    {j:'J36',ph:-0.4,z:[[13,8,10,16,29],[18,35,39,41,50],[6,12,17,23,12]]},
+    {j:'J38',ph:0.14,z:[[12,15,10,17,20],[15,34,27,38,59],[0,24,19,18,5]]},
+    {j:'R1',ph:0.88,z:[[11,11,6,10,7],[10,15,4,23,20],[5,13,10,16,6]]},
+  ];
+  const ZP_8733 = [
+    {j:'J1',ph:-2.37,z:[[20,13,11,9,10],[20,21,23,41,42],[7,10,9,13,11]]},
+    {j:'J3',ph:-3.67,z:[[7,14,19,27,21],[17,23,19,30,44],[16,10,5,16,19]]},
+    {j:'J4',ph:-1.22,z:[[17,23,16,15,12],[36,50,29,19,39],[8,16,18,18,11]]},
+    {j:'J5',ph:0.48,z:[[7,13,7,27,21],[25,37,38,38,49],[10,16,21,17,21]]},
+    {j:'J7',ph:-1.52,z:[[15,14,18,8,7],[17,24,14,19,14],[9,5,10,17,15]]},
+    {j:'J9',ph:6.95,z:[[11,9,6,14,20],[44,28,25,32,37],[28,45,22,18,22]]},
+    {j:'J11',ph:-5.29,z:[[9,11,13,17,15],[23,29,16,15,26],[4,12,3,8,6]]},
+    {j:'J12',ph:1.22,z:[[12,14,16,15,15],[15,26,25,37,38],[13,15,13,19,19]]},
+    {j:'J13',ph:-2.22,z:[[12,18,10,8,10],[27,34,25,24,21],[14,14,8,4,6]]},
+    {j:'J15',ph:-2.74,z:[[17,19,14,18,17],[31,27,27,26,19],[5,23,13,14,4]]},
+    {j:'J17',ph:0.91,z:[[17,19,13,18,23],[38,59,41,50,30],[19,29,15,20,19]]},
+    {j:'J18',ph:5.17,z:[[2,5,3,4,11],[32,22,11,26,20],[6,13,13,11,14]]},
+    {j:'J19',ph:-4.92,z:[[9,17,17,16,8],[15,27,19,27,27],[7,9,4,10,6]]},
+    {j:'J21',ph:4.18,z:[[10,8,14,15,12],[30,39,30,37,26],[28,27,19,12,22]]},
+    {j:'J23',ph:0.54,z:[[11,18,14,5,7],[28,33,17,33,32],[1,6,11,26,14]]},
+    {j:'J24',ph:-0.76,z:[[10,24,21,10,2],[34,47,40,27,14],[13,15,8,13,22]]},
+    {j:'J25',ph:-3.99,z:[[11,18,22,21,12],[15,16,15,18,15],[7,18,8,9,15]]},
+    {j:'J27',ph:-0.84,z:[[6,13,13,15,18],[25,19,15,26,40],[8,12,11,13,22]]},
+    {j:'J28',ph:-0.43,z:[[11,11,11,25,32],[38,41,24,27,31],[13,24,15,22,16]]},
+    {j:'J30',ph:6.47,z:[[2,14,4,11,1],[21,31,26,27,13],[15,13,24,13,16]]},
+    {j:'J31',ph:-4.83,z:[[18,26,20,17,17],[33,42,22,37,38],[9,11,15,13,8]]},
+    {j:'J33',ph:-2.81,z:[[21,7,10,12,7],[43,33,27,43,30],[12,8,5,12,8]]},
+    {j:'J34',ph:-2.76,z:[[24,21,14,17,9],[23,40,26,43,26],[7,11,6,19,14]]},
+    {j:'J35',ph:-2.37,z:[[16,13,15,7,8],[22,35,28,13,10],[6,10,5,10,10]]},
+    {j:'J36',ph:-5.24,z:[[23,31,21,20,14],[25,50,24,27,20],[16,10,10,15,7]]},
+    {j:'J37',ph:2.14,z:[[7,19,21,14,7],[26,38,36,29,33],[12,21,20,22,12]]},
+  ];
 
   function renderAccionesPress() {
     var MAP={923:AP_923,8733:AP_8733};
@@ -18016,27 +18081,75 @@
       var bc=r==='W'?'rgba(63,185,80,0.3)':r==='D'?'rgba(227,179,65,0.3)':'rgba(248,81,73,0.3)';
       return '<span style="display:inline-block;background:'+bg+';color:'+c+';border:1px solid '+bc+';font-size:10px;font-weight:800;padding:2px 5px;border-radius:4px">'+resLabel(r)+'</span>';
     }
-    // Colors per subtype
-    var SC={pressing:'#58a6ff',counter_press:'#f85149',recovery_press:'#3fb950',pressure:'#e3b341'};
-    // Pressing type bar (4 segments)
-    function pressBar(d){
-      var tot2=d.pressing+d.counter_press+d.recovery_press+d.pressure; if(!tot2)return '';
-      var pP=Math.round(d.pressing/tot2*100), pCP=Math.round(d.counter_press/tot2*100);
-      var pRP=Math.round(d.recovery_press/tot2*100), pPres=100-pP-pCP-pRP;
-      return '<div style="display:flex;height:6px;border-radius:3px;overflow:hidden;gap:1px;background:var(--bg3)">'
-        +'<div style="width:'+pP+'%;background:'+SC.pressing+'"></div>'
-        +'<div style="width:'+pCP+'%;background:'+SC.counter_press+'"></div>'
-        +'<div style="width:'+pRP+'%;background:'+SC.recovery_press+'"></div>'
-        +'<div style="width:'+pPres+'%;background:'+SC.pressure+'"></div>'
-        +'</div>'
-        +'<div style="display:flex;gap:6px;margin-top:2px;flex-wrap:wrap">'
-        +'<span style="font-size:8px;color:'+SC.pressing+'">Press '+d.pressing+'</span>'
-        +'<span style="font-size:8px;color:'+SC.counter_press+'">CPress '+d.counter_press+'</span>'
-        +'<span style="font-size:8px;color:'+SC.recovery_press+'">Recov '+d.recovery_press+'</span>'
-        +'<span style="font-size:8px;color:'+SC.pressure+'">Presión '+d.pressure+'</span>'
-        +'</div>';
+    // ── Zone data lookup ───────────────────────────────────────────────────
+    var ZP_MAP={923:ZP_923,8733:ZP_8733};
+    var zpByJ={};
+    (ZP_MAP[currentTeam.id]||[]).forEach(function(d){zpByJ[d.j]=d;});
+    // Season max zone count (for opacity normalization across all matches)
+    var mxZone=1;
+    (ZP_MAP[currentTeam.id]||[]).forEach(function(d){
+      for(var xz=0;xz<3;xz++) for(var yz=0;yz<5;yz++) mxZone=Math.max(mxZone,d.z[xz][yz]);
+    });
+    // ── Mini pitch builder: 15 zones (3×5) heatmap + pressing height line ──
+    function buildPressPitch(ap, zp) {
+      var CPW=230, CPH=Math.round(230*68/105), CS=230/105;
+      // Pitch stripe background
+      var sw=+(10.5*CS).toFixed(1);
+      var stripes='';
+      for(var si=0;si<10;si++) stripes+='<rect x="'+(+(si*10.5*CS).toFixed(1))+'" y="0" width="'+sw+'" height="'+CPH+'" fill="'+(si%2===0?'#1d5228':'#195023')+'"/>';
+      // 15 zone heatmap rects
+      var t1=Math.round(35/105*CPW), t2=Math.round(70/105*CPW); // third boundaries
+      var laneH=CPH/5;
+      var thirdX=[0,t1,t2,CPW];
+      var heatRects='';
+      if(zp) {
+        for(var xz=0;xz<3;xz++) {
+          for(var yz=0;yz<5;yz++) {
+            var cnt=zp.z[xz][yz];
+            var alpha=(cnt/mxZone*0.72).toFixed(2);
+            var rx=thirdX[xz], rw=thirdX[xz+1]-rx;
+            var ry=+(yz*laneH).toFixed(1), rh=+(laneH).toFixed(1);
+            heatRects+='<rect x="'+rx+'" y="'+ry+'" width="'+rw+'" height="'+rh+'" fill="rgba(251,191,36,'+alpha+')" rx="0"/>';
+          }
+        }
+      }
+      // Pitch markings
+      var ctrX=+(52.5*CS).toFixed(1), midY=Math.round(CPH/2);
+      var paX=+(16.5*CS).toFixed(1);
+      var paT=+((68-40.32)/2*CS).toFixed(1), paB=+(CPH-paT).toFixed(1);
+      var gaT=+((68-18.32)/2*CS).toFixed(1), gaB=+(CPH-gaT).toFixed(1);
+      var rC=+(9.15*CS).toFixed(1);
+      var opaX=+(88.5*CS).toFixed(1);
+      var marks=''
+        +'<rect x="1" y="1" width="'+(CPW-2)+'" height="'+(CPH-2)+'" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1"/>'
+        +'<rect x="0" y="'+paT+'" width="'+paX+'" height="'+(paB-paT)+'" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1"/>'
+        +'<rect x="0" y="'+gaT+'" width="'+(+(5.5*CS).toFixed(1))+'" height="'+(gaB-gaT)+'" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="0.8"/>'
+        +'<rect x="'+opaX+'" y="'+paT+'" width="'+(CPW-opaX)+'" height="'+(paB-paT)+'" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1"/>'
+        +'<line x1="'+ctrX+'" y1="0" x2="'+ctrX+'" y2="'+CPH+'" stroke="rgba(255,255,255,0.55)" stroke-width="1"/>'
+        +'<circle cx="'+ctrX+'" cy="'+midY+'" r="'+rC+'" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1"/>'
+        // third dividers (subtle)
+        +'<line x1="'+t1+'" y1="0" x2="'+t1+'" y2="'+CPH+'" stroke="rgba(255,255,255,0.12)" stroke-width="0.8" stroke-dasharray="3,3"/>'
+        +'<line x1="'+t2+'" y1="0" x2="'+t2+'" y2="'+CPH+'" stroke="rgba(255,255,255,0.12)" stroke-width="0.8" stroke-dasharray="3,3"/>'
+        // lane dividers (subtle)
+        +[1,2,3,4].map(function(i){return '<line x1="0" y1="'+(+(i*laneH).toFixed(1))+'" x2="'+CPW+'" y2="'+(+(i*laneH).toFixed(1))+'" stroke="rgba(255,255,255,0.08)" stroke-width="0.6"/>';}).join('');
+      // Pressing height line
+      var phLine='';
+      if(zp) {
+        var phX=+((zp.ph+52.5)/105*CPW).toFixed(1);
+        var phCol=zp.ph>5?'#3fb950':zp.ph>0?'#e3b341':'#f85149';
+        phLine='<line x1="'+phX+'" y1="2" x2="'+phX+'" y2="'+(CPH-2)+'" stroke="'+phCol+'" stroke-width="2" stroke-dasharray="4,2"/>'
+          +'<rect x="'+(phX-14)+'" y="'+(midY-7)+'" width="28" height="13" rx="2" fill="rgba(0,0,0,0.7)"/>'
+          +'<text x="'+phX+'" y="'+(midY+4)+'" font-size="9" font-weight="800" fill="'+phCol+'" text-anchor="middle" font-family="inherit">'+(zp.ph>0?'+':'')+zp.ph+'m</text>';
+      }
+      // Third labels
+      var thirdLabels=''
+        +'<text x="'+(t1/2)+'" y="10" font-size="7" fill="rgba(255,255,255,0.35)" text-anchor="middle" font-family="inherit">DEF</text>'
+        +'<text x="'+((t1+t2)/2)+'" y="10" font-size="7" fill="rgba(255,255,255,0.35)" text-anchor="middle" font-family="inherit">MED</text>'
+        +'<text x="'+((t2+CPW)/2)+'" y="10" font-size="7" fill="rgba(255,255,255,0.35)" text-anchor="middle" font-family="inherit">ATT</text>';
+      return '<svg width="'+CPW+'" height="'+CPH+'" style="display:block">'+stripes+heatRects+marks+phLine+thirdLabels+'</svg>';
     }
-    // KPI chips
+    // ── KPI chips ──────────────────────────────────────────────────────────
+    var SC={pressing:'#58a6ff',counter_press:'#f85149',recovery_press:'#3fb950',pressure:'#e3b341'};
     var chips='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">'
       +'<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid #58a6ff;border-radius:8px;padding:8px 14px">'
         +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Total press / partido</div>'
@@ -18059,20 +18172,25 @@
         +'<div style="font-size:9px;color:var(--text3)">cadenas que recuperan</div>'
       +'</div>'
     +'</div>';
-    // Legend
+    // ── Legend ──────────────────────────────────────────────────────────────
     var legend='<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;align-items:center">'
-      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#58a6ff;display:inline-block"></span><span style="font-size:10px;color:#58a6ff">Pressing — presión activa organizada</span></span>'
-      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#f85149;display:inline-block"></span><span style="font-size:10px;color:#f85149">Counter-press — tras pérdida inmediata</span></span>'
-      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#3fb950;display:inline-block"></span><span style="font-size:10px;color:#3fb950">Recovery press — reposicionamiento</span></span>'
-      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#e3b341;display:inline-block"></span><span style="font-size:10px;color:#e3b341">Pressure — presión básica al poseedor</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#58a6ff;display:inline-block"></span><span style="font-size:10px;color:#58a6ff">Pressing</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#f85149;display:inline-block"></span><span style="font-size:10px;color:#f85149">Counter-press</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#3fb950;display:inline-block"></span><span style="font-size:10px;color:#3fb950">Recovery</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#e3b341;display:inline-block"></span><span style="font-size:10px;color:#e3b341">Presión básica</span></span>'
+      +'<span style="font-size:10px;color:var(--text3)">· Calor amarillo = intensidad zona · Línea 🟢alto / 🟡medio / 🔴bajo pressing</span>'
     +'</div>';
-    // Match cards
+    // ── Match cards ─────────────────────────────────────────────────────────
     var cards=merged.map(function(d){
       var col=rcSolid(d.res);
+      var zp=zpByJ[d.j]||null;
       var tot2=d.pressing+d.counter_press+d.recovery_press+d.pressure;
+      var pP=tot2?Math.round(d.pressing/tot2*100):0, pCP=tot2?Math.round(d.counter_press/tot2*100):0;
+      var pRP=tot2?Math.round(d.recovery_press/tot2*100):0, pPres=100-pP-pCP-pRP;
       var chainEnd=d.chain_regain+d.chain_disrupt;
       var rPct=chainEnd>0?Math.round(d.chain_regain/chainEnd*100):0;
       return '<div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;overflow:hidden">'
+        // Header
         +'<div style="padding:7px 10px;background:var(--bg3);display:flex;align-items:center;justify-content:space-between;gap:6px">'
           +'<div style="display:flex;align-items:center;gap:5px;min-width:0">'
             +'<span style="font-size:11px;font-weight:800;color:var(--accent);font-family:\'Bebas Neue\',sans-serif;letter-spacing:1px;flex-shrink:0">'+d.j+'</span>'
@@ -18082,29 +18200,40 @@
             +'<span style="font-size:10px;color:var(--text3)">'+d.score+'</span>'+resTag(d.res)
           +'</div>'
         +'</div>'
-        +'<div style="padding:8px 10px 10px">'
-          +'<div style="display:flex;justify-content:space-between;margin-bottom:3px">'
-            +'<span style="font-size:9px;color:var(--text3)">Acciones press</span>'
-            +'<span style="font-size:11px;font-weight:800;color:var(--text1);font-family:\'Bebas Neue\',sans-serif">'+tot2+'</span>'
+        // Mini pitch heatmap
+        +'<div style="background:#163520;line-height:0">'+buildPressPitch(d,zp)+'</div>'
+        // Press type bar
+        +'<div style="padding:6px 10px 4px">'
+          +'<div style="display:flex;height:5px;border-radius:2px;overflow:hidden;gap:1px">'
+            +'<div style="width:'+pP+'%;background:'+SC.pressing+'"></div>'
+            +'<div style="width:'+pCP+'%;background:'+SC.counter_press+'"></div>'
+            +'<div style="width:'+pRP+'%;background:'+SC.recovery_press+'"></div>'
+            +'<div style="width:'+pPres+'%;background:'+SC.pressure+'"></div>'
           +'</div>'
-          +pressBar(d)
-          +'<div style="display:flex;gap:6px;margin-top:8px;padding-top:7px;border-top:1px solid var(--border)">'
-            +'<div style="flex:1;text-align:center">'
-              +'<div style="font-size:13px;font-weight:800;color:#3fb950;font-family:\'Bebas Neue\',sans-serif;line-height:1">'+d.chain_n+'</div>'
-              +'<div style="font-size:8px;color:var(--text3)">cadenas</div>'
-            +'</div>'
-            +'<div style="flex:1;text-align:center">'
-              +'<div style="font-size:13px;font-weight:800;color:var(--text2);font-family:\'Bebas Neue\',sans-serif;line-height:1">'+d.chain_avg+'</div>'
-              +'<div style="font-size:8px;color:var(--text3)">long. media</div>'
-            +'</div>'
-            +'<div style="flex:1;text-align:center">'
-              +'<div style="font-size:13px;font-weight:800;color:var(--text2);font-family:\'Bebas Neue\',sans-serif;line-height:1">'+d.chain_max+'</div>'
-              +'<div style="font-size:8px;color:var(--text3)">long. max</div>'
-            +'</div>'
-            +'<div style="flex:1;text-align:center">'
-              +'<div style="font-size:13px;font-weight:800;color:#e3b341;font-family:\'Bebas Neue\',sans-serif;line-height:1">'+rPct+'%</div>'
-              +'<div style="font-size:8px;color:var(--text3)">recuperación</div>'
-            +'</div>'
+          +'<div style="display:flex;gap:5px;margin-top:2px">'
+            +'<span style="font-size:8px;color:'+SC.pressing+'">P '+d.pressing+'</span>'
+            +'<span style="font-size:8px;color:'+SC.counter_press+'">CP '+d.counter_press+'</span>'
+            +'<span style="font-size:8px;color:'+SC.recovery_press+'">R '+d.recovery_press+'</span>'
+            +'<span style="font-size:8px;color:'+SC.pressure+'">Pr '+d.pressure+'</span>'
+          +'</div>'
+        +'</div>'
+        // Chain stats
+        +'<div style="padding:0 10px 8px;display:flex;gap:6px;border-top:1px solid var(--border);margin-top:4px;padding-top:5px">'
+          +'<div style="flex:1;text-align:center">'
+            +'<div style="font-size:12px;font-weight:800;color:#3fb950;font-family:\'Bebas Neue\',sans-serif;line-height:1">'+d.chain_n+'</div>'
+            +'<div style="font-size:8px;color:var(--text3)">cadenas</div>'
+          +'</div>'
+          +'<div style="flex:1;text-align:center">'
+            +'<div style="font-size:12px;font-weight:800;color:var(--text2);font-family:\'Bebas Neue\',sans-serif;line-height:1">'+d.chain_avg+'</div>'
+            +'<div style="font-size:8px;color:var(--text3)">long.med</div>'
+          +'</div>'
+          +'<div style="flex:1;text-align:center">'
+            +'<div style="font-size:12px;font-weight:800;color:var(--text2);font-family:\'Bebas Neue\',sans-serif;line-height:1">'+d.chain_max+'</div>'
+            +'<div style="font-size:8px;color:var(--text3)">max</div>'
+          +'</div>'
+          +'<div style="flex:1;text-align:center">'
+            +'<div style="font-size:12px;font-weight:800;color:#e3b341;font-family:\'Bebas Neue\',sans-serif;line-height:1">'+rPct+'%</div>'
+            +'<div style="font-size:8px;color:var(--text3)">recup.</div>'
           +'</div>'
         +'</div>'
       +'</div>';
