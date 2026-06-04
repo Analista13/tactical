@@ -226,6 +226,7 @@
     { tab:'secuencias',   label:'Sec. Pases OF' },
     { tab:'defzonas',     label:'Zonas Def.' },
     { tab:'accionesdef',  label:'Acciones Def.' },
+    { tab:'duelosaereos', label:'Duelos Aéreos' },
   ];
 
   // ── Render aside ─────────────────────────────────────────────────────────────
@@ -3643,7 +3644,7 @@
     if (lvLocal) lvLocal.style.display = tab === 'bloque' ? 'none' : '';
     if (lvVis)   lvVis.style.display   = tab === 'bloque' ? 'none' : '';
     // Para equipos sin datos de análisis, mostrar placeholder excepto en Plantilla y Acciones Def.
-    if (currentTeam.id !== 923 && tab !== 'plantilla' && tab !== 'accionesdef') {
+    if (currentTeam.id !== 923 && tab !== 'plantilla' && tab !== 'accionesdef' && tab !== 'duelosaereos') {
       document.getElementById('content').innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:420px;gap:18px">
           <img src="${currentTeam.escudo}" style="width:64px;height:64px;object-fit:contain;opacity:0.45;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4))">
@@ -3668,6 +3669,7 @@
     else if(tab === 'secuencias')   loadSecuencias();
     else if(tab === 'defzonas')     loadDefZonas();
     else if(tab === 'accionesdef')  loadAccionesDef();
+    else if(tab === 'duelosaereos') loadDuelosAereos();
     else if(tab === 'plantilla')    loadPlantillaTab();
   }
 
@@ -17875,6 +17877,170 @@
     if (tab === 'bloque') renderBloqueDefensivo();
     if (tab === 'xloss') renderXLoss();
     if (tab === 'rupturas') renderRupturas();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  DUELOS AÉREOS
+  // ═══════════════════════════════════════════════════════════════════
+  let _daSubTab = 'ofensivos'; // 'ofensivos' | 'defensivos' | 'jugadores'
+
+  function loadDuelosAereos() {
+    _daSubTab = 'ofensivos';
+    renderDuelosAereos();
+  }
+
+  function renderDuelosAereos() {
+    const cont = document.getElementById('content');
+    if (!cont) return;
+    const tid = currentTeam.id;
+    const DA_MAP = { 923: typeof DA_923 !== 'undefined' ? DA_923 : null, 8733: typeof DA_8733 !== 'undefined' ? DA_8733 : null };
+    const data = DA_MAP[tid];
+
+    const tabBtn = (id, label) => {
+      const act = _daSubTab === id;
+      return `<button onclick="_daSubTab='${id}';renderDuelosAereos()" style="background:none;border:none;border-bottom:2px solid ${act ? 'var(--accent)' : 'transparent'};color:${act ? 'var(--text1)' : 'var(--text3)'};font-size:13px;font-weight:${act ? 700 : 400};padding:11px 16px;cursor:pointer;font-family:inherit;letter-spacing:.3px;transition:all .15s">${label}</button>`;
+    };
+
+    const tabBar = `<div style="border-bottom:1px solid var(--border);padding:0 24px;background:var(--bg1);display:flex;gap:0;flex-shrink:0">
+      ${tabBtn('ofensivos','Ofensivos')}
+      ${tabBtn('defensivos','Defensivos')}
+      ${tabBtn('jugadores','Jugadores')}
+    </div>`;
+
+    if (!data) {
+      cont.innerHTML = `<div style="height:100%;display:flex;flex-direction:column;overflow:hidden">
+        ${tabBar}
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px">Datos de duelos aéreos próximamente</div>
+      </div>`;
+      return;
+    }
+
+    // ── KPIs globales ─────────────────────────────────────────────────
+    const duels = _daSubTab === 'jugadores' ? data.duels : data.duels.filter(d => _daSubTab === 'ofensivos' ? d.type === 'off' : d.type === 'def');
+    const totAtt = duels.reduce((s,d) => s+d.att, 0);
+    const totWon = duels.reduce((s,d) => s+d.won, 0);
+    const totPct = totAtt ? Math.round(totWon/totAtt*100) : 0;
+
+    // ── Pitch SVG ─────────────────────────────────────────────────────
+    const W=480, H=320, sx=W/120, sy=H/80;
+    const pitchSVG = () => {
+      const locs = duels.flatMap(d => d.locs);
+      const dots = locs.map(l => {
+        const cx = Math.round(l.x*sx), cy = Math.round(l.y*sy);
+        const col = l.won ? 'rgba(63,185,80,0.75)' : 'rgba(248,81,73,0.65)';
+        return `<circle cx="${cx}" cy="${cy}" r="4" fill="${col}" stroke="${l.won?'rgba(63,185,80,1)':'rgba(248,81,73,1)'}" stroke-width="0.6"/>`;
+      }).join('');
+      return `<svg width="${W}" height="${H}" style="display:block;border-radius:6px;overflow:hidden">
+        <rect width="${W}" height="${H}" fill="#2d5a1b"/>
+        ${[0,1,2,3,4,5].map(i=>`<rect x="${i%2===0?0:W/6}" y="${Math.floor(i/2)*(H/3)}" width="${W}" height="${H/3}" fill="${i%2===0?'#2d5a1b':'#336820'}" opacity="0.5"/>`).join('')}
+        <rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+        <line x1="${W/2}" y1="0" x2="${W/2}" y2="${H}" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        <circle cx="${W/2}" cy="${H/2}" r="${9.15*sx}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        <rect x="0" y="${(80-40.32)/2*sy}" width="${16.5*sx}" height="${40.32*sy}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        <rect x="${(120-16.5)*sx}" y="${(80-40.32)/2*sy}" width="${16.5*sx}" height="${40.32*sy}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        <rect x="0" y="${(80-18.32)/2*sy}" width="${5.5*sx}" height="${18.32*sy}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        <rect x="${(120-5.5)*sx}" y="${(80-18.32)/2*sy}" width="${5.5*sx}" height="${18.32*sy}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        <line x1="${40*sx}" y1="0" x2="${40*sx}" y2="${H}" stroke="rgba(255,255,255,0.15)" stroke-width="0.8" stroke-dasharray="4,3"/>
+        <line x1="${80*sx}" y1="0" x2="${80*sx}" y2="${H}" stroke="rgba(255,255,255,0.15)" stroke-width="0.8" stroke-dasharray="4,3"/>
+        <text x="${20*sx}" y="12" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="9" font-family="DM Sans">DEF</text>
+        <text x="${60*sx}" y="12" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="9" font-family="DM Sans">MED</text>
+        <text x="${100*sx}" y="12" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="9" font-family="DM Sans">ATQ</text>
+        ${dots}
+      </svg>`;
+    };
+
+    // ── Vista Jugadores ───────────────────────────────────────────────
+    if (_daSubTab === 'jugadores') {
+      const players = data.players.sort((a,b) => b.att - a.att);
+      const maxAtt = players[0]?.att || 1;
+      const rows = players.map((p,i) => {
+        const pct = p.att ? Math.round(p.won/p.att*100) : 0;
+        const col = pct>=60?'#3fb950':pct>=40?'#e3b341':'#f85149';
+        return `<tr style="border-bottom:1px solid var(--border)" onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background=''">
+          <td style="padding:9px 8px;font-size:12px;color:var(--text3);width:24px">${i+1}</td>
+          <td style="padding:9px 8px">
+            <div style="font-size:12px;font-weight:700;color:var(--text1)">${p.name}</div>
+            <div style="font-size:10px;color:var(--text3)">${p.pos}</div>
+          </td>
+          <td style="padding:9px 8px;min-width:130px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="flex:1;height:6px;background:var(--bg3);border-radius:3px"><div style="height:6px;background:var(--accent);border-radius:3px;width:${Math.round(p.att/maxAtt*100)}%"></div></div>
+              <span style="font-size:12px;font-weight:700;color:var(--text1);min-width:22px;text-align:right">${p.att}</span>
+            </div>
+          </td>
+          <td style="padding:9px 8px;font-size:12px;color:#3fb950;text-align:center;font-weight:600">${p.won}</td>
+          <td style="padding:9px 8px;font-size:12px;color:#f85149;text-align:center;font-weight:600">${p.lost}</td>
+          <td style="padding:9px 8px;font-size:13px;font-weight:700;text-align:center;color:${col}">${pct}%</td>
+          <td style="padding:9px 8px;font-size:10px;color:var(--text3)">${p.att_z} ATQ · ${p.mid} MED · ${p.def} DEF</td>
+        </tr>`;
+      }).join('');
+
+      cont.innerHTML = `<div style="height:100%;display:flex;flex-direction:column;overflow:hidden">
+        ${tabBar}
+        <div style="flex:1;overflow-y:auto;padding:20px 24px">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="border-bottom:2px solid var(--border)">
+              <th style="padding:8px;font-size:10px;color:var(--text3);font-weight:600;text-align:left">#</th>
+              <th style="padding:8px;font-size:10px;color:var(--text3);font-weight:600;text-align:left">JUGADOR</th>
+              <th style="padding:8px;font-size:10px;color:var(--text3);font-weight:600;text-align:left">DUELOS</th>
+              <th style="padding:8px;font-size:10px;color:#3fb950;font-weight:600;text-align:center">GANADOS</th>
+              <th style="padding:8px;font-size:10px;color:#f85149;font-weight:600;text-align:center">PERDIDOS</th>
+              <th style="padding:8px;font-size:10px;color:var(--text3);font-weight:600;text-align:center">%</th>
+              <th style="padding:8px;font-size:10px;color:var(--text3);font-weight:600;text-align:left">POR ZONA</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+      return;
+    }
+
+    // ── Vista campo (Ofensivos / Defensivos) ─────────────────────────
+    const label = _daSubTab === 'ofensivos' ? 'Duelos Aéreos Ofensivos' : 'Duelos Aéreos Defensivos';
+    cont.innerHTML = `<div style="height:100%;display:flex;flex-direction:column;overflow:hidden">
+      ${tabBar}
+      <div style="flex:1;overflow-y:auto;padding:20px 24px">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+          <img src="${currentTeam.escudo}" style="width:36px;height:36px;object-fit:contain"/>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:var(--text1)">${label.toUpperCase()} — ${currentTeam.name.toUpperCase()}</div>
+            <div style="font-size:11px;color:var(--text3)">Temporada 2025/26 · Primera División RFEF</div>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:24px">
+            <div style="text-align:right"><div style="font-size:20px;font-weight:800;color:var(--text1)">${totAtt}</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase">Total duelos</div></div>
+            <div style="text-align:right"><div style="font-size:20px;font-weight:800;color:#3fb950">${totWon}</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase">Ganados</div></div>
+            <div style="text-align:right"><div style="font-size:20px;font-weight:800;color:${totPct>=55?'#3fb950':totPct>=45?'#e3b341':'#f85149'}">${totPct}%</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase">% éxito</div></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+          <div>${pitchSVG()}</div>
+          <div style="flex:1;min-width:180px">
+            <div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px">Por zona</div>
+            ${['ATQ','MED','DEF'].map(z => {
+              const zLocs = duels.flatMap(d=>d.locs).filter(l => z==='ATQ'?l.x>=80:z==='MED'?l.x>=40&&l.x<80:l.x<40);
+              const zW = zLocs.filter(l=>l.won).length, zT = zLocs.length;
+              const zP = zT ? Math.round(zW/zT*100) : 0;
+              const col = z==='ATQ'?'#3fb950':z==='MED'?'#e3b341':'#58a6ff';
+              return `<div style="margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+                  <span style="color:var(--text2)">Zona ${z}</span>
+                  <span style="color:${col};font-weight:700">${zW}/${zT} <span style="color:var(--text3);font-weight:400">(${zP}%)</span></span>
+                </div>
+                <div style="height:6px;background:var(--bg3);border-radius:3px"><div style="height:6px;background:${col};border-radius:3px;width:${zP}%"></div></div>
+              </div>`;
+            }).join('')}
+            <div style="margin-top:20px;font-size:10px;color:var(--text3);line-height:1.8">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+                <span style="width:10px;height:10px;border-radius:50%;background:rgba(63,185,80,0.75);display:inline-block"></span> Duelo ganado
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="width:10px;height:10px;border-radius:50%;background:rgba(248,81,73,0.65);display:inline-block"></span> Duelo perdido
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
   }
 
   // Global: used by both renderLineaDef and renderBloqueDefensivo
