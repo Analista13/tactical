@@ -2860,7 +2860,7 @@
 
   // ── barra de subtabs de Jugadores ──────────────────────────────────────────
   function jugSubTabBar() {
-    const tabs=[['mapa','Mapa de Pases'],['asoc','Asociaciones'],['telarana','Telaraña'],['metricas','Métricas'],['calor','Mapas de Calor'],['regates','Regates']];
+    const tabs=[['mapa','Mapa de Pases'],['asoc','Asociaciones'],['telarana','Telaraña'],['metricas','Métricas'],['calor','Mapas de Calor']];
     return `<div style="display:flex;gap:2px;margin-bottom:20px;border-bottom:1px solid var(--border)">
       ${tabs.map(([id,lbl])=>`<button onclick="setJugSubTab('${id}')" style="background:transparent;border:none;border-bottom:2px solid ${jugSubTab===id?'var(--accent)':'transparent'};color:${jugSubTab===id?'var(--accent)':'var(--text2)'};padding:10px 20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap">${lbl}</button>`).join('')}
     </div>`;
@@ -3028,12 +3028,6 @@
     const tid=currentTeam.id, mid=redMatchId;
     const cont=document.getElementById('redCont');
     if(!cont) return;
-    // Regates tab uses season data — no match needed
-    if(jugSubTab==='regates') {
-      regatesPlayer=null;
-      cont.innerHTML=jugSubTabBar()+buildRegatesHTML(tid);
-      return;
-    }
     if(!mid){
       cont.innerHTML=jugSubTabBar()+`<div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Selecciona un partido</div>`;
       return;
