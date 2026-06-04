@@ -11730,26 +11730,17 @@
         </div>
       </div>`;
     if (plantillaView === 'fichajes') { renderFichajesTab(); return; }
-    if (plantillaView === 'regates')  { renderRegatesEnPlantilla(); return; }
 
     const PLANTILLA_MAP = { 923: PLANTILLA_923, 8733: PLANTILLA_8733 };
     const d = PLANTILLA_MAP[currentTeam.id] || PLANTILLA_923;
     const total = d.porteros.length + d.defensas.length + d.centrocampistas.length + d.delanteros.length;
 
     const hasFichajes = currentTeam.id === 923;
-    const DR_MAP2 = {923: typeof DR_923!=='undefined'?DR_923:[], 8733: typeof DR_8733!=='undefined'?DR_8733:[]};
-    const hasRegates = (DR_MAP2[currentTeam.id]||[]).length > 0;
-
-    const tabBtn = (label, view) => {
-      const active = plantillaView === view;
-      return `<button onclick="plantillaView='${view}';renderPlantillaTab()" style="padding:6px 20px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:${active?'var(--accent)':'transparent'};color:${active?'#0d1117':'var(--text2)'}">${label}</button>`;
-    };
-    const tabSwitch = `
+    const tabSwitch = hasFichajes ? `
       <div style="display:inline-flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:3px;margin-bottom:20px">
-        ${tabBtn('Plantilla','plantilla')}
-        ${hasFichajes ? tabBtn('Fichajes','fichajes') : ''}
-        ${hasRegates  ? tabBtn('Regates','regates')   : ''}
-      </div>`;
+        <button onclick="plantillaView='plantilla';renderPlantillaTab()" style="padding:6px 20px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:${plantillaView==='plantilla'?'var(--accent)':'transparent'};color:${plantillaView==='plantilla'?'#0d1117':'var(--text2)'}">Plantilla</button>
+        <button onclick="plantillaView='fichajes';renderPlantillaTab()" style="padding:6px 20px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:${plantillaView==='fichajes'?'var(--accent)':'transparent'};color:${plantillaView==='fichajes'?'#0d1117':'var(--text2)'}">Fichajes</button>
+      </div>` : '';
 
     cont.innerHTML = `
       <div style="padding:20px 24px">
@@ -12503,6 +12494,10 @@
     const _pasesData = window._pasesSeasonCache ? (window._pasesSeasonCache[_runKey] || null) : undefined;
     // Posesión SkillCorner data
     const _possData = _POSS_DATA[_runKey] || null;
+    // Regates StatsBomb data — busca por nombre normalizado
+    const _drAll = {923: typeof DR_923!=='undefined'?DR_923:[], 8733: typeof DR_8733!=='undefined'?DR_8733:{}}[currentTeam.id]||[];
+    const _normName = n => n.replace(/\s+/g,' ').trim().toLowerCase();
+    const _drData = _drAll.find(d => _normName(d.name) === _normName(p.name)) || null;
     // Si se llama desde un click de tab, respetar _profileTab; si es nuevo jugador, reset
     // (se resetea desde el card click)
 
@@ -12574,6 +12569,7 @@
                 ...(_runData !== null ? [['carreras','🏃 Carreras']] : []),
                 ...(_pasesData !== null ? [['pases','🎯 Pases']] : []),
                 ...(_possData ? [['posesion','⚽ Posesión']] : []),
+                ...(_drData ? [['regates','⚡ Regates']] : []),
               ].map(([id,lbl]) => {
                 const act = _profileTab === id;
                 const tabCol = id==='carreras' ? '#f0883e' : id==='pases' ? '#58a6ff' : id==='posesion' ? '#3fb950' : 'var(--accent)';
@@ -13643,6 +13639,52 @@
                   `<div style="font-size:9px;color:var(--text3);margin-top:8px">SkillCorner · 1ª RFEF 25/26 · percentil vs. misma posición</div>`;
               }
 
+            })() : _profileTab === 'regates' ? (() => {
+              if (!_drData) return '<div style="padding:40px;text-align:center;color:var(--text3)">Sin datos de regates</div>';
+              const zonaBar = (label, val, col) => {
+                const pct = _drData.att ? Math.round(val/_drData.att*100) : 0;
+                return `<div style="margin-bottom:10px">
+                  <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:3px">
+                    <span>${label}</span><span style="font-weight:700;color:${col}">${val} <span style="color:var(--text3);font-weight:400">(${pct}%)</span></span>
+                  </div>
+                  <div style="height:6px;background:var(--bg3);border-radius:3px">
+                    <div style="height:6px;background:${col};border-radius:3px;width:${pct}%"></div>
+                  </div>
+                </div>`;
+              };
+              return `
+                <div style="margin-bottom:16px;display:flex;gap:24px;flex-wrap:wrap">
+                  <div style="text-align:center">
+                    <div style="font-size:28px;font-weight:800;color:var(--text1)">${_drData.att}</div>
+                    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Intentos</div>
+                  </div>
+                  <div style="text-align:center">
+                    <div style="font-size:28px;font-weight:800;color:#3fb950">${_drData.comp}</div>
+                    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Completados</div>
+                  </div>
+                  <div style="text-align:center">
+                    <div style="font-size:28px;font-weight:800;color:${_drData.pct>=60?'#3fb950':_drData.pct>=40?'#e3b341':'#f85149'}">${_drData.pct}%</div>
+                    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Éxito</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+                  <div>${buildDribblePitch(_drData.locs)}</div>
+                  <div style="flex:1;min-width:180px;padding-top:4px">
+                    <div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px">Regates por zona</div>
+                    ${zonaBar('Zona ATQ (x ≥ 80)', _drData.att_z, '#3fb950')}
+                    ${zonaBar('Zona MED (40–80)',   _drData.mid,   '#e3b341')}
+                    ${zonaBar('Zona DEF (x < 40)',  _drData.def,   '#58a6ff')}
+                    <div style="margin-top:18px;font-size:10px;color:var(--text3);line-height:1.6">
+                      <span style="display:inline-flex;align-items:center;gap:5px;margin-right:12px">
+                        <span style="width:10px;height:10px;border-radius:50%;background:rgba(63,185,80,0.85);display:inline-block"></span> Completado
+                      </span>
+                      <span style="display:inline-flex;align-items:center;gap:5px">
+                        <span style="width:10px;height:10px;border-radius:50%;background:rgba(248,81,73,0.75);display:inline-block"></span> Fallado
+                      </span>
+                    </div>
+                    <div style="margin-top:8px;font-size:9px;color:var(--text3)">StatsBomb · 1ª RFEF 2025/26 · Temporada completa</div>
+                  </div>
+                </div>`;
             })() : (() => {
               const keys   = _OBE_TAB[_profileTab] || [];
               const pCol   = p => p >= 75 ? '#3fb950' : p >= 50 ? '#c8a96e' : p >= 25 ? '#f0883e' : '#f85149';
