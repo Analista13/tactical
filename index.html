@@ -17523,7 +17523,8 @@
       '<div id="accdef-wrap" style="height:100%;display:flex;flex-direction:column;overflow:hidden">' +
         '<div style="border-bottom:1px solid var(--border);padding:0 24px;background:var(--bg1);display:flex;gap:0;flex-shrink:0">' +
           '<button onclick="switchAccionesDefTab(\'lineadef\')" id="sbtab-lineadef" style="background:none;border:none;border-bottom:2px solid var(--accent);color:var(--text1);font-size:13px;font-weight:700;padding:11px 16px;cursor:pointer;font-family:inherit;letter-spacing:.3px">Línea Def.</button>' +
-          '<button onclick="switchAccionesDefTab(\'presion\')" id="sbtab-presion" style="background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);font-size:13px;font-weight:400;padding:11px 16px;cursor:pointer;font-family:inherit;letter-spacing:.3px">Presión</button>' +
+          '<button onclick="switchAccionesDefTab(\'presion\')" id="sbtab-presion" style="background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);font-size:13px;font-weight:400;padding:11px 16px;cursor:pointer;font-family:inherit;letter-spacing:.3px">PPDA</button>' +
+          '<button onclick="switchAccionesDefTab(\'accpress\')" id="sbtab-accpress" style="background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);font-size:13px;font-weight:400;padding:11px 16px;cursor:pointer;font-family:inherit;letter-spacing:.3px">Acciones Press</button>' +
           '<button onclick="switchAccionesDefTab(\'bloque\')" id="sbtab-bloque" style="background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);font-size:13px;font-weight:400;padding:11px 16px;cursor:pointer;font-family:inherit;letter-spacing:.3px">Bloque</button>' +
           '<button onclick="switchAccionesDefTab(\'xloss\')" id="sbtab-xloss" style="background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);font-size:13px;font-weight:400;padding:11px 16px;cursor:pointer;font-family:inherit;letter-spacing:.3px">xLoss / xShot</button>' +
           '<button onclick="switchAccionesDefTab(\'rupturas\')" id="sbtab-rupturas" style="background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);font-size:13px;font-weight:400;padding:11px 16px;cursor:pointer;font-family:inherit;letter-spacing:.3px">Rupturas</button>' +
@@ -17543,6 +17544,7 @@
     });
     if (tab === 'lineadef') renderLineaDef();
     if (tab === 'presion') renderPresion();
+    if (tab === 'accpress') renderAccionesPress();
     if (tab === 'bloque') renderBloqueDefensivo();
     if (tab === 'xloss') renderXLoss();
     if (tab === 'rupturas') renderRupturas();
@@ -17905,6 +17907,29 @@
   function hidePpdaTip(){
     var tip=document.getElementById('ppda-tip');
     if(tip) tip.style.display='none';
+  }
+
+  // ── Acciones de Press data ─────────────────────────────────────────────────
+  // Structure per match: {j, rival, loc, score, res,
+  //   pressing, counter_press, recovery_press, pressure,   ← on_ball_engagement subtypes (counts)
+  //   chain_avg, chain_max,                                ← pressing_chain_length avg & max
+  //   chain_end_recovery, chain_end_disruption}            ← pressing_chain_end_type counts
+  const AP_923  = [];   // Ponferradina — pending CSV data
+  const AP_8733 = [];   // Celta Fortuna — pending CSV data
+
+  function renderAccionesPress() {
+    var MAP={923:AP_923,8733:AP_8733};
+    var data=MAP[currentTeam.id]||[];
+    var cont=document.getElementById('subtab-content');
+    if(!data.length){
+      cont.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:380px;gap:12px">'
+        +'<div style="font-size:32px">⏳</div>'
+        +'<div style="font-size:14px;color:var(--text3)">Datos de acciones de pressing pendientes de carga</div>'
+        +'<div style="font-size:11px;color:var(--text3);max-width:360px;text-align:center">Proporciona los CSV con <code>on_ball_engagement</code> y <code>pressing_chain</code> para activar esta sección</div>'
+      +'</div>';
+      return;
+    }
+    // Full render will go here once data is loaded
   }
 
   function renderPresion() {
