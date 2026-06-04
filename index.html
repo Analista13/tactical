@@ -17460,11 +17460,6 @@
   // Bloque variant: adds lb/mb/hb coloured zone overlays on the pitch
   function buildMiniPitchBloque(d){
     var CPW=230,CPH=Math.round(230*68/105),CS=230/105;
-    var LIGA_AVG_M=32.18;
-    var rcSolid=function(r){return r==='W'?'#3fb950':r==='D'?'#e3b341':r==='L'?'#f85149':'#8b949e';};
-    var matchX=+((52.5+d.lineX)*CS).toFixed(1);
-    var ligaX=+(LIGA_AVG_M*CS).toFixed(1);
-    var col=rcSolid(d.res);
     var paX=+(16.5*CS).toFixed(1);
     var ctrX=+(52.5*CS).toFixed(1);
     var opaX=+(88.5*CS).toFixed(1);
@@ -17481,9 +17476,9 @@
     var hbX=+(CPW*d.lb/100+CPW*d.mb/100).toFixed(1);
     var hbW=+(CPW-hbX).toFixed(1);
     var zones=''
-      +'<rect x="0" y="0" width="'+lbW+'" height="'+CPH+'" fill="rgba(88,166,255,0.22)"/>'
-      +'<rect x="'+lbW+'" y="0" width="'+mbW+'" height="'+CPH+'" fill="rgba(227,179,65,0.22)"/>'
-      +'<rect x="'+hbX+'" y="0" width="'+hbW+'" height="'+CPH+'" fill="rgba(248,81,73,0.22)"/>';
+      +'<rect x="0" y="0" width="'+lbW+'" height="'+CPH+'" fill="rgba(88,166,255,0.25)"/>'
+      +'<rect x="'+lbW+'" y="0" width="'+mbW+'" height="'+CPH+'" fill="rgba(227,179,65,0.25)"/>'
+      +'<rect x="'+hbX+'" y="0" width="'+hbW+'" height="'+CPH+'" fill="rgba(248,81,73,0.25)"/>';
     var marks=''
       +'<rect x="1" y="1" width="'+(CPW-2)+'" height="'+(CPH-2)+'" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1"/>'
       +'<rect x="0" y="'+paT+'" width="'+paX+'" height="'+(paB-paT)+'" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1"/>'
@@ -17491,23 +17486,13 @@
       +'<line x1="'+ctrX+'" y1="0" x2="'+ctrX+'" y2="'+CPH+'" stroke="rgba(255,255,255,0.65)" stroke-width="1"/>'
       +'<circle cx="'+ctrX+'" cy="'+midY+'" r="'+rC+'" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1"/>'
       +'<rect x="'+opaX+'" y="'+paT+'" width="'+(CPW-opaX)+'" height="'+(paB-paT)+'" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1"/>';
-    var labels=''
-      +'<text x="3" y="'+(CPH-4)+'" font-size="7" fill="rgba(255,255,255,0.28)" font-family="inherit">← portería</text>'
-      +'<text x="'+(CPW-3)+'" y="'+(CPH-4)+'" font-size="7" fill="rgba(255,255,255,0.28)" text-anchor="end" font-family="inherit">ataque →</text>';
-    // Zone labels at bottom
+    // Zone % labels centred in each band
     var zoneLabels=''
-      +'<text x="'+(lbW/2).toFixed(1)+'" y="'+(CPH-15)+'" font-size="6.5" font-weight="700" fill="rgba(88,166,255,0.75)" text-anchor="middle" font-family="inherit">B '+d.lb+'%</text>'
-      +'<text x="'+(parseFloat(lbW)+parseFloat(mbW)/2).toFixed(1)+'" y="'+(CPH-15)+'" font-size="6.5" font-weight="700" fill="rgba(227,179,65,0.75)" text-anchor="middle" font-family="inherit">M '+d.mb+'%</text>'
-      +'<text x="'+(parseFloat(hbX)+(CPW-parseFloat(hbX))/2).toFixed(1)+'" y="'+(CPH-15)+'" font-size="6.5" font-weight="700" fill="rgba(248,81,73,0.75)" text-anchor="middle" font-family="inherit">A '+d.hb+'%</text>';
-    var lm=(52.5+d.lineX).toFixed(1);
-    var ligaLine='<line x1="'+ligaX+'" y1="0" x2="'+ligaX+'" y2="'+CPH+'" stroke="rgba(200,200,200,0.7)" stroke-width="1.5" stroke-dasharray="4,3"/>';
-    var glow='<line x1="'+matchX+'" y1="0" x2="'+matchX+'" y2="'+CPH+'" stroke="'+col+'" stroke-width="9" stroke-opacity="0.15"/>';
-    var line='<line x1="'+matchX+'" y1="0" x2="'+matchX+'" y2="'+CPH+'" stroke="'+col+'" stroke-width="2.5"/>';
-    var lblX=parseFloat(matchX)+4;
-    var distLabel='<rect x="'+lblX+'" y="2" width="26" height="12" rx="2" fill="rgba(0,0,0,0.55)"/>'
-      +'<text x="'+(lblX+3)+'" y="11" font-size="8" font-weight="bold" fill="'+col+'" font-family="inherit">'+lm+'m</text>';
+      +'<text x="'+(lbW/2).toFixed(1)+'" y="'+(midY+4)+'" font-size="9" font-weight="700" fill="rgba(88,166,255,0.9)" text-anchor="middle" font-family="inherit">'+d.lb+'%</text>'
+      +'<text x="'+(parseFloat(lbW)+parseFloat(mbW)/2).toFixed(1)+'" y="'+(midY+4)+'" font-size="9" font-weight="700" fill="rgba(227,179,65,0.9)" text-anchor="middle" font-family="inherit">'+d.mb+'%</text>'
+      +'<text x="'+(parseFloat(hbX)+(CPW-parseFloat(hbX))/2).toFixed(1)+'" y="'+(midY+4)+'" font-size="9" font-weight="700" fill="rgba(248,81,73,0.9)" text-anchor="middle" font-family="inherit">'+d.hb+'%</text>';
     return '<svg width="'+CPW+'" height="'+CPH+'" style="display:block">'
-      +stripes+zones+marks+labels+zoneLabels+ligaLine+glow+line+distLabel
+      +stripes+zones+marks+zoneLabels
       +'</svg>';
   }
 
