@@ -18097,19 +18097,33 @@
       var sw=+(10.5*CS).toFixed(1);
       var stripes='';
       for(var si=0;si<10;si++) stripes+='<rect x="'+(+(si*10.5*CS).toFixed(1))+'" y="0" width="'+sw+'" height="'+CPH+'" fill="'+(si%2===0?'#1d5228':'#195023')+'"/>';
-      // 15 zone heatmap rects
-      var t1=Math.round(35/105*CPW), t2=Math.round(70/105*CPW); // third boundaries
+      // 15 zone heatmap rects — multi-color scale (per-match normalization)
+      var t1=Math.round(35/105*CPW), t2=Math.round(70/105*CPW);
       var laneH=CPH/5;
       var thirdX=[0,t1,t2,CPW];
       var heatRects='';
       if(zp) {
+        // Normalize per match so within-match contrast is clear
+        var matchMax=1;
+        for(var xz2=0;xz2<3;xz2++) for(var yz2=0;yz2<5;yz2++) matchMax=Math.max(matchMax,zp.z[xz2][yz2]);
+        // Color scale: transparent → blue → cyan → yellow → orange → red
+        function heatColor(cnt) {
+          var r=cnt/matchMax; // 0..1
+          if(r<0.08) return 'rgba(0,0,0,0)';
+          if(r<0.25) return 'rgba(88,166,255,0.35)';   // blue — low
+          if(r<0.50) return 'rgba(63,185,80,0.50)';    // green — moderate
+          if(r<0.72) return 'rgba(251,191,36,0.65)';   // yellow — high
+          if(r<0.88) return 'rgba(251,146,60,0.75)';   // orange — very high
+          return 'rgba(248,81,73,0.85)';                // red — peak
+        }
         for(var xz=0;xz<3;xz++) {
           for(var yz=0;yz<5;yz++) {
             var cnt=zp.z[xz][yz];
-            var alpha=(cnt/mxZone*0.72).toFixed(2);
+            var col2=heatColor(cnt);
+            if(col2==='rgba(0,0,0,0)') continue;
             var rx=thirdX[xz], rw=thirdX[xz+1]-rx;
-            var ry=+(yz*laneH).toFixed(1), rh=+(laneH).toFixed(1);
-            heatRects+='<rect x="'+rx+'" y="'+ry+'" width="'+rw+'" height="'+rh+'" fill="rgba(251,191,36,'+alpha+')" rx="0"/>';
+            var ry=+(yz*laneH).toFixed(1), rh=+(laneH+0.5).toFixed(1);
+            heatRects+='<rect x="'+rx+'" y="'+ry+'" width="'+rw+'" height="'+rh+'" fill="'+col2+'"/>';
           }
         }
       }
@@ -18172,13 +18186,72 @@
         +'<div style="font-size:9px;color:var(--text3)">cadenas que recuperan</div>'
       +'</div>'
     +'</div>';
-    // ── Legend ──────────────────────────────────────────────────────────────
-    var legend='<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;align-items:center">'
-      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#58a6ff;display:inline-block"></span><span style="font-size:10px;color:#58a6ff">Pressing</span></span>'
-      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#f85149;display:inline-block"></span><span style="font-size:10px;color:#f85149">Counter-press</span></span>'
-      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#3fb950;display:inline-block"></span><span style="font-size:10px;color:#3fb950">Recovery</span></span>'
-      +'<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#e3b341;display:inline-block"></span><span style="font-size:10px;color:#e3b341">Presión básica</span></span>'
-      +'<span style="font-size:10px;color:var(--text3)">· Calor amarillo = intensidad zona · Línea 🟢alto / 🟡medio / 🔴bajo pressing</span>'
+    // ── Explanation panel ──────────────────────────────────────────────────
+    var legend='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:18px">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--text1);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Por qu\xe9 estas m\xe9tricas</div>'
+      +'<div style="font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:14px">'
+        +'SkillCorner distingue <strong style="color:var(--text1)">cuatro tipos de acci\xf3n sobre el portador</strong> seg\xfan el contexto t\xe1ctico. Analizar su distribuci\xf3n permite entender si el equipo presiona de forma coordinada, cu\xe1ndo lo hace y en qu\xe9 zona del campo recupera el bal\xf3n.'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
+        +'<div style="display:flex;gap:8px;align-items:flex-start">'
+          +'<div style="width:3px;min-height:44px;border-radius:2px;background:#58a6ff;flex-shrink:0;margin-top:2px"></div>'
+          +'<div><div style="font-size:11px;font-weight:700;color:#58a6ff;margin-bottom:2px">Pressing</div>'
+          +'<div style="font-size:11px;color:var(--text3);line-height:1.5">Presi\xf3n organizada en cadena — varios jugadores coordinan la presi\xf3n de forma sistem\xe1tica para cortar opciones al rival.</div></div>'
+        +'</div>'
+        +'<div style="display:flex;gap:8px;align-items:flex-start">'
+          +'<div style="width:3px;min-height:44px;border-radius:2px;background:#f85149;flex-shrink:0;margin-top:2px"></div>'
+          +'<div><div style="font-size:11px;font-weight:700;color:#f85149;margin-bottom:2px">Counter-press</div>'
+          +'<div style="font-size:11px;color:var(--text3);line-height:1.5">Presi\xf3n inmediata tras p\xe9rdida — la m\xe1s valorada en el f\xfatbol moderno. Se activa en los primeros segundos despu\xe9s de perder el bal\xf3n.</div></div>'
+        +'</div>'
+        +'<div style="display:flex;gap:8px;align-items:flex-start">'
+          +'<div style="width:3px;min-height:44px;border-radius:2px;background:#3fb950;flex-shrink:0;margin-top:2px"></div>'
+          +'<div><div style="font-size:11px;font-weight:700;color:#3fb950;margin-bottom:2px">Recovery press</div>'
+          +'<div style="font-size:11px;color:var(--text3);line-height:1.5">Presi\xf3n de reposicionamiento — un jugador presiona individualmente mientras el bloque se reorganiza, ganando tiempo al equipo.</div></div>'
+        +'</div>'
+        +'<div style="display:flex;gap:8px;align-items:flex-start">'
+          +'<div style="width:3px;min-height:44px;border-radius:2px;background:#e3b341;flex-shrink:0;margin-top:2px"></div>'
+          +'<div><div style="font-size:11px;font-weight:700;color:#e3b341;margin-bottom:2px">Presi\xf3n b\xe1sica</div>'
+          +'<div style="font-size:11px;color:var(--text3);line-height:1.5">Acci\xf3n 1v1 sobre el portador sin coordinaci\xf3n colectiva — la forma m\xe1s elemental e individual de presi\xf3n.</div></div>'
+        +'</div>'
+      +'</div>'
+      +'<div style="border-top:1px solid var(--border);margin-bottom:12px"></div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">'
+        +'<div>'
+          +'<div style="font-size:10px;font-weight:700;color:var(--text1);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Cadenas de pressing</div>'
+          +'<div style="font-size:11px;color:var(--text3);line-height:1.55">Secuencia coordinada de <strong style="color:var(--text2)">2 + jugadores</strong> que presionan consecutivamente. La longitud media indica cu\xe1ntos participan. Termina en <strong style="color:#3fb950">recuperaci\xf3n</strong> (bal\xf3n ganado) o <strong style="color:var(--text3)">disrupci\xf3n</strong> (juego rival frenado sin recuperar).</div>'
+        +'</div>'
+        +'<div>'
+          +'<div style="font-size:10px;font-weight:700;color:var(--text1);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Mapa de zonas</div>'
+          +'<div style="font-size:11px;color:var(--text3);line-height:1.55;margin-bottom:7px">Color de cada zona seg\xfan el volumen de acciones respecto al m\xe1ximo del propio partido. Escala independiente por jornada.</div>'
+          +'<div style="display:flex;align-items:center;gap:3px">'
+            +'<span style="font-size:9px;color:var(--text3);margin-right:2px">bajo</span>'
+            +'<div style="width:16px;height:10px;border-radius:2px;background:rgba(88,166,255,0.35)"></div>'
+            +'<div style="width:16px;height:10px;border-radius:2px;background:rgba(63,185,80,0.50)"></div>'
+            +'<div style="width:16px;height:10px;border-radius:2px;background:rgba(251,191,36,0.65)"></div>'
+            +'<div style="width:16px;height:10px;border-radius:2px;background:rgba(251,146,60,0.75)"></div>'
+            +'<div style="width:16px;height:10px;border-radius:2px;background:rgba(248,81,73,0.85)"></div>'
+            +'<span style="font-size:9px;color:var(--text3);margin-left:2px">pico</span>'
+          +'</div>'
+        +'</div>'
+        +'<div>'
+          +'<div style="font-size:10px;font-weight:700;color:var(--text1);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">L\xednea de altura</div>'
+          +'<div style="font-size:11px;color:var(--text3);line-height:1.55;margin-bottom:7px">Posici\xf3n media (en metros desde el centro) donde el equipo inicia el pressing. El n\xfamero indica distancia al c\xedrculo central.</div>'
+          +'<div style="display:flex;flex-direction:column;gap:4px">'
+            +'<div style="display:flex;align-items:center;gap:6px">'
+              +'<svg width="22" height="8"><line x1="0" y1="4" x2="22" y2="4" stroke="#3fb950" stroke-width="2" stroke-dasharray="4,2"/></svg>'
+              +'<span style="font-size:10px;color:#3fb950">+5m o m\xe1s — pressing alto (campo rival)</span>'
+            +'</div>'
+            +'<div style="display:flex;align-items:center;gap:6px">'
+              +'<svg width="22" height="8"><line x1="0" y1="4" x2="22" y2="4" stroke="#e3b341" stroke-width="2" stroke-dasharray="4,2"/></svg>'
+              +'<span style="font-size:10px;color:#e3b341">0 – 5m — mediocampo / propio</span>'
+            +'</div>'
+            +'<div style="display:flex;align-items:center;gap:6px">'
+              +'<svg width="22" height="8"><line x1="0" y1="4" x2="22" y2="4" stroke="#f85149" stroke-width="2" stroke-dasharray="4,2"/></svg>'
+              +'<span style="font-size:10px;color:#f85149">Negativo — bloque bajo (campo propio)</span>'
+            +'</div>'
+          +'</div>'
+        +'</div>'
+      +'</div>'
     +'</div>';
     // ── Match cards ─────────────────────────────────────────────────────────
     var cards=merged.map(function(d){
