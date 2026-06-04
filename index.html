@@ -18411,11 +18411,14 @@
     var tot={flb:0,flb_d:0,flb_i:0,flb_th:0,slb:0,slb_d:0,slb_i:0,slb_th:0,llb:0,llb_d:0,llb_i:0,llb_th:0};
     data.forEach(function(d){for(var k in tot)tot[k]+=d[k];});
     var avgFlb=+(tot.flb/N).toFixed(1), avgSlb=+(tot.slb/N).toFixed(1), avgLlb=+(tot.llb/N).toFixed(1);
-    var pctDLlb=tot.llb>0?Math.round(tot.llb_d/tot.llb*100):0;
-    var pctILlb=tot.llb>0?Math.round(tot.llb_i/tot.llb*100):0;
-    var pctThLlb=tot.llb>0?Math.round(tot.llb_th/tot.llb*100):0;
-    var pctDSlb=tot.slb>0?Math.round(tot.slb_d/tot.slb*100):0;
-    var pctISlb=tot.slb>0?Math.round(tot.slb_i/tot.slb*100):0;
+    // Use classified total (d+i+th) as denominator so percentages always sum to 100%
+    var llbClass=tot.llb_d+tot.llb_i+tot.llb_th||1;
+    var slbClass=tot.slb_d+tot.slb_i+tot.slb_th||1;
+    var pctDLlb=Math.round(tot.llb_d/llbClass*100);
+    var pctILlb=Math.round(tot.llb_i/llbClass*100);
+    var pctThLlb=100-pctDLlb-pctILlb;
+    var pctDSlb=Math.round(tot.slb_d/slbClass*100);
+    var pctISlb=Math.round(tot.slb_i/slbClass*100);
     var worstJ=data.reduce(function(b,d){return d.llb>b.llb?d:b;},data[0]);
     // Find rival who caused most total backline breaks across all games
     var rivalMap={};
@@ -18426,8 +18429,10 @@
       rivalMap[d.rival].n++;
     });
     var worstRival=Object.keys(rivalMap).reduce(function(best,k){return rivalMap[k].llb>rivalMap[best].llb?k:best;},Object.keys(rivalMap)[0]);
-    var wRD=rivalMap[worstRival].llb_d, wRI=rivalMap[worstRival].llb_i, wRTh=rivalMap[worstRival].llb_th;
-    var wRMaxCarril=wRD>=wRI&&wRD>=wRTh?'Carril Derecho':wRI>=wRD&&wRI>=wRTh?'Carril Izquierdo':'centro';
+    var wR=rivalMap[worstRival];
+    var wRClass=wR.llb_d+wR.llb_i+wR.llb_th||1;
+    var wRPctD=Math.round(wR.llb_d/wRClass*100), wRPctI=Math.round(wR.llb_i/wRClass*100), wRPctTh=100-wRPctD-wRPctI;
+    var wRMaxCarril=wR.llb_d>=wR.llb_i&&wR.llb_d>=wR.llb_th?'Carril Derecho':wR.llb_i>=wR.llb_d&&wR.llb_i>=wR.llb_th?'Carril Izquierdo':'centro';
     var mainThreatVal=Math.max(tot.llb_d,tot.llb_i,tot.llb_th);
     var mainThreat=mainThreatVal===tot.llb_d?'Carril Derecho':mainThreatVal===tot.llb_i?'Carril Izquierdo':'centro';
     // Helper: result color & tag
@@ -18500,13 +18505,16 @@
       +'El rival ha roto la <strong style="color:#f85149">backline</strong> una media de '
       +'<strong style="color:var(--text1)">'+avgLlb+' veces por partido</strong>. '
       +'La vía principal de entrada fue el <strong style="color:var(--text1)">'+mainThreat+'</strong> '
-      +'(D: '+pctDLlb+'% · Central: '+pctThLlb+'% · I: '+pctILlb+'%).'
+      +'— Carril Dcho: <strong style="color:var(--text1)">'+pctDLlb+'%</strong>'
+      +' · Central: <strong style="color:var(--text1)">'+pctThLlb+'%</strong>'
+      +' · Carril Izdo: <strong style="color:var(--text1)">'+pctILlb+'%</strong>.'
       +'</p>'
       +'<p style="color:var(--text2);font-size:13px;line-height:1.65;margin:0 0 8px">'
-      +'El rival que más daño generó fue <strong style="color:var(--text1)">'+worstRival+'</strong>, '
-      +'con <strong style="color:#f85149">'+rivalMap[worstRival].llb+' rupturas de backline</strong> '
-      +'(en '+rivalMap[worstRival].n+(rivalMap[worstRival].n===1?' partido':' partidos')+'), '
-      +'principalmente por el <strong style="color:var(--text1)">'+wRMaxCarril+'</strong>.'
+      +'El rival que más daño generó fue <strong style="color:var(--text1)">'+worstRival+'</strong> '
+      +'('+wR.n+(wR.n===1?' partido':' partidos')+'), con '
+      +'<strong style="color:#f85149">'+wR.llb+' rupturas de backline</strong>. '
+      +'Su carril dominante: <strong style="color:var(--text1)">'+wRMaxCarril+'</strong> '
+      +'(D: '+wRPctD+'% · C: '+wRPctTh+'% · I: '+wRPctI+'%).'
       +'</p>'
       +'<p style="color:var(--text2);font-size:13px;line-height:1.65;margin:0">'
       +'Partido más expuesto: <strong style="color:var(--text1)">'+worstJ.j+' vs '+worstJ.rival+'</strong> — '
