@@ -17650,6 +17650,28 @@
         +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px 6px;margin-bottom:20px">'
           +svg
         +'</div>'
+        // Team analysis block
+        +(function(){
+          var sumR=pts.reduce(function(a,b){return a+b.ppdaR;},0);
+          var avgR=+(sumR/N).toFixed(2);
+          var diff=+(avgPpda-avgR).toFixed(2);
+          var pressMas=pts.filter(function(d){return d.ppda<d.ppdaR;}).length;
+          var is923=currentTeam.id===923;
+          var teamName=is923?'Ponferradina':'Celta Fortuna';
+          var analisis, conclusion;
+          if(is923){
+            analisis='Con un PPDA medio de <strong style="color:'+ppdaColor(avgPpda)+'">'+avgPpda+'</strong>, Ponferradina se sit\xfaa en un pressing moderado-intenso dentro de la categor\xeda. En <strong style="color:var(--text1)">'+pressMas+' de '+N+' partidos</strong> presion\xf3 m\xe1s que su rival, con una diferencia media de <strong style="color:'+(diff<0?'#3fb950':'#f85149')+'">'+(diff<0?diff:'+'+diff)+'</strong> respecto al PPDA rival ('+avgR+'). El equipo alterna jornadas de pressing muy alto — como en J27 (PPDA '+minD.ppda+') — con partidos de bloque bajo donde cede el juego al rival, como en J22 (PPDA '+maxD.ppda+'). En conjunto, el balance de pressing es ligeramente favorable al equipo: presiona un poco m\xe1s de lo que le presionan.';
+            conclusion='El perfil es el de un equipo que no busca el pressing estructural como identidad, sino que adapta la intensidad defensiva seg\xfan el rival y el contexto del partido.';
+          } else {
+            analisis='Con un PPDA medio de <strong style="color:'+ppdaColor(avgPpda)+'">'+avgPpda+'</strong>, Celta Fortuna muestra un pressing moderado-bajo, con un balance casi neutro respecto a sus rivales (diferencia media de <strong style="color:'+(diff<0?'#3fb950':'#f85149')+'">'+(diff<0?diff:'+'+diff)+'</strong>). En <strong style="color:var(--text1)">'+pressMas+' de '+N+' partidos</strong> presion\xf3 m\xe1s que el rival. El valor m\xednimo de '+minD.ppda+' (J'+minD.j.replace('J','')+' vs '+minD.rival+') refleja jornadas muy agresivas, mientras que el pico de '+maxD.ppda+' ('+maxD.j+' vs '+maxD.rival+') indica jornadas donde el equipo opt\xf3 claramente por el bloque.';
+            conclusion='El equipo no muestra un pressing alto como caracter\xedstica sistem\xe1tica: su PPDA medio supera el 10, lo que lo sit\xfaa dentro del perfil de equipos que priorizan el orden defensivo sobre la presi\xf3n sobre el portador.';
+          }
+          return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:12px">'
+            +'<div style="font-size:11px;font-weight:700;color:var(--text1);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">An\xe1lisis — '+teamName+' vs rivales</div>'
+            +'<div style="font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:10px">'+analisis+'</div>'
+            +'<div style="font-size:12px;color:var(--text3);line-height:1.55;border-left:3px solid var(--border);padding-left:10px;font-style:italic">'+conclusion+'</div>'
+          +'</div>';
+        })()
         // PPDA explanation
         +'<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px">'
           +'<div style="font-size:11px;font-weight:700;color:var(--text1);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Qu\xe9 es el PPDA</div>'
