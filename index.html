@@ -15454,16 +15454,48 @@
     {name:'Jorrín',       pos:'LW',  amarillas:[{j:18,m:'Infracción reglamentaria'}], acumulaciones:[], rojas:[]},
   ];
 
+  // ─── SANCIONES Celta Fortuna (8733) ──────────────────────────────────────────
+  // Fuente: Acuerdos del Juez Disciplinario — Primera Federación Grupo 1 — 2025/26
+  // Extraído de los PDFs oficiales de rfef.es (J3, J10, J27 no disponibles)
+  const SANCIONES_DATA_8733 = [
+    {name:'González',      pos:'CB',  amarillas:[{j:1,m:'Juego peligroso'},{j:4,m:'Infracción reglamentaria'},{j:8,m:'Juego peligroso'},{j:9,m:'Infracción reglamentaria'},{j:14,m:'Protestar al árbitro'},{j:15,m:'Juego peligroso'},{j:16,m:'Protestar al árbitro'},{j:25,m:'Pérdida de tiempo'},{j:32,m:'Pérdida de tiempo'},{j:34,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
+    {name:'Anxo R.',       pos:'CB',  amarillas:[{j:4,m:'Juego peligroso'},{j:6,m:'Infracción reglamentaria'},{j:8,m:'Juego peligroso'},{j:14,m:'Infracción reglamentaria'},{j:15,m:'Protestar al árbitro'},{j:17,m:'Juego peligroso'},{j:18,m:'Juego peligroso'},{j:34,m:'Juego peligroso'}], acumulaciones:[{j:12,m:'Suspensión: acumulación'},{j:24,m:'Suspensión: acumulación'}], rojas:[]},
+    {name:'Marcos',        pos:'CM',  amarillas:[{j:4,m:'Infracción reglamentaria'},{j:14,m:'Infracción reglamentaria'},{j:18,m:'Quitarse camiseta'},{j:34,m:'Infracción reglamentaria'}], acumulaciones:[{j:28,m:'Suspensión: acumulación'}], rojas:[{j:21,m:'Conducta violenta (2 partidos)'}]},
+    {name:'Capdevila',     pos:'DM',  amarillas:[{j:2,m:'Infracción reglamentaria'},{j:7,m:'Protestar al árbitro'},{j:14,m:'Infracción reglamentaria'},{j:38,m:'Protestar al árbitro'}], acumulaciones:[], rojas:[{j:26,m:'Doble amarilla'}]},
+    {name:'Burcio',        pos:'DM',  amarillas:[{j:6,m:'Juego peligroso'},{j:16,m:'Infracción reglamentaria'},{j:33,m:'Infracción reglamentaria'},{j:36,m:'Infracción reglamentaria'}], acumulaciones:[], rojas:[{j:7,m:'Expulsión directa'},{j:12,m:'Doble amarilla'}]},
+    {name:'Gavian',        pos:'WB',  amarillas:[{j:8,m:'Pérdida de tiempo'},{j:11,m:'Incumplir instrucciones'},{j:14,m:'Infracción reglamentaria'},{j:26,m:'Infracción reglamentaria'},{j:30,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
+    {name:'H. González',   pos:'RW',  amarillas:[{j:2,m:'Protestar al árbitro'},{j:9,m:'Juego peligroso'},{j:13,m:'Protestar al árbitro'},{j:25,m:'Juego peligroso'}], acumulaciones:[{j:26,m:'Suspensión: acumulación'}], rojas:[]},
+    {name:'Bilbao',        pos:'CM',  amarillas:[{j:1,m:'Infracción reglamentaria'},{j:6,m:'Juego peligroso'},{j:7,m:'Juego peligroso'},{j:25,m:'Pérdida de tiempo'}], acumulaciones:[], rojas:[]},
+    {name:'Marín',         pos:'CF',  amarillas:[{j:9,m:'Juego peligroso'},{j:11,m:'Juego peligroso'},{j:16,m:'Infracción reglamentaria'}], acumulaciones:[{j:36,m:'Suspensión: acumulación'}], rojas:[]},
+    {name:'Antañón',       pos:'DM',  amarillas:[{j:9,m:'Juego peligroso'},{j:22,m:'Protestar al árbitro'},{j:28,m:'Infracción reglamentaria'}], acumulaciones:[], rojas:[]},
+    {name:'Arcos',         pos:'WB',  amarillas:[{j:11,m:'Protestar al árbitro'},{j:17,m:'Juego peligroso'},{j:35,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
+    {name:'Coke',          pos:'CM',  amarillas:[{j:11,m:'Protestar al árbitro'},{j:24,m:'Pérdida de tiempo'},{j:28,m:'Pérdida de tiempo'}], acumulaciones:[], rojas:[]},
+    {name:'Oliveras',      pos:'RB',  amarillas:[{j:14,m:'Infracción reglamentaria'},{j:26,m:'Infracción reglamentaria'},{j:36,m:'Infracción reglamentaria'}], acumulaciones:[], rojas:[]},
+    {name:'Vázquez',       pos:'CB',  amarillas:[{j:17,m:'Infracción reglamentaria'},{j:20,m:'Infracción reglamentaria'},{j:21,m:'Pérdida de tiempo'}], acumulaciones:[], rojas:[]},
+    {name:'Ndiaye',        pos:'DEL', amarillas:[{j:11,m:'Juego peligroso'}], acumulaciones:[], rojas:[{j:16,m:'Sanción grave (2 partidos)'}]},
+    {name:'J. López',      pos:'LB',  amarillas:[{j:2,m:'Juego peligroso'},{j:30,m:'Infracción reglamentaria'}], acumulaciones:[], rojas:[]},
+    {name:'Khayat',        pos:'CB',  amarillas:[{j:13,m:'Infracción reglamentaria'},{j:25,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
+    {name:'Miller',        pos:'RB',  amarillas:[{j:20,m:'Infracción reglamentaria'},{j:23,m:'Infracción reglamentaria'}], acumulaciones:[], rojas:[]},
+    {name:'De la Iglesia', pos:'CM',  amarillas:[{j:21,m:'Juego peligroso'},{j:32,m:'Pérdida de tiempo'}], acumulaciones:[], rojas:[]},
+    {name:'Ribes',         pos:'CB',  amarillas:[{j:22,m:'Juego peligroso'},{j:37,m:'Incumplir instrucciones'}], acumulaciones:[], rojas:[]},
+    {name:'Somuah',        pos:'CF',  amarillas:[{j:26,m:'Juego peligroso'},{j:33,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
+    {name:'Barreiros',     pos:'DM',  amarillas:[{j:21,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
+    {name:'Pérez-Laf.',    pos:'CF',  amarillas:[{j:26,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
+    {name:'Kibet',         pos:'RW',  amarillas:[{j:29,m:'Juego peligroso'}], acumulaciones:[], rojas:[]},
+    {name:'Glez. Maestu',  pos:'CM',  amarillas:[{j:36,m:'Salir terreno sin autorización'}], acumulaciones:[], rojas:[]},
+  ];
+
   let sancionesVista = 'total'; // 'total' | 'jornadas'
 
   function loadSanciones() {
+    const sd = currentTeam.id === 8733 ? SANCIONES_DATA_8733 : SANCIONES_DATA;
     const cont = document.getElementById('content');
-    const totalAm = SANCIONES_DATA.reduce((s,p) => s + p.amarillas.length, 0);
-    const totalRo = SANCIONES_DATA.reduce((s,p) => s + p.rojas.length, 0);
-    const totalAc = SANCIONES_DATA.reduce((s,p) => s + p.acumulaciones.length, 0);
+    const totalAm = sd.reduce((s,p) => s + p.amarillas.length, 0);
+    const totalRo = sd.reduce((s,p) => s + p.rojas.length, 0);
+    const totalAc = sd.reduce((s,p) => s + p.acumulaciones.length, 0);
     const lastJ = 38;
 
-    const sorted = [...SANCIONES_DATA].sort((a,b) =>
+    const sorted = [...sd].sort((a,b) =>
       (b.rojas.length*10 + b.amarillas.length + b.acumulaciones.length) -
       (a.rojas.length*10 + a.amarillas.length + a.acumulaciones.length)
     );
