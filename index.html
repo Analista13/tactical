@@ -17912,38 +17912,85 @@
       return;
     }
 
+    // ── Build match metadata map {jornada_int → {isHome, rival, score, res}} ──
+    const matchMeta = {};
+    if (tid === 923) {
+      const pts = (typeof PARTIDOS_MAP !== 'undefined' && PARTIDOS_MAP[923]) || [];
+      pts.forEach(p => {
+        const jn = parseInt((p.j||'').replace(/\D/g,''), 10);
+        if (!jn) return;
+        const isHome = !!(p.local && (p.local.includes('Ponferradina') || p.local.includes('ponferradina')));
+        const rival = isHome ? (p.vis||'') : (p.local||'');
+        const rv = rival.length > 14 ? rival.substring(0,12)+'…' : rival;
+        const sc = p.s || '?-?';
+        const [gl,gv] = sc.split('-').map(Number);
+        const myG = isHome ? gl : gv, thG = isHome ? gv : gl;
+        const res = isNaN(myG)||isNaN(thG) ? '?' : myG>thG?'W':myG<thG?'L':'D';
+        matchMeta[jn] = {isHome, rival:rv, score:sc, res};
+      });
+    } else {
+      const xd = typeof XLOSS_8733 !== 'undefined' ? XLOSS_8733 : [];
+      xd.forEach(p => {
+        const jn = parseInt((p.j||'').replace(/\D/g,''), 10);
+        if (!jn) return;
+        const isHome = p.loc === 'L';
+        const rv = (p.rival||'').length > 14 ? (p.rival||'').substring(0,12)+'…' : (p.rival||'');
+        matchMeta[jn] = {isHome, rival:rv, score:p.score||'?-?', res:p.res||'?'};
+      });
+    }
+
     const baseLocs = data.locs;
     const allLocs  = _daJornada==='all' ? baseLocs : baseLocs.filter(l=>l.j===_daJornada);
     const totAtt = allLocs.length;
     const totWon = allLocs.filter(l=>l.won).length;
     const totPct = totAtt ? Math.round(totWon/totAtt*100) : 0;
 
-    // Jornada selector
+    // ── Match cards selector ─────────────────────────────────────────────
     const jornadas = data.jornadas || [];
-    const jOpts = jornadas.map(j=>`<option value="${j}" ${_daJornada===j?'selected':''}>J${j}</option>`).join('');
-    const jSel = `<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-      <span style="font-size:11px;color:var(--text3)">Jornada:</span>
-      <select onchange="_daJornada=this.value==='all'?'all':+this.value;renderDuelosAereos()" style="background:var(--bg2);border:1px solid var(--border);color:var(--text1);border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit;cursor:pointer">
-        <option value="all" ${_daJornada==='all'?'selected':''}>Todas</option>
-        ${jOpts}
-      </select>
+    const resCol = r => r==='W'?'#3fb950':r==='D'?'#e3b341':r==='L'?'#f85149':'#8b949e';
+
+    const allCard = (() => {
+      const sel = _daJornada==='all';
+      return `<div onclick="_daJornada='all';renderDuelosAereos()" style="flex-shrink:0;min-width:68px;border:1px solid ${sel?'var(--accent)':'var(--border)'};border-radius:8px;background:${sel?'rgba(88,166,255,0.12)':'var(--bg2)'};cursor:pointer;padding:7px 6px;text-align:center;transition:all .12s">
+        <div style="font-size:11px;font-weight:800;color:${sel?'var(--accent)':'var(--text3)'};letter-spacing:.5px">TODAS</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:2px">${baseLocs.length} duelos</div>
+      </div>`;
+    })();
+
+    const matchCards = jornadas.map(j => {
+      const sel = _daJornada === j;
+      const m = matchMeta[j];
+      const rc = m ? resCol(m.res) : '#8b949e';
+      const icon = m ? (m.isHome ? '🏠' : '✈️') : '';
+      const rivalStr = m ? m.rival : '';
+      const scoreStr = m ? m.score : '';
+      return `<div onclick="_daJornada=${j};renderDuelosAereos()" style="flex-shrink:0;width:84px;border:1px solid ${sel?'var(--accent)':'var(--border)'};border-radius:8px;background:${sel?'rgba(88,166,255,0.12)':'var(--bg2)'};cursor:pointer;padding:6px 5px 5px;text-align:center;transition:all .12s">
+        <div style="font-size:10px;font-weight:800;color:${sel?'var(--accent)':'var(--text2)'};letter-spacing:.3px">J${j}</div>
+        ${m?`<div style="font-size:8.5px;color:var(--text3);margin:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${icon} ${rivalStr}</div>
+        <div style="font-size:12px;font-weight:800;color:${rc};letter-spacing:.5px">${scoreStr}</div>`:'<div style="font-size:9px;color:var(--text3);margin-top:4px">—</div>'}
+      </div>`;
+    }).join('');
+
+    const cardsStrip = `<div style="display:flex;gap:6px;overflow-x:auto;padding:10px 0 8px;flex-shrink:0;scrollbar-width:thin;scrollbar-color:var(--border) transparent">
+      ${allCard}${matchCards}
     </div>`;
 
-    const kpiBar = `<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">
-      <img src="${currentTeam.escudo}" style="width:28px;height:28px;object-fit:contain;flex-shrink:0"/>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:800;color:var(--text1)">DUELOS AÉREOS — ${currentTeam.name.toUpperCase()}</div>
-        <div style="font-size:10px;color:var(--text3)">Temporada 2025/26 · Primera División RFEF</div>
-      </div>
-      ${jSel}
-      <div style="display:flex;gap:16px;flex-shrink:0">
-        <div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--text1)">${totAtt}</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase">Total</div></div>
-        <div style="text-align:center"><div style="font-size:20px;font-weight:800;color:#3fb950">${totWon}</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase">Ganados</div></div>
-        <div style="text-align:center"><div style="font-size:20px;font-weight:800;color:${totPct>=50?'#3fb950':totPct>=35?'#e3b341':'#f85149'}">${totPct}%</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase">% Éxito</div></div>
-      </div>
-    </div>`;
+    // ── Current match info bar ──────────────────────────────────────────
+    let matchBar = '';
+    if (_daJornada !== 'all' && matchMeta[_daJornada]) {
+      const m = matchMeta[_daJornada];
+      const rc = resCol(m.res);
+      const resLabel = m.res==='W'?'VICTORIA':m.res==='D'?'EMPATE':'DERROTA';
+      matchBar = `<div style="display:flex;align-items:center;gap:12px;padding:7px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:10px">
+        <span style="font-size:11px;font-weight:700;color:var(--accent)">J${_daJornada}</span>
+        <span style="font-size:12px;color:var(--text1)">${m.isHome?'🏠':'✈️'} ${m.rival}</span>
+        <span style="font-size:15px;font-weight:800;color:${rc}">${m.score}</span>
+        <span style="font-size:9px;font-weight:700;color:${rc};background:${rc}22;padding:2px 7px;border-radius:4px">${resLabel}</span>
+        <span style="font-size:10px;color:var(--text3);margin-left:auto">${totAtt} duelos · <span style="color:#3fb950">${totWon} gan</span> · <span style="color:#f85149">${totAtt-totWon} perd</span> · <span style="color:${totPct>=50?'#3fb950':totPct>=30?'#e3b341':'#f85149'}">${totPct}%</span></span>
+      </div>`;
+    }
 
-    // ── Jugadores ─────────────────────────────────────────────────────
+    // ── Jugadores tab ────────────────────────────────────────────────────
     if (_daSubTab === 'jugadores') {
       const players = [...data.players].sort((a,b)=>b.att-a.att);
       const maxAtt = players[0]?.att||1;
@@ -17962,80 +18009,69 @@
           <td style="padding:8px"><div style="font-size:9px;color:var(--text3);margin-bottom:3px">${p.att_z||0} ATQ · ${p.mid||0} MED · ${p.def||0} DEF</div><div style="display:flex;gap:2px;align-items:center">${zBar(p.att_z,'#3fb950')}${zBar(p.mid,'#e3b341')}${zBar(p.def,'#58a6ff')}</div></td>
         </tr>`;
       }).join('');
-      cont.innerHTML=`<div style="height:100%;display:flex;flex-direction:column;overflow:hidden">${tabBar}<div style="flex:1;overflow-y:auto;padding:16px 20px">${kpiBar}<table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:2px solid var(--border)"><th style="padding:7px 8px;font-size:10px;color:var(--text3);font-weight:600;text-align:left">#</th><th style="padding:7px 8px;font-size:10px;color:var(--text3);font-weight:600;text-align:left">JUGADOR</th><th style="padding:7px 8px;font-size:10px;color:var(--text3);font-weight:600;text-align:left">DUELOS</th><th style="padding:7px 8px;font-size:10px;color:#3fb950;font-weight:600;text-align:center">GAN.</th><th style="padding:7px 8px;font-size:10px;color:#f85149;font-weight:600;text-align:center">PERD.</th><th style="padding:7px 8px;font-size:10px;color:var(--text3);font-weight:600;text-align:center">%</th><th style="padding:7px 8px;font-size:10px;color:var(--text3);font-weight:600;text-align:left">POR ZONA</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+      cont.innerHTML=`<div style="height:100%;display:flex;flex-direction:column;overflow:hidden">${tabBar}<div style="flex:1;overflow-y:auto;padding:14px 18px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <img src="${currentTeam.escudo}" style="width:22px;height:22px;object-fit:contain"/>
+          <span style="font-size:12px;font-weight:800;color:var(--text1)">DUELOS AÉREOS — ${currentTeam.name.toUpperCase()}</span>
+          <span style="font-size:10px;color:var(--text3)">Temporada 2025/26</span>
+        </div>
+        ${cardsStrip}
+        ${matchBar}
+        <table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:2px solid var(--border)"><th style="padding:7px 8px;font-size:10px;color:var(--text3);font-weight:600;text-align:left">#</th><th style="padding:7px 8px;font-size:10px;color:var(--text3);font-weight:600;text-align:left">JUGADOR</th><th style="padding:7px 8px;font-size:10px;color:var(--text3);font-weight:600;text-align:left">DUELOS</th><th style="padding:7px 8px;font-size:10px;color:#3fb950;font-weight:600;text-align:center">GAN.</th><th style="padding:7px 8px;font-size:10px;color:#f85149;font-weight:600;text-align:center">PERD.</th><th style="padding:7px 8px;font-size:10px;color:var(--text3);font-weight:600;text-align:center">%</th><th style="padding:7px 8px;font-size:10px;color:var(--text3);font-weight:600;text-align:left">POR ZONA</th></tr></thead><tbody>${rows}</tbody></table>
+      </div></div>`;
       return;
     }
 
-    // ── Campo: dos medio campos ────────────────────────────────────────
-    const defLocs = allLocs.filter(l=>l.x<60);   // campo propio
-    const offLocs = allLocs.filter(l=>l.x>=60);  // campo rival
+    // ── Campo: dos medio campos ──────────────────────────────────────────
+    const defLocs = allLocs.filter(l=>l.x<60);
+    const offLocs = allLocs.filter(l=>l.x>=60);
 
-    // Dimensiones de cada medio campo SVG
-    const W=270, H=324, sxD=W/60, sxO=W/60, sy=H/80;
-
-    // 3 zonas en campo defensivo (x: 0-60)
+    const W=270, H=324;
     const DZONES=[{x0:0,x1:20,lbl:'DEF',c:'#58a6ff'},{x0:20,x1:40,lbl:'MED',c:'#e3b341'},{x0:40,x1:60,lbl:'ENT',c:'#a371f7'}];
-    // 3 zonas en campo ofensivo (x: 60-120, offset 60)
     const OZONES=[{x0:60,x1:80,lbl:'SAL',c:'#a371f7'},{x0:80,x1:100,lbl:'ATQ',c:'#e3b341'},{x0:100,x1:120,lbl:'GOL',c:'#3fb950'}];
-    // 5 carriles
     const LANES=[{y0:0,y1:16,lbl:'BI'},{y0:16,y1:32,lbl:'II'},{y0:32,y1:48,lbl:'CEN'},{y0:48,y1:64,lbl:'ID'},{y0:64,y1:80,lbl:'BD'}];
 
     function buildHalfPitch(locs, zones, xOffset, isOff) {
-      const sx = W/60;
-      const zW = W/3, lH = H/5;
-
-      const cells = zones.flatMap((z,zi)=>LANES.map((l,li)=>{
+      const sx = W/60, zW = W/3, lH = H/5, sy = H/80;
+      const cells = zones.flatMap((z)=>LANES.map((l)=>{
         const cl=locs.filter(loc=>loc.x>=z.x0&&loc.x<z.x1&&loc.y>=l.y0&&loc.y<l.y1);
         const total=cl.length, won=cl.filter(loc=>loc.won).length;
         const pct=total?Math.round(won/total*100):null;
-        const px0=(z.x0-xOffset)*sx, px1=(z.x1-xOffset)*sx;
-        return {zi,li,total,won,pct,px0,px1,py0:l.y0*sy,py1:l.y1*sy};
+        const px0=(z.x0-xOffset)*sx;
+        return {total,won,pct,px0,py0:l.y0*sy};
       }));
-
       const cellBgs=cells.map(c=>{
         if(!c.total) return '';
         const col=c.pct>=50?'#3fb950':c.pct>=30?'#e3b341':'#f85149';
         return `<rect x="${c.px0.toFixed(1)}" y="${c.py0.toFixed(1)}" width="${zW.toFixed(1)}" height="${lH.toFixed(1)}" fill="${col}" opacity="0.13"/>`;
       }).join('');
-
       const locsLost=locs.filter(l=>!l.won), locsWon=locs.filter(l=>l.won);
       const mkDot=(l,col)=>{
         const cx=((l.x-xOffset)*sx).toFixed(1), cy=(l.y*sy).toFixed(1);
         return `<circle cx="${cx}" cy="${cy}" r="3" fill="${col}" fill-opacity="0.75" stroke="${col}" stroke-width="0.3"/>`;
       };
       const dots=locsLost.map(l=>mkDot(l,'#f85149')).join('')+locsWon.map(l=>mkDot(l,'#3fb950')).join('');
-
       const cellTexts=cells.map(c=>{
         if(!c.total) return '';
-        const cx=(c.px0+zW/2).toFixed(1), cy=(c.py0+lH/2).toFixed(1);
+        const cx=(c.px0+zW/2).toFixed(1);
         const col=c.pct>=50?'#7ee787':c.pct>=30?'#f0c040':'#ff8080';
         return `<rect x="${(c.px0+zW/2-20).toFixed(1)}" y="${(c.py0+lH/2-12).toFixed(1)}" width="40" height="20" rx="3" fill="rgba(0,0,0,0.55)"/>
 <text x="${cx}" y="${(c.py0+lH/2-1).toFixed(1)}" text-anchor="middle" fill="rgba(255,255,255,0.85)" font-size="7.5" font-family="DM Sans">${c.won}/${c.total}</text>
 <text x="${cx}" y="${(c.py0+lH/2+9).toFixed(1)}" text-anchor="middle" fill="${col}" font-size="9.5" font-weight="700" font-family="DM Sans">${c.pct}%</text>`;
       }).join('');
-
-      // Marcas de campo
+      const sy2 = H/80;
       const zLines=[20,40].map(x=>`<line x1="${((x-xOffset)*sx).toFixed(1)}" y1="0" x2="${((x-xOffset)*sx).toFixed(1)}" y2="${H}" stroke="rgba(255,255,255,0.5)" stroke-width="1.2" stroke-dasharray="5,3"/>`).join('');
-      const lLines=[16,32,48,64].map(y=>`<line x1="0" y1="${(y*sy).toFixed(1)}" x2="${W}" y2="${(y*sy).toFixed(1)}" stroke="rgba(255,255,255,0.3)" stroke-width="0.8" stroke-dasharray="3,3"/>`).join('');
-      const zLabels=zones.map((z,i)=>`<text x="${((z.x0-xOffset+(z.x1-z.x0)/2)*sx).toFixed(1)}" y="12" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="9" font-weight="700" font-family="DM Sans">${z.lbl}</text>`).join('');
-      const lLabels=LANES.map(l=>`<text x="4" y="${((l.y0+l.y1)/2*sy+3).toFixed(1)}" fill="rgba(255,255,255,0.45)" font-size="7" font-family="DM Sans">${l.lbl}</text>`).join('');
-
-      // Penalty area en campo propio (izq) o rival (der)
+      const lLines=[16,32,48,64].map(y=>`<line x1="0" y1="${(y*sy2).toFixed(1)}" x2="${W}" y2="${(y*sy2).toFixed(1)}" stroke="rgba(255,255,255,0.3)" stroke-width="0.8" stroke-dasharray="3,3"/>`).join('');
+      const zLabels=zones.map((z)=>`<text x="${((z.x0-xOffset+(z.x1-z.x0)/2)*sx).toFixed(1)}" y="12" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="9" font-weight="700" font-family="DM Sans">${z.lbl}</text>`).join('');
+      const lLabels=LANES.map(l=>`<text x="4" y="${((l.y0+l.y1)/2*sy2+3).toFixed(1)}" fill="rgba(255,255,255,0.45)" font-size="7" font-family="DM Sans">${l.lbl}</text>`).join('');
       let pArea='';
       if (!isOff) {
-        // Own goal left side
-        pArea=`<rect x="0" y="${((80-40.32)/2*sy).toFixed(1)}" width="${(16.5*sx).toFixed(1)}" height="${(40.32*sy).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="0.9"/>
-<rect x="0" y="${((80-18.32)/2*sy).toFixed(1)}" width="${(5.5*sx).toFixed(1)}" height="${(18.32*sy).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.7"/>`;
+        pArea=`<rect x="0" y="${((80-40.32)/2*sy2).toFixed(1)}" width="${(16.5*sx).toFixed(1)}" height="${(40.32*sy2).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="0.9"/>
+<rect x="0" y="${((80-18.32)/2*sy2).toFixed(1)}" width="${(5.5*sx).toFixed(1)}" height="${(18.32*sy2).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.7"/>`;
       } else {
-        // Opponent goal right side: x=103.5-120 → offset 60 → x_local=43.5-60
-        pArea=`<rect x="${((103.5-xOffset)*sx).toFixed(1)}" y="${((80-40.32)/2*sy).toFixed(1)}" width="${(16.5*sx).toFixed(1)}" height="${(40.32*sy).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="0.9"/>
-<rect x="${((114.5-xOffset)*sx).toFixed(1)}" y="${((80-18.32)/2*sy).toFixed(1)}" width="${(5.5*sx).toFixed(1)}" height="${(18.32*sy).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.7"/>`;
+        pArea=`<rect x="${((103.5-xOffset)*sx).toFixed(1)}" y="${((80-40.32)/2*sy2).toFixed(1)}" width="${(16.5*sx).toFixed(1)}" height="${(40.32*sy2).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="0.9"/>
+<rect x="${((114.5-xOffset)*sx).toFixed(1)}" y="${((80-18.32)/2*sy2).toFixed(1)}" width="${(5.5*sx).toFixed(1)}" height="${(18.32*sy2).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.7"/>`;
       }
-
-      // Half-line
-      const halfX=isOff?0:W;
-      const halfLine=`<line x1="${halfX}" y1="0" x2="${halfX}" y2="${H}" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>`;
-
       return `<svg width="${W}" height="${H}" style="display:block;border-radius:${isOff?'0 8px 8px 0':'8px 0 0 8px'};overflow:hidden;flex-shrink:0">
   ${[0,1,2,3,4,5,6].map(i=>`<rect x="0" y="${(i*H/7).toFixed(1)}" width="${W}" height="${(H/7).toFixed(1)}" fill="${i%2===0?'#2a5c1a':'#265618'}"/>`).join('')}
   ${cellBgs}
@@ -18044,31 +18080,60 @@
 </svg>`;
     }
 
-    const svgDef = buildHalfPitch(defLocs, DZONES, 0,    false);
-    const svgOff = buildHalfPitch(offLocs, OZONES, 60,   true);
+    const svgDef = buildHalfPitch(defLocs, DZONES, 0,  false);
+    const svgOff = buildHalfPitch(offLocs, OZONES, 60, true);
 
     const dW=defLocs.filter(l=>l.won).length, dT=defLocs.length, dP=dT?Math.round(dW/dT*100):0;
     const oW=offLocs.filter(l=>l.won).length, oT=offLocs.length, oP=oT?Math.round(oW/oT*100):0;
 
-    const halfStat=(label,won,total,pct,col)=>`<div style="text-align:center;padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;min-width:90px">
-  <div style="font-size:9px;font-weight:700;color:${col};text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">${label}</div>
-  <div style="display:flex;justify-content:center;gap:10px;align-items:baseline">
-    <span style="font-size:15px;font-weight:800;color:#3fb950">${won}<span style="font-size:9px;color:var(--text3)">G</span></span>
-    <span style="font-size:15px;font-weight:800;color:#f85149">${total-won}<span style="font-size:9px;color:var(--text3)">P</span></span>
-    <span style="font-size:16px;font-weight:800;color:${pct>=50?'#3fb950':pct>=30?'#e3b341':'#f85149'}">${pct}%</span>
+    const halfStat=(label,won,total,pct,col)=>`<div style="text-align:center;padding:5px 9px;background:var(--bg2);border:1px solid var(--border);border-radius:6px">
+  <div style="font-size:9px;font-weight:700;color:${col};text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">${label}</div>
+  <div style="display:flex;justify-content:center;gap:8px;align-items:baseline">
+    <span style="font-size:14px;font-weight:800;color:#3fb950">${won}<span style="font-size:9px;color:var(--text3)">G</span></span>
+    <span style="font-size:14px;font-weight:800;color:#f85149">${total-won}<span style="font-size:9px;color:var(--text3)">P</span></span>
+    <span style="font-size:15px;font-weight:800;color:${pct>=50?'#3fb950':pct>=30?'#e3b341':'#f85149'}">${pct}%</span>
   </div>
 </div>`;
 
+    // ── Player sidebar (season totals) ─────────────────────────────────
+    const topPlayers = [...data.players].sort((a,b)=>b.won-a.won).slice(0,12);
+    const playerRows = topPlayers.map(p=>{
+      const pct = p.att ? Math.round(p.won/p.att*100) : 0;
+      const col = pct>=50?'#3fb950':pct>=30?'#e3b341':'#f85149';
+      const shortName = p.name.split(' ').slice(-1)[0] || p.name;
+      return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:600;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
+          <div style="font-size:9px;color:var(--text3)">${p.att} duelos</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:12px;font-weight:800;color:${col}">${pct}%</div>
+          <div style="font-size:9px;color:var(--text3)">${p.won}G·${p.lost}P</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    const playerSidebar = `<div style="width:160px;flex-shrink:0;margin-left:12px">
+      <div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)">TOP JUGADORES · TEMPORADA</div>
+      ${playerRows}
+    </div>`;
+
     cont.innerHTML=`<div style="height:100%;display:flex;flex-direction:column;overflow:hidden">
   ${tabBar}
-  <div style="flex:1;overflow-y:auto;padding:14px 18px">
-    ${kpiBar}
-    <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+  <div style="flex:1;overflow-y:auto;padding:12px 16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <img src="${currentTeam.escudo}" style="width:22px;height:22px;object-fit:contain;flex-shrink:0"/>
+      <span style="font-size:12px;font-weight:800;color:var(--text1)">DUELOS AÉREOS — ${currentTeam.name.toUpperCase()}</span>
+      <span style="font-size:10px;color:var(--text3)">Temporada 2025/26 · Primera RFEF</span>
+    </div>
+    ${cardsStrip}
+    ${matchBar}
+    <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
       ${halfStat('Defensivos',dW,dT,dP,'#58a6ff')}
       ${halfStat('Ofensivos',oW,oT,oP,'#3fb950')}
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-left:auto">
-        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:50%;background:#3fb950;display:inline-block"></span>Ganado</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:50%;background:#f85149;display:inline-block"></span>Perdido</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-left:auto;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:50%;background:#3fb950;display:inline-block"></span>Ganado</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:50%;background:#f85149;display:inline-block"></span>Perdido</div>
       </div>
     </div>
     <div style="display:flex;gap:0;align-items:flex-start">
@@ -18080,6 +18145,7 @@
         <div style="font-size:10px;font-weight:700;color:#3fb950;text-align:center;margin-bottom:4px;letter-spacing:.5px">DUELOS OFENSIVOS</div>
         ${svgOff}
       </div>
+      ${playerSidebar}
     </div>
   </div>
 </div>`;
