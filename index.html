@@ -17948,6 +17948,12 @@
       });
     }
 
+    // Match panel
+    const jornadas = data.jornadas || [];
+    // Reset jornada/player if they don't exist for this team (e.g. after team switch)
+    if (_daJornada !== 'all' && !jornadas.includes(_daJornada)) _daJornada = 'all';
+    if (_daPlayer && !data.players.find(p=>p.name===_daPlayer)) _daPlayer = null;
+
     // Compute locs: either selected player or all players
     const selPlayer = _daPlayer ? data.players.find(p=>p.name===_daPlayer) : null;
     const baseLocs = selPlayer
@@ -17958,8 +17964,6 @@
     const totWon = allLocs.filter(l=>l.won).length;
     const totPct = totAtt ? Math.round(totWon/totAtt*100) : 0;
 
-    // Match panel
-    const jornadas = data.jornadas || [];
     const curLabel = _daJornada==='all' ? 'TODAS' : 'J'+_daJornada;
     const todasSel = _daJornada === 'all';
     const allLocsFlat = data.players.flatMap(p=>parseLocs(p.locs));
