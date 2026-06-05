@@ -3644,7 +3644,7 @@
     if (lvLocal) lvLocal.style.display = tab === 'bloque' ? 'none' : '';
     if (lvVis)   lvVis.style.display   = tab === 'bloque' ? 'none' : '';
     // Para equipos sin datos de análisis, mostrar placeholder excepto en Plantilla y Acciones Def.
-    if (currentTeam.id !== 923 && tab !== 'plantilla' && tab !== 'accionesdef' && tab !== 'duelosaereos') {
+    if (currentTeam.id !== 923 && tab !== 'plantilla' && tab !== 'accionesdef' && tab !== 'duelosaereos' && tab !== 'sanciones') {
       document.getElementById('content').innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:420px;gap:18px">
           <img src="${currentTeam.escudo}" style="width:64px;height:64px;object-fit:contain;opacity:0.45;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4))">
