@@ -382,7 +382,7 @@
 
   function openTeam(id, name, escudo) {
     currentTeam = {id, name, escudo};
-    pasadoresData = null; // Reset when switching team
+    pasadoresData = null; sbMetrics8733 = null; // Reset when switching team
     PARTIDOS = PARTIDOS_MAP[id] || PARTIDOS_MAP[2908];
     PLAYER_DORSALES = PLAYER_DORSALES_MAP_D[id] || {};
     appState = 'analysis';
@@ -539,6 +539,7 @@
   let plantillaRegatesPlayer = null;
   let progresionSubTab  = 'pasadores'; // 'pasadores' | 'porlinea' | 'receptores' | 'mapa' | 'mapa_rec'
   let pasadoresData     = null;
+  let sbMetrics8733     = null;  // StatsBomb metrics for Celta
   // Estado subtab Mapa Pasadores
   let mapaPasView    = 'total';   // 'total' | 'jornada'
   let mapaPasJornada = 1;
@@ -3095,6 +3096,10 @@ const CELTA_LINEUPS = {
     }
     cont.innerHTML=`${jugSubTabBar()}<div class="loading"><div class="spinner"></div><span>Cargando datos...</span></div>`;
     const partido=PARTIDOS.find(p=>p.id==mid);
+    // Load StatsBomb metrics for Celta if needed
+    if(tid===8733 && !sbMetrics8733 && jugSubTab==='metricas'){
+      try{ const r=await fetch('data/statsbomb_metrics_8733.json'); sbMetrics8733=await r.json(); }catch(e){}
+    }
     try {
       const lineup=await getLineup(mid,tid);
       if(!lineup.length){
@@ -3575,6 +3580,60 @@ const CELTA_LINEUPS = {
               </table>
             </div>
           </div>`;
+        }
+        // ── STATSBOMB ENRICHMENT (solo Celta) ─────────────────────────────────
+        if(tid===8733 && sbMetrics8733){
+          const sbm = sbMetrics8733.metrics || {};
+          const sbPlayers = allPlayers.filter(n => sbm[n]).sort((a,b)=>(sbm[b]?.xt_gen||0)-(sbm[a]?.xt_gen||0));
+          if(sbPlayers.length){
+            const cols=[
+              {k:'pp',   lbl:'PROG',  col:'#34d399', tip:'Pases progresivos (StatsBomb): avanzan ≥10m hacia portería'},
+              {k:'cross',lbl:'CTROS', col:'#60a5fa', tip:'Centros (StatsBomb): pases en profundidad desde banda'},
+              {k:'ka',   lbl:'CLAVE', col:'#f59e0b', tip:'Pases clave (StatsBomb): pases que acaban en tiro'},
+              {k:'ga',   lbl:'→GOL',  col:'#22c55e', tip:'Asistencias (StatsBomb): pases que acaban en gol'},
+              {k:'xt_gen',lbl:'xT↗', col:'var(--accent)', tip:'xT generado (StatsBomb): aumento de amenaza esperada'},
+              {k:'pcarry',lbl:'COND+',col:'#a78bfa', tip:'Conducciones progresivas (StatsBomb)'},
+            ];
+            const maxV={};
+            cols.forEach(c=>{ maxV[c.k]=Math.max(0.001,...sbPlayers.map(n=>sbm[n]?.[c.k]||0)); });
+            const sbBar=(v,m,col)=>`<div style="height:2px;background:var(--bg4);border-radius:1px;margin-top:4px"><div style="height:2px;width:${Math.min(100,Math.round(v/m*100))}%;background:${col};border-radius:1px"></div></div>`;
+            const sbCell=(v,m,disp,col,last=false)=>`<td style="padding:8px 12px;text-align:right;${last?'':'border-right:1px solid rgba(255,255,255,0.06);'}vertical-align:top;min-width:58px">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${col};line-height:1;white-space:nowrap">${disp}</div>
+              ${sbBar(v,m,col)}
+            </td>`;
+            const sbRows=sbPlayers.map(n=>{
+              const m2=sbm[n]; const p=sorted.find(s=>s.name===n)||{tier:2};
+              const tc2=TIER_COL[p.tier??2]; const bo2=TIER_BO[p.tier??2];
+              return `<tr style="border-bottom:1px solid rgba(255,255,255,0.06)" onmouseenter="this.style.background='rgba(255,255,255,0.02)'" onmouseleave="this.style.background=''">
+                <td style="padding:8px 14px;border-right:1px solid rgba(255,255,255,0.06);white-space:nowrap;min-width:140px">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span style="color:${tc2};font-size:8px;font-weight:700;background:rgba(0,0,0,0.3);border:1px solid ${bo2};padding:2px 5px;border-radius:3px;letter-spacing:0.8px;font-family:'DM Mono',monospace">${sbm[n].sb_name?.split('.')[0]||''}</span>
+                    <span style="font-size:12px;font-weight:600;color:var(--text)">${dispN(n)}</span>
+                  </div>
+                </td>
+                ${cols.map((c,ci)=>sbCell(m2[c.k]||0,maxV[c.k],c.k==='xt_gen'?(m2[c.k]||0).toFixed(2):(m2[c.k]||0),c.col,ci===cols.length-1)).join('')}
+              </tr>`;
+            }).join('');
+            const sbThead=`<tr style="border-bottom:2px solid rgba(255,255,255,0.1);background:var(--bg)">
+              <th style="padding:8px 14px;text-align:left;font-size:9px;letter-spacing:1.5px;color:var(--text3);font-weight:600;font-family:'DM Mono',monospace">JUGADOR</th>
+              ${cols.map((c,ci)=>`<th style="padding:8px 12px;text-align:right;font-size:9px;letter-spacing:1.5px;color:${c.col};font-weight:700;font-family:'DM Mono',monospace;${ci<cols.length-1?'border-right:1px solid rgba(255,255,255,0.06);':''}" title="${c.tip}">${c.lbl}</th>`).join('')}
+            </tr>`;
+            html+=`<div style="margin-top:28px;padding-top:20px;border-top:2px solid rgba(255,165,0,0.25)">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+                <div style="font-size:9px;letter-spacing:2px;font-weight:700;color:#f97316;font-family:'DM Mono',monospace">STATSBOMB · TODA LA TEMPORADA</div>
+                <div style="font-size:10px;color:var(--text3)">Métricas de calidad de pase + conducción (StatsBomb Events API)</div>
+              </div>
+              <div style="background:var(--bg2);border:1px solid rgba(255,165,0,0.2);border-radius:var(--radius);overflow-x:auto">
+                <table style="width:100%;border-collapse:collapse;min-width:580px">
+                  <thead>${sbThead}</thead>
+                  <tbody>${sbRows}</tbody>
+                </table>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+                ${cols.map(c=>`<div style="font-size:10px;color:var(--text3);display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:${c.col};display:inline-block"></span>${c.lbl}: ${c.tip}</div>`).join('')}
+              </div>
+            </div>`;
+          }
         }
       } else if(jugSubTab==='calor'){
         // ── ZONAS OFICIALES SKILLCORNER ──────────────────────────────────────
