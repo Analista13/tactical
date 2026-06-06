@@ -2193,6 +2193,29 @@ const CELTA_LINEUPS = {
           <tbody>${rows}</tbody>
         </table>
       </div>
+      <div style="display:flex;flex-wrap:wrap;gap:0;border-top:1px solid rgba(255,255,255,0.06)">
+        <div style="flex:1;min-width:200px;padding:10px 16px;border-right:1px solid rgba(255,255,255,0.04)">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <span style="width:10px;height:10px;border-radius:2px;background:rgba(196,118,48,0.65);display:inline-block;flex-shrink:0"></span>
+            <span style="font-size:10px;font-weight:700;color:rgba(196,118,48,0.9);letter-spacing:1px;font-family:'DM Mono',monospace">PASES</span>
+          </div>
+          <div style="font-size:11px;color:var(--text3);line-height:1.5">Número de pases completados entre ese par de jugadores. Refleja las <b style="color:var(--text2)">combinaciones más recurrentes</b> del equipo.</div>
+        </div>
+        <div style="flex:1;min-width:200px;padding:10px 16px;border-right:1px solid rgba(255,255,255,0.04)">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <span style="width:10px;height:10px;border-radius:2px;background:rgba(30,90,170,0.65);display:inline-block;flex-shrink:0"></span>
+            <span style="font-size:10px;font-weight:700;color:rgba(80,140,210,0.9);letter-spacing:1px;font-family:'DM Mono',monospace">xT</span>
+          </div>
+          <div style="font-size:11px;color:var(--text3);line-height:1.5">Amenaza acumulada: cuánto acercan al gol <b style="color:var(--text2)">todos los pases de esa conexión sumados</b>. Los pases desde posiciones más peligrosas valen más.</div>
+        </div>
+        <div style="flex:1;min-width:200px;padding:10px 16px">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <span style="width:10px;height:10px;border-radius:2px;background:rgba(160,45,55,0.65);display:inline-block;flex-shrink:0"></span>
+            <span style="font-size:10px;font-weight:700;color:rgba(200,80,90,0.9);letter-spacing:1px;font-family:'DM Mono',monospace">xT/PASE</span>
+          </div>
+          <div style="font-size:11px;color:var(--text3);line-height:1.5"><b style="color:var(--text2)">Calidad de cada pase</b> de esa combinación: indica que incluso con pocos pases, esa conexión es muy vertical o llega a zonas peligrosas. Revela automatismos de alto impacto.</div>
+        </div>
+      </div>
     </div>`;
   }
 
