@@ -216,7 +216,7 @@
       logo: 'img/premier_league_logo_white.png',
       season: '2025/26',
       teams: [
-        { id:null, name:'Arsenal FC', escudo:'img/escudos/arsenal.svg', partidos:0, active:false, initials:'AR', color:'#EF0107' },
+        { id:11,   name:'Arsenal FC', escudo:'img/escudos/arsenal.svg', partidos:0, active:true, initials:'AR', color:'#EF0107' },
       ]
     }
   ];
@@ -11944,6 +11944,58 @@ const CELTA_LINEUPS = {
     ],
   };
 
+  // ── Plantilla Arsenal FC 2025-26 ─────────────────────────────────────────────
+  const PLANTILLA_11 = {
+    porteros: [
+      { d:1,  img:'img/jugadores/arsenal/01_raya.png',    name:'David Raya',           pos:'Portero',      age:30, val:'30M€', dob:'15/09/1995', foot:'Derecho', h:'1.83m', nat:'España'   },
+      { d:13, img:'img/jugadores/arsenal/13_kepa.png',    name:'Kepa Arrizabalaga',    pos:'Portero',      age:31, val:'9M€',  dob:'03/10/1994', foot:'Derecho', h:'1.86m', nat:'España'   },
+      { d:39, img:'img/jugadores/arsenal/39_setford.png', name:'Tommy Setford',        pos:'Portero',      age:20, val:'1M€',  dob:'28/02/2006', foot:'Derecho', h:'1.93m', nat:'Inglaterra' },
+    ],
+    defensas: [
+      { d:2,  img:'img/jugadores/arsenal/02_saliba.png',       name:'William Saliba',     pos:'Def. central', age:24, val:'80M€', dob:'24/03/2001', foot:'Derecho',   h:'1.92m', nat:'Francia'   },
+      { d:4,  img:'img/jugadores/arsenal/04_white.png',        name:'Ben White',          pos:'Lateral der.', age:28, val:'45M€', dob:'08/10/1997', foot:'Derecho',   h:'1.86m', nat:'Inglaterra' },
+      { d:6,  img:'img/jugadores/arsenal/06_gabriel.png',      name:'Gabriel Magalhães',  pos:'Def. central', age:27, val:'65M€', dob:'19/12/1997', foot:'Izquierdo', h:'1.90m', nat:'Brasil'    },
+      { d:3,  img:'img/jugadores/arsenal/03_mosquera.png',     name:'Cristhian Mosquera', pos:'Def. central', age:21, val:'30M€', dob:'27/04/2004', foot:'Derecho',   h:'1.85m', nat:'España'    },
+      { d:5,  img:'img/jugadores/arsenal/05_hincapie.png',     name:'Piero Hincapié',     pos:'Def. central', age:23, val:'35M€', dob:'09/01/2002', foot:'Izquierdo', h:'1.80m', nat:'Ecuador'   },
+      { d:33, img:'img/jugadores/arsenal/33_calafiori.png',    name:'Riccardo Calafiori', pos:'Lateral izq.', age:23, val:'40M€', dob:'19/05/2002', foot:'Izquierdo', h:'1.86m', nat:'Italia'    },
+      { d:12, img:'img/jugadores/arsenal/12_timber.png',       name:'Jurriën Timber',     pos:'Lateral der.', age:24, val:'45M€', dob:'17/06/2001', foot:'Derecho',   h:'1.78m', nat:'Países Bajos' },
+      { d:49, img:'img/jugadores/arsenal/49_lewis_skelly.png', name:'Myles Lewis-Skelly', pos:'Lateral izq.', age:19, val:'40M€', dob:'26/09/2006', foot:'Izquierdo', h:'1.78m', nat:'Inglaterra' },
+    ],
+    centrocampistas: [
+      { d:36, img:'img/jugadores/arsenal/36_zubimendi.png', name:'Martín Zubimendi',  pos:'Mediocentro', age:26, val:'60M€', dob:'02/02/1999', foot:'Derecho', h:'1.82m', nat:'España'      },
+      { d:41, img:'img/jugadores/arsenal/41_rice.png',      name:'Declan Rice',       pos:'Mediocentro', age:26, val:'110M€',dob:'14/01/1999', foot:'Derecho', h:'1.85m', nat:'Inglaterra'  },
+      { d:16, img:'img/jugadores/arsenal/16_norgaard.png',  name:'Christian Nørgaard',pos:'Mediocentro', age:31, val:'12M€', dob:'10/03/1994', foot:'Derecho', h:'1.87m', nat:'Dinamarca'   },
+      { d:23, img:'img/jugadores/arsenal/23_merino.png',    name:'Mikel Merino',      pos:'Mediocentro', age:29, val:'35M€', dob:'22/06/1996', foot:'Derecho', h:'1.88m', nat:'España'      },
+      { d:8,  img:'img/jugadores/arsenal/08_odegaard.png',  name:'Martin Ødegaard',   pos:'MC ofensivo', age:26, val:'90M€', dob:'17/12/1998', foot:'Izquierdo', h:'1.78m', nat:'Noruega'   },
+    ],
+    delanteros: [
+      { d:7,  img:'img/jugadores/arsenal/07_saka.png',              name:'Bukayo Saka',           pos:'Extremo der.', age:23, val:'140M€', dob:'05/09/2001', foot:'Izquierdo', h:'1.78m', nat:'Inglaterra' },
+      { d:10, img:'img/jugadores/arsenal/10_eze.png',               name:'Eberechi Eze',          pos:'MC ofensivo',  age:27, val:'65M€',  dob:'29/06/1998', foot:'Derecho',   h:'1.78m', nat:'Inglaterra' },
+      { d:19, img:'img/jugadores/arsenal/19_trossard.png',          name:'Leandro Trossard',      pos:'Extremo izq.', age:30, val:'30M€',  dob:'04/12/1994', foot:'Izquierdo', h:'1.72m', nat:'Bélgica'    },
+      { d:11, img:'img/jugadores/arsenal/11_martinelli.png',        name:'Gabriel Martinelli',    pos:'Extremo izq.', age:24, val:'55M€',  dob:'18/06/2001', foot:'Derecho',   h:'1.78m', nat:'Brasil'     },
+      { d:20, img:'img/jugadores/arsenal/20_madueke.png',           name:'Noni Madueke',          pos:'Extremo der.', age:23, val:'45M€',  dob:'10/03/2002', foot:'Derecho',   h:'1.75m', nat:'Inglaterra' },
+      { d:29, img:'img/jugadores/arsenal/29_havertz.png',           name:'Kai Havertz',           pos:'Delantero',    age:26, val:'70M€',  dob:'11/06/1999', foot:'Derecho',   h:'1.93m', nat:'Alemania'   },
+      { d:9,  img:'img/jugadores/arsenal/09_jesus.png',             name:'Gabriel Jesus',         pos:'Delantero',    age:28, val:'30M€',  dob:'03/04/1997', foot:'Derecho',   h:'1.75m', nat:'Brasil'     },
+      { d:14, img:'img/jugadores/arsenal/14_gyokeres.png',          name:'Viktor Gyökeres',       pos:'Delantero',    age:27, val:'75M€',  dob:'04/06/1998', foot:'Derecho',   h:'1.91m', nat:'Suecia'     },
+      { d:56, img:'img/jugadores/arsenal/56_dowman.png',            name:'Max Dowman',            pos:'Extremo izq.', age:16, val:'4M€',   dob:'31/01/2009', foot:'Derecho',   h:'1.70m', nat:'Inglaterra' },
+      { d:71, img:'img/jugadores/arsenal/71_harriman_annous.png',   name:'Andre Harriman-Annous', pos:'Extremo der.', age:18, val:'1M€',   dob:'27/02/2007', foot:'Derecho',   h:'1.80m', nat:'Inglaterra' },
+    ],
+  };
+
+  // ─── Fichajes 25/26 Arsenal FC (fuente: Transfermarkt) ───────────────────────
+  const FICHAJES_11 = {
+    verano: [
+      { name:'Kepa Arrizabalaga',    pos:'Portero',      img:'img/jugadores/arsenal/13_kepa.png',          from:'Chelsea FC',          liga:'Premier League', type:'Cesión',   val:'9M€',   active:true },
+      { name:'Cristhian Mosquera',   pos:'Def. central', img:'img/jugadores/arsenal/03_mosquera.png',      from:'Valencia CF',         liga:'LaLiga',         type:'Traspaso', val:'15M€',  active:true },
+      { name:'Piero Hincapié',       pos:'Def. central', img:'img/jugadores/arsenal/05_hincapie.png',      from:'Bayer Leverkusen',    liga:'Bundesliga',     type:'Cesión',   val:'25M€',  active:true },
+      { name:'Martín Zubimendi',     pos:'Mediocentro',  img:'img/jugadores/arsenal/36_zubimendi.png',     from:'Real Sociedad',       liga:'LaLiga',         type:'Traspaso', val:'70M€',  active:true },
+      { name:'Eberechi Eze',         pos:'MC ofensivo',  img:'img/jugadores/arsenal/10_eze.png',           from:'Crystal Palace',      liga:'Premier League', type:'Traspaso', val:'69M€',  active:true },
+      { name:'Noni Madueke',         pos:'Extremo der.', img:'img/jugadores/arsenal/20_madueke.png',       from:'Chelsea FC',          liga:'Premier League', type:'Traspaso', val:'52M€',  active:true },
+      { name:'Viktor Gyökeres',      pos:'Delantero',    img:'img/jugadores/arsenal/14_gyokeres.png',      from:'Sporting CP',         liga:'Liga Portugal',  type:'Traspaso', val:'63,5M€',active:true },
+    ],
+    invierno: [],
+  };
+
   function loadPlantillaTab() {
     document.getElementById('content').innerHTML = '<div class="loading"><div class="spinner"></div><span>Cargando plantilla...</span></div>';
     setTimeout(renderPlantillaTab, 0);
@@ -11986,11 +12038,11 @@ const CELTA_LINEUPS = {
       </div>`;
     if (plantillaView === 'fichajes') { renderFichajesTab(); return; }
 
-    const PLANTILLA_MAP = { 923: PLANTILLA_923, 8733: PLANTILLA_8733 };
+    const PLANTILLA_MAP = { 923: PLANTILLA_923, 8733: PLANTILLA_8733, 11: PLANTILLA_11 };
     const d = PLANTILLA_MAP[currentTeam.id] || PLANTILLA_923;
     const total = d.porteros.length + d.defensas.length + d.centrocampistas.length + d.delanteros.length;
 
-    const hasFichajes = currentTeam.id === 923;
+    const hasFichajes = currentTeam.id === 923 || currentTeam.id === 11;
     const tabSwitch = hasFichajes ? `
       <div style="display:inline-flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:3px;margin-bottom:20px">
         <button onclick="plantillaView='plantilla';renderPlantillaTab()" style="padding:6px 20px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:${plantillaView==='plantilla'?'var(--accent)':'transparent'};color:${plantillaView==='plantilla'?'#0d1117':'var(--text2)'}">Plantilla</button>
@@ -12026,7 +12078,7 @@ const CELTA_LINEUPS = {
     const DR_MAP2 = {923: typeof DR_923!=='undefined'?DR_923:[], 8733: typeof DR_8733!=='undefined'?DR_8733:[]};
     const data = DR_MAP2[tid] || [];
 
-    const hasFichajes = tid === 923;
+    const hasFichajes = tid === 923 || tid === 11;
     const tabBtn = (label, view) => {
       const active = plantillaView === view && !(view==='regates');
       const isReg = view==='regates';
@@ -12137,8 +12189,9 @@ const CELTA_LINEUPS = {
   // ═══════════════════════════════════════════════════════════════════
   function renderFichajesTab() {
     const cont = document.getElementById('content');
-    // Solo SD Ponferradina tiene datos de fichajes por ahora
-    if (currentTeam.id !== 923) {
+    const FICHAJES_MAP = { 923: FICHAJES_923, 11: FICHAJES_11 };
+    const fichajesData = FICHAJES_MAP[currentTeam.id];
+    if (!fichajesData) {
       cont.innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:420px;gap:18px">
           <img src="${currentTeam.escudo}" style="width:64px;height:64px;object-fit:contain;opacity:0.45;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4))">
@@ -12217,8 +12270,8 @@ const CELTA_LINEUPS = {
         </div>`;
     };
 
-    const nVerano = FICHAJES_923.verano.length;
-    const nInvierno = FICHAJES_923.invierno.length;
+    const nVerano = fichajesData.verano.length;
+    const nInvierno = fichajesData.invierno.length;
     const tabSwitch = `
       <div style="display:inline-flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:3px;margin-bottom:20px">
         <button onclick="plantillaView='plantilla';renderPlantillaTab()" style="padding:6px 20px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:transparent;color:var(--text2)">Plantilla</button>
@@ -12253,8 +12306,8 @@ const CELTA_LINEUPS = {
           </div>
         </div>
 
-        ${windowSection('☀️', 'Mercado de Verano', '2025 · ' + nVerano + ' incorporaciones', FICHAJES_923.verano, '#e3b341')}
-        ${windowSection('❄️', 'Mercado de Invierno', '2026 · ' + nInvierno + ' incorporaciones', FICHAJES_923.invierno, '#58a6ff')}
+        ${windowSection('☀️', 'Mercado de Verano', '2025 · ' + nVerano + ' incorporaciones', fichajesData.verano, '#e3b341')}
+        ${windowSection('❄️', 'Mercado de Invierno', '2026 · ' + nInvierno + ' incorporaciones', fichajesData.invierno, '#58a6ff')}
 
         <div style="font-size:10px;color:var(--text3);text-align:center;padding-bottom:8px">
           Fuente: Transfermarkt · Valores de mercado a fecha de la temporada
@@ -12729,7 +12782,7 @@ const CELTA_LINEUPS = {
   };
 
   function openPlayerProfile(dorsal) {
-    const PLANTILLA_MAP2 = { 923: PLANTILLA_923, 8733: PLANTILLA_8733 };
+    const PLANTILLA_MAP2 = { 923: PLANTILLA_923, 8733: PLANTILLA_8733, 11: PLANTILLA_11 };
     const _plantilla = PLANTILLA_MAP2[currentTeam.id] || PLANTILLA_923;
     const ALL = [
       ..._plantilla.porteros, ..._plantilla.defensas,
