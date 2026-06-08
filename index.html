@@ -548,6 +548,7 @@
   let pasesSubTab       = 'equipo';   // 'equipo' | 'jugadores' | 'progresion'
   let plantillaView     = 'plantilla'; // 'plantilla' | 'fichajes' | 'regates'
   let equipoSubTab      = 'alineaciones'; // 'alineaciones'
+  let minutosVista      = 'total'; // 'total' | 'jornadas'
   let alineacionesMatchIdx = 0;
   let plantillaRegatesPlayer = null;
   let progresionSubTab  = 'pasadores'; // 'pasadores' | 'porlinea' | 'receptores' | 'mapa' | 'mapa_rec'
@@ -13852,6 +13853,31 @@ const CELTA_LINEUPS = {
       ],
     },
   };
+  const MINUTOS_DATA_14 = [
+    { name:"Alisson Becker", grupo:"GK", grupoLabel:"Portero", apps:26, total:2394, byJ:{1:94,2:90,3:98,4:90,5:94,6:90,12:90,13:92,14:91,15:90,16:90,17:95,18:93,19:92,20:97,21:95,22:90,23:95,24:90,25:90,26:90,27:90,28:90,29:90,30:96,38:92} },
+    { name:"Giorgi Mamardashvili", grupo:"GK", grupoLabel:"Portero", apps:10, total:873, byJ:{7:95,8:90,9:90,10:90,11:90,31:90,32:90,33:58,36:90,37:90} },
+    { name:"Freddie Woodman", grupo:"GK", grupoLabel:"Portero", apps:3, total:222, byJ:{33:42,34:90,35:90} },
+    { name:"Virgil van Dijk", grupo:"DEF", grupoLabel:"Defensa", apps:38, total:3489, byJ:{1:94,2:90,3:98,4:90,5:94,6:90,7:95,8:90,9:90,10:90,11:90,12:90,13:92,14:91,15:90,16:90,17:95,18:93,19:92,20:97,21:95,22:90,23:95,24:90,25:90,26:90,27:90,28:90,29:90,30:96,31:90,32:90,33:100,34:90,35:90,36:90,37:90,38:92} },
+    { name:"Ibrahima Konaté", grupo:"DEF", grupoLabel:"Defensa", apps:36, total:3143, byJ:{1:94,2:90,3:79,4:87,5:94,6:74,7:56,8:90,9:90,10:90,11:90,12:55,13:92,14:91,15:90,16:90,17:95,18:93,19:92,20:97,21:95,22:90,24:90,25:90,26:90,27:90,28:90,29:79,31:77,32:90,33:100,34:90,35:87,36:77,37:90,38:89} },
+    { name:"Milos Kerkez", grupo:"DEF", grupoLabel:"Defensa", apps:34, total:2308, byJ:{1:60,2:90,3:98,4:38,5:94,6:90,7:55,8:90,9:61,11:34,12:68,13:85,14:5,15:90,16:90,17:95,18:93,19:26,20:97,21:95,22:78,23:45,24:90,25:90,27:83,28:90,29:65,31:76,33:14,34:3,35:31,36:90,37:90,38:9} },
+    { name:"Andy Robertson", grupo:"DEF", grupoLabel:"Defensa", apps:23, total:1193, byJ:{1:34,4:52,7:40,9:29,10:90,11:56,12:22,13:7,14:86,16:12,19:66,22:12,23:50,26:90,27:7,29:25,30:96,31:14,32:90,33:86,34:87,35:59,38:83} },
+    { name:"Jeremie Frimpong", grupo:"DEF", grupoLabel:"Defensa", apps:20, total:1067, byJ:{1:60,4:3,6:16,17:35,18:93,19:84,20:21,21:95,22:90,23:59,28:13,29:72,30:64,31:63,32:69,33:16,34:31,35:75,36:90,38:18} },
+    { name:"Conor Bradley", grupo:"DEF", grupoLabel:"Defensa", apps:15, total:959, byJ:{2:10,4:45,5:94,6:45,7:45,8:62,9:62,10:90,11:90,15:68,17:45,18:32,19:79,20:97,21:95} },
+    { name:"Joe Gomez", grupo:"DEF", grupoLabel:"Defensa", apps:20, total:613, byJ:{1:22,3:19,9:7,13:92,14:65,15:22,16:26,20:1,21:0,23:34,26:21,27:7,28:77,29:18,30:96,32:21,34:3,36:13,37:66,38:3} },
+    { name:"Dominik Szoboszlai", grupo:"MID", grupoLabel:"Centrocampista", apps:36, total:3299, byJ:{1:94,2:90,3:98,4:90,5:94,6:90,7:95,8:90,9:90,10:90,11:90,12:90,13:92,14:91,15:90,16:83,17:95,19:92,20:97,21:95,22:90,23:95,24:90,25:90,27:90,28:90,29:90,30:96,31:90,32:90,33:100,34:90,35:90,36:90,37:90,38:92} },
+    { name:"Ryan Gravenberch", grupo:"MID", grupoLabel:"Centrocampista", apps:36, total:3059, byJ:{2:90,3:98,4:90,5:94,6:90,7:95,8:62,10:90,11:90,12:90,13:92,14:91,15:90,16:90,17:95,18:93,19:92,20:97,21:95,22:78,23:95,24:90,25:90,26:90,27:90,28:86,29:45,30:96,31:90,32:45,33:100,34:11,35:90,36:90,37:66,38:83} },
+    { name:"Alexis Mac Allister", grupo:"MID", grupoLabel:"Centrocampista", apps:37, total:2700, byJ:{1:72,3:61,4:45,5:61,6:65,7:86,8:62,9:28,10:90,11:74,12:90,13:92,14:74,15:22,16:90,17:95,18:93,19:26,20:97,21:95,22:12,23:59,24:90,25:90,26:90,27:90,28:90,29:90,30:91,31:90,32:22,33:16,34:90,35:90,36:90,37:90,38:92} },
+    { name:"Florian Wirtz", grupo:"MID", grupoLabel:"Centrocampista", apps:33, total:2427, byJ:{1:82,2:80,3:89,4:87,5:33,6:74,7:50,8:28,9:83,10:13,11:90,13:75,14:91,15:68,16:78,17:95,18:93,19:66,20:76,21:95,22:90,23:95,24:87,25:90,26:90,30:64,31:90,32:68,33:84,34:90,35:90,37:24,38:19} },
+    { name:"Curtis Jones", grupo:"MID", grupoLabel:"Centrocampista", apps:33, total:1980, byJ:{1:22,2:90,3:37,5:33,6:25,7:39,8:28,9:70,11:16,12:78,13:17,14:26,15:90,16:90,17:95,18:93,19:66,20:85,22:87,23:36,24:6,26:15,27:83,29:45,30:32,31:82,32:45,33:100,34:87,35:90,36:90,37:90,38:92} },
+    { name:"Wataru Endo", grupo:"MID", grupoLabel:"Centrocampista", apps:6, total:185, byJ:{1:34,3:9,7:9,23:61,24:3,26:69} },
+    { name:"Trey Nyoni", grupo:"MID", grupoLabel:"Centrocampista", apps:4, total:26, byJ:{18:0,28:4,30:13,38:9} },
+    { name:"Cody Gakpo", grupo:"FWD", grupoLabel:"Delantero", apps:36, total:2798, byJ:{1:94,2:90,3:98,4:90,5:61,6:45,7:95,8:90,9:61,10:90,11:34,12:90,13:92,14:45,15:90,18:7,19:26,20:96,21:95,22:78,23:74,24:90,25:90,26:75,27:77,28:90,29:65,30:83,31:90,32:90,33:84,34:90,35:90,36:77,37:74,38:92} },
+    { name:"Mohamed Salah", grupo:"FWD", grupoLabel:"Delantero", apps:27, total:2198, byJ:{1:94,2:90,3:98,4:90,5:94,6:90,7:95,8:90,9:90,10:90,11:90,12:90,14:46,16:64,23:95,24:84,25:90,26:90,27:77,28:90,29:90,30:32,32:90,33:100,34:59,37:16,38:74} },
+    { name:"Hugo Ekitiké", grupo:"FWD", grupoLabel:"Delantero", apps:28, total:1845, byJ:{1:72,2:80,3:79,4:72,5:67,7:21,8:28,9:90,10:77,11:56,12:35,13:24,14:17,15:90,16:78,17:95,18:86,19:92,22:90,23:36,24:84,25:90,26:90,27:90,28:76,29:90,30:32,31:8} },
+    { name:"Alexander Isak", grupo:"FWD", grupoLabel:"Delantero", apps:13, total:736, byJ:{5:27,6:84,7:74,8:72,12:68,13:68,14:86,16:12,17:50,32:21,33:72,34:79,36:23} },
+    { name:"Rio Ngumoha", grupo:"FWD", grupoLabel:"Delantero", apps:18, total:567, byJ:{4:3,6:6,9:20,12:12,19:8,22:12,23:21,27:13,28:14,29:25,30:64,31:27,32:69,33:28,35:15,36:67,37:90,38:73} },
+    { name:"Federico Chiesa", grupo:"FWD", grupoLabel:"Delantero", apps:23, total:338, byJ:{1:12,2:10,3:19,4:18,6:16,8:18,9:29,12:22,14:5,16:7,17:5,18:61,19:13,20:12,22:3,24:6,27:13,29:11,30:5,31:13,35:3,36:13,37:24} },
+  ];
   function renderEquipoTab() {
     const cont = document.getElementById('content');
     const tabBtn = (id, label) => `<button onclick="equipoSubTab='${id}';renderEquipoTab()" style="padding:6px 20px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:${equipoSubTab===id?'var(--accent)':'transparent'};color:${equipoSubTab===id?'#0d1117':'var(--text2)'}">${label}</button>`;
@@ -13860,11 +13886,186 @@ const CELTA_LINEUPS = {
       <div style="padding:20px 24px">
         <div style="display:inline-flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:3px;margin-bottom:20px">
           ${tabBtn('alineaciones', 'Alineaciones')}
+          ${tabBtn('minutos', 'Minutos')}
         </div>
         <div id="equipo-subtab-content"></div>
       </div>`;
 
     if (equipoSubTab === 'alineaciones') renderEquipoAlineaciones();
+    else if (equipoSubTab === 'minutos') renderEquipoMinutos();
+  }
+
+  function renderEquipoMinutos() {
+    const el = document.getElementById('equipo-subtab-content');
+    if (typeof MINUTOS_DATA_14 === 'undefined' || !el) return;
+    const data = MINUTOS_DATA_14;
+    const lastJ = 38;
+    const GROUP_ORDER = ['GK','DEF','MID','FWD'];
+    const GROUP_LABEL = {GK:'Porteros', DEF:'Defensas', MID:'Centrocampistas', FWD:'Delanteros'};
+    const GROUP_COLOR = {GK:'#e3b341', DEF:'#58a6ff', MID:'#3fb950', FWD:'#f85149'};
+
+    const totalApps = data.reduce((s,p)=>s+p.apps, 0);
+    const totalMin  = data.reduce((s,p)=>s+p.total, 0);
+    const topPlayer = [...data].sort((a,b)=>b.total-a.total)[0];
+    const avgMinPerApp = totalApps ? (totalMin/totalApps) : 0;
+
+    const grouped = GROUP_ORDER.map(g => ({
+      g, label: GROUP_LABEL[g], color: GROUP_COLOR[g],
+      players: data.filter(p => p.grupo === g).sort((a,b)=> b.total - a.total)
+    })).filter(grp => grp.players.length);
+
+    // ── Vista TOTAL ──────────────────────────────────────────────────────────
+    const renderTotal = () => `
+      <div class="table-wrap anim">
+        <table>
+          <thead>
+            <tr>
+              <th>Jugador</th><th>Pos</th>
+              <th style="text-align:center">Partidos</th>
+              <th style="text-align:center">Min. totales</th>
+              <th style="text-align:center">Min/Partido</th>
+              <th>% del total posible</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${grouped.map(grp => `
+              <tr>
+                <td colspan="6" style="background:var(--bg3);font-weight:800;font-size:11px;letter-spacing:0.6px;color:${grp.color};padding:7px 14px;text-transform:uppercase">${grp.label}</td>
+              </tr>
+              ${grp.players.map(p => {
+                const perApp = p.apps ? Math.round(p.total/p.apps) : 0;
+                const pct = Math.min(100, Math.round((p.total/(lastJ*90))*100));
+                return `<tr>
+                  <td style="font-weight:700">${p.name}</td>
+                  <td><span class="pill pill-blue">${p.grupoLabel}</span></td>
+                  <td style="text-align:center;color:var(--text2);font-weight:600">${p.apps}</td>
+                  <td style="text-align:center;color:${grp.color};font-weight:800">${p.total}'</td>
+                  <td style="text-align:center;color:var(--text3)">${perApp}'</td>
+                  <td style="min-width:160px">
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <div style="flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden">
+                        <div style="width:${pct}%;height:100%;background:${grp.color};border-radius:4px"></div>
+                      </div>
+                      <span style="font-size:10px;color:var(--text3);font-weight:700;min-width:30px;text-align:right">${pct}%</span>
+                    </div>
+                  </td>
+                </tr>`;
+              }).join('')}
+            `).join('')}
+          </tbody>
+        </table>
+      </div>`;
+
+    // ── Vista POR JORNADAS ───────────────────────────────────────────────────
+    const renderJornadas = () => {
+      const jHeaders = Array.from({length:lastJ},(_,i)=>`<th style="text-align:center;font-size:10px;color:var(--text3);padding:6px 3px;min-width:20px">J${i+1}</th>`).join('');
+
+      const minColor = (mins) => {
+        if (mins == null) return 'var(--bg4)';
+        if (mins === 0) return 'rgba(248,81,73,0.35)';
+        if (mins < 30) return 'rgba(227,179,65,0.45)';
+        if (mins < 60) return 'rgba(63,185,80,0.45)';
+        return 'rgba(63,185,80,0.85)';
+      };
+
+      const makeCell = (jn, mins, name) => {
+        if (mins == null) {
+          return `<td style="padding:4px 2px;text-align:center"><span style="display:inline-block;width:20px;height:14px;border-radius:3px;background:var(--bg4);opacity:0.35"></span></td>`;
+        }
+        return `<td style="padding:4px 2px;text-align:center">
+          <span class="min-cell" data-tip="J${jn} · ${name}&lt;br&gt;${mins} minutos jugados"
+            style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:16px;border-radius:3px;background:${minColor(mins)};color:#0d1117;font-size:9px;font-weight:800;cursor:pointer;transition:transform .1s"
+            onmouseenter="sancionTip(event,this)" onmouseleave="sancionTipHide()">${mins}</span>
+        </td>`;
+      };
+
+      const rows = grouped.map(grp => `
+        <tr>
+          <td colspan="${lastJ+2}" style="background:var(--bg3);font-weight:800;font-size:11px;letter-spacing:0.6px;color:${grp.color};padding:7px 14px;text-transform:uppercase">${grp.label}</td>
+        </tr>
+        ${grp.players.map(p => {
+          const cells = Array.from({length:lastJ},(_,i)=>{
+            const jn = i+1;
+            const mins = (jn in p.byJ) ? p.byJ[jn] : (p.byJ[String(jn)] !== undefined ? p.byJ[String(jn)] : null);
+            return makeCell(jn, mins, p.name);
+          }).join('');
+          return `<tr>
+            <td style="font-weight:700;white-space:nowrap;padding:7px 14px">${p.name}</td>
+            <td style="padding:7px 8px"><span class="pill pill-blue">${p.grupoLabel}</span></td>
+            ${cells}
+          </tr>`;
+        }).join('')}
+      `).join('');
+
+      return `
+        <div class="table-wrap anim" style="overflow-x:auto">
+          <table style="min-width:1100px">
+            <thead>
+              <tr>
+                <th style="white-space:nowrap">Jugador</th>
+                <th>Pos</th>
+                ${jHeaders}
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    };
+
+    el.innerHTML = `
+      <div class="content-head anim">
+        <div><h2>MINUTOS JUGADOS</h2>
+          <p>Temporada 2025/26 · Premier League · J1–J${lastJ} · Porteros, Defensas, Centrocampistas y Delanteros</p>
+        </div>
+      </div>
+
+      <div class="cards anim" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+        <div class="card">
+          <div class="card-label">Jugadores utilizados</div>
+          <div class="card-value" style="color:var(--accent)">${data.length}</div>
+          <div class="card-sub">en ${lastJ} jornadas</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Más minutos</div>
+          <div class="card-value" style="color:#3fb950;font-size:20px">${topPlayer ? topPlayer.name : '—'}</div>
+          <div class="card-sub">${topPlayer ? topPlayer.total + "' · " + topPlayer.apps + ' partidos' : ''}</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Minutos totales</div>
+          <div class="card-value" style="color:var(--accent)">${totalMin.toLocaleString('es-ES')}</div>
+          <div class="card-sub">acumulados por la plantilla</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Media min/aparición</div>
+          <div class="card-value" style="color:var(--orange)">${avgMinPerApp.toFixed(0)}'</div>
+          <div class="card-sub">por jugador y partido</div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <div style="display:flex;background:var(--bg3);border-radius:8px;padding:3px;gap:2px">
+          <button onclick="minutosVista='total';renderEquipoMinutos()"
+            style="background:${minutosVista==='total'?'var(--bg2)':'transparent'};border:${minutosVista==='total'?'1px solid var(--border)':'1px solid transparent'};color:${minutosVista==='total'?'var(--accent)':'var(--text2)'};border-radius:6px;padding:5px 14px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">
+            Total
+          </button>
+          <button onclick="minutosVista='jornadas';renderEquipoMinutos()"
+            style="background:${minutosVista==='jornadas'?'var(--bg2)':'transparent'};border:${minutosVista==='jornadas'?'1px solid var(--border)':'1px solid transparent'};color:${minutosVista==='jornadas'?'var(--accent)':'var(--text2)'};border-radius:6px;padding:5px 14px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">
+            Por Jornadas
+          </button>
+        </div>
+        ${minutosVista==='jornadas'?'<span style="font-size:11px;color:var(--text3)">Pasa el ratón sobre una celda para ver los minutos jugados en esa jornada</span>':''}
+      </div>
+
+      ${minutosVista==='total' ? renderTotal() : renderJornadas()}
+
+      <div style="margin-top:14px;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text3);display:flex;gap:20px;flex-wrap:wrap;align-items:center">
+        <span style="font-weight:600;color:var(--text2)">Leyenda:</span>
+        <span><span style="display:inline-block;width:14px;height:10px;border-radius:2px;background:rgba(248,81,73,0.35);margin-right:4px"></span>No jugó / 0'</span>
+        <span><span style="display:inline-block;width:14px;height:10px;border-radius:2px;background:rgba(227,179,65,0.45);margin-right:4px"></span>Menos de 30'</span>
+        <span><span style="display:inline-block;width:14px;height:10px;border-radius:2px;background:rgba(63,185,80,0.45);margin-right:4px"></span>Entre 30' y 60'</span>
+        <span><span style="display:inline-block;width:14px;height:10px;border-radius:2px;background:rgba(63,185,80,0.85);margin-right:4px"></span>Más de 60'</span>
+        <span style="margin-left:auto">Datos: Premier League · Comentarios oficiales del partido · J1–J${lastJ}</span>
+      </div>`;
   }
 
   function renderMatchEventTimeline(m) {
