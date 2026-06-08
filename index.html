@@ -208,6 +208,14 @@
         { id:8733, name:'RC Celta Fortuna', escudo:'img/escudos/celta-fortuna.png', partidos:0, active:true, initials:'CF', color:'#6BB5E8' },
         { id:null, name:'CE Europa',      escudo:'', partidos:0, active:false, initials:'CE', color:'#E8B06B' },
       ]
+    },
+    {
+      id: 'premier_league',
+      name: 'Premier League',
+      shortName: 'Inglaterra',
+      logo: 'img/premier_league_logo.svg',
+      season: '2025/26',
+      teams: []
     }
   ];
 
@@ -295,7 +303,7 @@
     const hTitle = document.getElementById('headerTitle');
     if (hTitle) hTitle.textContent = 'Tactical';
     const hSub = document.getElementById('headerSub');
-    if (hSub) { hSub.textContent = 'Primera Federación · Playoff 25/26'; hSub.style.display = ''; }
+    if (hSub) { hSub.style.display = 'none'; }
     const hBadge = document.getElementById('headerBadge');
     if (hBadge) hBadge.style.display = 'none';
     const hLV = document.getElementById('headerLocVis');
