@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1270 1450" fill="none">
+  <!-- Shield outline -->
+  <path d="M635 30 C 380 30 130 95 60 150 C 60 650 200 1130 635 1420 C 1070 1130 1210 650 1210 150 C 1140 95 890 30 635 30 Z" fill="#9C824A"/>
+  <!-- Inner shield -->
+  <path d="M635 80 C 410 80 190 135 130 180 C 130 640 255 1080 635 1355 C 1015 1080 1140 640 1140 180 C 1080 135 860 80 635 80 Z" fill="#EF0107"/>
+  <!-- Navy side stripes -->
+  <path d="M130 180 C 160 165 210 148 270 135 L 270 1230 C 210 1140 160 1010 130 850 Z" fill="#063672"/>
+  <path d="M1140 180 C 1110 165 1060 148 1000 135 L 1000 1230 C 1060 1140 1110 1010 1140 850 Z" fill="#063672"/>
+  <!-- White inner stripes -->
+  <path d="M270 135 L 320 125 L 320 1280 L 270 1230 Z" fill="#FFFFFF"/>
+  <path d="M1000 135 L 950 125 L 950 1280 L 1000 1230 Z" fill="#FFFFFF"/>
+  <!-- Arsenal text -->
+  <text x="635" y="430" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-style="italic" font-size="190" fill="#FFFFFF" stroke="#9C824A" stroke-width="6" text-anchor="middle">Arsenal</text>
+  <!-- Cannon barrel -->
+  <rect x="270" y="730" width="730" height="60" rx="20" fill="#9C824A"/>
+  <rect x="240" y="745" width="100" height="80" rx="30" fill="#9C824A"/>
+  <!-- Cannon wheel -->
+  <circle cx="635" cy="850" r="170" fill="#EF0107" stroke="#FFFFFF" stroke-width="14"/>
+  <circle cx="635" cy="850" r="36" fill="#EF0107" stroke="#FFFFFF" stroke-width="12"/>
+  <g stroke="#FFFFFF" stroke-width="12">
+    <line x1="635" y1="700" x2="635" y2="790"/>
+    <line x1="635" y1="910" x2="635" y2="1000"/>
+    <line x1="500" y1="780" x2="585" y2="820"/>
+    <line x1="685" y1="880" x2="770" y2="920"/>
+    <line x1="770" y1="780" x2="685" y2="820"/>
+    <line x1="585" y1="880" x2="500" y2="920"/>
+  </g>
+  <!-- Cannon support legs -->
+  <path d="M380 880 L 270 1010 L 320 1040 L 430 905 Z" fill="#9C824A"/>
+</svg>
