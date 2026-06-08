@@ -12107,6 +12107,37 @@ const CELTA_LINEUPS = {
     setTimeout(renderEquipoTab, 0);
   }
 
+  const ALINEACIONES_14 = [
+    {
+      jornada: 'Jornada 3', rival: 'Arsenal', resultado: 'Liverpool 1-0 Arsenal',
+      fecha: 'Dom 31 ago 2025', estadio: 'Anfield', formacion: '4-2-3-1',
+      titulares: [
+        { d:1,  name:'Becker',       img:'img/jugadores/liverpool/01_alisson_becker.png',     pos:'Portero',          row:0, col:1 },
+        { d:8,  name:'Szoboszlai',   img:'img/jugadores/liverpool/08_dominik_szoboszlai.png', pos:'Lateral der.',     row:1, col:0, goals:["83'"] },
+        { d:5,  name:'Konaté',       img:'img/jugadores/liverpool/05_ibrahima_konate.png',    pos:'Def. central',     row:1, col:1, subOff:"79'" },
+        { d:4,  name:'van Dijk',     img:'img/jugadores/liverpool/04_virgil_van_dijk.png',    pos:'Def. central',     row:1, col:2, captain:true },
+        { d:6,  name:'Kerkez',       img:'img/jugadores/liverpool/06_milos_kerkez.png',       pos:'Lateral izq.',     row:1, col:3 },
+        { d:38, name:'Gravenberch',  img:'img/jugadores/liverpool/38_ryan_gravenberch.png',   pos:'Mediocentro',      row:2, col:1 },
+        { d:10, name:'Mac Allister', img:'img/jugadores/liverpool/10_alexis_mac_allister.png',pos:'Mediocentro',      row:2, col:2, subOff:"61'" },
+        { d:11, name:'Salah',        img:'img/jugadores/liverpool/11_mohamed_salah.png',      pos:'Extremo der.',     row:3, col:0 },
+        { d:7,  name:'Wirtz',        img:'img/jugadores/liverpool/07_florian_wirtz.png',      pos:'MC ofensivo',      row:3, col:1, subOff:"89'" },
+        { d:18, name:'Gakpo',        img:'img/jugadores/liverpool/18_cody_gakpo.png',         pos:'Extremo izq.',     row:3, col:2 },
+        { d:22, name:'Ekitiké',      img:'img/jugadores/liverpool/22_hugo_ekitike.png',       pos:'Delantero',        row:3, col:3, subOff:"79'" },
+      ],
+      suplentes: [
+        { d:2,  name:'Joe Gomez',         img:'img/jugadores/liverpool/02_joe_gomez.png',          pos:'Def. central',  subOn:"79'" },
+        { d:3,  name:'Wataru Endo',       img:'img/jugadores/liverpool/03_wataru_endo.png',        pos:'Mediocentro',   subOn:"89'" },
+        { d:12, name:'Conor Bradley',     img:'img/jugadores/liverpool/12_conor_bradley.png',      pos:'Lateral der.',  subOn:null },
+        { d:14, name:'Federico Chiesa',   img:'img/jugadores/liverpool/14_federico_chiesa.png',    pos:'Extremo der.',  subOn:"79'" },
+        { d:17, name:'Curtis Jones',      img:'img/jugadores/liverpool/17_curtis_jones.png',       pos:'Mediocentro',   subOn:"61'" },
+        { d:19, name:'Harvey Elliott',    img:null,                                                pos:'Mediocentro',   subOn:null },
+        { d:25, name:'Giorgi Mamardashvili', img:'img/jugadores/liverpool/25_giorgi_mamardashvili.png', pos:'Portero',  subOn:null },
+        { d:26, name:'Andy Robertson',    img:'img/jugadores/liverpool/26_andy_robertson.png',     pos:'Lateral izq.',  subOn:null },
+        { d:73, name:'Rio Ngumoha',       img:'img/jugadores/liverpool/73_rio_ngumoha.png',        pos:'Extremo izq.',  subOn:null },
+      ],
+    },
+  ];
+
   function renderEquipoTab() {
     const cont = document.getElementById('content');
     const tabBtn = (id, label) => `<button onclick="equipoSubTab='${id}';renderEquipoTab()" style="padding:6px 20px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:${equipoSubTab===id?'var(--accent)':'transparent'};color:${equipoSubTab===id?'#0d1117':'var(--text2)'}">${label}</button>`;
@@ -12125,7 +12156,7 @@ const CELTA_LINEUPS = {
   function renderEquipoAlineaciones() {
     const el = document.getElementById('equipo-subtab-content');
     if (!el) return;
-    const ALI_MAP = {};
+    const ALI_MAP = { 14: ALINEACIONES_14 };
     const data = ALI_MAP[currentTeam.id] || [];
     if (!data.length) {
       el.innerHTML = `
