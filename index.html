@@ -548,6 +548,7 @@
   let pasesSubTab       = 'equipo';   // 'equipo' | 'jugadores' | 'progresion'
   let plantillaView     = 'plantilla'; // 'plantilla' | 'fichajes' | 'regates'
   let equipoSubTab      = 'alineaciones'; // 'alineaciones'
+  let alineacionesMatchIdx = 0;
   let plantillaRegatesPlayer = null;
   let progresionSubTab  = 'pasadores'; // 'pasadores' | 'porlinea' | 'receptores' | 'mapa' | 'mapa_rec'
   let pasadoresData     = null;
@@ -12094,6 +12095,41 @@ const CELTA_LINEUPS = {
     setTimeout(renderPlantillaTab, 0);
   }
 
+  // ── Alineaciones Arsenal FC 2025/26 (fuente: premierleague.com) ──────────────
+  // Solo se incluye el XI y banquillo del Arsenal (no el rival), tal y como
+  // aparece en la ficha de "Line-ups" de cada partido.
+  const ALINEACIONES_11 = [
+    {
+      jornada: 'Jornada 2 · Premier League', rival: 'Leeds United', resultado: 'Arsenal 5-0 Leeds',
+      fecha: 'Sáb 23 Ago 2025', estadio: 'Emirates Stadium', formacion: '4-3-3',
+      titulares: [
+        { d:1,  name:'Raya',      img:'img/jugadores/arsenal/01_raya.png',    pos:'GK',  row:0, col:2 },
+        { d:12, name:'Timber',    img:'img/jugadores/arsenal/12_timber.png',  pos:'LB',  row:1, col:0, goals:['34\'','56\''], subOff:'64\'' },
+        { d:2,  name:'Saliba',    img:'img/jugadores/arsenal/02_saliba.png',  pos:'CB',  row:1, col:1 },
+        { d:6,  name:'Magalhães', img:'img/jugadores/arsenal/06_gabriel.png', pos:'CB',  row:1, col:3 },
+        { d:33, name:'Calafiori', img:'img/jugadores/arsenal/33_calafiori.png',pos:'RB', row:1, col:4, subOff:'64\'' },
+        { d:36, name:'Zubimendi', img:'img/jugadores/arsenal/36_zubimendi.png',pos:'CM', row:2, col:1 },
+        { d:41, name:'Rice',      img:'img/jugadores/arsenal/41_rice.png',    pos:'CM',  row:2, col:3 },
+        { d:8,  name:'Ødegaard',  img:'img/jugadores/arsenal/08_odegaard.png',pos:'CAM', row:2, col:2, captain:true, subOff:'38\'' },
+        { d:7,  name:'Saka',      img:'img/jugadores/arsenal/07_saka.png',    pos:'RW',  row:3, col:0, goals:['45+1\''], subOff:'53\'' },
+        { d:14, name:'Gyökeres',  img:'img/jugadores/arsenal/14_gyokeres.png',pos:'ST',  row:3, col:2, goals:['48\'','90+5\' (P)'] },
+        { d:20, name:'Madueke',   img:'img/jugadores/arsenal/20_madueke.png', pos:'LW',  row:3, col:4, subOff:'64\'' },
+      ],
+      suplentes: [
+        { d:22, name:'Ethan Nwaneri',       img:null,                                           pos:'Centrocampista', subOn:'38\' (por Ødegaard)' },
+        { d:19, name:'Leandro Trossard',    img:'img/jugadores/arsenal/19_trossard.png',        pos:'Delantero',      subOn:'53\' (por Saka)' },
+        { d:3,  name:'Cristhian Mosquera',  img:'img/jugadores/arsenal/03_mosquera.png',        pos:'Defensa',        subOn:'64\' (por Timber)' },
+        { d:49, name:'Myles Lewis-Skelly',  img:'img/jugadores/arsenal/49_lewis_skelly.png',    pos:'Defensa',        subOn:'64\' (por Calafiori)' },
+        { d:56, name:'Max Dowman',          img:'img/jugadores/arsenal/56_dowman.png',          pos:'Centrocampista', subOn:'64\' (por Madueke)' },
+        { d:13, name:'Kepa Arrizabalaga',   img:'img/jugadores/arsenal/13_kepa.png',            pos:'Portero',        subOn:null },
+        { d:15, name:'Jakub Kiwior',        img:null,                                           pos:'Defensa',        subOn:null },
+        { d:23, name:'Mikel Merino',        img:'img/jugadores/arsenal/23_merino.png',          pos:'Centrocampista', subOn:null },
+        { d:11, name:'Gabriel Martinelli',  img:'img/jugadores/arsenal/11_martinelli.png',      pos:'Delantero',      subOn:null },
+      ],
+      tarjetas: [], // sin tarjetas para el Arsenal en este partido
+    },
+  ];
+
   // ── Tab "Equipo" ─────────────────────────────────────────────────────────────
   function loadEquipoTab() {
     document.getElementById('content').innerHTML = '<div class="loading"><div class="spinner"></div><span>Cargando equipo...</span></div>';
@@ -12117,7 +12153,86 @@ const CELTA_LINEUPS = {
 
   function renderEquipoAlineaciones() {
     const el = document.getElementById('equipo-subtab-content');
-    if (el) el.innerHTML = '';
+    if (!el) return;
+    const ALI_MAP = { 11: ALINEACIONES_11 };
+    const data = ALI_MAP[currentTeam.id] || [];
+    if (!data.length) {
+      el.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:14px">
+          <div style="font-size:13px;color:var(--text3)">Alineaciones no disponibles para ${currentTeam.name}.</div>
+        </div>`;
+      return;
+    }
+    if (alineacionesMatchIdx >= data.length) alineacionesMatchIdx = 0;
+    const m = data[alineacionesMatchIdx];
+
+    const selector = data.length > 1 ? `
+      <select onchange="alineacionesMatchIdx=parseInt(this.value);renderEquipoAlineaciones()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text1);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:7px 12px;border-radius:8px;margin-bottom:16px;cursor:pointer">
+        ${data.map((d,i) => `<option value="${i}" ${i===alineacionesMatchIdx?'selected':''}>${d.jornada} · vs ${d.rival}</option>`).join('')}
+      </select>` : '';
+
+    const dot = (color, label) => `<span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block"></span>${label}</span>`;
+
+    const playerChip = p => {
+      const photo = p.img
+        ? `<img src="${p.img}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid var(--accent);background:var(--bg3)" onerror="this.outerHTML='<div style=&quot;width:54px;height:54px;border-radius:50%;background:var(--bg3);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:&apos;Bebas Neue&apos;,sans-serif;font-size:18px;color:var(--text2)&quot;>${p.d}</div>'">`
+        : `<div style="width:54px;height:54px;border-radius:50%;background:var(--bg3);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text2)">${p.d}</div>`;
+      const badges = [];
+      if (p.captain) badges.push(`<span style="background:var(--accent);color:#0d1117;font-size:8px;font-weight:800;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center">C</span>`);
+      if (p.goals) p.goals.forEach(g => badges.push(`<span title="Gol ${g}" style="font-size:10px">⚽ <span style="color:var(--text3)">${g}</span></span>`));
+      if (p.subOff) badges.push(`<span title="Sustituido" style="font-size:10px;color:#f85149">↩ ${p.subOff}</span>`);
+      return `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;width:84px">
+          <div style="position:relative">${photo}</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text1);text-align:center;line-height:1.2">${p.d} ${p.name}</div>
+          <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px;min-height:14px">${badges.join('')}</div>
+        </div>`;
+    };
+
+    const rows = [0,1,2,3].map(r => {
+      const players = m.titulares.filter(p => p.row === r).sort((a,b)=>a.col-b.col);
+      if (!players.length) return '';
+      return `<div style="display:flex;justify-content:space-evenly;align-items:flex-start;padding:14px 6px">${players.map(playerChip).join('')}</div>`;
+    }).join('');
+
+    const subRow = p => {
+      const photo = p.img
+        ? `<img src="${p.img}" style="width:38px;height:38px;border-radius:8px;object-fit:cover;object-position:top;background:var(--bg3);flex-shrink:0;border:1px solid var(--border)">`
+        : `<div style="width:38px;height:38px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text3);flex-shrink:0">${p.d}</div>`;
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:9px 16px;border-bottom:1px solid var(--border);opacity:${p.subOn ? 1 : 0.55}">
+          ${photo}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:700;color:var(--text1)">${p.d} ${p.name}</div>
+            <div style="font-size:10px;color:var(--text3)">${p.pos}</div>
+          </div>
+          ${p.subOn
+            ? `<span style="font-size:10px;font-weight:700;color:#3fb950;white-space:nowrap">↪ Entró ${p.subOn}</span>`
+            : `<span style="font-size:10px;color:var(--text3);white-space:nowrap">No utilizado</span>`}
+        </div>`;
+    };
+
+    el.innerHTML = `
+      ${selector}
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px">
+        <div style="padding:14px 18px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-size:13px;font-weight:800;color:var(--text1)">${m.resultado}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">${m.jornada} · ${m.fecha} · ${m.estadio}</div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--accent)">Formación ${m.formacion}</div>
+        </div>
+        <div style="background:radial-gradient(ellipse at center, rgba(63,185,80,0.10), transparent 70%), repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 60px, rgba(255,255,255,0.05) 60px 62px);position:relative;padding:6px 0">
+          ${rows}
+        </div>
+        <div style="padding:10px 18px;display:flex;gap:16px;flex-wrap:wrap;border-top:1px solid var(--border)">
+          ${dot('var(--accent)','Capitán')} ${dot('#3fb950','⚽ Gol')} ${dot('#f85149','↩ Sustituido')}
+        </div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        <div style="padding:12px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text1)">Suplentes</div>
+        ${m.suplentes.map(subRow).join('')}
+      </div>`;
   }
 
   function renderPlantillaTab() {
