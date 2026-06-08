@@ -12117,7 +12117,7 @@ const CELTA_LINEUPS = {
         { d:5,  name:'Konaté',       img:'img/jugadores/liverpool/05_ibrahima_konate.png',    pos:'Def. central',     row:1, col:1, subOff:"79'" },
         { d:4,  name:'van Dijk',     img:'img/jugadores/liverpool/04_virgil_van_dijk.png',    pos:'Def. central',     row:1, col:2, captain:true },
         { d:6,  name:'Kerkez',       img:'img/jugadores/liverpool/06_milos_kerkez.png',       pos:'Lateral izq.',     row:1, col:3 },
-        { d:38, name:'Gravenberch',  img:'img/jugadores/liverpool/38_ryan_gravenberch.png',   pos:'Mediocentro',      row:2, col:1 },
+        { d:38, name:'Gravenberch',  img:'img/jugadores/liverpool/38_ryan_gravenberch.png',   pos:'Mediocentro',      row:2, col:1, card:'amarilla' },
         { d:10, name:'Mac Allister', img:'img/jugadores/liverpool/10_alexis_mac_allister.png',pos:'Mediocentro',      row:2, col:2, subOff:"61'" },
         { d:11, name:'Salah',        img:'img/jugadores/liverpool/11_mohamed_salah.png',      pos:'Extremo der.',     row:3, col:0 },
         { d:7,  name:'Wirtz',        img:'img/jugadores/liverpool/07_florian_wirtz.png',      pos:'MC ofensivo',      row:3, col:1, subOff:"89'" },
@@ -12183,6 +12183,7 @@ const CELTA_LINEUPS = {
       if (p.captain) badges.push(`<span style="background:var(--accent);color:#0d1117;font-size:8px;font-weight:800;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center">C</span>`);
       if (p.goals) p.goals.forEach(g => badges.push(`<span title="Gol ${g}" style="font-size:10px">⚽ <span style="color:var(--text3)">${g}</span></span>`));
       if (p.subOff) badges.push(`<span title="Sustituido" style="font-size:10px;color:#f85149">↩ ${p.subOff}</span>`);
+      if (p.card) badges.push(`<span title="Tarjeta ${p.card}" style="display:inline-block;width:9px;height:13px;border-radius:2px;background:${p.card==='roja'?'#f85149':'#e3b341'};box-shadow:0 0 0 1px rgba(0,0,0,0.35)"></span>`);
       return `
         <div style="display:flex;flex-direction:column;align-items:center;gap:5px;width:84px">
           <div style="position:relative">${photo}</div>
@@ -12196,6 +12197,24 @@ const CELTA_LINEUPS = {
       if (!players.length) return '';
       return `<div style="display:flex;justify-content:space-evenly;align-items:flex-start;padding:14px 6px">${players.map(playerChip).join('')}</div>`;
     }).join('');
+
+    const lineCol = 'rgba(255,255,255,0.32)';
+    const pitchLines = `
+      <div style="position:absolute;inset:8px 22px;border:2px solid ${lineCol};border-radius:6px;pointer-events:none;z-index:0">
+        <div style="position:absolute;left:0;right:0;top:50%;border-top:2px solid ${lineCol}"></div>
+        <div style="position:absolute;left:50%;top:50%;width:104px;height:104px;transform:translate(-50%,-50%);border:2px solid ${lineCol};border-radius:50%"></div>
+        <div style="position:absolute;left:50%;top:50%;width:6px;height:6px;transform:translate(-50%,-50%);background:${lineCol};border-radius:50%"></div>
+        <div style="position:absolute;left:50%;top:0;width:48%;height:16%;transform:translateX(-50%);border:2px solid ${lineCol};border-top:none"></div>
+        <div style="position:absolute;left:50%;top:0;width:24%;height:6.5%;transform:translateX(-50%);border:2px solid ${lineCol};border-top:none"></div>
+        <div style="position:absolute;left:50%;top:16%;width:64px;height:32px;margin-left:-32px;border:2px solid ${lineCol};border-top:none;border-radius:0 0 50px 50px;clip-path:inset(0 0 50% 0)"></div>
+        <div style="position:absolute;left:50%;bottom:0;width:48%;height:16%;transform:translateX(-50%);border:2px solid ${lineCol};border-bottom:none"></div>
+        <div style="position:absolute;left:50%;bottom:0;width:24%;height:6.5%;transform:translateX(-50%);border:2px solid ${lineCol};border-bottom:none"></div>
+        <div style="position:absolute;left:50%;bottom:16%;width:64px;height:32px;margin-left:-32px;border:2px solid ${lineCol};border-bottom:none;border-radius:50px 50px 0 0;clip-path:inset(50% 0 0 0)"></div>
+        <div style="position:absolute;left:-2px;top:-2px;width:20px;height:20px;border:2px solid transparent;border-top-color:${lineCol};border-left-color:${lineCol};border-radius:50%;clip-path:inset(50% 0 0 50%)"></div>
+        <div style="position:absolute;right:-2px;top:-2px;width:20px;height:20px;border:2px solid transparent;border-top-color:${lineCol};border-right-color:${lineCol};border-radius:50%;clip-path:inset(50% 50% 0 0)"></div>
+        <div style="position:absolute;left:-2px;bottom:-2px;width:20px;height:20px;border:2px solid transparent;border-bottom-color:${lineCol};border-left-color:${lineCol};border-radius:50%;clip-path:inset(0 0 50% 50%)"></div>
+        <div style="position:absolute;right:-2px;bottom:-2px;width:20px;height:20px;border:2px solid transparent;border-bottom-color:${lineCol};border-right-color:${lineCol};border-radius:50%;clip-path:inset(0 50% 50% 0)"></div>
+      </div>`;
 
     const subRow = p => {
       const photo = p.img
@@ -12224,11 +12243,16 @@ const CELTA_LINEUPS = {
           </div>
           <div style="font-size:11px;font-weight:700;color:var(--accent)">Formación ${m.formacion}</div>
         </div>
-        <div style="background:radial-gradient(ellipse at center, rgba(63,185,80,0.10), transparent 70%), repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 60px, rgba(255,255,255,0.05) 60px 62px);position:relative;padding:6px 0">
-          ${rows}
+        <div style="position:relative;min-height:600px;padding:10px 0;overflow:hidden;background:repeating-linear-gradient(180deg, #1f6e3c 0 42px, #246e40 42px 84px);box-shadow:inset 0 0 60px rgba(0,0,0,0.35)">
+          ${pitchLines}
+          <div style="position:relative;z-index:1;display:flex;flex-direction:column;justify-content:space-between;min-height:580px;padding:14px 6px">
+            ${rows}
+          </div>
         </div>
         <div style="padding:10px 18px;display:flex;gap:16px;flex-wrap:wrap;border-top:1px solid var(--border)">
           ${dot('var(--accent)','Capitán')} ${dot('#3fb950','⚽ Gol')} ${dot('#f85149','↩ Sustituido')}
+          <span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)"><span style="display:inline-block;width:8px;height:11px;border-radius:1.5px;background:#e3b341"></span>Tarjeta amarilla</span>
+          <span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)"><span style="display:inline-block;width:8px;height:11px;border-radius:1.5px;background:#f85149"></span>Tarjeta roja</span>
         </div>
       </div>
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden">
