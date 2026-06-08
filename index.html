@@ -547,6 +547,7 @@
   let pasesDropdownOpen = false;      // dropdown selector de partido
   let pasesSubTab       = 'equipo';   // 'equipo' | 'jugadores' | 'progresion'
   let plantillaView     = 'plantilla'; // 'plantilla' | 'fichajes' | 'regates'
+  let equipoSubTab      = 'alineaciones'; // 'alineaciones'
   let plantillaRegatesPlayer = null;
   let progresionSubTab  = 'pasadores'; // 'pasadores' | 'porlinea' | 'receptores' | 'mapa' | 'mapa_rec'
   let pasadoresData     = null;
@@ -12100,7 +12101,23 @@ const CELTA_LINEUPS = {
   }
 
   function renderEquipoTab() {
-    document.getElementById('content').innerHTML = '';
+    const cont = document.getElementById('content');
+    const tabBtn = (id, label) => `<button onclick="equipoSubTab='${id}';renderEquipoTab()" style="padding:6px 20px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:${equipoSubTab===id?'var(--accent)':'transparent'};color:${equipoSubTab===id?'#0d1117':'var(--text2)'}">${label}</button>`;
+
+    cont.innerHTML = `
+      <div style="padding:20px 24px">
+        <div style="display:inline-flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:3px;margin-bottom:20px">
+          ${tabBtn('alineaciones', 'Alineaciones')}
+        </div>
+        <div id="equipo-subtab-content"></div>
+      </div>`;
+
+    if (equipoSubTab === 'alineaciones') renderEquipoAlineaciones();
+  }
+
+  function renderEquipoAlineaciones() {
+    const el = document.getElementById('equipo-subtab-content');
+    if (el) el.innerHTML = '';
   }
 
   function renderPlantillaTab() {
