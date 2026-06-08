@@ -13905,6 +13905,14 @@ const CELTA_LINEUPS = {
     const GROUP_LABEL = {GK:'Porteros', DEF:'Defensas', MID:'Centrocampistas', FWD:'Delanteros'};
     const GROUP_COLOR = {GK:'#e3b341', DEF:'#58a6ff', MID:'#3fb950', FWD:'#f85149'};
 
+    const jornadaInfo = {};
+    if (typeof ALINEACIONES_14 !== 'undefined') {
+      ALINEACIONES_14.forEach(m => {
+        const num = parseInt((m.jornada.match(/\d+/)||[])[0]);
+        if (num) jornadaInfo[num] = { rival: m.rival, loc: m.loc };
+      });
+    }
+
     const totalApps = data.reduce((s,p)=>s+p.apps, 0);
     const totalMin  = data.reduce((s,p)=>s+p.total, 0);
     const topPlayer = [...data].sort((a,b)=>b.total-a.total)[0];
@@ -13973,10 +13981,12 @@ const CELTA_LINEUPS = {
         if (mins == null) {
           return `<td style="padding:4px 2px;text-align:center"><span style="display:inline-block;width:20px;height:14px;border-radius:3px;background:var(--bg4);opacity:0.35"></span></td>`;
         }
+        const info = jornadaInfo[jn];
+        const rivalLine = info ? `&lt;br&gt;${info.loc === 'H' ? 'vs' : '@'} ${info.rival}` : '';
         return `<td style="padding:4px 2px;text-align:center">
-          <span class="min-cell" data-tip="J${jn} · ${name}&lt;br&gt;${mins} minutos jugados"
+          <span class="min-cell" data-tip="J${jn} · ${name}${rivalLine}&lt;br&gt;${mins} minutos jugados"
             style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:16px;border-radius:3px;background:${minColor(mins)};color:#0d1117;font-size:9px;font-weight:800;cursor:pointer;transition:transform .1s"
-            onmouseenter="sancionTip(event,this)" onmouseleave="sancionTipHide()">${mins}</span>
+            onmouseenter="sancionTip(event,this)" onmouseleave="sancionTipHide();this.style.transform=''">${mins}</span>
         </td>`;
       };
 
