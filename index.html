@@ -12122,7 +12122,7 @@ const CELTA_LINEUPS = {
         { d:11, name:'Salah',        img:'img/jugadores/liverpool/11_mohamed_salah.png',      pos:'Extremo der.',     row:3, col:0 },
         { d:7,  name:'Wirtz',        img:'img/jugadores/liverpool/07_florian_wirtz.png',      pos:'MC ofensivo',      row:3, col:1, subOff:"89'" },
         { d:18, name:'Gakpo',        img:'img/jugadores/liverpool/18_cody_gakpo.png',         pos:'Extremo izq.',     row:3, col:2 },
-        { d:22, name:'Ekitiké',      img:'img/jugadores/liverpool/22_hugo_ekitike.png',       pos:'Delantero',        row:3, col:3, subOff:"79'" },
+        { d:22, name:'Ekitiké',      img:'img/jugadores/liverpool/22_hugo_ekitike.png',       pos:'Delantero',        row:4, col:1, subOff:"79'" },
       ],
       suplentes: [
         { d:2,  name:'Joe Gomez',         img:'img/jugadores/liverpool/02_joe_gomez.png',          pos:'Def. central',  subOn:"79'" },
@@ -12192,7 +12192,7 @@ const CELTA_LINEUPS = {
         </div>`;
     };
 
-    const rows = [0,1,2,3].map(r => {
+    const rows = [0,1,2,3,4].map(r => {
       const players = m.titulares.filter(p => p.row === r).sort((a,b)=>a.col-b.col);
       if (!players.length) return '';
       return `<div style="display:flex;justify-content:space-evenly;align-items:flex-start;padding:14px 6px">${players.map(playerChip).join('')}</div>`;
