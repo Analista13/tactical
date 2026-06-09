@@ -555,6 +555,8 @@
   let asistVista        = 'tabla'; // 'tabla' | 'campo'
   let asistPlayerSel    = '';
   let alineacionesMatchIdx = 0;
+  let alineacionesSubTab   = 'vista'; // 'vista' | 'jugadores' | 'formaciones'
+  let aliFormSel           = null;    // selected formation group key
   let plantillaRegatesPlayer = null;
   let progresionSubTab  = 'pasadores'; // 'pasadores' | 'porlinea' | 'receptores' | 'mapa' | 'mapa_rec'
   let pasadoresData     = null;
@@ -14912,12 +14914,28 @@ const CELTA_LINEUPS = {
     const ALI_MAP = { 14: ALINEACIONES_14 };
     const data = ALI_MAP[currentTeam.id] || [];
     if (!data.length) {
-      el.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:14px">
-          <div style="font-size:13px;color:var(--text3)">Alineaciones no disponibles para ${currentTeam.name}.</div>
-        </div>`;
+      el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:14px"><div style="font-size:13px;color:var(--text3)">Alineaciones no disponibles.</div></div>`;
       return;
     }
+
+    // ── Sub-tab bar ──────────────────────────────────────────────────────────
+    const aliSubBtn = (id, label) => `
+      <button onclick="alineacionesSubTab='${id}';renderEquipoAlineaciones()"
+        style="background:${alineacionesSubTab===id?'var(--bg2)':'transparent'};border:${alineacionesSubTab===id?'1px solid var(--border)':'1px solid transparent'};color:${alineacionesSubTab===id?'var(--accent)':'var(--text2)'};border-radius:6px;padding:5px 14px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">${label}</button>`;
+
+    const subNav = `<div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap">
+      ${aliSubBtn('vista','Vista partido')}
+      ${aliSubBtn('jugadores','Jugadores utilizados')}
+      ${aliSubBtn('formaciones','Alineaciones repetidas')}
+    </div>`;
+
+    if (alineacionesSubTab === 'jugadores') {
+      _renderAliJugadores(el, data, subNav); return;
+    }
+    if (alineacionesSubTab === 'formaciones') {
+      _renderAliFormaciones(el, data, subNav); return;
+    }
+
     if (alineacionesMatchIdx >= data.length) alineacionesMatchIdx = 0;
     const m = data[alineacionesMatchIdx];
 
@@ -15024,6 +15042,7 @@ const CELTA_LINEUPS = {
     };
 
     el.innerHTML = `
+      ${subNav}
       ${selector}
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px">
         <div style="padding:14px 18px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
@@ -15049,6 +15068,212 @@ const CELTA_LINEUPS = {
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden">
         <div style="padding:12px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text1)">Suplentes</div>
         ${m.suplentes.map(subRow).join('')}
+      </div>`;
+  }
+
+  // ── Alineaciones: Jugadores utilizados ──────────────────────────────────
+  function _renderAliJugadores(el, data, subNav) {
+    // Collect all unique players across all matches
+    const playerMap = {}; // name → { name, d, img, pos, T:Set<j>, S:Set<j>, played:Set<j> }
+    data.forEach(m => {
+      const jNum = parseInt((m.jornada.match(/\d+/) || ['0'])[0]);
+      m.titulares.forEach(p => {
+        if (!playerMap[p.name]) playerMap[p.name] = { name:p.name, d:p.d, img:p.img, pos:p.pos, T:new Set(), S:new Set() };
+        playerMap[p.name].T.add(jNum);
+      });
+      m.suplentes.forEach(p => {
+        if (!playerMap[p.name]) playerMap[p.name] = { name:p.name, d:p.d, img:p.img, pos:p.pos, T:new Set(), S:new Set() };
+        if (p.subOn) playerMap[p.name].S.add(jNum); // only who actually played
+      });
+    });
+
+    // Sort players: by total appearances desc, then by d
+    const players = Object.values(playerMap).sort((a,b) => {
+      const ta = a.T.size + a.S.size, tb = b.T.size + b.S.size;
+      return tb - ta || a.d - b.d;
+    });
+
+    const jornadas = data.map(m => parseInt((m.jornada.match(/\d+/) || ['0'])[0])).sort((a,b)=>a-b);
+    const matchByJ = {};
+    data.forEach(m => {
+      const j = parseInt((m.jornada.match(/\d+/) || ['0'])[0]);
+      matchByJ[j] = m;
+    });
+
+    // Column widths
+    const thStyle = `style="padding:5px 4px;font-size:10px;color:var(--text3);text-align:center;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--bg3);z-index:2;min-width:28px;white-space:nowrap"`;
+    const nameTh = `style="padding:5px 10px;font-size:10px;color:var(--text3);text-align:left;border-bottom:2px solid var(--border);position:sticky;top:0;left:0;background:var(--bg3);z-index:3;white-space:nowrap;min-width:130px"`;
+
+    const headers = jornadas.map(j => {
+      const m = matchByJ[j];
+      const lj = m.loc === 'H' ? '🏠' : '✈️';
+      const parts = (m.resultado.match(/(\d+)-(\d+)/) || [null,'0','0']).slice(1).map(Number);
+      const liv = m.loc === 'H' ? parts[0] : parts[1];
+      const riv = m.loc === 'H' ? parts[1] : parts[0];
+      const col = liv > riv ? '#22c55e' : liv === riv ? '#f59e0b' : '#ef4444';
+      return `<th ${thStyle}>
+        <div style="font-weight:800;color:var(--text2)">J${j}</div>
+        <div style="font-size:9px;color:${col}">${liv}-${riv}</div>
+      </th>`;
+    }).join('');
+
+    const rows = players.map(p => {
+      const tCount = p.T.size, sCount = p.S.size, total = tCount + sCount;
+      const cells = jornadas.map(j => {
+        if (p.T.has(j)) return `<td style="text-align:center;padding:4px 2px"><span style="display:inline-block;width:22px;height:22px;border-radius:4px;background:#166534;color:#4ade80;font-size:10px;font-weight:800;line-height:22px;text-align:center" title="Titular J${j}">T</span></td>`;
+        if (p.S.has(j)) return `<td style="text-align:center;padding:4px 2px"><span style="display:inline-block;width:22px;height:22px;border-radius:4px;background:#1c3461;color:#60a5fa;font-size:10px;font-weight:700;line-height:22px;text-align:center" title="Suplente J${j}">S</span></td>`;
+        // Check if in squad (in suplentes but didn't play)
+        const m = matchByJ[j];
+        if (m && m.suplentes.some(s => s.name === p.name)) return `<td style="text-align:center;padding:4px 2px"><span style="display:inline-block;width:22px;height:22px;border-radius:4px;background:var(--bg3);color:var(--text3);font-size:9px;line-height:22px;text-align:center" title="En banco J${j}">B</span></td>`;
+        // Check if not in squad at all for this jornada
+        const inAny = m && (m.titulares.some(t=>t.name===p.name) || m.suplentes.some(s=>s.name===p.name));
+        return `<td style="text-align:center;padding:4px 2px;color:var(--border)">—</td>`;
+      }).join('');
+
+      return `<tr style="border-bottom:1px solid var(--border);transition:background 0.15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+        <td style="padding:6px 10px;position:sticky;left:0;background:var(--bg2);z-index:1;white-space:nowrap;border-right:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;font-weight:700;color:var(--text3);width:16px;flex-shrink:0">${p.d}</span>
+            <span style="font-size:12px;font-weight:700;color:var(--text1)">${p.name}</span>
+            <span style="font-size:10px;color:var(--text3)">${p.pos}</span>
+          </div>
+        </td>
+        <td style="text-align:center;padding:6px 8px;font-size:11px;font-weight:800;color:#4ade80;white-space:nowrap">${tCount}</td>
+        <td style="text-align:center;padding:6px 8px;font-size:11px;font-weight:800;color:#60a5fa;white-space:nowrap">${sCount}</td>
+        <td style="text-align:center;padding:6px 8px;font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap">${total}</td>
+        ${cells}
+      </tr>`;
+    }).join('');
+
+    el.innerHTML = `${subNav}
+      <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;gap:10px;align-items:center">
+          <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)"><span style="display:inline-block;width:16px;height:16px;border-radius:3px;background:#166534;color:#4ade80;font-size:9px;font-weight:800;line-height:16px;text-align:center">T</span>Titular</span>
+          <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)"><span style="display:inline-block;width:16px;height:16px;border-radius:3px;background:#1c3461;color:#60a5fa;font-size:9px;font-weight:700;line-height:16px;text-align:center">S</span>Suplente que jugó</span>
+          <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)"><span style="display:inline-block;width:16px;height:16px;border-radius:3px;background:var(--bg3);color:var(--text3);font-size:9px;line-height:16px;text-align:center">B</span>En banco (no jugó)</span>
+          <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">— No convocado</span>
+        </div>
+      </div>
+      <div style="overflow-x:auto;border-radius:10px;border:1px solid var(--border)">
+        <table style="border-collapse:collapse;width:max-content;min-width:100%">
+          <thead>
+            <tr>
+              <th ${nameTh}>Jugador</th>
+              <th ${thStyle} style="min-width:32px;color:#4ade80">T</th>
+              <th ${thStyle} style="min-width:32px;color:#60a5fa">S</th>
+              <th ${thStyle} style="min-width:32px">Total</th>
+              ${headers}
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  // ── Alineaciones: Formaciones repetidas ──────────────────────────────────
+  function _renderAliFormaciones(el, data, subNav) {
+    // Group matches by (formation + sorted starter names)
+    const groups = {}; // key → { formation, players:[], matches:[] }
+    data.forEach(m => {
+      const names = m.titulares.map(p => p.name).sort().join('|');
+      const key = m.formacion + '::' + names;
+      if (!groups[key]) groups[key] = { formation: m.formacion, players: m.titulares.map(p=>p.name).sort(), matches: [] };
+      groups[key].matches.push(m);
+    });
+
+    // Sort by frequency desc
+    const sorted = Object.entries(groups).sort((a,b) => b[1].matches.length - a[1].matches.length);
+
+    if (!aliFormSel) aliFormSel = sorted[0]?.[0] || null;
+
+    const selGroup = aliFormSel ? groups[aliFormSel] : null;
+    const selMatches = selGroup ? selGroup.matches : [];
+
+    // Sidebar: list of formation groups
+    const sidebar = sorted.map(([key, g]) => {
+      const isAct = key === aliFormSel;
+      const jList = g.matches.map(m => 'J' + (m.jornada.match(/\d+/)||['?'])[0]).join(', ');
+      return `<div onclick="aliFormSel='${key.replace(/'/g,"\\'")}';renderEquipoAlineaciones()"
+        style="padding:10px 12px;cursor:pointer;border-radius:8px;background:${isAct?'#1e3a5f':'var(--bg3)'};border:1.5px solid ${isAct?'#3b82f6':'var(--border)'};margin-bottom:6px;transition:all 0.15s">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:800;color:${isAct?'#93c5fd':'var(--text1)'};">${g.formation}</span>
+          <span style="background:${isAct?'#3b82f6':'#334155'};color:white;font-size:11px;font-weight:800;border-radius:20px;padding:1px 9px">${g.matches.length}×</span>
+        </div>
+        <div style="font-size:10px;color:var(--text3);line-height:1.5">${jList}</div>
+      </div>`;
+    }).join('');
+
+    // Match cards for selected group
+    const matchCards = selMatches.map(m => {
+      const jNum = (m.jornada.match(/\d+/)||['?'])[0];
+      const lj = m.loc === 'H' ? '🏠' : '✈️';
+      const parts = (m.resultado.match(/(\d+)-(\d+)/) || [null,'0','0']).slice(1).map(Number);
+      const liv = m.loc === 'H' ? parts[0] : parts[1];
+      const riv = m.loc === 'H' ? parts[1] : parts[0];
+      const col = liv > riv ? '#22c55e' : liv === riv ? '#f59e0b' : '#ef4444';
+      const rival = m.rival.length > 14 ? m.rival.slice(0,13)+'…' : m.rival;
+      return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;min-width:110px;flex-shrink:0">
+        <div style="font-size:10px;font-weight:800;color:var(--text3);margin-bottom:2px">J${jNum} ${lj}</div>
+        <div style="font-size:12px;font-weight:700;color:var(--text1);margin-bottom:4px">${rival}</div>
+        <div style="font-size:16px;font-weight:900;color:${col}">${parts[0]}-${parts[1]}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${m.formacion}</div>
+      </div>`;
+    }).join('');
+
+    // Stats for selected group
+    let wins=0, draws=0, losses=0, gf=0, ga=0;
+    selMatches.forEach(m => {
+      const parts = (m.resultado.match(/(\d+)-(\d+)/) || [null,'0','0']).slice(1).map(Number);
+      const liv = m.loc === 'H' ? parts[0] : parts[1];
+      const riv = m.loc === 'H' ? parts[1] : parts[0];
+      gf+=liv; ga+=riv;
+      if (liv>riv) wins++; else if (liv===riv) draws++; else losses++;
+    });
+
+    // Player list for selected group
+    const playerList = selGroup ? selGroup.players.map(name => {
+      // find player full info from any match
+      let info = null;
+      selMatches.forEach(m => { const f = m.titulares.find(p=>p.name===name); if(f) info=f; });
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+        ${info?.img ? `<img src="${info.img}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;object-position:top;border:1px solid var(--border)">` : `<div style="width:28px;height:28px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3)">${info?.d||'?'}</div>`}
+        <span style="font-size:11px;font-weight:700;color:var(--text1)">${info?.d||''} ${name}</span>
+        <span style="font-size:10px;color:var(--text3);margin-left:auto">${info?.pos||''}</span>
+      </div>`;
+    }).join('') : '';
+
+    const statChip = (val, label, col) => `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 16px;text-align:center">
+      <div style="font-size:22px;font-weight:900;color:${col}">${val}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px">${label}</div>
+    </div>`;
+
+    el.innerHTML = `${subNav}
+      <div style="display:flex;gap:18px;align-items:flex-start">
+        <div style="width:185px;flex-shrink:0">
+          <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Alineaciones · ${sorted.length} distintas</div>
+          ${sidebar}
+        </div>
+        <div style="flex:1;min-width:0">
+          ${selGroup ? `
+          <div style="margin-bottom:16px">
+            <div style="font-size:16px;font-weight:900;color:var(--text1);margin-bottom:4px">Formación ${selGroup.formation} <span style="font-size:12px;font-weight:600;color:var(--text3)">(${selMatches.length} partido${selMatches.length!==1?'s':''})</span></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+              ${statChip(wins,'Victorias','#22c55e')}
+              ${statChip(draws,'Empates','#f59e0b')}
+              ${statChip(losses,'Derrotas','#ef4444')}
+              ${statChip(gf+':'+ga,'Goles','var(--text2)')}
+              ${statChip(((wins+draws*0.33)/selMatches.length*100).toFixed(0)+'%','Puntos %','#60a5fa')}
+            </div>
+            <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Partidos con esta alineación</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">${matchCards}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div>
+                <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">11 Titulares</div>
+                <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px">${playerList}</div>
+              </div>
+            </div>
+          ` : '<div style="color:var(--text3);font-size:12px">Selecciona una alineación a la izquierda.</div>'}
+        </div>
       </div>`;
   }
 
