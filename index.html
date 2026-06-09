@@ -550,6 +550,10 @@
   let equipoSubTab      = 'alineaciones'; // 'alineaciones'
   let minutosVista      = 'total'; // 'total' | 'jornadas'
   let tarjetasVista     = 'total'; // 'total' | 'jornadas'
+  let golesVista        = 'tabla'; // 'tabla' | 'porteria'
+  let golesPlayerSel    = '';
+  let asistVista        = 'tabla'; // 'tabla' | 'campo'
+  let asistPlayerSel    = '';
   let alineacionesMatchIdx = 0;
   let plantillaRegatesPlayer = null;
   let progresionSubTab  = 'pasadores'; // 'pasadores' | 'porlinea' | 'receptores' | 'mapa' | 'mapa_rec'
@@ -13898,6 +13902,111 @@ const CELTA_LINEUPS = {
     { name:"Mohamed Salah", grupo:"FWD", grupoLabel:"Delantero", posShort:"EXT DER", yellow:1, red:0, byJ_Y:{9:1}, byJ_R:{} },
     { name:"Federico Chiesa", grupo:"FWD", grupoLabel:"Delantero", posShort:"DC", yellow:1, red:0, byJ_Y:{6:1}, byJ_R:{} },
   ];
+
+  const GOLES_DATA_14 = [
+    {name:"Dominik Szoboszlai",jornada:25,rival:"Man City",loc:"H",min:73,xG:0.035,xGoT:0.2736,body:"PD",x:72.2,y:50.5,goalY:45.9,goalZ:20.3},
+    {name:"Ryan Gravenberch",jornada:36,rival:"Chelsea",loc:"H",min:5,xG:0.0445,xGoT:0.0553,body:"PD",x:83.3,y:65.1,goalY:47.9,goalZ:25.3},
+    {name:"Hugo Ekitiké",jornada:24,rival:"Newcastle",loc:"H",min:40,xG:0.2659,xGoT:0.2901,body:"PD",x:94.3,y:56.7,goalY:52.7,goalZ:9.5},
+    {name:"Hugo Ekitiké",jornada:24,rival:"Newcastle",loc:"H",min:42,xG:0.111,xGoT:0.8457,body:"PD",x:92.8,y:65.8,goalY:45.8,goalZ:2.5},
+    {name:"Florian Wirtz",jornada:24,rival:"Newcastle",loc:"H",min:66,xG:0.2175,xGoT:0.915,body:"PD",x:87.6,y:42.9,goalY:54.3,goalZ:4.4},
+    {name:"Ibrahima Konaté",jornada:24,rival:"Newcastle",loc:"H",min:92,xG:0.1377,xGoT:0.7219,body:"PD",x:91.4,y:51.1,goalY:52.9,goalZ:1.9},
+    {name:"Ryan Gravenberch",jornada:5,rival:"Everton",loc:"H",min:9,xG:0.1347,xGoT:0.6787,body:"PD",x:91.3,y:34.3,goalY:54.3,goalZ:13.3},
+    {name:"Hugo Ekitiké",jornada:5,rival:"Everton",loc:"H",min:28,xG:0.3005,xGoT:0.3519,body:"PD",x:91.6,y:35.0,goalY:54.2,goalZ:3.2},
+    {name:"Dominik Szoboszlai",jornada:30,rival:"Tottenham",loc:"H",min:17,xG:0.0419,xGoT:0.0645,body:"PD",x:79.3,y:64.9,goalY:52.0,goalZ:22.2},
+    {name:"Alexander Isak",jornada:13,rival:"West Ham",loc:"A",min:59,xG:0.1667,xGoT:0.7634,body:"PD",x:88.3,y:58.3,goalY:54.1,goalZ:1.9},
+    {name:"Cody Gakpo",jornada:13,rival:"West Ham",loc:"A",min:91,xG:0.3433,xGoT:0.1955,body:"PD",x:90.6,y:48.5,goalY:50.0,goalZ:12.7},
+    {name:"Cody Gakpo",jornada:8,rival:"Man United",loc:"H",min:77,xG:0.9288,xGoT:0.9688,body:"PD",x:98.6,y:49.9,goalY:53.8,goalZ:20.3},
+    {name:"Ryan Gravenberch",jornada:2,rival:"Newcastle",loc:"A",min:34,xG:0.0231,xGoT:0.3377,body:"PD",x:79.0,y:63.8,goalY:54.4,goalZ:3.2},
+    {name:"Hugo Ekitiké",jornada:2,rival:"Newcastle",loc:"A",min:45,xG:0.2048,xGoT:0.7543,body:"PD",x:84.9,y:53.2,goalY:54.4,goalZ:3.8},
+    {name:"Rio Ngumoha",jornada:2,rival:"Newcastle",loc:"A",min:99,xG:0.3553,xGoT:0.8729,body:"PD",x:90.9,y:58.5,goalY:46.0,goalZ:17.7},
+    {name:"Virgil van Dijk",jornada:23,rival:"Bournemouth",loc:"A",min:44,xG:0.1337,xGoT:0.755,body:"Cab",x:95.5,y:54.8,goalY:47.6,goalZ:22.2},
+    {name:"Dominik Szoboszlai",jornada:23,rival:"Bournemouth",loc:"A",min:79,xG:0.0492,xGoT:0.1249,body:"PD",x:80.8,y:69.1,goalY:46.8,goalZ:8.9},
+    {name:"Mohamed Salah",jornada:29,rival:"Wolves",loc:"A",min:82,xG:0.2534,xGoT:0.4567,body:"PI",x:90.3,y:38.7,goalY:46.2,goalZ:22.8},
+    {name:"Ryan Gravenberch",jornada:18,rival:"Wolves",loc:"H",min:40,xG:0.1287,xGoT:0.6088,body:"PD",x:88.2,y:41.5,goalY:46.3,goalZ:3.8},
+    {name:"Florian Wirtz",jornada:18,rival:"Wolves",loc:"H",min:41,xG:0.6628,xGoT:0.3117,body:"PD",x:93.9,y:50.0,goalY:49.1,goalZ:15.8},
+    {name:"Mohamed Salah",jornada:10,rival:"Aston Villa",loc:"H",min:45,xG:0.1024,xGoT:0.5214,body:"PD",x:87.6,y:26.8,goalY:48.7,goalZ:2.5},
+    {name:"Ryan Gravenberch",jornada:10,rival:"Aston Villa",loc:"H",min:57,xG:0.1283,xGoT:0.1306,body:"PI",x:84.4,y:47.7,goalY:50.2,goalZ:4.4},
+    {name:"Dominik Szoboszlai",jornada:35,rival:"Man United",loc:"A",min:46,xG:0.1358,xGoT:0.6202,body:"PI",x:88.4,y:58.5,goalY:47.4,goalZ:2.5},
+    {name:"Cody Gakpo",jornada:35,rival:"Man United",loc:"A",min:55,xG:0.3691,xGoT:0.481,body:"PI",x:89.4,y:57.2,goalY:51.8,goalZ:0.6},
+    {name:"Florian Wirtz",jornada:22,rival:"Burnley",loc:"H",min:41,xG:0.1012,xGoT:0.688,body:"PD",x:87.5,y:60.3,goalY:53.6,goalZ:30.4},
+    {name:"Virgil van Dijk",jornada:37,rival:"Aston Villa",loc:"A",min:51,xG:0.2006,xGoT:0.8367,body:"Cab",x:94.3,y:58.5,goalY:45.7,goalZ:12.7},
+    {name:"Virgil van Dijk",jornada:37,rival:"Aston Villa",loc:"A",min:91,xG:0.1977,xGoT:0.4786,body:"Cab",x:94.4,y:47.9,goalY:47.7,goalZ:8.2},
+    {name:"Hugo Ekitiké",jornada:16,rival:"Brighton",loc:"H",min:0,xG:0.2081,xGoT:0.345,body:"PD",x:89.0,y:48.8,goalY:49.0,goalZ:31.6},
+    {name:"Hugo Ekitiké",jornada:16,rival:"Brighton",loc:"H",min:59,xG:0.2809,xGoT:0.7605,body:"Cab",x:98.9,y:60.2,goalY:52.4,goalZ:19.6},
+    {name:"Dominik Szoboszlai",jornada:3,rival:"Arsenal",loc:"H",min:82,xG:0.034,xGoT:0.1848,body:"PD",x:73.8,y:52.0,goalY:54.4,goalZ:22.8},
+    {name:"Milos Kerkez",jornada:31,rival:"Brighton",loc:"A",min:29,xG:0.3721,xGoT:0.1993,body:"PI",x:86.9,y:55.5,goalY:50.6,goalZ:10.8},
+    {name:"Alexis Mac Allister",jornada:27,rival:"Nottingham",loc:"A",min:96,xG:0.586,xGoT:0.2583,body:"PD",x:96.4,y:51.3,goalY:50.1,goalZ:11.4},
+    {name:"Mohamed Salah",jornada:33,rival:"Everton",loc:"A",min:28,xG:0.5203,xGoT:0.6234,body:"PI",x:93.5,y:42.8,goalY:51.6,goalZ:2.5},
+    {name:"Virgil van Dijk",jornada:33,rival:"Everton",loc:"A",min:99,xG:0.2308,xGoT:0.3016,body:"Cab",x:95.6,y:50.0,goalY:51.2,goalZ:17.7},
+    {name:"Virgil van Dijk",jornada:26,rival:"Sunderland",loc:"A",min:60,xG:0.3489,xGoT:0.9482,body:"Cab",x:96.7,y:49.3,goalY:52.2,goalZ:30.4},
+    {name:"Hugo Ekitiké",jornada:1,rival:"Bournemouth",loc:"H",min:36,xG:0.5487,xGoT:0.62,body:"PD",x:90.7,y:57.0,goalY:48.0,goalZ:3.2},
+    {name:"Cody Gakpo",jornada:1,rival:"Bournemouth",loc:"H",min:48,xG:0.1217,xGoT:0.4385,body:"PD",x:87.0,y:52.1,goalY:47.1,goalZ:3.2},
+    {name:"Federico Chiesa",jornada:1,rival:"Bournemouth",loc:"H",min:87,xG:0.1556,xGoT:0.8582,body:"PD",x:89.8,y:53.4,goalY:46.1,goalZ:8.9},
+    {name:"Mohamed Salah",jornada:1,rival:"Bournemouth",loc:"H",min:93,xG:0.1099,xGoT:0.4931,body:"PD",x:90.7,y:64.2,goalY:47.2,goalZ:1.9},
+    {name:"Mohamed Salah",jornada:4,rival:"Burnley",loc:"A",min:94,xG:0.7884,xGoT:0.9845,body:"PI",x:90.3,y:48.5,goalY:48.1,goalZ:28.5},
+    {name:"Hugo Ekitiké",jornada:28,rival:"West Ham",loc:"H",min:4,xG:0.0514,xGoT:0.5666,body:"PD",x:88.2,y:65.1,goalY:53.6,goalZ:0.6},
+    {name:"Virgil van Dijk",jornada:28,rival:"West Ham",loc:"H",min:23,xG:0.1958,xGoT:0.8155,body:"Cab",x:97.0,y:52.3,goalY:47.1,goalZ:21.5},
+    {name:"Alexis Mac Allister",jornada:28,rival:"West Ham",loc:"H",min:42,xG:0.0865,xGoT:0.5222,body:"PD",x:89.4,y:56.9,goalY:52.7,goalZ:27.8},
+    {name:"Cody Gakpo",jornada:28,rival:"West Ham",loc:"H",min:69,xG:0.0294,xGoT:0.279,body:"PD",x:93.3,y:68.0,goalY:46.8,goalZ:2.5},
+    {name:"Milos Kerkez",jornada:9,rival:"Brentford",loc:"A",min:49,xG:0.597,xGoT:0.861,body:"PD",x:95.9,y:55.9,goalY:48.2,goalZ:19.6},
+    {name:"Mohamed Salah",jornada:9,rival:"Brentford",loc:"A",min:88,xG:0.1095,xGoT:0.7147,body:"PD",x:89.6,y:38.3,goalY:46.1,goalZ:32.3},
+    {name:"Cody Gakpo",jornada:7,rival:"Chelsea",loc:"A",min:62,xG:0.548,xGoT:0.9455,body:"PD",x:96.3,y:48.9,goalY:52.5,goalZ:32.3},
+    {name:"Florian Wirtz",jornada:20,rival:"Fulham",loc:"A",min:56,xG:0.3942,xGoT:0.4331,body:"PI",x:94.1,y:39.0,goalY:52.1,goalZ:7.6},
+    {name:"Cody Gakpo",jornada:20,rival:"Fulham",loc:"A",min:93,xG:0.3601,xGoT:0.7807,body:"PI",x:97.3,y:56.0,goalY:51.9,goalZ:13.9},
+    {name:"Alexander Isak",jornada:34,rival:"C. Palace",loc:"H",min:34,xG:0.4329,xGoT:0.8513,body:"PI",x:90.4,y:53.2,goalY:47.1,goalZ:20.9},
+    {name:"Andy Robertson",jornada:34,rival:"C. Palace",loc:"H",min:39,xG:0.371,xGoT:0.8056,body:"PI",x:90.6,y:60.9,goalY:45.7,goalZ:2.5},
+    {name:"Florian Wirtz",jornada:34,rival:"C. Palace",loc:"H",min:95,xG:0.0387,xGoT:0.2687,body:"PD",x:90.4,y:34.8,goalY:54.0,goalZ:18.4},
+    {name:"Curtis Jones",jornada:38,rival:"Brentford",loc:"H",min:57,xG:0.6319,xGoT:0.9653,body:"PD",x:94.2,y:53.9,goalY:52.3,goalZ:5.7},
+    {name:"Alexander Isak",jornada:17,rival:"Tottenham",loc:"A",min:55,xG:0.083,xGoT:0.1056,body:"PI",x:91.5,y:59.5,goalY:48.5,goalZ:16.5},
+    {name:"Hugo Ekitiké",jornada:17,rival:"Tottenham",loc:"A",min:65,xG:0.2555,xGoT:0.8738,body:"Cab",x:96.2,y:47.9,goalY:45.8,goalZ:29.7},
+    {name:"Federico Chiesa",jornada:6,rival:"C. Palace",loc:"A",min:86,xG:0.2453,xGoT:0.7715,body:"PD",x:94.3,y:57.8,goalY:53.6,goalZ:13.3},
+    {name:"Hugo Ekitiké",jornada:15,rival:"Leeds",loc:"A",min:47,xG:0.2108,xGoT:0.7482,body:"PD",x:85.2,y:53.8,goalY:53.7,goalZ:2.5},
+    {name:"Hugo Ekitiké",jornada:15,rival:"Leeds",loc:"A",min:49,xG:0.482,xGoT:0.7542,body:"PI",x:94.2,y:44.2,goalY:51.9,goalZ:3.8},
+    {name:"Dominik Szoboszlai",jornada:15,rival:"Leeds",loc:"A",min:79,xG:0.4928,xGoT:0.8022,body:"PD",x:89.5,y:40.0,goalY:53.5,goalZ:2.5},
+    {name:"Rio Ngumoha",jornada:32,rival:"Fulham",loc:"H",min:35,xG:0.0384,xGoT:0.2141,body:"PD",x:88.3,y:68.0,goalY:46.4,goalZ:8.9},
+    {name:"Mohamed Salah",jornada:32,rival:"Fulham",loc:"H",min:39,xG:0.0528,xGoT:0.6573,body:"PI",x:88.3,y:29.4,goalY:53.8,goalZ:1.9},
+  ];
+
+  const ASISTENCIAS_DATA_14 = [
+    {name:"Rio Ngumoha",jornada:36,rival:"Chelsea",loc:"H",min:5,xA:0.0083,receptor:"Ryan Gravenberch",x:89.0,y:88.5,x2:79.0,y2:62.4},
+    {name:"Florian Wirtz",jornada:24,rival:"Newcastle",loc:"H",min:40,xA:0.3998,receptor:"Hugo Ekitiké",x:94.7,y:65.2,x2:93.9,y2:54.2},
+    {name:"Milos Kerkez",jornada:24,rival:"Newcastle",loc:"H",min:42,xA:0.0006,receptor:"Hugo Ekitiké",x:19.9,y:89.4,x2:67.1,y2:70.7},
+    {name:"Mohamed Salah",jornada:24,rival:"Newcastle",loc:"H",min:66,xA:0.0507,receptor:"Florian Wirtz",x:89.3,y:30.5,x2:85.8,y2:43.6},
+    {name:"Mohamed Salah",jornada:5,rival:"Everton",loc:"H",min:9,xA:0.1443,receptor:"Ryan Gravenberch",x:76.2,y:6.6,x2:90.2,y2:34.6},
+    {name:"Ryan Gravenberch",jornada:5,rival:"Everton",loc:"H",min:28,xA:0.1548,receptor:"Hugo Ekitiké",x:71.2,y:18.5,x2:90.5,y2:35.1},
+    {name:"Cody Gakpo",jornada:13,rival:"West Ham",loc:"A",min:59,xA:0.0642,receptor:"Alexander Isak",x:91.7,y:75.6,x2:88.3,y2:58.3},
+    {name:"Joe Gomez",jornada:13,rival:"West Ham",loc:"A",min:91,xA:0.1564,receptor:"Cody Gakpo",x:84.3,y:28.5,x2:89.7,y2:52.1},
+    {name:"Cody Gakpo",jornada:2,rival:"Newcastle",loc:"A",min:45,xA:0.0644,receptor:"Hugo Ekitiké",x:86.0,y:62.5,x2:85.3,y2:48.2},
+    {name:"Mohamed Salah",jornada:2,rival:"Newcastle",loc:"A",min:99,xA:0.1312,receptor:"Rio Ngumoha",x:87.7,y:18.3,x2:89.6,y2:54.6},
+    {name:"Dominik Szoboszlai",jornada:23,rival:"Bournemouth",loc:"A",min:44,xA:0.1372,receptor:"Virgil van Dijk",x:99.5,y:99.5,x2:95.5,y2:54.8},
+    {name:"Jeremie Frimpong",jornada:18,rival:"Wolves",loc:"H",min:40,xA:0.0663,receptor:"Ryan Gravenberch",x:95.9,y:30.3,x2:88.2,y2:41.5},
+    {name:"Hugo Ekitiké",jornada:18,rival:"Wolves",loc:"H",min:41,xA:0.2344,receptor:"Florian Wirtz",x:69.1,y:66.9,x2:84.9,y2:48.1},
+    {name:"Dominik Szoboszlai",jornada:35,rival:"Man United",loc:"A",min:55,xA:0.1252,receptor:"Cody Gakpo",x:89.6,y:48.9,x2:87.8,y2:55.2},
+    {name:"Curtis Jones",jornada:22,rival:"Burnley",loc:"H",min:41,xA:0.073,receptor:"Florian Wirtz",x:99.4,y:66.1,x2:90.3,y2:61.3},
+    {name:"Dominik Szoboszlai",jornada:37,rival:"Aston Villa",loc:"A",min:51,xA:0.0892,receptor:"Virgil van Dijk",x:69.5,y:24.2,x2:92.6,y2:57.5},
+    {name:"Dominik Szoboszlai",jornada:37,rival:"Aston Villa",loc:"A",min:91,xA:0.1618,receptor:"Virgil van Dijk",x:83.9,y:85.8,x2:92.7,y2:48.3},
+    {name:"Joe Gomez",jornada:16,rival:"Brighton",loc:"H",min:0,xA:0.025,receptor:"Hugo Ekitiké",x:77.1,y:37.8,x2:85.6,y2:43.8},
+    {name:"Mohamed Salah",jornada:16,rival:"Brighton",loc:"H",min:59,xA:0.1768,receptor:"Hugo Ekitiké",x:100.0,y:0.0,x2:97.0,y2:54.8},
+    {name:"Cody Gakpo",jornada:33,rival:"Everton",loc:"A",min:28,xA:0.2271,receptor:"Mohamed Salah",x:76.7,y:82.8,x2:91.5,y2:43.6},
+    {name:"Dominik Szoboszlai",jornada:33,rival:"Everton",loc:"A",min:99,xA:0.1972,receptor:"Virgil van Dijk",x:99.5,y:99.5,x2:95.6,y2:50.0},
+    {name:"Mohamed Salah",jornada:26,rival:"Sunderland",loc:"A",min:60,xA:0.2389,receptor:"Virgil van Dijk",x:99.4,y:4.2,x2:96.7,y2:49.3},
+    {name:"Hugo Ekitiké",jornada:1,rival:"Bournemouth",loc:"H",min:48,xA:0.0139,receptor:"Cody Gakpo",x:90.7,y:76.5,x2:85.7,y2:68.1},
+    {name:"Ryan Gravenberch",jornada:28,rival:"West Ham",loc:"H",min:4,xA:0.0246,receptor:"Hugo Ekitiké",x:77.9,y:43.5,x2:85.0,y2:63.0},
+    {name:"Dominik Szoboszlai",jornada:28,rival:"West Ham",loc:"H",min:23,xA:0.2155,receptor:"Virgil van Dijk",x:99.5,y:99.5,x2:96.4,y2:52.9},
+    {name:"Hugo Ekitiké",jornada:28,rival:"West Ham",loc:"H",min:42,xA:0.1153,receptor:"Alexis Mac Allister",x:96.1,y:59.6,x2:87.8,y2:57.5},
+    {name:"Dominik Szoboszlai",jornada:9,rival:"Brentford",loc:"A",min:88,xA:0.0185,receptor:"Mohamed Salah",x:90.7,y:2.5,x2:87.5,y2:39.2},
+    {name:"Conor Bradley",jornada:20,rival:"Fulham",loc:"A",min:56,xA:0.1319,receptor:"Florian Wirtz",x:86.2,y:40.7,x2:91.8,y2:40.3},
+    {name:"Curtis Jones",jornada:34,rival:"C. Palace",loc:"H",min:39,xA:0.0026,receptor:"Andy Robertson",x:59.3,y:48.1,x2:72.2,y2:57.3},
+    {name:"Alexis Mac Allister",jornada:34,rival:"C. Palace",loc:"H",min:95,xA:0.036,receptor:"Florian Wirtz",x:92.1,y:36.3,x2:88.8,y2:35.2},
+    {name:"Mohamed Salah",jornada:38,rival:"Brentford",loc:"H",min:57,xA:0.2953,receptor:"Curtis Jones",x:98.2,y:26.5,x2:92.4,y2:53.9},
+    {name:"Florian Wirtz",jornada:17,rival:"Tottenham",loc:"A",min:55,xA:0.0958,receptor:"Alexander Isak",x:78.2,y:60.9,x2:89.1,y2:56.5},
+    {name:"Ryan Gravenberch",jornada:15,rival:"Leeds",loc:"A",min:79,xA:0.0144,receptor:"Dominik Szoboszlai",x:64.1,y:68.9,x2:81.2,y2:41.9},
+    {name:"Cody Gakpo",jornada:32,rival:"Fulham",loc:"H",min:39,xA:0.0302,receptor:"Mohamed Salah",x:89.8,y:45.7,x2:86.7,y2:33.1},
+    {name:"Alexis Mac Allister",jornada:1,rival:"Bournemouth",loc:"H",min:37,xA:0.0082,receptor:"Hugo Ekitiké",x:56.2,y:62.3,x2:89.2,y2:55.8},
+    {name:"Wataru Endo",jornada:1,rival:"Bournemouth",loc:"H",min:93,xA:0.0312,receptor:"Mohamed Salah",x:82.3,y:48.2,x2:89.4,y2:62.8},
+    {name:"Alexis Mac Allister",jornada:10,rival:"Aston Villa",loc:"H",min:57,xA:0.0285,receptor:"Ryan Gravenberch",x:78.5,y:55.1,x2:83.1,y2:47.8},
+  ];
+
   function renderEquipoTab() {
     const cont = document.getElementById('content');
     const tabBtn = (id, label) => `<button onclick="equipoSubTab='${id}';renderEquipoTab()" style="padding:6px 20px;border-radius:18px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.18s;background:${equipoSubTab===id?'var(--accent)':'transparent'};color:${equipoSubTab===id?'#0d1117':'var(--text2)'}">${label}</button>`;
@@ -13908,6 +14017,8 @@ const CELTA_LINEUPS = {
           ${tabBtn('alineaciones', 'Alineaciones')}
           ${tabBtn('minutos', 'Minutos')}
           ${tabBtn('tarjetas', 'Tarjetas')}
+          ${tabBtn('goles', 'Goles')}
+          ${tabBtn('asistencias', 'Asistencias')}
         </div>
         <div id="equipo-subtab-content"></div>
       </div>`;
@@ -13915,6 +14026,8 @@ const CELTA_LINEUPS = {
     if (equipoSubTab === 'alineaciones') renderEquipoAlineaciones();
     else if (equipoSubTab === 'minutos') renderEquipoMinutos();
     else if (equipoSubTab === 'tarjetas') renderEquipoTarjetas();
+    else if (equipoSubTab === 'goles') renderEquipoGoles();
+    else if (equipoSubTab === 'asistencias') renderEquipoAsistencias();
   }
 
   function renderEquipoMinutos() {
@@ -14279,6 +14392,371 @@ const CELTA_LINEUPS = {
         <span>${cardIcon('red')} <span style="margin-left:4px">Tarjeta roja</span></span>
         <span style="margin-left:auto">Datos: SkillCorner · Premier League · J1–J${lastJ}</span>
       </div>`;
+  }
+
+  function renderEquipoGoles() {
+    const el = document.getElementById('equipo-subtab-content');
+    if (!el) return;
+    const data = typeof GOLES_DATA_14 !== 'undefined' ? GOLES_DATA_14 : [];
+
+    // Aggregate per player
+    const pm = {};
+    data.forEach(g => {
+      if (!pm[g.name]) pm[g.name] = {name:g.name,goles:0,xG:0,xGoT:0,PD:0,PI:0,Cab:0,shots:[]};
+      const p = pm[g.name];
+      p.goles++; p.xG+=g.xG; p.xGoT+=g.xGoT;
+      if(g.body==='PD')p.PD++; else if(g.body==='PI')p.PI++; else if(g.body==='Cab')p.Cab++;
+      p.shots.push(g);
+    });
+    const players = Object.values(pm).sort((a,b)=>b.goles-a.goles);
+    if (!golesPlayerSel || !pm[golesPlayerSel]) golesPlayerSel = players[0]?.name||'';
+
+    const totalG = players.reduce((s,p)=>s+p.goles,0);
+    const totalxG = players.reduce((s,p)=>s+p.xG,0);
+    const topG = players[0];
+
+    const vBtn = (id,label) => `<button onclick="golesVista='${id}';renderEquipoGoles()"
+      style="background:${golesVista===id?'var(--bg2)':'transparent'};border:${golesVista===id?'1px solid var(--border)':'1px solid transparent'};color:${golesVista===id?'var(--accent)':'var(--text2)'};border-radius:6px;padding:5px 14px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">${label}</button>`;
+
+    const xgColor = (xg) => {
+      const t = Math.min(1, xg / 0.5);
+      const r = Math.round(248 - t*185), g2 = Math.round(81 + t*104), b = Math.round(73 - t*53);
+      return `rgb(${r},${g2},${b})`;
+    };
+
+    // ── TABLA ────────────────────────────────────────────────────────────────
+    const renderTabla = () => `
+      <div class="table-wrap anim">
+        <table>
+          <thead><tr>
+            <th>Jugador</th>
+            <th style="text-align:center">⚽ Goles</th>
+            <th style="text-align:center">xG</th>
+            <th style="text-align:center">xGoT</th>
+            <th style="text-align:center">G − xG</th>
+            <th style="text-align:center">🦵 PD</th>
+            <th style="text-align:center">🦵 PI</th>
+            <th style="text-align:center">🤕 Cab</th>
+          </tr></thead>
+          <tbody>${players.map(p => {
+            const diff = p.goles - p.xG;
+            const diffColor = diff>=0?'#3fb950':'#f85149';
+            return `<tr>
+              <td style="font-weight:700;cursor:pointer" onclick="golesVista='porteria';golesPlayerSel='${p.name.replace(/'/g,"\\'")}';renderEquipoGoles()">${p.name}</td>
+              <td style="text-align:center;font-weight:800;color:#3fb950">${p.goles}</td>
+              <td style="text-align:center;color:var(--text2)">${p.xG.toFixed(2)}</td>
+              <td style="text-align:center;color:var(--text3)">${p.xGoT.toFixed(2)}</td>
+              <td style="text-align:center;font-weight:700;color:${diffColor}">${diff>=0?'+':''}${diff.toFixed(2)}</td>
+              <td style="text-align:center;color:var(--text2)">${p.PD||'—'}</td>
+              <td style="text-align:center;color:var(--text2)">${p.PI||'—'}</td>
+              <td style="text-align:center;color:var(--text2)">${p.Cab||'—'}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div>`;
+
+    // ── PORTERÍA ─────────────────────────────────────────────────────────────
+    const renderPorteria = () => {
+      const sel = pm[golesPlayerSel];
+      const shots = sel ? sel.shots : [];
+
+      // Goal SVG dimensions
+      // GoalY: Opta Y axis, posts at ~44.62 and ~55.38 (goal width = 7.32m in 100-unit pitch of 68m width)
+      // GoalZ: 0=ground, ~33=crossbar (7.32m wide / 2.44m tall → crossbar at 33.3 Opta-equivalent units)
+      const W = 360, H = 120;
+      const GOAL_Y_MIN = 44.4, GOAL_Y_MAX = 55.6;
+      const GOAL_Z_MAX = 33.3;
+      const mapY = gy => ((gy - GOAL_Y_MIN) / (GOAL_Y_MAX - GOAL_Y_MIN)) * W;
+      const mapZ = gz => H - (gz / GOAL_Z_MAX) * H;
+
+      const shotDots = shots.map(s => {
+        const cx = mapY(s.goalY).toFixed(1);
+        const cy = mapZ(s.goalZ).toFixed(1);
+        const col = xgColor(s.xG);
+        const shape = s.body === 'Cab'
+          ? `<polygon points="${cx},${+cy-7} ${+cx+6},${+cy+4} ${+cx-6},${+cy+4}" fill="${col}" stroke="#0d1117" stroke-width="1.2" opacity="0.92"/>`
+          : `<circle cx="${cx}" cy="${cy}" r="6.5" fill="${col}" stroke="#0d1117" stroke-width="1.2" opacity="0.92"/>`;
+        const body = s.body==='PD'?'Pie der.':s.body==='PI'?'Pie izq.':s.body==='Cab'?'Cabeza':'Otro';
+        return `<g class="shot-dot" style="cursor:pointer">
+          <title>J${s.jornada} ${s.loc==='H'?'vs':'@'} ${s.rival} · min.${s.min}'\nxG: ${s.xG} · ${body}</title>
+          ${shape}
+        </g>`;
+      }).join('');
+
+      const playerList = players.map(p => `
+        <div onclick="golesPlayerSel='${p.name.replace(/'/g,"\\'")}';renderEquipoGoles()"
+          style="padding:8px 12px;cursor:pointer;border-radius:6px;background:${golesPlayerSel===p.name?'#1e3a5f':'transparent'};border:1px solid ${golesPlayerSel===p.name?'#3b82f6':'transparent'};display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span style="font-size:12px;font-weight:${golesPlayerSel===p.name?700:500};color:${golesPlayerSel===p.name?'#93c5fd':'var(--text2)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</span>
+          <span style="font-size:11px;font-weight:800;color:#3fb950;flex-shrink:0">${p.goles}⚽</span>
+        </div>`).join('');
+
+      const detailRows = shots.sort((a,b)=>a.jornada-b.jornada).map(s => {
+        const body = s.body==='PD'?'Pie der.':s.body==='PI'?'Pie izq.':s.body==='Cab'?'Cabeza':'Otro';
+        return `<tr>
+          <td style="color:var(--text3)">J${s.jornada}</td>
+          <td>${s.loc==='H'?'vs':'@'} ${s.rival}</td>
+          <td style="text-align:center;color:var(--text2)">${s.min}'</td>
+          <td style="text-align:center;color:var(--text3)">${body}</td>
+          <td style="text-align:center;color:${xgColor(s.xG)};font-weight:700">${s.xG.toFixed(3)}</td>
+          <td style="text-align:center;color:var(--text3)">${s.xGoT.toFixed(3)}</td>
+        </tr>`;
+      }).join('');
+
+      return `
+        <div style="display:flex;gap:16px;align-items:flex-start">
+          <div style="width:160px;flex-shrink:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px;max-height:440px;overflow-y:auto">${playerList}</div>
+          <div style="flex:1;min-width:0">
+            <div style="text-align:center;margin-bottom:8px">
+              <span style="font-size:13px;font-weight:700;color:var(--text1)">${golesPlayerSel}</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:8px">${shots.length} gol${shots.length!==1?'es':''} · xG total: ${(sel?.xG||0).toFixed(2)} · G−xG: ${((sel?.goles||0)-(sel?.xG||0))>=0?'+':''}${((sel?.goles||0)-(sel?.xG||0)).toFixed(2)}</span>
+            </div>
+            <div style="display:flex;justify-content:center;margin-bottom:16px">
+              <svg width="${W+40}" height="${H+40}" style="display:block">
+                <!-- Net background -->
+                <rect x="20" y="10" width="${W}" height="${H}" fill="#0d1a2a" stroke="none" rx="0"/>
+                <!-- Net lines horizontal -->
+                ${Array.from({length:6},(_,i)=>`<line x1="20" y1="${10+i*(H/5)}" x2="${20+W}" y2="${10+i*(H/5)}" stroke="#1e3a5f" stroke-width="0.7"/>`).join('')}
+                <!-- Net lines vertical -->
+                ${Array.from({length:13},(_,i)=>`<line x1="${20+i*(W/12)}" y1="10" x2="${20+i*(W/12)}" y2="${10+H}" stroke="#1e3a5f" stroke-width="0.7"/>`).join('')}
+                <!-- Goal frame -->
+                <rect x="20" y="10" width="${W}" height="${H}" fill="none" stroke="#e2e8f0" stroke-width="2.5" rx="0"/>
+                <!-- Post marks -->
+                <line x1="20" y1="10" x2="20" y2="${10+H}" stroke="#fff" stroke-width="3"/>
+                <line x1="${20+W}" y1="10" x2="${20+W}" y2="${10+H}" stroke="#fff" stroke-width="3"/>
+                <line x1="20" y1="10" x2="${20+W}" y2="10" stroke="#fff" stroke-width="3"/>
+                <!-- Center line -->
+                <line x1="${20+W/2}" y1="10" x2="${20+W/2}" y2="${10+H}" stroke="#ffffff22" stroke-width="1" stroke-dasharray="4,4"/>
+                <!-- Half height line -->
+                <line x1="20" y1="${10+H/2}" x2="${20+W}" y2="${10+H/2}" stroke="#ffffff22" stroke-width="1" stroke-dasharray="4,4"/>
+                <!-- Shot dots (translated to goal frame) -->
+                <g transform="translate(20,10)">${shotDots}</g>
+                <!-- Labels -->
+                <text x="${20+W/2}" y="${10+H+22}" text-anchor="middle" fill="#64748b" font-size="10">Centro</text>
+                <text x="20" y="${10+H+22}" text-anchor="middle" fill="#64748b" font-size="10">Post izq.</text>
+                <text x="${20+W}" y="${10+H+22}" text-anchor="middle" fill="#64748b" font-size="10">Post der.</text>
+              </svg>
+            </div>
+            <!-- Legend -->
+            <div style="display:flex;gap:16px;justify-content:center;margin-bottom:12px;font-size:10px;color:var(--text3)">
+              <span><svg width="12" height="12" style="vertical-align:middle;margin-right:3px"><circle cx="6" cy="6" r="5" fill="#3fb950"/></svg>Pie (xG alto)</span>
+              <span><svg width="12" height="12" style="vertical-align:middle;margin-right:3px"><circle cx="6" cy="6" r="5" fill="#f85149"/></svg>Pie (xG bajo)</span>
+              <span><svg width="14" height="12" style="vertical-align:middle;margin-right:3px"><polygon points="7,0 13,11 1,11" fill="#e3b341"/></svg>Cabeza</span>
+            </div>
+            <!-- Detail table -->
+            <div class="table-wrap" style="margin-top:0">
+              <table>
+                <thead><tr>
+                  <th>J</th><th>Rival</th>
+                  <th style="text-align:center">Min</th>
+                  <th style="text-align:center">Parte</th>
+                  <th style="text-align:center">xG</th>
+                  <th style="text-align:center">xGoT</th>
+                </tr></thead>
+                <tbody>${detailRows}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+    };
+
+    el.innerHTML = `
+      <div class="content-head anim">
+        <div><h2>GOLES</h2>
+          <p>Temporada 2025/26 · Premier League · Datos Opta</p>
+        </div>
+      </div>
+      <div class="cards anim" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+        <div class="card"><div class="card-label">Goles totales</div><div class="card-value" style="color:#3fb950">${totalG}</div><div class="card-sub">en 38 jornadas</div></div>
+        <div class="card"><div class="card-label">Máximo goleador</div><div class="card-value" style="color:#3fb950;font-size:18px">${topG?.name||'—'}</div><div class="card-sub">${topG?.goles||0} goles</div></div>
+        <div class="card"><div class="card-label">xG total equipo</div><div class="card-value" style="color:var(--accent)">${totalxG.toFixed(1)}</div><div class="card-sub">esperados</div></div>
+        <div class="card"><div class="card-label">G − xG equipo</div><div class="card-value" style="color:${totalG-totalxG>=0?'#3fb950':'#f85149'}">${totalG-totalxG>=0?'+':''}${(totalG-totalxG).toFixed(1)}</div><div class="card-sub">sobre el xG</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <div style="display:flex;background:var(--bg3);border-radius:8px;padding:3px;gap:2px">
+          ${vBtn('tabla','Tabla')}
+          ${vBtn('porteria','Portería')}
+        </div>
+        ${golesVista==='porteria'?'<span style="font-size:11px;color:var(--text3)">Selecciona un jugador · Círculo = pie · Triángulo = cabeza · Color = xG</span>':'<span style="font-size:11px;color:var(--text3)">Haz clic en un jugador para ver su portería</span>'}
+      </div>
+      ${golesVista==='tabla' ? renderTabla() : renderPorteria()}`;
+  }
+
+  function renderEquipoAsistencias() {
+    const el = document.getElementById('equipo-subtab-content');
+    if (!el) return;
+    const data = typeof ASISTENCIAS_DATA_14 !== 'undefined' ? ASISTENCIAS_DATA_14.filter(a=>a.x2>0&&a.y2>0) : [];
+
+    // Aggregate per player
+    const pm = {};
+    data.forEach(a => {
+      if (!pm[a.name]) pm[a.name] = {name:a.name,asist:0,xA:0,passes:[]};
+      pm[a.name].asist++;
+      pm[a.name].xA += a.xA;
+      pm[a.name].passes.push(a);
+    });
+    const players = Object.values(pm).sort((a,b)=>b.asist-a.asist);
+    if (!asistPlayerSel || !pm[asistPlayerSel]) asistPlayerSel = players[0]?.name||'';
+
+    const totalA = players.reduce((s,p)=>s+p.asist,0);
+    const totalxA = players.reduce((s,p)=>s+p.xA,0);
+    const topA = players[0];
+
+    const vBtn = (id,label) => `<button onclick="asistVista='${id}';renderEquipoAsistencias()"
+      style="background:${asistVista===id?'var(--bg2)':'transparent'};border:${asistVista===id?'1px solid var(--border)':'1px solid transparent'};color:${asistVista===id?'var(--accent)':'var(--text2)'};border-radius:6px;padding:5px 14px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">${label}</button>`;
+
+    // ── TABLA ────────────────────────────────────────────────────────────────
+    const renderTabla = () => `
+      <div class="table-wrap anim">
+        <table>
+          <thead><tr>
+            <th>Jugador</th>
+            <th style="text-align:center">🎯 Asist.</th>
+            <th style="text-align:center">xA</th>
+            <th style="text-align:center">A − xA</th>
+            <th>Receptor más habitual</th>
+          </tr></thead>
+          <tbody>${players.map(p => {
+            const diff = p.asist - p.xA;
+            const diffColor = diff>=0?'#3fb950':'#f85149';
+            // Most common receptor
+            const recCount = {};
+            p.passes.forEach(a=>{ recCount[a.receptor]=(recCount[a.receptor]||0)+1; });
+            const topRec = Object.entries(recCount).sort((a,b)=>b[1]-a[1])[0];
+            return `<tr>
+              <td style="font-weight:700;cursor:pointer" onclick="asistVista='campo';asistPlayerSel='${p.name.replace(/'/g,"\\'")}';renderEquipoAsistencias()">${p.name}</td>
+              <td style="text-align:center;font-weight:800;color:#58a6ff">${p.asist}</td>
+              <td style="text-align:center;color:var(--text2)">${p.xA.toFixed(2)}</td>
+              <td style="text-align:center;font-weight:700;color:${diffColor}">${diff>=0?'+':''}${diff.toFixed(2)}</td>
+              <td style="color:var(--text3);font-size:12px">${topRec?`${topRec[0]} (${topRec[1]})`:''}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div>`;
+
+    // ── CAMPO ────────────────────────────────────────────────────────────────
+    const renderCampo = () => {
+      const sel = pm[asistPlayerSel];
+      const passes = sel ? sel.passes : [];
+
+      // Pitch SVG 520×340 → Opta 100×100
+      const PW = 520, PH = 340;
+      const mx = v => (v/100)*PW;
+      const my = v => (v/100)*PH;
+
+      const xaColor = (xa) => {
+        const t = Math.min(1, xa / 0.3);
+        return `rgba(${Math.round(88+t*112)},${Math.round(166-t*8)},${Math.round(255-t*200)},${0.7+t*0.3})`;
+      };
+
+      const arrowId = (i) => `arr-${i}`;
+
+      const defs = passes.map((p,i) => `
+        <marker id="${arrowId(i)}" markerWidth="8" markerHeight="8" refX="5" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="${xaColor(p.xA)}"/>
+        </marker>`).join('');
+
+      const lines = passes.map((p,i) => {
+        const col = xaColor(p.xA);
+        return `<g style="cursor:pointer">
+          <title>J${p.jornada} ${p.loc==='H'?'vs':'@'} ${p.rival} · min.${p.min}'\n→ ${p.receptor}\nxA: ${p.xA}</title>
+          <line x1="${mx(p.x).toFixed(1)}" y1="${my(p.y).toFixed(1)}"
+                x2="${mx(p.x2).toFixed(1)}" y2="${my(p.y2).toFixed(1)}"
+                stroke="${col}" stroke-width="2.2" stroke-opacity="0.9"
+                marker-end="url(#${arrowId(i)})"/>
+          <circle cx="${mx(p.x).toFixed(1)}" cy="${my(p.y).toFixed(1)}" r="4" fill="${col}" opacity="0.9"/>
+          <circle cx="${mx(p.x2).toFixed(1)}" cy="${my(p.y2).toFixed(1)}" r="5" fill="none" stroke="${col}" stroke-width="1.5" opacity="0.85"/>
+        </g>`;
+      }).join('');
+
+      const playerList = players.map(p => `
+        <div onclick="asistPlayerSel='${p.name.replace(/'/g,"\\'")}';renderEquipoAsistencias()"
+          style="padding:8px 12px;cursor:pointer;border-radius:6px;background:${asistPlayerSel===p.name?'#1e3a5f':'transparent'};border:1px solid ${asistPlayerSel===p.name?'#3b82f6':'transparent'};display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span style="font-size:12px;font-weight:${asistPlayerSel===p.name?700:500};color:${asistPlayerSel===p.name?'#93c5fd':'var(--text2)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</span>
+          <span style="font-size:11px;font-weight:800;color:#58a6ff;flex-shrink:0">${p.asist}🎯</span>
+        </div>`).join('');
+
+      const detailRows = passes.sort((a,b)=>a.jornada-b.jornada).map(a => `<tr>
+        <td style="color:var(--text3)">J${a.jornada}</td>
+        <td>${a.loc==='H'?'vs':'@'} ${a.rival}</td>
+        <td style="text-align:center;color:var(--text2)">${a.min}'</td>
+        <td style="color:var(--text3);font-size:11px">${a.receptor}</td>
+        <td style="text-align:center;font-weight:700;color:#58a6ff">${a.xA.toFixed(3)}</td>
+      </tr>`).join('');
+
+      // Pitch SVG
+      const pitchSvg = `<svg width="${PW}" height="${PH}" style="display:block;background:#0a4a0a;border-radius:4px;border:1px solid #1a5a1a">
+        <defs>${defs}</defs>
+        <!-- Outer lines -->
+        <rect x="0" y="0" width="${PW}" height="${PH}" fill="none" stroke="#2d7a2d" stroke-width="2"/>
+        <!-- Center circle -->
+        <circle cx="${PW/2}" cy="${PH/2}" r="${PH*0.22}" fill="none" stroke="#2d7a2d" stroke-width="1.2"/>
+        <circle cx="${PW/2}" cy="${PH/2}" r="3" fill="#2d7a2d"/>
+        <!-- Halfway line -->
+        <line x1="${PW/2}" y1="0" x2="${PW/2}" y2="${PH}" stroke="#2d7a2d" stroke-width="1.2"/>
+        <!-- Left penalty area: x=0-17%, y=19%-81% -->
+        <rect x="0" y="${PH*0.19}" width="${PW*0.17}" height="${PH*0.62}" fill="none" stroke="#2d7a2d" stroke-width="1.2"/>
+        <!-- Left 6-yard box: x=0-5.5%, y=37%-63% -->
+        <rect x="0" y="${PH*0.37}" width="${PW*0.055}" height="${PH*0.26}" fill="none" stroke="#2d7a2d" stroke-width="1"/>
+        <!-- Left penalty spot -->
+        <circle cx="${PW*0.11}" cy="${PH*0.5}" r="2.5" fill="#2d7a2d"/>
+        <!-- Right penalty area -->
+        <rect x="${PW*0.83}" y="${PH*0.19}" width="${PW*0.17}" height="${PH*0.62}" fill="none" stroke="#2d7a2d" stroke-width="1.2"/>
+        <!-- Right 6-yard box -->
+        <rect x="${PW*0.945}" y="${PH*0.37}" width="${PW*0.055}" height="${PH*0.26}" fill="none" stroke="#2d7a2d" stroke-width="1"/>
+        <!-- Right penalty spot -->
+        <circle cx="${PW*0.89}" cy="${PH*0.5}" r="2.5" fill="#2d7a2d"/>
+        <!-- Assist arrows -->
+        ${lines}
+        <!-- Attack direction label -->
+        <text x="${PW-8}" y="${PH/2+4}" text-anchor="end" fill="#2d7a2d" font-size="9" font-family="sans-serif">→ ataque</text>
+      </svg>`;
+
+      return `
+        <div style="display:flex;gap:16px;align-items:flex-start">
+          <div style="width:160px;flex-shrink:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px;max-height:440px;overflow-y:auto">${playerList}</div>
+          <div style="flex:1;min-width:0">
+            <div style="text-align:center;margin-bottom:8px">
+              <span style="font-size:13px;font-weight:700;color:var(--text1)">${asistPlayerSel}</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:8px">${passes.length} asistencia${passes.length!==1?'s':''} · xA total: ${(sel?.xA||0).toFixed(2)}</span>
+            </div>
+            <div style="overflow-x:auto;margin-bottom:14px">${pitchSvg}</div>
+            <div style="display:flex;gap:16px;justify-content:center;margin-bottom:12px;font-size:10px;color:var(--text3)">
+              <span><svg width="24" height="8" style="vertical-align:middle;margin-right:3px"><line x1="0" y1="4" x2="20" y2="4" stroke="#58a6ff" stroke-width="2.5"/></svg>xA bajo</span>
+              <span><svg width="24" height="8" style="vertical-align:middle;margin-right:3px"><line x1="0" y1="4" x2="20" y2="4" stroke="#1e90ff" stroke-width="2.5"/></svg>xA alto</span>
+              <span>● Origen · ○ Recepción</span>
+            </div>
+            <div class="table-wrap" style="margin-top:0">
+              <table>
+                <thead><tr>
+                  <th>J</th><th>Rival</th><th style="text-align:center">Min</th><th>Receptor</th><th style="text-align:center">xA</th>
+                </tr></thead>
+                <tbody>${detailRows}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+    };
+
+    el.innerHTML = `
+      <div class="content-head anim">
+        <div><h2>ASISTENCIAS</h2>
+          <p>Temporada 2025/26 · Premier League · Datos Opta</p>
+        </div>
+      </div>
+      <div class="cards anim" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+        <div class="card"><div class="card-label">Asistencias totales</div><div class="card-value" style="color:#58a6ff">${totalA}</div><div class="card-sub">en 38 jornadas</div></div>
+        <div class="card"><div class="card-label">Más asistencias</div><div class="card-value" style="color:#58a6ff;font-size:18px">${topA?.name||'—'}</div><div class="card-sub">${topA?.asist||0} asistencias</div></div>
+        <div class="card"><div class="card-label">xA total equipo</div><div class="card-value" style="color:var(--accent)">${totalxA.toFixed(1)}</div><div class="card-sub">esperadas</div></div>
+        <div class="card"><div class="card-label">A − xA equipo</div><div class="card-value" style="color:${totalA-totalxA>=0?'#3fb950':'#f85149'}">${totalA-totalxA>=0?'+':''}${(totalA-totalxA).toFixed(1)}</div><div class="card-sub">sobre el xA</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <div style="display:flex;background:var(--bg3);border-radius:8px;padding:3px;gap:2px">
+          ${vBtn('tabla','Tabla')}
+          ${vBtn('campo','Campo')}
+        </div>
+        ${asistVista==='campo'?'<span style="font-size:11px;color:var(--text3)">Selecciona un jugador · Las flechas muestran el pase de asistencia</span>':'<span style="font-size:11px;color:var(--text3)">Haz clic en un jugador para ver sus asistencias en el campo</span>'}
+      </div>
+      ${asistVista==='tabla' ? renderTabla() : renderCampo()}`;
   }
 
   function renderMatchEventTimeline(m) {
