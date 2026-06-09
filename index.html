@@ -14475,12 +14475,11 @@ const CELTA_LINEUPS = {
         const col = xgColor(s.xG);
         const body = s.body==='PD'?'Pie der.':s.body==='PI'?'Pie izq.':s.body==='Cab'?'Cabeza':'Otro';
         const tip = `J${s.jornada} · ${s.loc==='H'?'vs':'@'} ${s.rival}&lt;br&gt;Min. ${s.min}' · ${body}&lt;br&gt;xG: ${s.xG.toFixed(3)}`;
-        const hitArea = `<circle cx="${cx}" cy="${cy}" r="10" fill="transparent" stroke="none"
-          data-tip="${tip}" onmouseenter="sancionTip(event,this)" onmouseleave="sancionTipHide();this.style.filter=''" style="cursor:pointer"
-          onmouseover="this.previousSibling.style.filter='brightness(1.4)'" onmouseout="this.previousSibling.style.filter=''"/>`;
         const shape = s.body === 'Cab'
           ? `<polygon points="${cx},${+cy-7} ${+cx+6},${+cy+4} ${+cx-6},${+cy+4}" fill="${col}" stroke="#0d1117" stroke-width="1.2" opacity="0.92" style="pointer-events:none"/>`
           : `<circle cx="${cx}" cy="${cy}" r="6.5" fill="${col}" stroke="#0d1117" stroke-width="1.2" opacity="0.92" style="pointer-events:none"/>`;
+        const hitArea = `<circle cx="${cx}" cy="${cy}" r="12" fill="transparent" stroke="none" style="cursor:pointer"
+          data-tip="${tip}" onmouseenter="svgTip(event,this)" onmousemove="svgTip(event,this)" onmouseleave="sancionTipHide()"/>`;
         return `<g>${shape}${hitArea}</g>`;
       }).join('');
 
@@ -14639,43 +14638,57 @@ const CELTA_LINEUPS = {
       const sel = pm[asistPlayerSel];
       const passes = sel ? sel.passes : [];
 
-      // Half-pitch: show x=40→100, y=0→100 of Opta coords
-      // SVG size: 480×320 (ratio ≈ 60:100 of pitch)
-      const PW = 480, PH = 320;
-      const X_START = 40; // show from x=40 onward
-      const mx = v => ((Math.min(Math.max(v, X_START), 100) - X_START) / (100 - X_START)) * PW;
-      const my = v => (v / 100) * PH;
+      // Pitch real: 105m × 68m. Opta: x=0-100 (105m), y=0-100 (68m)
+      // Half-pitch SVG: x=40→100 (63m), y=0→100 (68m)
+      // Scale: sx=63/68 of height ratio → keep aspect correct
+      const PH = 340, PW = Math.round(PH * 63 / 68); // ≈315
+      const X0 = 40;
+      // Real-space scale: pitch 68m wide → PH px; 63m long → PW px
+      const scaleX = PW / 60;   // px per Opta-x unit (x=40-100)
+      const scaleY = PH / 100;  // px per Opta-y unit
+      const mx = v => ((Math.min(Math.max(v, X0), 100) - X0) * scaleX);
+      const my = v => (Math.min(Math.max(v, 0), 100) * scaleY);
 
-      const xaColor = (xa) => {
-        const t = Math.min(1, xa / 0.3);
-        const r = Math.round(58 + t*60), g2 = Math.round(166 - t*60), b = Math.round(255 - t*180);
-        return `rgb(${r},${g2},${b})`;
-      };
-      const xaWidth = (xa) => (1.5 + Math.min(1, xa / 0.25) * 3.5).toFixed(1);
+      // Pitch markings in Opta coords → SVG px
+      // Penalty area: x=83.5 to 100, y=21.1 to 78.9 (16.5m from goal, 40.32m wide)
+      const PA_X = 83.5, PA_Y1 = 21.1, PA_Y2 = 78.9;
+      // 6-yard box: x=94.5 to 100, y=36.8 to 63.2 (5.5m, 18.32m)
+      const BOX6_X = 94.5, BOX6_Y1 = 36.8, BOX6_Y2 = 63.2;
+      // Penalty spot: x=88.5, y=50
+      // Center circle (ellipse in SVG due to different x/y scales):
+      //   real radius 9.15m → Opta-x: 9.15/105*100=8.71, Opta-y: 9.15/68*100=13.46
+      //   SVG: rx=8.71*scaleX, ry=13.46*scaleY
+      const arcCX = mx(50), arcCY = my(50);
+      const arcRX = 8.71 * scaleX, arcRY = 13.46 * scaleY;
+      // Goal posts: y=44.6 to 55.4 (7.32m), behind goal line (x=100)
+      const GOAL_Y1 = 44.6, GOAL_Y2 = 55.4;
 
-      const arrowId = (i) => `ha-${i}`;
+      const LINE = '#334155', LINE2 = '#1e293b', GRASS = '#0f1f0f';
+      const RED = '#e53935';
 
-      const defs = passes.map((p,i) => `
-        <marker id="${arrowId(i)}" markerWidth="7" markerHeight="7" refX="4" refY="3" orient="auto">
-          <path d="M0,0 L0,6 L7,3 z" fill="${xaColor(p.xA)}"/>
-        </marker>`).join('');
+      // xA opacity: 0→0.25, 0.3→1.0
+      const xaOpacity = xa => (0.25 + Math.min(1, xa / 0.3) * 0.75).toFixed(2);
+      // xA stroke width: 1.2→4.5
+      const xaWidth = xa => (1.2 + Math.min(1, xa / 0.3) * 3.3).toFixed(1);
+      // Reception circle radius: 4 base, bigger if xA ≥ 0.1
+      const recR = xa => xa >= 0.1 ? 7 : 4;
 
       const lines = passes.map((p,i) => {
-        const col = xaColor(p.xA);
-        const sw = xaWidth(p.xA);
         const x1 = mx(p.x).toFixed(1), y1 = my(p.y).toFixed(1);
         const x2 = mx(p.x2).toFixed(1), y2 = my(p.y2).toFixed(1);
+        const op = xaOpacity(p.xA);
+        const sw = xaWidth(p.xA);
+        const rr = recR(p.xA);
         const tip = `J${p.jornada} · ${p.loc==='H'?'vs':'@'} ${p.rival}&lt;br&gt;Min. ${p.min}' → ${p.receptor}&lt;br&gt;xA: ${p.xA.toFixed(3)}`;
+        const mid = `${((+x1+ +x2)/2).toFixed(1)},${((+y1+ +y2)/2).toFixed(1)}`;
         return `<g>
           <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
-            stroke="${col}" stroke-width="${sw}" stroke-opacity="0.85"
-            marker-end="url(#${arrowId(i)})" style="pointer-events:none"/>
-          <circle cx="${x1}" cy="${y1}" r="5" fill="${col}" opacity="0.9" style="pointer-events:none"/>
-          <circle cx="${x2}" cy="${y2}" r="6" fill="none" stroke="${col}" stroke-width="2" opacity="0.85" style="pointer-events:none"/>
-          <!-- invisible hit area on the line -->
+            stroke="${RED}" stroke-width="${sw}" stroke-opacity="${op}" style="pointer-events:none"/>
+          <circle cx="${x1}" cy="${y1}" r="3.5" fill="${RED}" opacity="${op}" style="pointer-events:none"/>
+          <circle cx="${x2}" cy="${y2}" r="${rr}" fill="none" stroke="${RED}" stroke-width="1.5" opacity="${op}" style="pointer-events:none"/>
           <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
-            stroke="transparent" stroke-width="14" style="cursor:pointer"
-            data-tip="${tip}" onmouseenter="sancionTip(event,this)" onmouseleave="sancionTipHide()"/>
+            stroke="transparent" stroke-width="16" style="cursor:pointer"
+            data-tip="${tip}" onmouseenter="svgTip(event,this)" onmousemove="svgTip(event,this)" onmouseleave="sancionTipHide()"/>
         </g>`;
       }).join('');
 
@@ -14694,52 +14707,52 @@ const CELTA_LINEUPS = {
         <td style="text-align:center;font-weight:700;color:#58a6ff">${a.xA.toFixed(3)}</td>
       </tr>`).join('');
 
-      // Half-pitch SVG: penalty area is at x=83-100 → svg x = (83-40)/(60)*480 = 344 to 480
-      // 6-yard box: x=94.5-100 → svg x = (94.5-40)/60*480 = 436 to 480
-      const paX = mx(83), pa6X = mx(94.5);
-      const paY = PH*0.19, paH = PH*0.62;
-      const pa6Y = PH*0.37, pa6H = PH*0.26;
-      // Center arc: center of pitch x=50, radius proportional
-      const arcX = mx(50), arcR = PH*0.22;
-
-      const pitchSvg = `<svg width="${PW}" height="${PH}" style="display:block;background:#0a4a0a;border-radius:4px;border:1px solid #1a5a1a">
-        <defs>${defs}</defs>
-        <!-- Outer lines -->
-        <rect x="0" y="0" width="${PW}" height="${PH}" fill="none" stroke="#2d7a2d" stroke-width="2"/>
-        <!-- Halfway line (left edge of half-pitch) -->
-        <line x1="0" y1="0" x2="0" y2="${PH}" stroke="#2d7a2d" stroke-width="1.5" stroke-dasharray="6,4"/>
-        <!-- Center arc (partial circle) -->
-        <clipPath id="halfclip"><rect x="0" y="0" width="${PW}" height="${PH}"/></clipPath>
-        <circle cx="${arcX}" cy="${PH/2}" r="${arcR}" fill="none" stroke="#2d7a2d" stroke-width="1.2" clip-path="url(#halfclip)"/>
+      const pitchSvg = `<svg width="${PW+2}" height="${PH}" viewBox="-1 0 ${PW+2} ${PH}" style="display:block;border-radius:4px;overflow:hidden">
+        <!-- Grass -->
+        <rect x="-1" y="0" width="${PW+2}" height="${PH}" fill="${GRASS}"/>
+        <!-- Halfway line (left border, dashed) -->
+        <line x1="0" y1="0" x2="0" y2="${PH}" stroke="${LINE}" stroke-width="1.5"/>
+        <!-- Touchlines -->
+        <line x1="0" y1="0" x2="${PW}" y2="0" stroke="${LINE}" stroke-width="1.5"/>
+        <line x1="0" y1="${PH}" x2="${PW}" y2="${PH}" stroke="${LINE}" stroke-width="1.5"/>
+        <!-- Goal line -->
+        <line x1="${PW}" y1="0" x2="${PW}" y2="${PH}" stroke="${LINE}" stroke-width="1.5"/>
+        <!-- Center circle arc (only right half visible) -->
+        <ellipse cx="${arcCX.toFixed(1)}" cy="${arcCY.toFixed(1)}" rx="${arcRX.toFixed(1)}" ry="${arcRY.toFixed(1)}"
+          fill="none" stroke="${LINE}" stroke-width="1.2" clip-path="url(#hpclip)"/>
         <!-- Penalty area -->
-        <rect x="${paX.toFixed(1)}" y="${paY.toFixed(1)}" width="${(PW-paX).toFixed(1)}" height="${paH.toFixed(1)}" fill="none" stroke="#2d7a2d" stroke-width="1.3"/>
+        <rect x="${mx(PA_X).toFixed(1)}" y="${my(PA_Y1).toFixed(1)}"
+          width="${(PW - mx(PA_X)).toFixed(1)}" height="${(my(PA_Y2)-my(PA_Y1)).toFixed(1)}"
+          fill="none" stroke="${LINE}" stroke-width="1.2"/>
         <!-- 6-yard box -->
-        <rect x="${pa6X.toFixed(1)}" y="${pa6Y.toFixed(1)}" width="${(PW-pa6X).toFixed(1)}" height="${pa6H.toFixed(1)}" fill="none" stroke="#2d7a2d" stroke-width="1"/>
-        <!-- Penalty spot: x=89 in Opta -->
-        <circle cx="${mx(89).toFixed(1)}" cy="${(PH/2).toFixed(1)}" r="3" fill="#2d7a2d"/>
-        <!-- Goal -->
-        <rect x="${(PW-4).toFixed(1)}" y="${(PH*0.37).toFixed(1)}" width="4" height="${(PH*0.26).toFixed(1)}" fill="#ffffff33" stroke="#fff" stroke-width="1.5"/>
-        <!-- Assist arrows -->
+        <rect x="${mx(BOX6_X).toFixed(1)}" y="${my(BOX6_Y1).toFixed(1)}"
+          width="${(PW - mx(BOX6_X)).toFixed(1)}" height="${(my(BOX6_Y2)-my(BOX6_Y1)).toFixed(1)}"
+          fill="none" stroke="${LINE}" stroke-width="1"/>
+        <!-- Penalty spot -->
+        <circle cx="${mx(88.5).toFixed(1)}" cy="${my(50).toFixed(1)}" r="2.5" fill="${LINE}"/>
+        <!-- Goal (behind goal line) -->
+        <rect x="${PW}" y="${my(GOAL_Y1).toFixed(1)}" width="6"
+          height="${(my(GOAL_Y2)-my(GOAL_Y1)).toFixed(1)}"
+          fill="none" stroke="${LINE}" stroke-width="1.5"/>
+        <!-- Clip for center arc -->
+        <defs><clipPath id="hpclip"><rect x="0" y="0" width="${PW}" height="${PH}"/></clipPath></defs>
+        <!-- Assists -->
         ${lines}
-        <!-- Labels -->
-        <text x="6" y="14" fill="#2d7a2d88" font-size="9" font-family="sans-serif">← medio campo</text>
-        <text x="${PW-6}" y="${PH/2+4}" text-anchor="end" fill="#2d7a2d88" font-size="9" font-family="sans-serif">portería →</text>
       </svg>`;
 
       return `
-        <div style="display:flex;gap:16px;align-items:flex-start">
-          <div style="width:160px;flex-shrink:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px;max-height:440px;overflow-y:auto">${playerList}</div>
+        <div style="display:flex;gap:20px;align-items:flex-start">
+          <div style="width:155px;flex-shrink:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px;max-height:480px;overflow-y:auto">${playerList}</div>
           <div style="flex:1;min-width:0">
-            <div style="text-align:center;margin-bottom:8px">
+            <div style="margin-bottom:10px">
               <span style="font-size:13px;font-weight:700;color:var(--text1)">${asistPlayerSel}</span>
-              <span style="font-size:11px;color:var(--text3);margin-left:8px">${passes.length} asistencia${passes.length!==1?'s':''} · xA total: ${(sel?.xA||0).toFixed(2)}</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:8px">${passes.length} asistencia${passes.length!==1?'s':''} · xA: ${(sel?.xA||0).toFixed(2)}</span>
             </div>
-            <div style="overflow-x:auto;margin-bottom:14px">${pitchSvg}</div>
-            <div style="display:flex;gap:20px;justify-content:center;margin-bottom:12px;font-size:10px;color:var(--text3);align-items:center">
-              <span><svg width="30" height="8" style="vertical-align:middle;margin-right:3px"><line x1="0" y1="4" x2="28" y2="4" stroke="rgb(58,166,255)" stroke-width="2"/></svg>xA bajo</span>
-              <span><svg width="30" height="8" style="vertical-align:middle;margin-right:3px"><line x1="0" y1="4" x2="28" y2="4" stroke="rgb(118,106,75)" stroke-width="5"/></svg>xA alto</span>
-              <span>● Origen del pase · ○ Recepción</span>
-              <span style="color:var(--text3)">Pasa el ratón sobre una flecha para ver el detalle</span>
+            <div style="margin-bottom:14px">${pitchSvg}</div>
+            <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px;font-size:11px;color:var(--text3)">
+              <span><svg width="10" height="10" style="vertical-align:middle;margin-right:4px"><circle cx="5" cy="5" r="4" fill="#e53935"/></svg>Asistencia</span>
+              <span><svg width="14" height="14" style="vertical-align:middle;margin-right:4px"><circle cx="7" cy="7" r="6" fill="none" stroke="#e53935" stroke-width="1.5"/></svg>xA ≥ 0.1</span>
+              <span style="color:var(--text3)">Pasa el ratón sobre el pase para ver el detalle</span>
             </div>
             <div class="table-wrap" style="margin-top:0">
               <table>
@@ -18993,6 +19006,14 @@ const CELTA_LINEUPS = {
   function sancionTipHide() {
     document.getElementById('pos-tip').style.display = 'none';
     document.querySelectorAll('.sanc-dot').forEach(d => d.style.transform = '');
+  }
+  // Tooltip para elementos SVG — sin transform (scale desde (0,0) en SVG descoloca)
+  function svgTip(e, el) {
+    const tip = document.getElementById('pos-tip');
+    tip.innerHTML = (el.dataset.tip||'').replace(/&lt;br&gt;/g,'<br>');
+    tip.style.display = 'block';
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top  = (e.clientY - 10) + 'px';
   }
 
 
