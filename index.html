@@ -549,6 +549,7 @@
   let plantillaView     = 'plantilla'; // 'plantilla' | 'fichajes' | 'regates'
   let equipoSubTab      = 'alineaciones'; // 'alineaciones'
   let minutosVista      = 'total'; // 'total' | 'jornadas'
+  let tarjetasVista     = 'total'; // 'total' | 'jornadas'
   let alineacionesMatchIdx = 0;
   let plantillaRegatesPlayer = null;
   let progresionSubTab  = 'pasadores'; // 'pasadores' | 'porlinea' | 'receptores' | 'mapa' | 'mapa_rec'
@@ -13854,30 +13855,48 @@ const CELTA_LINEUPS = {
     },
   };
   const MINUTOS_DATA_14 = [
-    { name:"Alisson Becker", grupo:"GK", grupoLabel:"Portero", apps:26, total:2546, byJ:{1:96,2:104,3:98,4:96,5:94,6:99,12:95,13:95,14:98,15:100,16:100,17:100,18:96,19:97,20:100,21:97,22:97,23:96,24:96,25:105,26:97,27:99,28:97,29:98,30:96,38:100} },
-    { name:"Giorgi Mamardashvili", grupo:"GK", grupoLabel:"Portero", apps:10, total:929, byJ:{7:98,8:99,9:101,10:94,11:93,31:97,32:94,33:57,36:98,37:98} },
-    { name:"Freddie Woodman", grupo:"GK", grupoLabel:"Portero", apps:3, total:240, byJ:{33:46,34:98,35:96} },
-    { name:"Virgil van Dijk", grupo:"DEF", grupoLabel:"Defensa", apps:38, total:3715, byJ:{1:96,2:104,3:98,4:96,5:94,6:99,7:98,8:99,9:101,10:94,11:93,12:95,13:95,14:98,15:100,16:100,17:100,18:96,19:97,20:100,21:97,22:97,23:96,24:96,25:105,26:97,27:99,28:97,29:98,30:96,31:97,32:94,33:103,34:98,35:96,36:98,37:98,38:100} },
-    { name:"Ibrahima Konaté", grupo:"DEF", grupoLabel:"Defensa", apps:36, total:3306, byJ:{1:96,2:104,3:79,4:87,5:94,6:74,7:55,8:99,9:101,10:94,11:93,12:55,13:95,14:98,15:100,16:100,17:100,18:96,19:97,20:100,21:97,22:97,24:96,25:105,26:97,27:99,28:97,29:79,31:76,32:94,33:103,34:98,35:87,36:77,37:98,38:89} },
-    { name:"Milos Kerkez", grupo:"DEF", grupoLabel:"Defensa", apps:34, total:2444, byJ:{1:60,2:104,3:98,4:38,5:94,6:99,7:55,8:99,9:61,11:37,12:68,13:84,14:12,15:100,16:100,17:100,18:96,19:31,20:100,21:97,22:78,23:45,24:96,25:94,27:83,28:97,29:64,31:76,33:17,34:11,35:37,36:98,37:98,38:17} },
-    { name:"Andy Robertson", grupo:"DEF", grupoLabel:"Defensa", apps:24, total:1283, byJ:{1:36,4:58,7:43,9:40,10:94,11:56,12:27,13:11,14:86,16:22,17:1,19:66,22:19,23:51,26:97,27:16,29:34,30:96,31:21,32:94,33:86,34:87,35:59,38:83} },
-    { name:"Jeremie Frimpong", grupo:"DEF", grupoLabel:"Defensa", apps:21, total:1140, byJ:{1:60,4:9,6:25,8:14,17:31,18:96,19:84,20:24,21:97,22:97,23:58,28:21,29:71,30:63,31:63,32:68,33:20,34:39,35:75,36:98,38:27} },
-    { name:"Conor Bradley", grupo:"DEF", grupoLabel:"Defensa", apps:15, total:978, byJ:{2:24,4:51,5:94,6:45,7:45,8:61,9:61,10:94,11:82,15:67,17:45,18:35,19:79,20:100,21:95} },
-    { name:"Joe Gomez", grupo:"DEF", grupoLabel:"Defensa", apps:21, total:709, byJ:{1:25,3:19,9:18,11:11,13:95,14:64,15:33,16:25,20:4,21:2,23:34,26:29,27:16,28:76,29:27,30:96,32:26,34:11,36:21,37:66,38:11} },
-    { name:"Dominik Szoboszlai", grupo:"MID", grupoLabel:"Centrocampista", apps:36, total:3505, byJ:{1:96,2:104,3:98,4:96,5:94,6:99,7:98,8:99,9:101,10:94,11:93,12:95,13:95,14:98,15:100,16:83,17:100,19:97,20:100,21:97,22:97,23:96,24:96,25:105,27:99,28:97,29:98,30:96,31:97,32:94,33:103,34:98,35:96,36:98,37:98,38:100} },
-    { name:"Ryan Gravenberch", grupo:"MID", grupoLabel:"Centrocampista", apps:36, total:3225, byJ:{2:104,3:98,4:96,5:94,6:99,7:98,8:61,10:94,11:93,12:95,13:95,14:98,15:100,16:100,17:100,18:96,19:97,20:100,21:97,22:78,23:96,24:96,25:105,26:97,27:99,28:86,29:45,30:96,31:97,32:49,33:103,34:20,35:96,36:98,37:66,38:83} },
-    { name:"Alexis Mac Allister", grupo:"MID", grupoLabel:"Centrocampista", apps:37, total:2869, byJ:{1:72,3:61,4:45,5:61,6:64,7:86,8:61,9:40,10:94,11:73,12:95,13:95,14:73,15:33,16:100,17:100,18:96,19:31,20:100,21:97,22:19,23:58,24:96,25:105,26:97,27:99,28:97,29:98,30:90,31:97,32:26,33:20,34:98,35:96,36:98,37:98,38:100} },
-    { name:"Florian Wirtz", grupo:"MID", grupoLabel:"Centrocampista", apps:33, total:2514, byJ:{1:81,2:80,3:89,4:87,5:34,6:74,7:53,8:38,9:83,10:17,11:82,13:75,14:98,15:67,16:78,17:99,18:92,19:66,20:76,21:97,22:97,23:96,24:87,25:105,26:97,30:64,31:97,32:68,33:83,34:98,35:96,37:32,38:28} },
-    { name:"Curtis Jones", grupo:"MID", grupoLabel:"Centrocampista", apps:34, total:2136, byJ:{1:24,2:95,3:37,5:33,6:35,7:43,8:38,9:69,11:20,12:78,13:20,14:34,15:100,16:100,17:100,18:96,19:66,20:85,22:87,23:38,24:12,25:20,26:22,27:83,29:53,30:32,31:89,32:45,33:103,34:87,35:96,36:98,37:98,38:100} },
-    { name:"Wataru Endo", grupo:"MID", grupoLabel:"Centrocampista", apps:8, total:216, byJ:{1:36,2:3,3:9,7:12,15:17,23:62,24:9,26:68} },
-    { name:"Trey Nyoni", grupo:"MID", grupoLabel:"Centrocampista", apps:6, total:51, byJ:{17:1,18:4,28:11,30:13,32:5,38:17} },
-    { name:"Harvey Elliott", grupo:"MID", grupoLabel:"Centrocampista", apps:1, total:9, byJ:{2:9} },
-    { name:"Cody Gakpo", grupo:"FWD", grupoLabel:"Delantero", apps:36, total:2888, byJ:{1:96,2:95,3:98,4:96,5:60,6:54,7:98,8:99,9:61,10:94,11:37,12:95,13:95,14:45,15:83,18:11,19:31,20:96,21:97,22:78,23:73,24:96,25:85,26:75,27:77,28:97,29:64,30:83,31:97,32:94,33:83,34:98,35:96,36:77,37:74,38:100} },
-    { name:"Mohamed Salah", grupo:"FWD", grupoLabel:"Delantero", apps:27, total:2313, byJ:{1:96,2:101,3:98,4:96,5:94,6:99,7:98,8:85,9:101,10:94,11:93,12:95,14:53,16:75,23:96,24:84,25:105,26:97,27:77,28:97,29:98,30:33,32:89,33:103,34:59,37:24,38:73} },
-    { name:"Hugo Ekitiké", grupo:"FWD", grupoLabel:"Delantero", apps:28, total:1923, byJ:{1:71,2:80,3:78,4:71,5:67,7:24,8:38,9:101,10:77,11:56,12:40,13:28,14:25,15:83,16:78,17:99,18:85,19:97,22:97,23:38,24:84,25:105,26:88,27:99,28:76,29:98,30:32,31:8} },
-    { name:"Alexander Isak", grupo:"FWD", grupoLabel:"Delantero", apps:14, total:739, byJ:{5:27,6:84,7:74,8:72,12:68,13:67,14:86,15:17,16:22,17:14,32:26,33:72,34:78,36:32} },
-    { name:"Rio Ngumoha", grupo:"FWD", grupoLabel:"Delantero", apps:19, total:668, byJ:{2:9,4:9,6:15,9:32,12:17,19:13,22:19,23:23,27:22,28:21,29:34,30:64,31:34,32:68,33:31,35:21,36:66,37:98,38:72} },
-    { name:"Federico Chiesa", grupo:"FWD", grupoLabel:"Delantero", apps:26, total:519, byJ:{1:15,2:24,3:20,4:25,6:25,8:27,9:40,11:11,12:27,14:12,16:17,17:10,18:61,19:18,20:15,22:10,24:12,25:11,26:9,27:22,29:19,30:6,31:21,35:9,36:21,37:32} },
+    { name:"Alisson Becker", grupo:"GK", grupoLabel:"Portero", posShort:"PT", apps:26, total:2546, byJ:{1:96,2:104,3:98,4:96,5:94,6:99,12:95,13:95,14:98,15:100,16:100,17:100,18:96,19:97,20:100,21:97,22:97,23:96,24:96,25:105,26:97,27:99,28:97,29:98,30:96,38:100} },
+    { name:"Giorgi Mamardashvili", grupo:"GK", grupoLabel:"Portero", posShort:"PT", apps:10, total:929, byJ:{7:98,8:99,9:101,10:94,11:93,31:97,32:94,33:57,36:98,37:98} },
+    { name:"Freddie Woodman", grupo:"GK", grupoLabel:"Portero", posShort:"PT", apps:3, total:240, byJ:{33:46,34:98,35:96} },
+    { name:"Virgil van Dijk", grupo:"DEF", grupoLabel:"Defensa", posShort:"CAT", apps:38, total:3715, byJ:{1:96,2:104,3:98,4:96,5:94,6:99,7:98,8:99,9:101,10:94,11:93,12:95,13:95,14:98,15:100,16:100,17:100,18:96,19:97,20:100,21:97,22:97,23:96,24:96,25:105,26:97,27:99,28:97,29:98,30:96,31:97,32:94,33:103,34:98,35:96,36:98,37:98,38:100} },
+    { name:"Ibrahima Konaté", grupo:"DEF", grupoLabel:"Defensa", posShort:"CAT", apps:36, total:3306, byJ:{1:96,2:104,3:79,4:87,5:94,6:74,7:55,8:99,9:101,10:94,11:93,12:55,13:95,14:98,15:100,16:100,17:100,18:96,19:97,20:100,21:97,22:97,24:96,25:105,26:97,27:99,28:97,29:79,31:76,32:94,33:103,34:98,35:87,36:77,37:98,38:89} },
+    { name:"Milos Kerkez", grupo:"DEF", grupoLabel:"Defensa", posShort:"LAT IZQ", apps:34, total:2444, byJ:{1:60,2:104,3:98,4:38,5:94,6:99,7:55,8:99,9:61,11:37,12:68,13:84,14:12,15:100,16:100,17:100,18:96,19:31,20:100,21:97,22:78,23:45,24:96,25:94,27:83,28:97,29:64,31:76,33:17,34:11,35:37,36:98,37:98,38:17} },
+    { name:"Andy Robertson", grupo:"DEF", grupoLabel:"Defensa", posShort:"LAT IZQ", apps:24, total:1283, byJ:{1:36,4:58,7:43,9:40,10:94,11:56,12:27,13:11,14:86,16:22,17:1,19:66,22:19,23:51,26:97,27:16,29:34,30:96,31:21,32:94,33:86,34:87,35:59,38:83} },
+    { name:"Jeremie Frimpong", grupo:"DEF", grupoLabel:"Defensa", posShort:"LAT DER", apps:21, total:1140, byJ:{1:60,4:9,6:25,8:14,17:31,18:96,19:84,20:24,21:97,22:97,23:58,28:21,29:71,30:63,31:63,32:68,33:20,34:39,35:75,36:98,38:27} },
+    { name:"Conor Bradley", grupo:"DEF", grupoLabel:"Defensa", posShort:"LAT DER", apps:15, total:978, byJ:{2:24,4:51,5:94,6:45,7:45,8:61,9:61,10:94,11:82,15:67,17:45,18:35,19:79,20:100,21:95} },
+    { name:"Joe Gomez", grupo:"DEF", grupoLabel:"Defensa", posShort:"LAT DER", apps:21, total:709, byJ:{1:25,3:19,9:18,11:11,13:95,14:64,15:33,16:25,20:4,21:2,23:34,26:29,27:16,28:76,29:27,30:96,32:26,34:11,36:21,37:66,38:11} },
+    { name:"Dominik Szoboszlai", grupo:"MID", grupoLabel:"Centrocampista", posShort:"MCO", apps:36, total:3505, byJ:{1:96,2:104,3:98,4:96,5:94,6:99,7:98,8:99,9:101,10:94,11:93,12:95,13:95,14:98,15:100,16:83,17:100,19:97,20:100,21:97,22:97,23:96,24:96,25:105,27:99,28:97,29:98,30:96,31:97,32:94,33:103,34:98,35:96,36:98,37:98,38:100} },
+    { name:"Ryan Gravenberch", grupo:"MID", grupoLabel:"Centrocampista", posShort:"MC", apps:36, total:3225, byJ:{2:104,3:98,4:96,5:94,6:99,7:98,8:61,10:94,11:93,12:95,13:95,14:98,15:100,16:100,17:100,18:96,19:97,20:100,21:97,22:78,23:96,24:96,25:105,26:97,27:99,28:86,29:45,30:96,31:97,32:49,33:103,34:20,35:96,36:98,37:66,38:83} },
+    { name:"Alexis Mac Allister", grupo:"MID", grupoLabel:"Centrocampista", posShort:"MC", apps:37, total:2869, byJ:{1:72,3:61,4:45,5:61,6:64,7:86,8:61,9:40,10:94,11:73,12:95,13:95,14:73,15:33,16:100,17:100,18:96,19:31,20:100,21:97,22:19,23:58,24:96,25:105,26:97,27:99,28:97,29:98,30:90,31:97,32:26,33:20,34:98,35:96,36:98,37:98,38:100} },
+    { name:"Florian Wirtz", grupo:"MID", grupoLabel:"Centrocampista", posShort:"MCO", apps:33, total:2514, byJ:{1:81,2:80,3:89,4:87,5:34,6:74,7:53,8:38,9:83,10:17,11:82,13:75,14:98,15:67,16:78,17:99,18:92,19:66,20:76,21:97,22:97,23:96,24:87,25:105,26:97,30:64,31:97,32:68,33:83,34:98,35:96,37:32,38:28} },
+    { name:"Curtis Jones", grupo:"MID", grupoLabel:"Centrocampista", posShort:"MC", apps:34, total:2136, byJ:{1:24,2:95,3:37,5:33,6:35,7:43,8:38,9:69,11:20,12:78,13:20,14:34,15:100,16:100,17:100,18:96,19:66,20:85,22:87,23:38,24:12,25:20,26:22,27:83,29:53,30:32,31:89,32:45,33:103,34:87,35:96,36:98,37:98,38:100} },
+    { name:"Wataru Endo", grupo:"MID", grupoLabel:"Centrocampista", posShort:"MC", apps:8, total:216, byJ:{1:36,2:3,3:9,7:12,15:17,23:62,24:9,26:68} },
+    { name:"Trey Nyoni", grupo:"MID", grupoLabel:"Centrocampista", posShort:"MC", apps:6, total:51, byJ:{17:1,18:4,28:11,30:13,32:5,38:17} },
+    { name:"Harvey Elliott", grupo:"MID", grupoLabel:"Centrocampista", posShort:"MC", apps:1, total:9, byJ:{2:9} },
+    { name:"Cody Gakpo", grupo:"FWD", grupoLabel:"Delantero", posShort:"EXT IZQ", apps:36, total:2888, byJ:{1:96,2:95,3:98,4:96,5:60,6:54,7:98,8:99,9:61,10:94,11:37,12:95,13:95,14:45,15:83,18:11,19:31,20:96,21:97,22:78,23:73,24:96,25:85,26:75,27:77,28:97,29:64,30:83,31:97,32:94,33:83,34:98,35:96,36:77,37:74,38:100} },
+    { name:"Mohamed Salah", grupo:"FWD", grupoLabel:"Delantero", posShort:"EXT DER", apps:27, total:2313, byJ:{1:96,2:101,3:98,4:96,5:94,6:99,7:98,8:85,9:101,10:94,11:93,12:95,14:53,16:75,23:96,24:84,25:105,26:97,27:77,28:97,29:98,30:33,32:89,33:103,34:59,37:24,38:73} },
+    { name:"Hugo Ekitiké", grupo:"FWD", grupoLabel:"Delantero", posShort:"DC", apps:28, total:1923, byJ:{1:71,2:80,3:78,4:71,5:67,7:24,8:38,9:101,10:77,11:56,12:40,13:28,14:25,15:83,16:78,17:99,18:85,19:97,22:97,23:38,24:84,25:105,26:88,27:99,28:76,29:98,30:32,31:8} },
+    { name:"Alexander Isak", grupo:"FWD", grupoLabel:"Delantero", posShort:"DC", apps:14, total:739, byJ:{5:27,6:84,7:74,8:72,12:68,13:67,14:86,15:17,16:22,17:14,32:26,33:72,34:78,36:32} },
+    { name:"Rio Ngumoha", grupo:"FWD", grupoLabel:"Delantero", posShort:"EXT IZQ", apps:19, total:668, byJ:{2:9,4:9,6:15,9:32,12:17,19:13,22:19,23:23,27:22,28:21,29:34,30:64,31:34,32:68,33:31,35:21,36:66,37:98,38:72} },
+    { name:"Federico Chiesa", grupo:"FWD", grupoLabel:"Delantero", posShort:"DC", apps:26, total:519, byJ:{1:15,2:24,3:20,4:25,6:25,8:27,9:40,11:11,12:27,14:12,16:17,17:10,18:61,19:18,20:15,22:10,24:12,25:11,26:9,27:22,29:19,30:6,31:21,35:9,36:21,37:32} },
+  ];
+
+  const TARJETAS_DATA_14 = [
+    { name:"Alisson Becker", grupo:"GK", grupoLabel:"Portero", posShort:"PT", yellow:1, red:0, byJ_Y:{25:1}, byJ_R:{} },
+    { name:"Ibrahima Konaté", grupo:"DEF", grupoLabel:"Defensa", posShort:"CAT", yellow:5, red:0, byJ_Y:{2:1,6:1,16:1,17:1,21:1}, byJ_R:{} },
+    { name:"Conor Bradley", grupo:"DEF", grupoLabel:"Defensa", posShort:"LAT DER", yellow:5, red:0, byJ_Y:{2:1,4:1,7:1,11:1,15:1}, byJ_R:{} },
+    { name:"Milos Kerkez", grupo:"DEF", grupoLabel:"Defensa", posShort:"LAT IZQ", yellow:4, red:0, byJ_Y:{1:1,4:1,9:1,22:1}, byJ_R:{} },
+    { name:"Virgil van Dijk", grupo:"DEF", grupoLabel:"Defensa", posShort:"CAT", yellow:3, red:0, byJ_Y:{6:1,10:1,25:1}, byJ_R:{} },
+    { name:"Joe Gomez", grupo:"DEF", grupoLabel:"Defensa", posShort:"LAT DER", yellow:2, red:0, byJ_Y:{14:1,15:1}, byJ_R:{} },
+    { name:"Dominik Szoboszlai", grupo:"MID", grupoLabel:"Centrocampista", posShort:"MCO", yellow:5, red:1, byJ_Y:{5:1,7:1,10:1,11:1,17:1}, byJ_R:{25:1} },
+    { name:"Alexis Mac Allister", grupo:"MID", grupoLabel:"Centrocampista", posShort:"MC", yellow:4, red:0, byJ_Y:{11:1,17:1,21:1,24:1}, byJ_R:{} },
+    { name:"Ryan Gravenberch", grupo:"MID", grupoLabel:"Centrocampista", posShort:"MC", yellow:4, red:0, byJ_Y:{2:1,3:1,12:1,23:1}, byJ_R:{} },
+    { name:"Florian Wirtz", grupo:"MID", grupoLabel:"Centrocampista", posShort:"MCO", yellow:1, red:0, byJ_Y:{5:1}, byJ_R:{} },
+    { name:"Curtis Jones", grupo:"MID", grupoLabel:"Centrocampista", posShort:"MC", yellow:1, red:0, byJ_Y:{11:1}, byJ_R:{} },
+    { name:"Wataru Endo", grupo:"MID", grupoLabel:"Centrocampista", posShort:"MC", yellow:1, red:0, byJ_Y:{3:1}, byJ_R:{} },
+    { name:"Federico Chiesa", grupo:"FWD", grupoLabel:"Delantero", posShort:"DC", yellow:2, red:0, byJ_Y:{6:1,12:1}, byJ_R:{} },
+    { name:"Mohamed Salah", grupo:"FWD", grupoLabel:"Delantero", posShort:"EXT DER", yellow:1, red:0, byJ_Y:{9:1}, byJ_R:{} },
+    { name:"Cody Gakpo", grupo:"FWD", grupoLabel:"Delantero", posShort:"EXT IZQ", yellow:1, red:0, byJ_Y:{20:1}, byJ_R:{} },
   ];
   function renderEquipoTab() {
     const cont = document.getElementById('content');
@@ -13888,12 +13907,14 @@ const CELTA_LINEUPS = {
         <div style="display:inline-flex;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:22px;padding:3px;margin-bottom:20px">
           ${tabBtn('alineaciones', 'Alineaciones')}
           ${tabBtn('minutos', 'Minutos')}
+          ${tabBtn('tarjetas', 'Tarjetas')}
         </div>
         <div id="equipo-subtab-content"></div>
       </div>`;
 
     if (equipoSubTab === 'alineaciones') renderEquipoAlineaciones();
     else if (equipoSubTab === 'minutos') renderEquipoMinutos();
+    else if (equipoSubTab === 'tarjetas') renderEquipoTarjetas();
   }
 
   function renderEquipoMinutos() {
@@ -13945,7 +13966,7 @@ const CELTA_LINEUPS = {
                 const perApp = p.apps ? Math.round(p.total/p.apps) : 0;
                 const pct = Math.min(100, Math.round((p.total/(lastJ*90))*100));
                 return `<tr>
-                  <td style="font-weight:700">${p.name}</td>
+                  <td style="font-weight:700">${p.name}<span style="font-size:10px;color:var(--text3);font-weight:500;margin-left:5px">(${p.posShort})</span></td>
                   <td><span class="pill pill-blue">${p.grupoLabel}</span></td>
                   <td style="text-align:center;color:var(--text2);font-weight:600">${p.apps}</td>
                   <td style="text-align:center;color:${grp.color};font-weight:800">${p.total}'</td>
@@ -14001,7 +14022,7 @@ const CELTA_LINEUPS = {
             return makeCell(jn, mins, p.name);
           }).join('');
           return `<tr>
-            <td style="font-weight:700;white-space:nowrap;padding:7px 14px">${p.name}</td>
+            <td style="font-weight:700;white-space:nowrap;padding:7px 14px">${p.name}<span style="font-size:10px;color:var(--text3);font-weight:500;margin-left:5px">(${p.posShort})</span></td>
             <td style="padding:7px 8px"><span class="pill pill-blue">${p.grupoLabel}</span></td>
             ${cells}
           </tr>`;
@@ -14076,6 +14097,187 @@ const CELTA_LINEUPS = {
         <span><span style="display:inline-block;width:14px;height:10px;border-radius:2px;background:rgba(63,185,80,0.45);margin-right:4px"></span>Entre 30' y 60'</span>
         <span><span style="display:inline-block;width:14px;height:10px;border-radius:2px;background:rgba(63,185,80,0.85);margin-right:4px"></span>Más de 60'</span>
         <span style="margin-left:auto">Datos: Premier League · Comentarios oficiales del partido · J1–J${lastJ}</span>
+      </div>`;
+  }
+
+  function renderEquipoTarjetas() {
+    const el = document.getElementById('equipo-subtab-content');
+    if (typeof TARJETAS_DATA_14 === 'undefined' || !el) return;
+    const data = TARJETAS_DATA_14;
+    const lastJ = 38;
+    const GROUP_ORDER = ['GK','DEF','MID','FWD'];
+    const GROUP_LABEL = {GK:'Porteros', DEF:'Defensas', MID:'Centrocampistas', FWD:'Delanteros'};
+    const GROUP_COLOR = {GK:'#e3b341', DEF:'#58a6ff', MID:'#3fb950', FWD:'#f85149'};
+
+    const jornadaInfo = {};
+    if (typeof ALINEACIONES_14 !== 'undefined') {
+      ALINEACIONES_14.forEach(m => {
+        const num = parseInt((m.jornada.match(/\d+/)||[])[0]);
+        if (num) jornadaInfo[num] = { rival: m.rival, loc: m.loc };
+      });
+    }
+
+    const totalYellow = data.reduce((s,p)=>s+p.yellow, 0);
+    const totalRed    = data.reduce((s,p)=>s+p.red, 0);
+    const topYellow   = [...data].sort((a,b)=>b.yellow-a.yellow)[0];
+    const topRed      = data.filter(p=>p.red>0).sort((a,b)=>b.red-a.red)[0];
+
+    const grouped = GROUP_ORDER.map(g => ({
+      g, label: GROUP_LABEL[g], color: GROUP_COLOR[g],
+      players: data.filter(p => p.grupo === g).sort((a,b)=> (b.yellow+b.red*3) - (a.yellow+a.red*3))
+    })).filter(grp => grp.players.length);
+
+    const cardIcon = (type) => type === 'red'
+      ? `<span style="display:inline-block;width:9px;height:13px;border-radius:2px;background:#f85149;box-shadow:0 0 0 1px rgba(0,0,0,0.5);vertical-align:middle"></span>`
+      : `<span style="display:inline-block;width:9px;height:13px;border-radius:2px;background:#e3b341;box-shadow:0 0 0 1px rgba(0,0,0,0.5);vertical-align:middle"></span>`;
+
+    // ── Vista TOTAL ──────────────────────────────────────────────────────────
+    const renderTotal = () => `
+      <div class="table-wrap anim">
+        <table>
+          <thead>
+            <tr>
+              <th>Jugador</th><th>Pos</th>
+              <th style="text-align:center">${cardIcon('yellow')} Amarillas</th>
+              <th style="text-align:center">${cardIcon('red')} Rojas</th>
+              <th style="text-align:center">Total sanciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${grouped.map(grp => `
+              <tr>
+                <td colspan="5" style="background:var(--bg3);font-weight:800;font-size:11px;letter-spacing:0.6px;color:${grp.color};padding:7px 14px;text-transform:uppercase">${grp.label}</td>
+              </tr>
+              ${grp.players.map(p => {
+                return `<tr>
+                  <td style="font-weight:700">${p.name}<span style="font-size:10px;color:var(--text3);font-weight:500;margin-left:5px">(${p.posShort})</span></td>
+                  <td><span class="pill pill-blue">${p.grupoLabel}</span></td>
+                  <td style="text-align:center">
+                    ${p.yellow > 0 ? `<span style="display:inline-flex;align-items:center;gap:5px;font-weight:800;color:#e3b341">${cardIcon('yellow')} ${p.yellow}</span>` : '<span style="color:var(--text3)">—</span>'}
+                  </td>
+                  <td style="text-align:center">
+                    ${p.red > 0 ? `<span style="display:inline-flex;align-items:center;gap:5px;font-weight:800;color:#f85149">${cardIcon('red')} ${p.red}</span>` : '<span style="color:var(--text3)">—</span>'}
+                  </td>
+                  <td style="text-align:center;color:var(--text2);font-weight:600">${p.yellow + p.red}</td>
+                </tr>`;
+              }).join('')}
+            `).join('')}
+          </tbody>
+        </table>
+      </div>`;
+
+    // ── Vista POR JORNADAS ───────────────────────────────────────────────────
+    const renderJornadas = () => {
+      const jHeaders = Array.from({length:lastJ},(_,i)=>`<th style="text-align:center;font-size:10px;color:var(--text3);padding:6px 3px;min-width:24px">J${i+1}</th>`).join('');
+
+      const makeCell = (jn, hasY, hasR, name) => {
+        if (!hasY && !hasR) {
+          return `<td style="padding:4px 2px;text-align:center"><span style="display:inline-block;width:20px;height:14px;border-radius:3px;background:var(--bg4);opacity:0.3"></span></td>`;
+        }
+        const info = jornadaInfo[jn];
+        const rivalLine = info ? `&lt;br&gt;${info.loc === 'H' ? 'vs' : '@'} ${info.rival}` : '';
+        let tipText, bg;
+        if (hasR) {
+          tipText = `J${jn} · ${name}${rivalLine}&lt;br&gt;🟥 Tarjeta roja`;
+          bg = 'rgba(248,81,73,0.85)';
+        } else {
+          tipText = `J${jn} · ${name}${rivalLine}&lt;br&gt;🟨 Tarjeta amarilla`;
+          bg = 'rgba(227,179,65,0.85)';
+        }
+        const inner = hasR ? `<span style="display:inline-block;width:7px;height:10px;border-radius:1px;background:#fff;opacity:0.85"></span>` : `<span style="display:inline-block;width:7px;height:10px;border-radius:1px;background:#0d1117;opacity:0.6"></span>`;
+        return `<td style="padding:4px 2px;text-align:center">
+          <span class="min-cell" data-tip="${tipText}"
+            style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:16px;border-radius:3px;background:${bg};cursor:pointer;transition:transform .1s"
+            onmouseenter="sancionTip(event,this)" onmouseleave="sancionTipHide();this.style.transform=''">${inner}</span>
+        </td>`;
+      };
+
+      const rows = grouped.map(grp => `
+        <tr>
+          <td colspan="${lastJ+2}" style="background:var(--bg3);font-weight:800;font-size:11px;letter-spacing:0.6px;color:${grp.color};padding:7px 14px;text-transform:uppercase">${grp.label}</td>
+        </tr>
+        ${grp.players.map(p => {
+          const cells = Array.from({length:lastJ},(_,i)=>{
+            const jn = i+1;
+            const hasY = !!(p.byJ_Y[jn] || p.byJ_Y[String(jn)]);
+            const hasR = !!(p.byJ_R[jn] || p.byJ_R[String(jn)]);
+            return makeCell(jn, hasY, hasR, p.name);
+          }).join('');
+          return `<tr>
+            <td style="font-weight:700;white-space:nowrap;padding:7px 14px">${p.name}<span style="font-size:10px;color:var(--text3);font-weight:500;margin-left:5px">(${p.posShort})</span></td>
+            <td style="padding:7px 8px"><span class="pill pill-blue">${p.grupoLabel}</span></td>
+            ${cells}
+          </tr>`;
+        }).join('')}
+      `).join('');
+
+      return `
+        <div class="table-wrap anim" style="overflow-x:auto">
+          <table style="min-width:1100px">
+            <thead>
+              <tr>
+                <th style="white-space:nowrap">Jugador</th>
+                <th>Pos</th>
+                ${jHeaders}
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    };
+
+
+    el.innerHTML = `
+      <div class="content-head anim">
+        <div><h2>TARJETAS</h2>
+          <p>Temporada 2025/26 · Premier League · J1–J${lastJ} · Amarillas y rojas</p>
+        </div>
+      </div>
+
+      <div class="cards anim" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+        <div class="card">
+          <div class="card-label">Jugadores con tarjeta</div>
+          <div class="card-value" style="color:var(--accent)">${data.length}</div>
+          <div class="card-sub">en ${lastJ} jornadas</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Más tarjetas amarillas</div>
+          <div class="card-value" style="color:#e3b341;font-size:20px">${topYellow ? topYellow.name : '—'}</div>
+          <div class="card-sub">${topYellow ? topYellow.yellow + ' amarillas' : ''}</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Total amarillas</div>
+          <div class="card-value" style="color:#e3b341">${totalYellow}</div>
+          <div class="card-sub">en toda la temporada</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Total rojas</div>
+          <div class="card-value" style="color:#f85149">${totalRed}</div>
+          <div class="card-sub">${topRed ? 'incl. ' + topRed.name : 'sin expulsiones'}</div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <div style="display:flex;background:var(--bg3);border-radius:8px;padding:3px;gap:2px">
+          <button onclick="tarjetasVista='total';renderEquipoTarjetas()"
+            style="background:${tarjetasVista==='total'?'var(--bg2)':'transparent'};border:${tarjetasVista==='total'?'1px solid var(--border)':'1px solid transparent'};color:${tarjetasVista==='total'?'var(--accent)':'var(--text2)'};border-radius:6px;padding:5px 14px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">
+            Total
+          </button>
+          <button onclick="tarjetasVista='jornadas';renderEquipoTarjetas()"
+            style="background:${tarjetasVista==='jornadas'?'var(--bg2)':'transparent'};border:${tarjetasVista==='jornadas'?'1px solid var(--border)':'1px solid transparent'};color:${tarjetasVista==='jornadas'?'var(--accent)':'var(--text2)'};border-radius:6px;padding:5px 14px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">
+            Por Jornadas
+          </button>
+        </div>
+        ${tarjetasVista==='jornadas'?'<span style="font-size:11px;color:var(--text3)">Pasa el ratón sobre una celda para ver la tarjeta de esa jornada</span>':''}
+      </div>
+
+      ${tarjetasVista==='total' ? renderTotal() : renderJornadas()}
+
+      <div style="margin-top:14px;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text3);display:flex;gap:20px;flex-wrap:wrap;align-items:center">
+        <span style="font-weight:600;color:var(--text2)">Leyenda:</span>
+        <span>${cardIcon('yellow')} <span style="margin-left:4px">Tarjeta amarilla</span></span>
+        <span>${cardIcon('red')} <span style="margin-left:4px">Tarjeta roja</span></span>
+        <span style="margin-left:auto">Datos: SkillCorner · Premier League · J1–J${lastJ}</span>
       </div>`;
   }
 
