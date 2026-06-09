@@ -16867,7 +16867,16 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
     const _runKey  = p.csvName || p.name;
     const _runData = window._runSeasonCache ? (window._runSeasonCache[_runKey] || null) : undefined;
     // Liverpool player stats
-    const _livData = (currentTeam.id === 14 && typeof LIV_PLAYERS !== 'undefined') ? (LIV_PLAYERS.players[_runKey] || null) : null;
+    const _LIV_NAME_MAP = {
+      'Virgil van Dijk':'V. van Dijk','Ibrahima Konaté':'I. Konaté','Joe Gomez':'J. Gomez',
+      'Conor Bradley':'C. Bradley','Jeremie Frimpong':'J. Frimpong','Andy Robertson':'A. Robertson',
+      'Milos Kerkez':'M. Kerkez','Ryan Gravenberch':'R. Gravenberch','Dominik Szoboszlai':'D. Szoboszlai',
+      'Alexis Mac Allister':'A. Mac Allister','Curtis Jones':'C. Jones','Florian Wirtz':'F. Wirtz',
+      'Alexander Isak':'A. Isak','Cody Gakpo':'C. Gakpo','Hugo Ekitiké':'H. Ekitiké',
+      'Federico Chiesa':'F. Chiesa','Rio Ngumoha':'R. Ngumoha',
+    };
+    const _livKey = _LIV_NAME_MAP[_runKey] || _runKey;
+    const _livData = (currentTeam.id === 14 && typeof LIV_PLAYERS !== 'undefined') ? (LIV_PLAYERS.players[_livKey] || null) : null;
     // _runData === undefined → cache not loaded yet; null → loaded, player not found
     // Pases season data
     const _pasesData = window._pasesSeasonCache ? (window._pasesSeasonCache[_runKey] || null) : undefined;
