@@ -12214,6 +12214,28 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
     if (!el) return;
     const allTeams = PL_STANDINGS.map(t=>t.name);
     const teamColor = Object.fromEntries(PL_STANDINGS.map(t=>[t.name,t.color]));
+    const ESCUDOS = {
+      'Liverpool':'img/escudos/liverpool.png',
+      'Arsenal':'img/escudos/pl-arsenal.png',
+      'Aston Villa':'img/escudos/pl-aston-villa.png',
+      'Bournemouth':'img/escudos/pl-bournemouth.png',
+      'Brentford':'img/escudos/pl-brentford.png',
+      'Brighton':'img/escudos/pl-brighton.png',
+      'Burnley':'img/escudos/pl-burnley.png',
+      'Chelsea':'img/escudos/pl-chelsea.png',
+      'Crystal Palace':'img/escudos/pl-crystal-palace.png',
+      'Everton':'img/escudos/pl-everton.png',
+      'Fulham':'img/escudos/pl-fulham.png',
+      'Leeds':'img/escudos/pl-leeds-united.png',
+      'Man City':'img/escudos/pl-manchester-city.png',
+      'Man Utd':'img/escudos/pl-manchester-united.png',
+      'Newcastle':'img/escudos/pl-newcastle-united.png',
+      'Nottm Forest':'img/escudos/pl-nottingham-forest.png',
+      'Sunderland':'img/escudos/pl-sunderland.png',
+      'Spurs':'img/escudos/pl-tottenham-hotspur.png',
+      'West Ham':'img/escudos/pl-west-ham-united.png',
+      'Wolves':'img/escudos/pl-wolverhampton.png',
+    };
 
     window._clasifToggleTeam = function(name) {
       const idx = clasifCompare.indexOf(name);
@@ -12225,125 +12247,200 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
     const selected = ['Liverpool', ...clasifCompare.filter(t=>t!=='Liverpool')];
 
     // ── Chart geometry ─────────────────────────────────────────────────────
-    const W=740, H=400, L=36, R=110, T=16, B=36;
+    const W=800, H=420, L=36, R=28, T=20, B=34;
     const cW=W-L-R, cH=H-T-B, N=38;
     const xS = i => L + (i/(N-1))*cW;
     const yS = pos => T + ((pos-1)/19)*cH;
 
-    // ── Smooth curve path (catmull-rom → cubic bezier) ────────────────────
-    const smoothPath = (pts) => {
-      if (pts.length < 2) return '';
-      let d = `M${pts[0][0]},${pts[0][1]}`;
-      for (let i = 0; i < pts.length - 1; i++) {
-        const p0 = pts[Math.max(i-1,0)];
-        const p1 = pts[i];
-        const p2 = pts[i+1];
-        const p3 = pts[Math.min(i+2,pts.length-1)];
-        const cp1x = p1[0] + (p2[0]-p0[0])/6;
-        const cp1y = p1[1] + (p2[1]-p0[1])/6;
-        const cp2x = p2[0] - (p3[0]-p1[0])/6;
-        const cp2y = p2[1] - (p3[1]-p1[1])/6;
-        d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
-      }
-      return d;
-    };
-
-    const teamPts = t => (PL_EVOLUTION[t]||[]).map((pos,i)=>[xS(i),yS(pos)]);
-
     // ── Zone bands ─────────────────────────────────────────────────────────
     const zones = [
-      { y1:0.5, y2:4.5, fill:'rgba(34,197,94,0.07)',  label:'UCL', lCol:'#22c55e' },
-      { y1:4.5, y2:5.5, fill:'rgba(59,130,246,0.06)', label:'UEL', lCol:'#3b82f6' },
-      { y1:5.5, y2:6.5, fill:'rgba(234,179,8,0.05)',  label:'UECL',lCol:'#eab308'},
-      { y1:17.5,y2:20.5,fill:'rgba(239,68,68,0.08)',  label:'REL', lCol:'#ef4444' },
+      { y1:0.5, y2:4.5, fill:'rgba(34,197,94,0.06)',  label:'UCL',  lCol:'#22c55e' },
+      { y1:4.5, y2:5.5, fill:'rgba(59,130,246,0.06)', label:'UEL',  lCol:'#3b82f6' },
+      { y1:5.5, y2:6.5, fill:'rgba(234,179,8,0.05)',  label:'UECL', lCol:'#eab308' },
+      { y1:17.5,y2:20.5,fill:'rgba(239,68,68,0.07)',  label:'REL',  lCol:'#ef4444' },
     ];
     const zoneSvg = zones.map(z => {
       const y1=yS(z.y1), y2=yS(z.y2);
-      return `<rect x="${L}" y="${y1.toFixed(1)}" width="${cW}" height="${(y2-y1).toFixed(1)}" fill="${z.fill}"/>
-        <text x="${L+cW+4}" y="${((y1+y2)/2+3.5).toFixed(1)}" fill="${z.lCol}" font-size="9" font-weight="700" font-family="'DM Sans',sans-serif">${z.label}</text>`;
+      return `<rect x="${L}" y="${y1.toFixed(1)}" width="${cW}" height="${(y2-y1).toFixed(1)}" fill="${z.fill}"/>`;
     }).join('');
 
     // ── Grid ───────────────────────────────────────────────────────────────
-    const gridH = [1,5,10,15,20].map(pos => {
+    const gridH = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(pos => {
       const y = yS(pos).toFixed(1);
-      return `<line x1="${L}" y1="${y}" x2="${L+cW}" y2="${y}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-        <text x="${L-6}" y="${(+y+3.5).toFixed(1)}" fill="rgba(255,255,255,0.3)" font-size="10" font-family="'DM Sans',sans-serif" text-anchor="end">${pos}</text>`;
+      const major = pos%5===0||pos===1||pos===20;
+      return `<line x1="${L}" y1="${y}" x2="${L+cW}" y2="${y}" stroke="rgba(255,255,255,${major?'0.08':'0.03'})" stroke-width="${major?1:0.5}"/>
+        ${major?`<text x="${L-5}" y="${(+y+3.5).toFixed(1)}" fill="rgba(255,255,255,0.35)" font-size="10" font-family="'DM Sans',sans-serif" text-anchor="end">${pos}</text>`:''}`;
     }).join('');
-    const gridV = [1,5,10,15,20,25,30,35,38].map(j => {
+
+    const gridV = Array.from({length:38},(_,i)=>i+1).map(j => {
       const x = xS(j-1).toFixed(1);
-      const isDash = j!==1 && j!==38;
-      return `<line x1="${x}" y1="${T}" x2="${x}" y2="${T+cH}" stroke="rgba(255,255,255,${isDash?'0.04':'0.10'})" stroke-width="${isDash?1:1.5}" stroke-dasharray="${isDash?'3,5':''}"/>
-        <text x="${x}" y="${T+cH+14}" fill="rgba(255,255,255,${j===1||j===38?0.5:0.28})" font-size="${j===1||j===38?10:9}" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="${j===1||j===38?700:400}">J${j}</text>`;
-    }).join('');
-
-    // ── Background (unselected) teams ──────────────────────────────────────
-    const bgPaths = allTeams.filter(t=>!selected.includes(t)).map(t => {
-      const d = smoothPath(teamPts(t));
-      return `<path d="${d}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>`;
-    }).join('');
-
-    // ── Selected teams ─────────────────────────────────────────────────────
-    // Draw shadow first, then colored line, then dot + label
-    const selShadows = selected.map(t => {
-      const d = smoothPath(teamPts(t));
-      const isLiv = t==='Liverpool';
-      return `<path d="${d}" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="${isLiv?6:4}" stroke-linecap="round"/>`;
-    }).join('');
-
-    const selPaths = selected.map(t => {
-      const pts = teamPts(t);
-      const d = smoothPath(pts);
-      const col = teamColor[t]||'#888';
-      const isLiv = t==='Liverpool';
-      const lastPt = pts[pts.length-1];
-      const lastPos = (PL_EVOLUTION[t]||[])[37] || 20;
-      // End dot + label
-      const endGroup = `<circle cx="${lastPt[0].toFixed(1)}" cy="${lastPt[1].toFixed(1)}" r="${isLiv?5:4}" fill="${col}" stroke="${isLiv?'#fff':'rgba(255,255,255,0.6)'}" stroke-width="${isLiv?1.5:1}"/>
-        <text x="${(lastPt[0]+10).toFixed(1)}" y="${(lastPt[1]+4).toFixed(1)}" fill="${col}" font-size="${isLiv?12:10}" font-weight="${isLiv?900:700}" font-family="'DM Sans',sans-serif">${t.length>10?t.split(' ')[0]:t}</text>
-        <text x="${(lastPt[0]+10).toFixed(1)}" y="${(lastPt[1]+15).toFixed(1)}" fill="${col}" font-size="9" font-weight="500" font-family="'DM Sans',sans-serif" opacity="0.7">${lastPos}°</text>`;
-      return `<path d="${d}" fill="none" stroke="${col}" stroke-width="${isLiv?2.5:1.8}" stroke-linecap="round" opacity="${isLiv?1:0.85}"/>
-        ${endGroup}`;
+      const major = j===1||j===10||j===20||j===30||j===38;
+      return `<line x1="${x}" y1="${T}" x2="${x}" y2="${T+cH}" stroke="rgba(255,255,255,${major?'0.08':'0.025'})" stroke-width="${major?1:0.5}"/>
+        ${major?`<text x="${x}" y="${T+cH+14}" fill="rgba(255,255,255,0.4)" font-size="10" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="600">J${j}</text>`:''}`;
     }).join('');
 
     // ── Axis border ────────────────────────────────────────────────────────
     const axis = `<line x1="${L}" y1="${T}" x2="${L}" y2="${T+cH}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
       <line x1="${L}" y1="${T+cH}" x2="${L+cW}" y2="${T+cH}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>`;
 
-    const svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;min-width:540px;font-family:'DM Sans',sans-serif">
-      ${zoneSvg}${gridH}${gridV}${bgPaths}${selShadows}${selPaths}${axis}
+    // ── Background (unselected) teams ──────────────────────────────────────
+    const bgLines = allTeams.filter(t=>!selected.includes(t)).map(t => {
+      const evos = PL_EVOLUTION[t]||[];
+      const pts = evos.map((pos,i)=>`${xS(i).toFixed(1)},${yS(pos).toFixed(1)}`).join(' ');
+      return `<polyline points="${pts}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.7" stroke-linejoin="miter"/>`;
+    }).join('');
+
+    // ── Selected teams: lines + dots + escudo at end ───────────────────────
+    // Build clipPath defs and image overlays separately so they render on top
+    let defsHtml = '<defs>';
+    let selLinesHtml = '';
+    let selDotsHtml = '';
+    let selEscudosHtml = '';
+
+    selected.forEach(t => {
+      const evos = PL_EVOLUTION[t]||[];
+      const col = teamColor[t]||'#888';
+      const isLiv = t==='Liverpool';
+      const strokeW = isLiv ? 1.4 : 0.9;
+      const dotR = isLiv ? 2.2 : 1.6;
+
+      const ptsArr = evos.map((pos,i)=>({x:xS(i),y:yS(pos),pos,j:i+1}));
+      const ptsStr = ptsArr.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+      // Line
+      selLinesHtml += `<polyline points="${ptsStr}" fill="none" stroke="${col}" stroke-width="${strokeW}" stroke-linejoin="miter" opacity="${isLiv?1:0.8}"/>`;
+
+      // Dots at each jornada
+      ptsArr.forEach(p => {
+        selDotsHtml += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${dotR}" fill="${col}" data-team="${t.replace(/"/g,'&quot;')}" data-j="${p.j}" data-pos="${p.pos}" opacity="${isLiv?1:0.8}"/>`;
+      });
+
+      // Escudo at last point
+      const last = ptsArr[ptsArr.length-1];
+      const escSrc = ESCUDOS[t]||'';
+      const escR = isLiv ? 11 : 9;
+      const clipId = `evo-clip-${t.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')}`;
+      if (escSrc) {
+        defsHtml += `<clipPath id="${clipId}"><circle cx="${last.x.toFixed(1)}" cy="${last.y.toFixed(1)}" r="${escR}"/></clipPath>`;
+        selEscudosHtml += `<image href="${escSrc}" x="${(last.x-escR).toFixed(1)}" y="${(last.y-escR).toFixed(1)}" width="${escR*2}" height="${escR*2}" clip-path="url(#${clipId})" style="pointer-events:none"/>`;
+        selEscudosHtml += `<circle cx="${last.x.toFixed(1)}" cy="${last.y.toFixed(1)}" r="${escR}" fill="none" stroke="${col}" stroke-width="${isLiv?2:1.5}" style="pointer-events:none"/>`;
+      }
+    });
+    defsHtml += '</defs>';
+
+    // ── Hover interaction elements ─────────────────────────────────────────
+    const cursorLine = `<line id="evo-cursor" x1="0" y1="${T}" x2="0" y2="${T+cH}" stroke="rgba(255,255,255,0.25)" stroke-width="1" stroke-dasharray="4,3" display="none" style="pointer-events:none"/>`;
+    const overlayRect = `<rect id="evo-overlay" x="${L}" y="${T}" width="${cW}" height="${cH}" fill="transparent" style="cursor:crosshair"/>`;
+
+    const svg = `<svg id="evo-svg" viewBox="0 0 ${W} ${H}" width="100%" style="display:block;min-width:600px;font-family:'DM Sans',sans-serif">
+      ${defsHtml}
+      ${zoneSvg}${gridH}${gridV}${axis}
+      ${bgLines}
+      ${selLinesHtml}${selDotsHtml}${selEscudosHtml}
+      ${cursorLine}${overlayRect}
     </svg>`;
 
-    // ── Team pills ──────────────────────────────────────────────────────────
-    // Sort by final position
+    // ── Team pills ─────────────────────────────────────────────────────────
     const pills = PL_STANDINGS.filter(t=>t.name!=='Liverpool').map(t => {
       const sel = clasifCompare.includes(t.name);
       const col = t.color||'#888';
-      const safeName = t.name.replace(/'/g,'&#39;');
+      const safeName = t.name.replace(/'/g,"\\'");
       return `<button onclick="_clasifToggleTeam('${safeName}')"
-        style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;cursor:pointer;background:${sel?col+'28':'transparent'};border:1.5px solid ${sel?col:'rgba(255,255,255,0.12)'};transition:all 0.15s;font-family:inherit">
-        <span style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0"></span>
+        style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;cursor:pointer;background:${sel?col+'22':'transparent'};border:1px solid ${sel?col:'rgba(255,255,255,0.10)'};transition:all 0.15s;font-family:inherit">
+        <span style="width:7px;height:7px;border-radius:50%;background:${col};flex-shrink:0"></span>
         <span style="font-size:11px;font-weight:${sel?700:500};color:${sel?col:'var(--text2)'};">${t.name}</span>
         <span style="font-size:10px;color:var(--text3);">${t.pos}°</span>
       </button>`;
     }).join('');
 
     el.innerHTML = `
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;position:relative">
         <div style="padding:12px 20px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
           <div>
             <span style="font-size:14px;font-weight:900;color:var(--text1)">Evolución en la clasificación</span>
             <span style="font-size:11px;color:var(--text3);margin-left:10px">Premier League 2025/26 · 38 jornadas</span>
           </div>
-          <div style="display:flex;gap:14px;font-size:10px">
-            ${zones.map(z=>`<span style="display:inline-flex;align-items:center;gap:4px;color:${z.lCol}"><span style="width:8px;height:8px;border-radius:2px;background:${z.lCol};display:inline-block"></span>${z.label==='REL'?'Descenso':z.label==='UCL'?'Champions':z.label==='UEL'?'Europa Lg':z.label}</span>`).join('')}
+          <div style="display:flex;gap:12px;font-size:10px">
+            ${zones.map(z=>`<span style="display:inline-flex;align-items:center;gap:4px;color:${z.lCol}"><span style="width:8px;height:8px;border-radius:2px;background:${z.lCol};display:inline-block;opacity:0.8"></span>${z.label==='REL'?'Descenso':z.label==='UCL'?'Champions':z.label==='UEL'?'Europa Lg':z.label}</span>`).join('')}
           </div>
         </div>
-        <div style="padding:16px 20px 8px;overflow-x:auto;background:#0d1117">${svg}</div>
+        <div style="padding:16px 20px 8px;overflow-x:auto;background:#0d1117;position:relative">
+          ${svg}
+          <div id="evo-tip" style="display:none;position:absolute;background:rgba(10,12,18,0.95);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:8px 12px;pointer-events:none;z-index:20;min-width:120px;backdrop-filter:blur(4px)"></div>
+        </div>
         <div style="padding:12px 20px;border-top:1px solid var(--border)">
           <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Comparar con Liverpool <span style="font-weight:400;text-transform:none">(máx. 4)</span></div>
           <div style="display:flex;flex-wrap:wrap;gap:5px">${pills}</div>
         </div>
       </div>`;
+
+    // ── Hover logic ────────────────────────────────────────────────────────
+    (function() {
+      const svgEl = document.getElementById('evo-svg');
+      const overlay = document.getElementById('evo-overlay');
+      const cursor = document.getElementById('evo-cursor');
+      const tip = document.getElementById('evo-tip');
+      if (!svgEl || !overlay || !tip) return;
+
+      // Pre-compute x positions for each jornada index
+      const jornadas = Array.from({length:38},(_,i)=>i);
+      const xPositions = jornadas.map(i => xS(i));
+      // Build lookup: selected[team][jIndex] = pos
+      const selData = {};
+      selected.forEach(t => {
+        selData[t] = PL_EVOLUTION[t]||[];
+      });
+      const selColors = Object.fromEntries(selected.map(t=>[t,teamColor[t]||'#888']));
+
+      overlay.addEventListener('mousemove', function(e) {
+        const svgRect = svgEl.getBoundingClientRect();
+        const svgW = svgRect.width;
+        const scale = svgW / W;
+        const mx = (e.clientX - svgRect.left) / scale;
+
+        // Find nearest jornada
+        let nearestJ = 0, minDist = Infinity;
+        xPositions.forEach((x,i) => {
+          const d = Math.abs(mx - x);
+          if (d < minDist) { minDist=d; nearestJ=i; }
+        });
+
+        // Move cursor
+        const cx = xPositions[nearestJ];
+        cursor.setAttribute('x1', cx.toFixed(1));
+        cursor.setAttribute('x2', cx.toFixed(1));
+        cursor.setAttribute('display','');
+
+        // Build tooltip
+        const tipLines = selected.map(t => {
+          const pos = selData[t][nearestJ];
+          const col = selColors[t];
+          const isLiv = t==='Liverpool';
+          return `<div style="display:flex;align-items:center;gap:6px;padding:2px 0">
+            <span style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0"></span>
+            <span style="font-size:11px;color:rgba(255,255,255,0.7);flex:1;font-weight:${isLiv?700:400}">${t}</span>
+            <span style="font-size:13px;font-weight:800;color:${col}">${pos}°</span>
+          </div>`;
+        }).join('');
+
+        tip.innerHTML = `<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:5px;letter-spacing:0.5px">JORNADA ${nearestJ+1}</div>${tipLines}`;
+        tip.style.display = 'block';
+
+        // Position tooltip near cursor
+        const containerRect = svgEl.parentElement.getBoundingClientRect();
+        const tipX = e.clientX - containerRect.left + 14;
+        const tipY = e.clientY - containerRect.top - 10;
+        const tipW = tip.offsetWidth;
+        const finalX = (tipX + tipW + 10 > containerRect.width) ? tipX - tipW - 28 : tipX;
+        tip.style.left = finalX + 'px';
+        tip.style.top = Math.max(4, tipY) + 'px';
+      });
+
+      overlay.addEventListener('mouseleave', function() {
+        cursor.setAttribute('display','none');
+        tip.style.display='none';
+      });
+    })();
   }
 
   function _renderClasifForma() {
