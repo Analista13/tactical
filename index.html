@@ -14927,6 +14927,7 @@ const CELTA_LINEUPS = {
       ${aliSubBtn('vista','Vista partido')}
       ${aliSubBtn('jugadores','Jugadores utilizados')}
       ${aliSubBtn('formaciones','Alineaciones repetidas')}
+      ${aliSubBtn('xi','XI Posible')}
     </div>`;
 
     if (alineacionesSubTab === 'jugadores') {
@@ -14934,6 +14935,9 @@ const CELTA_LINEUPS = {
     }
     if (alineacionesSubTab === 'formaciones') {
       _renderAliFormaciones(el, data, subNav); return;
+    }
+    if (alineacionesSubTab === 'xi') {
+      _renderAliXI(el, data, subNav); return;
     }
 
     if (alineacionesMatchIdx >= data.length) alineacionesMatchIdx = 0;
@@ -15295,6 +15299,197 @@ const CELTA_LINEUPS = {
               ${pitchHtml}
             </div>
           ` : `<div style="color:var(--text3);font-size:12px;padding:20px 0">Selecciona una alineación a la izquierda.</div>`}
+        </div>
+      </div>`;
+  }
+
+  // ── XI Posible ──────────────────────────────────────────────────────────
+  function _renderAliXI(el, data, subNav) {
+    const TOTAL_J = data.length; // jornadas disputadas
+
+    // ── 1. Aggregate per player from ALINEACIONES_14 ──────────────────────
+    const pStats = {}; // name → { starts, subs, mins, posShort, img, d, pos, jornadas:Set }
+    const minMap = {};
+    if (typeof MINUTOS_DATA_14 !== 'undefined') {
+      MINUTOS_DATA_14.forEach(p => { minMap[p.name] = { posShort: p.posShort, total: p.total, grupo: p.grupo }; });
+    }
+    data.forEach(m => {
+      m.titulares.forEach(p => {
+        if (!pStats[p.name]) pStats[p.name] = { starts:0, subs:0, name:p.name, img:p.img, d:p.d, pos:p.pos, row:p.row, col:p.col };
+        pStats[p.name].starts++;
+      });
+      m.suplentes.forEach(p => {
+        if (!pStats[p.name]) pStats[p.name] = { starts:0, subs:0, name:p.name, img:p.img, d:p.d, pos:p.pos, row:0, col:0 };
+        if (p.subOn) pStats[p.name].subs++;
+      });
+    });
+    // Enrich with minutes & posShort
+    Object.values(pStats).forEach(p => {
+      const m = minMap[p.name] || {};
+      p.posShort = m.posShort || '—';
+      p.mins = m.total || 0;
+      p.grupo = m.grupo || 'OTH';
+      p.startPct = Math.round(p.starts / TOTAL_J * 100);
+      p.appPct   = Math.round((p.starts + p.subs) / TOTAL_J * 100);
+    });
+
+    // ── 2. Group by posShort and sort by starts desc ───────────────────────
+    const byPos = {}; // posShort → []
+    Object.values(pStats).forEach(p => {
+      if (!byPos[p.posShort]) byPos[p.posShort] = [];
+      byPos[p.posShort].push(p);
+    });
+    Object.values(byPos).forEach(arr => arr.sort((a,b) => b.starts - a.starts || b.mins - a.mins));
+
+    // ── 3. Build predicted XI using most-common lineup structure ──────────
+    // We use the top-frequency alineación's row/col layout as the pitch template,
+    // then replace each slot with the current season's top starter at that row/col.
+    // First find most-repeated formation.
+    const groups = {};
+    data.forEach(m => {
+      const names = m.titulares.map(p=>p.name).sort().join('|');
+      const key = m.formacion + '::' + names;
+      if (!groups[key]) groups[key] = { formation:m.formacion, titulares:m.titulares, count:0 };
+      groups[key].count++;
+    });
+    const topGroup = Object.values(groups).sort((a,b)=>b.count-a.count)[0];
+    const baseFormation = topGroup?.formation || '4-2-3-1';
+
+    // Build slot map: for each row/col in the top lineup, find position key and best player
+    // Strategy: collect the posShort of each slot from the full season data
+    const slotPosShort = {}; // "row-col" → posShort (most common assignment)
+    data.forEach(m => {
+      m.titulares.forEach(p => {
+        const key = `${p.row}-${p.col}`;
+        const ps = (minMap[p.name]||{}).posShort || null;
+        if (!slotPosShort[key]) slotPosShort[key] = {};
+        if (ps) slotPosShort[key][ps] = (slotPosShort[key][ps]||0) + 1;
+      });
+    });
+    // For each slot, pick the dominant posShort
+    const slotPos = {};
+    Object.entries(slotPosShort).forEach(([slot, counts]) => {
+      slotPos[slot] = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—';
+    });
+
+    // For each slot, pick the best available player (not already picked)
+    const used = new Set();
+    const xi = {}; // "row-col" → player stats obj
+    // Get all unique row-col from data
+    const allSlots = new Set();
+    data.forEach(m => m.titulares.forEach(p => allSlots.add(`${p.row}-${p.col}`)));
+
+    allSlots.forEach(slot => {
+      const ps = slotPos[slot];
+      const candidates = (byPos[ps] || []).filter(p => !used.has(p.name));
+      if (candidates.length) {
+        xi[slot] = candidates[0];
+        used.add(candidates[0].name);
+      }
+    });
+
+    // ── 4. Pitch rendering ────────────────────────────────────────────────
+    const lineCol = 'rgba(255,255,255,0.32)';
+    const pitchLines = `
+      <div style="position:absolute;inset:8px 22px;border:2px solid ${lineCol};border-radius:6px;pointer-events:none;z-index:0"></div>
+      <div style="position:absolute;left:0;right:0;top:50%;border-top:2px solid ${lineCol}"></div>
+      <div style="position:absolute;left:50%;top:50%;width:104px;height:104px;transform:translate(-50%,-50%);border:2px solid ${lineCol};border-radius:50%"></div>
+      <div style="position:absolute;left:50%;top:50%;width:6px;height:6px;transform:translate(-50%,-50%);background:${lineCol};border-radius:50%"></div>
+      <div style="position:absolute;left:50%;top:0;width:48%;height:16%;transform:translateX(-50%);border:2px solid ${lineCol};border-top:none"></div>
+      <div style="position:absolute;left:50%;top:0;width:24%;height:6.5%;transform:translateX(-50%);border:2px solid ${lineCol};border-top:none"></div>
+      <div style="position:absolute;left:50%;bottom:0;width:48%;height:16%;transform:translateX(-50%);border:2px solid ${lineCol};border-bottom:none"></div>
+      <div style="position:absolute;left:50%;bottom:0;width:24%;height:6.5%;transform:translateX(-50%);border:2px solid ${lineCol};border-bottom:none"></div>`;
+
+    // Color for start% badge
+    const pctColor = pct => pct >= 75 ? '#22c55e' : pct >= 50 ? '#f59e0b' : pct >= 25 ? '#60a5fa' : '#94a3b8';
+
+    const xiChip = (p) => {
+      if (!p) return `<div style="width:80px"></div>`;
+      const photo = p.img
+        ? `<img src="${p.img}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid var(--accent);background:var(--bg3)" onerror="this.outerHTML='<div style=&quot;width:54px;height:54px;border-radius:50%;background:var(--bg3);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--text2)&quot;>${p.d}</div>'">`
+        : `<div style="width:54px;height:54px;border-radius:50%;background:var(--bg3);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--text2)">${p.d}</div>`;
+      const col = pctColor(p.startPct);
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;width:84px">
+        <div style="position:relative">
+          ${photo}
+          <span style="position:absolute;bottom:-4px;right:-2px;background:${col};color:#000;font-size:9px;font-weight:900;border-radius:10px;padding:1px 5px;border:1.5px solid #0d1117">${p.startPct}%</span>
+        </div>
+        <div style="font-size:10px;font-weight:700;color:var(--text1);text-align:center;line-height:1.2;margin-top:6px">${p.name.split(' ').slice(-1)[0]}</div>
+        <div style="font-size:9px;color:var(--text3)">${p.starts}T · ${p.mins}'</div>
+      </div>`;
+    };
+
+    const rows = [0,1,2,3,4].map(r => {
+      const cols = [...allSlots].filter(s=>s.startsWith(`${r}-`)).sort();
+      if (!cols.length) return '';
+      const chips = cols.map(slot => xiChip(xi[slot])).join('');
+      return `<div style="display:flex;justify-content:space-evenly;align-items:flex-start;padding:12px 6px">${chips}</div>`;
+    }).join('');
+
+    // ── 5. Competition table per position group ────────────────────────────
+    const posOrder = ['PT','CAT','LAT DER','LAT IZQ','MC','MCO','EXT DER','EXT IZQ','DC'];
+    const posLabel = { PT:'Portero', CAT:'Def. Central', 'LAT DER':'Lateral Der.', 'LAT IZQ':'Lateral Izq.', MC:'Mediocentro', MCO:'MC Ofensivo', 'EXT DER':'Extremo Der.', 'EXT IZQ':'Extremo Izq.', DC:'Delantero' };
+    const groupColor = { PT:'#f0883e', CAT:'#58a6ff', 'LAT DER':'#58a6ff', 'LAT IZQ':'#58a6ff', MC:'#e3b341', MCO:'#e3b341', 'EXT DER':'#3fb950', 'EXT IZQ':'#3fb950', DC:'#3fb950' };
+
+    const competitionBlocks = posOrder.map(ps => {
+      const players = byPos[ps] || [];
+      if (!players.length) return '';
+      const col = groupColor[ps] || 'var(--text2)';
+      const rows2 = players.map((p, i) => {
+        const isFirst = i === 0;
+        const bar = `<div style="height:4px;border-radius:2px;background:${col};opacity:${isFirst?1:0.5};width:${Math.round(p.startPct)}%;min-width:2px;transition:width 0.4s"></div>`;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--border);background:${isFirst?'rgba(255,255,255,0.03)':''}">
+          ${p.img ? `<img src="${p.img}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;object-position:top;border:1px solid ${isFirst?col:'var(--border)'};flex-shrink:0">` : `<div style="width:28px;height:28px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3)">${p.d}</div>`}
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+              <span style="font-size:11px;font-weight:${isFirst?800:600};color:${isFirst?'var(--text1)':'var(--text2)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</span>
+              ${isFirst?`<span style="font-size:9px;font-weight:800;background:${col}22;color:${col};border-radius:4px;padding:1px 5px;flex-shrink:0">TITULAR</span>`:''}
+            </div>
+            ${bar}
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:12px;font-weight:800;color:${pctColor(p.startPct)}">${p.startPct}%</div>
+            <div style="font-size:9px;color:var(--text3)">${p.starts}T ${p.subs}S</div>
+          </div>
+        </div>`;
+      }).join('');
+      return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px">
+        <div style="padding:7px 10px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+          <span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span>
+          <span style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:${col}">${posLabel[ps]||ps}</span>
+        </div>
+        ${rows2}
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `${subNav}
+      <div style="display:flex;gap:20px;align-items:flex-start">
+        <!-- Pitch + XI -->
+        <div style="flex:1;min-width:0">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px">
+            <div style="padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+              <div>
+                <span style="font-size:14px;font-weight:900;color:var(--text1)">XI Posible</span>
+                <span style="font-size:11px;color:var(--text3);margin-left:8px">basado en titularidades de ${TOTAL_J} jornadas</span>
+              </div>
+              <span style="font-size:12px;font-weight:700;color:var(--accent)">${baseFormation}</span>
+            </div>
+            <div style="position:relative;min-height:580px;padding:10px 0;overflow:hidden;background:repeating-linear-gradient(180deg,#1f6e3c 0 42px,#246e40 42px 84px);box-shadow:inset 0 0 60px rgba(0,0,0,0.35)">
+              ${pitchLines}
+              <div style="position:relative;z-index:1;display:flex;flex-direction:column;justify-content:space-between;min-height:560px;padding:10px 6px">
+                ${rows}
+              </div>
+            </div>
+            <div style="padding:8px 16px;border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+              ${['75% T.habitual','50% Rotación','25% Esporádico'].map((l,i)=>{const c=['#22c55e','#f59e0b','#60a5fa'][i];return`<span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)"><span style="width:10px;height:10px;border-radius:50%;background:${c};display:inline-block"></span>${l}</span>`}).join('')}
+              <span style="font-size:10px;color:var(--text3);margin-left:4px">% = partidos como titular / ${TOTAL_J} jornadas</span>
+            </div>
+          </div>
+        </div>
+        <!-- Competition per position -->
+        <div style="width:280px;flex-shrink:0">
+          <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Competencia por posición</div>
+          ${competitionBlocks}
         </div>
       </div>`;
   }
