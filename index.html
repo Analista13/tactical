@@ -3274,7 +3274,7 @@ const CELTA_LINEUPS = {
       // ── Datos defensivos (player_heatmap.json — temporada completa) ──────────
       const defRaw={};
       if(!__hmData){
-        try{ const r=await fetch('data/player_heatmap.json'); __hmData=await r.json(); }catch(e){}
+        try{ const r=await fetch('data/player_heatmap.json?v=4'); __hmData=await r.json(); }catch(e){}
       }
       if(__hmData){
         allPlayers.forEach(n=>{
@@ -18531,7 +18531,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
     if (__hmData) {
       applyHeatmaps();
     } else {
-      fetch('data/player_heatmap.json')
+      fetch('data/player_heatmap.json?v=4')
         .then(r => r.json())
         .then(d => { __hmData = d; applyHeatmaps(); })
         .catch(() => {
