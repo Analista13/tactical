@@ -14427,6 +14427,16 @@ const CELTA_LINEUPS = {
     // ── TABLA ────────────────────────────────────────────────────────────────
     const renderTabla = () => `
       <div class="table-wrap anim">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+          ${[
+            {k:'xG', color:'#f97316', desc:'Expected Goals. Probabilidad de que un disparo acabe en gol según posición, ángulo y tipo de remate. 1 xG = disparo ideal desde el punto de penalti.'},
+            {k:'xGoT', color:'#a78bfa', desc:'Expected Goals on Target. Como el xG pero solo contando los disparos que van a portería. Mide la calidad del remate entre los tres palos.'},
+            {k:'G − xG', color:'#3fb950', desc:'Goles reales menos xG acumulado. Positivo = el jugador convierte por encima de la calidad esperada (efectividad). Negativo = rinde por debajo de sus oportunidades.'},
+          ].map(m=>`<div style="display:flex;align-items:flex-start;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex:1;min-width:200px">
+            <span style="font-size:13px;font-weight:800;color:${m.color};white-space:nowrap">${m.k}</span>
+            <span style="font-size:11px;color:var(--text3);line-height:1.5">${m.desc}</span>
+          </div>`).join('')}
+        </div>
         <table>
           <thead><tr>
             <th>Jugador</th>
@@ -14607,6 +14617,15 @@ const CELTA_LINEUPS = {
     // ── TABLA ────────────────────────────────────────────────────────────────
     const renderTabla = () => `
       <div class="table-wrap anim">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+          ${[
+            {k:'xA', color:'#58a6ff', desc:'Expected Assists. Probabilidad de que un pase acabe en gol según posición, ángulo y zona del receptor. Mide la calidad de la última acción antes del disparo.'},
+            {k:'A − xA', color:'#3fb950', desc:'Asistencias reales menos xA acumulado. Positivo = el jugador genera más goles de los esperados por sus pases (calidad de compañeros + suerte). Negativo = sus pases valen más de lo que se convirtió.'},
+          ].map(m=>`<div style="display:flex;align-items:flex-start;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex:1;min-width:200px">
+            <span style="font-size:13px;font-weight:800;color:${m.color};white-space:nowrap">${m.k}</span>
+            <span style="font-size:11px;color:var(--text3);line-height:1.5">${m.desc}</span>
+          </div>`).join('')}
+        </div>
         <table>
           <thead><tr>
             <th>Jugador</th>
