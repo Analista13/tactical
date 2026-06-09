@@ -12128,7 +12128,7 @@ const PL_RESULTS = {"Arsenal": {"3": ["L", 0, 3, "Wolves", 1], "4": ["W", 2, 1, 
       <div id="clasif-content"></div>`;
 
     if (clasifSubTab === 'tabla') _renderClasifTabla();
-    else if (clasifSubTab === 'evolucion') loadClasificacionTab();
+    else if (clasifSubTab === 'evolucion') _renderClasifEvolucion();
     else if (clasifSubTab === 'forma') _renderClasifForma();
   }
 
@@ -12312,7 +12312,7 @@ const PL_RESULTS = {"Arsenal": {"3": ["L", 0, 3, "Wolves", 1], "4": ["W", 2, 1, 
       const res = PL_RESULTS[t.name] || {};
       const isLiv = t.name === 'Liverpool';
       const cells = Array.from({length:N},(_,i)=>i+1).map(j => {
-        const v = res[j];
+        const v = res[String(j)];
         if (!v) return `<td style="padding:2px 1px;text-align:center"><span style="display:inline-block;width:18px;height:18px;border-radius:3px;background:var(--bg3)"></span></td>`;
         const r = v[0], gf=v[1], ga=v[2], opp=v[3], home=v[4];
         const col = r==='W'?'#166534':r==='D'?'#78350f':'#7f1d1d';
