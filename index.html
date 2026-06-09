@@ -15173,106 +15173,128 @@ const CELTA_LINEUPS = {
   // ── Alineaciones: Formaciones repetidas ──────────────────────────────────
   function _renderAliFormaciones(el, data, subNav) {
     // Group matches by (formation + sorted starter names)
-    const groups = {}; // key → { formation, players:[], matches:[] }
+    const groups = {};
     data.forEach(m => {
       const names = m.titulares.map(p => p.name).sort().join('|');
       const key = m.formacion + '::' + names;
-      if (!groups[key]) groups[key] = { formation: m.formacion, players: m.titulares.map(p=>p.name).sort(), matches: [] };
+      if (!groups[key]) groups[key] = { formation: m.formacion, titulares: m.titulares, matches: [] };
       groups[key].matches.push(m);
     });
-
-    // Sort by frequency desc
     const sorted = Object.entries(groups).sort((a,b) => b[1].matches.length - a[1].matches.length);
-
     if (!aliFormSel) aliFormSel = sorted[0]?.[0] || null;
-
     const selGroup = aliFormSel ? groups[aliFormSel] : null;
     const selMatches = selGroup ? selGroup.matches : [];
 
-    // Sidebar: list of formation groups
+    // ── Sidebar ──────────────────────────────────────────────────────────
     const sidebar = sorted.map(([key, g]) => {
       const isAct = key === aliFormSel;
       const jList = g.matches.map(m => 'J' + (m.jornada.match(/\d+/)||['?'])[0]).join(', ');
-      return `<div onclick="aliFormSel='${key.replace(/'/g,"\\'")}';renderEquipoAlineaciones()"
+      return `<div onclick="aliFormSel='${key.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}';renderEquipoAlineaciones()"
         style="padding:10px 12px;cursor:pointer;border-radius:8px;background:${isAct?'#1e3a5f':'var(--bg3)'};border:1.5px solid ${isAct?'#3b82f6':'var(--border)'};margin-bottom:6px;transition:all 0.15s">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
-          <span style="font-size:13px;font-weight:800;color:${isAct?'#93c5fd':'var(--text1)'};">${g.formation}</span>
+          <span style="font-size:14px;font-weight:900;color:${isAct?'#93c5fd':'var(--text1)'};letter-spacing:1px">${g.formation}</span>
           <span style="background:${isAct?'#3b82f6':'#334155'};color:white;font-size:11px;font-weight:800;border-radius:20px;padding:1px 9px">${g.matches.length}×</span>
         </div>
         <div style="font-size:10px;color:var(--text3);line-height:1.5">${jList}</div>
       </div>`;
     }).join('');
 
-    // Match cards for selected group
-    const matchCards = selMatches.map(m => {
-      const jNum = (m.jornada.match(/\d+/)||['?'])[0];
-      const lj = m.loc === 'H' ? '🏠' : '✈️';
-      const parts = (m.resultado.match(/(\d+)-(\d+)/) || [null,'0','0']).slice(1).map(Number);
-      const liv = m.loc === 'H' ? parts[0] : parts[1];
-      const riv = m.loc === 'H' ? parts[1] : parts[0];
-      const col = liv > riv ? '#22c55e' : liv === riv ? '#f59e0b' : '#ef4444';
-      const rival = m.rival.length > 14 ? m.rival.slice(0,13)+'…' : m.rival;
-      return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;min-width:110px;flex-shrink:0">
-        <div style="font-size:10px;font-weight:800;color:var(--text3);margin-bottom:2px">J${jNum} ${lj}</div>
-        <div style="font-size:12px;font-weight:700;color:var(--text1);margin-bottom:4px">${rival}</div>
-        <div style="font-size:16px;font-weight:900;color:${col}">${parts[0]}-${parts[1]}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:2px">${m.formacion}</div>
-      </div>`;
-    }).join('');
-
-    // Stats for selected group
+    // ── Stats ─────────────────────────────────────────────────────────────
     let wins=0, draws=0, losses=0, gf=0, ga=0;
     selMatches.forEach(m => {
-      const parts = (m.resultado.match(/(\d+)-(\d+)/) || [null,'0','0']).slice(1).map(Number);
-      const liv = m.loc === 'H' ? parts[0] : parts[1];
-      const riv = m.loc === 'H' ? parts[1] : parts[0];
+      const parts = (m.resultado.match(/(\d+)-(\d+)/)||[null,'0','0']).slice(1).map(Number);
+      const liv = m.loc==='H'?parts[0]:parts[1], riv = m.loc==='H'?parts[1]:parts[0];
       gf+=liv; ga+=riv;
-      if (liv>riv) wins++; else if (liv===riv) draws++; else losses++;
+      if(liv>riv) wins++; else if(liv===riv) draws++; else losses++;
     });
-
-    // Player list for selected group
-    const playerList = selGroup ? selGroup.players.map(name => {
-      // find player full info from any match
-      let info = null;
-      selMatches.forEach(m => { const f = m.titulares.find(p=>p.name===name); if(f) info=f; });
-      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
-        ${info?.img ? `<img src="${info.img}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;object-position:top;border:1px solid var(--border)">` : `<div style="width:28px;height:28px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3)">${info?.d||'?'}</div>`}
-        <span style="font-size:11px;font-weight:700;color:var(--text1)">${info?.d||''} ${name}</span>
-        <span style="font-size:10px;color:var(--text3);margin-left:auto">${info?.pos||''}</span>
-      </div>`;
-    }).join('') : '';
-
-    const statChip = (val, label, col) => `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 16px;text-align:center">
-      <div style="font-size:22px;font-weight:900;color:${col}">${val}</div>
+    const pct = selMatches.length ? ((wins*3+draws)/(selMatches.length*3)*100).toFixed(0) : 0;
+    const statChip = (val, label, col) => `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 14px;text-align:center;flex:1">
+      <div style="font-size:20px;font-weight:900;color:${col}">${val}</div>
       <div style="font-size:10px;color:var(--text3);margin-top:2px">${label}</div>
     </div>`;
 
+    // ── Match chips ───────────────────────────────────────────────────────
+    const matchCards = selMatches.map(m => {
+      const jNum = (m.jornada.match(/\d+/)||['?'])[0];
+      const lj = m.loc==='H'?'🏠':'✈️';
+      const parts = (m.resultado.match(/(\d+)-(\d+)/)||[null,'0','0']).slice(1).map(Number);
+      const liv = m.loc==='H'?parts[0]:parts[1], riv = m.loc==='H'?parts[1]:parts[0];
+      const col = liv>riv?'#22c55e':liv===riv?'#f59e0b':'#ef4444';
+      const rival = m.rival.length>13?m.rival.slice(0,12)+'…':m.rival;
+      return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 10px;min-width:100px;flex-shrink:0;text-align:center">
+        <div style="font-size:10px;font-weight:800;color:var(--text3)">J${jNum} ${lj}</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text1);margin:2px 0">${rival}</div>
+        <div style="font-size:15px;font-weight:900;color:${col}">${parts[0]}-${parts[1]}</div>
+      </div>`;
+    }).join('');
+
+    // ── Pitch (reuse same chip + pitch logic as vista partido) ────────────
+    const lineCol = 'rgba(255,255,255,0.32)';
+    const pitchLines = `
+      <div style="position:absolute;inset:8px 22px;border:2px solid ${lineCol};border-radius:6px;pointer-events:none;z-index:0"></div>
+      <div style="position:absolute;left:0;right:0;top:50%;border-top:2px solid ${lineCol}"></div>
+      <div style="position:absolute;left:50%;top:50%;width:104px;height:104px;transform:translate(-50%,-50%);border:2px solid ${lineCol};border-radius:50%"></div>
+      <div style="position:absolute;left:50%;top:50%;width:6px;height:6px;transform:translate(-50%,-50%);background:${lineCol};border-radius:50%"></div>
+      <div style="position:absolute;left:50%;top:0;width:48%;height:16%;transform:translateX(-50%);border:2px solid ${lineCol};border-top:none"></div>
+      <div style="position:absolute;left:50%;top:0;width:24%;height:6.5%;transform:translateX(-50%);border:2px solid ${lineCol};border-top:none"></div>
+      <div style="position:absolute;left:50%;bottom:0;width:48%;height:16%;transform:translateX(-50%);border:2px solid ${lineCol};border-bottom:none"></div>
+      <div style="position:absolute;left:50%;bottom:0;width:24%;height:6.5%;transform:translateX(-50%);border:2px solid ${lineCol};border-bottom:none"></div>`;
+
+    const playerChip = p => {
+      const photo = p.img
+        ? `<img src="${p.img}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid var(--accent);background:var(--bg3)" onerror="this.outerHTML='<div style=&quot;width:52px;height:52px;border-radius:50%;background:var(--bg3);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:16px;font-weight:800;color:var(--text2)&quot;>${p.d}</div>'">`
+        : `<div style="width:52px;height:52px;border-radius:50%;background:var(--bg3);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--text2)">${p.d}</div>`;
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:80px">
+        ${photo}
+        <div style="font-size:10px;font-weight:700;color:var(--text1);text-align:center;line-height:1.2">${p.name.split(' ').slice(-1)[0]}</div>
+      </div>`;
+    };
+
+    let pitchHtml = '';
+    if (selGroup) {
+      const titulares = selGroup.titulares;
+      const rows = [0,1,2,3,4].map(r => {
+        const rowPlayers = titulares.filter(p=>p.row===r).sort((a,b)=>a.col-b.col);
+        if (!rowPlayers.length) return '';
+        return `<div style="display:flex;justify-content:space-evenly;align-items:flex-start;padding:12px 6px">${rowPlayers.map(playerChip).join('')}</div>`;
+      }).join('');
+      pitchHtml = `<div style="position:relative;min-height:560px;padding:10px 0;overflow:hidden;background:repeating-linear-gradient(180deg,#1f6e3c 0 42px,#246e40 42px 84px);box-shadow:inset 0 0 60px rgba(0,0,0,0.35);border-radius:0 0 10px 10px">
+        ${pitchLines}
+        <div style="position:relative;z-index:1;display:flex;flex-direction:column;justify-content:space-between;min-height:540px;padding:10px 6px">${rows}</div>
+      </div>`;
+    }
+
     el.innerHTML = `${subNav}
       <div style="display:flex;gap:18px;align-items:flex-start">
+        <!-- Sidebar -->
         <div style="width:185px;flex-shrink:0">
-          <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Alineaciones · ${sorted.length} distintas</div>
+          <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">${sorted.length} alineación${sorted.length!==1?'es':''} distinta${sorted.length!==1?'s':''}</div>
           ${sidebar}
         </div>
+        <!-- Main panel -->
         <div style="flex:1;min-width:0">
           ${selGroup ? `
-          <div style="margin-bottom:16px">
-            <div style="font-size:16px;font-weight:900;color:var(--text1);margin-bottom:4px">Formación ${selGroup.formation} <span style="font-size:12px;font-weight:600;color:var(--text3)">(${selMatches.length} partido${selMatches.length!==1?'s':''})</span></div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+            <!-- Header -->
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+              <span style="font-size:22px;font-weight:900;color:var(--text1);letter-spacing:1px">${selGroup.formation}</span>
+              <span style="font-size:13px;color:var(--text3)">${selMatches.length} partido${selMatches.length!==1?'s':''}</span>
+            </div>
+            <!-- Stats row -->
+            <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
               ${statChip(wins,'Victorias','#22c55e')}
               ${statChip(draws,'Empates','#f59e0b')}
               ${statChip(losses,'Derrotas','#ef4444')}
-              ${statChip(gf+':'+ga,'Goles','var(--text2)')}
-              ${statChip(((wins+draws*0.33)/selMatches.length*100).toFixed(0)+'%','Puntos %','#60a5fa')}
+              ${statChip(gf+':'+ga,'GF:GC','var(--text2)')}
+              ${statChip(pct+'%','Puntos %','#60a5fa')}
             </div>
-            <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Partidos con esta alineación</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">${matchCards}</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-              <div>
-                <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">11 Titulares</div>
-                <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px">${playerList}</div>
-              </div>
+            <!-- Match chips -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">${matchCards}</div>
+            <!-- Pitch -->
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+              <div style="padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:11px;font-weight:800;color:var(--text1)">11 Titulares · ${selGroup.formation}</div>
+              ${pitchHtml}
             </div>
-          ` : '<div style="color:var(--text3);font-size:12px">Selecciona una alineación a la izquierda.</div>'}
+          ` : `<div style="color:var(--text3);font-size:12px;padding:20px 0">Selecciona una alineación a la izquierda.</div>`}
         </div>
       </div>`;
   }
