@@ -556,7 +556,7 @@
   let asistPlayerSel    = '';
   let alineacionesMatchIdx = 0;
   let alineacionesSubTab   = 'vista';
-  let clasifSubTab         = 'tabla';   // 'tabla' | 'evolucion' | 'forma'
+  let clasifSubTab         = 'tabla';   // 'tabla' | 'evolucion' | 'forma' | 'xpts'
   let clasifCompare        = [];        // team names selected for comparison in evolucion
   let clasifHighlight      = 'Liverpool'; // highlighted team in tabla // 'vista' | 'jugadores' | 'formaciones'
   let aliFormSel           = null;    // selected formation group key
@@ -12128,12 +12128,14 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
         ${subBtn('tabla','Clasificación final')}
         ${subBtn('evolucion','Evolución')}
         ${subBtn('forma','Forma')}
+        ${subBtn('xpts','Puntos esperados')}
       </div>
       <div id="clasif-content"></div>`;
 
     if (clasifSubTab === 'tabla') _renderClasifTabla();
     else if (clasifSubTab === 'evolucion') _renderClasifEvolucion();
     else if (clasifSubTab === 'forma') _renderClasifForma();
+    else if (clasifSubTab === 'xpts') _renderClasifXPTS();
   }
 
   function _renderClasifTabla() {
@@ -12441,6 +12443,195 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
         tip.style.display='none';
       });
     })();
+  }
+
+  // ── xPTS data (Poisson simulation from Opta xG) ───────────────────────────
+  const PL_XPTS = [
+    {name:"Arsenal",       pts:79, xpts:61.5, pos:1,  xpos:1,  xgf:78.7,  xga:62.8},
+    {name:"Man City",      pts:73, xpts:58.1, pos:2,  xpos:3,  xgf:94.2,  xga:84.4},
+    {name:"Man Utd",       pts:68, xpts:56.6, pos:3,  xpos:5,  xgf:91.7,  xga:82.2},
+    {name:"Brighton",      pts:63, xpts:55.7, pos:4,  xpos:6,  xgf:83.2,  xga:77.6},
+    {name:"Bournemouth",   pts:61, xpts:54.9, pos:5,  xpos:8,  xgf:89.8,  xga:87.9},
+    {name:"Liverpool",     pts:59, xpts:59.6, pos:6,  xpos:2,  xgf:89.3,  xga:76.1},
+    {name:"Aston Villa",   pts:58, xpts:51.2, pos:7,  xpos:13, xgf:77.0,  xga:79.3},
+    {name:"Chelsea",       pts:55, xpts:56.6, pos:8,  xpos:4,  xgf:98.6,  xga:88.9},
+    {name:"Brentford",     pts:55, xpts:51.9, pos:9,  xpos:11, xgf:89.6,  xga:90.8},
+    {name:"Newcastle",     pts:53, xpts:55.0, pos:10, xpos:7,  xgf:88.5,  xga:83.9},
+    {name:"Fulham",        pts:52, xpts:51.3, pos:11, xpos:12, xgf:73.0,  xga:75.7},
+    {name:"Everton",       pts:49, xpts:50.3, pos:12, xpos:15, xgf:75.3,  xga:79.4},
+    {name:"Leeds",         pts:49, xpts:52.2, pos:13, xpos:10, xgf:83.5,  xga:85.9},
+    {name:"Sunderland",    pts:48, xpts:46.7, pos:14, xpos:19, xgf:64.8,  xga:75.5},
+    {name:"Nottm Forest",  pts:46, xpts:50.8, pos:15, xpos:14, xgf:76.3,  xga:81.7},
+    {name:"Crystal Palace",pts:46, xpts:54.5, pos:16, xpos:9,  xgf:87.0,  xga:81.9},
+    {name:"Spurs",         pts:40, xpts:49.4, pos:17, xpos:16, xgf:65.3,  xga:72.3},
+    {name:"West Ham",      pts:40, xpts:47.7, pos:18, xpos:18, xgf:77.0,  xga:86.0},
+    {name:"Wolves",        pts:23, xpts:47.7, pos:19, xpos:17, xgf:68.4,  xga:77.2},
+    {name:"Burnley",       pts:22, xpts:41.4, pos:20, xpos:20, xgf:71.1,  xga:92.7},
+  ];
+
+  function _renderClasifXPTS() {
+    const el = document.getElementById('clasif-content');
+    if (!el) return;
+
+    const ESCUDOS = {
+      'Liverpool':'img/escudos/liverpool.png','Arsenal':'img/escudos/pl-arsenal.png',
+      'Aston Villa':'img/escudos/pl-aston-villa.png','Bournemouth':'img/escudos/pl-bournemouth.png',
+      'Brentford':'img/escudos/pl-brentford.png','Brighton':'img/escudos/pl-brighton.png',
+      'Burnley':'img/escudos/pl-burnley.png','Chelsea':'img/escudos/pl-chelsea.png',
+      'Crystal Palace':'img/escudos/pl-crystal-palace.png','Everton':'img/escudos/pl-everton.png',
+      'Fulham':'img/escudos/pl-fulham.png','Leeds':'img/escudos/pl-leeds-united.png',
+      'Man City':'img/escudos/pl-manchester-city.png','Man Utd':'img/escudos/pl-manchester-united.png',
+      'Newcastle':'img/escudos/pl-newcastle-united.png','Nottm Forest':'img/escudos/pl-nottingham-forest.png',
+      'Sunderland':'img/escudos/pl-sunderland.png','Spurs':'img/escudos/pl-tottenham-hotspur.png',
+      'West Ham':'img/escudos/pl-west-ham-united.png','Wolves':'img/escudos/pl-wolverhampton.png',
+    };
+
+    // Toggle between Puntos / Posición view
+    if (typeof window._xptsView === 'undefined') window._xptsView = 'pts';
+
+    window._xptsToggleView = v => { window._xptsView = v; _renderClasifXPTS(); };
+
+    const view = window._xptsView; // 'pts' | 'pos'
+
+    // ── Layout constants ─────────────────────────────────────────────────
+    const ROW_H = 32, LABEL_W = 160, ESC_SIZE = 20;
+    const ROWS = PL_XPTS.length; // 20
+    const H = ROW_H * ROWS + 40; // + bottom axis label space
+    const W = 680;
+    const LEFT = LABEL_W + 10, RIGHT = 60;
+    const chartW = W - LEFT - RIGHT;
+
+    // ── Scale ─────────────────────────────────────────────────────────────
+    const xMin = view === 'pts' ? 0 : 1;
+    const xMax = view === 'pts' ? 90 : 20;
+    const xScale = v => LEFT + ((v - xMin) / (xMax - xMin)) * chartW;
+    const yCenter = i => 20 + i * ROW_H + ROW_H / 2;
+
+    // ── Grid lines + axis labels ──────────────────────────────────────────
+    const ticks = view === 'pts'
+      ? [0,10,20,30,40,50,60,70,80,90]
+      : [1,5,10,15,20];
+    const gridLines = ticks.map(t => {
+      const x = xScale(t).toFixed(1);
+      return `<line x1="${x}" y1="8" x2="${x}" y2="${20 + ROWS*ROW_H}" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+        <text x="${x}" y="${20 + ROWS*ROW_H + 14}" fill="rgba(255,255,255,0.35)" font-size="10" text-anchor="middle" font-family="'DM Sans',sans-serif">${t}</text>`;
+    }).join('');
+
+    // ── Zone band (top 4 / bottom 3) ──────────────────────────────────────
+    const zoneBands = view === 'pos' ? [
+      { pos1:1, pos2:4, col:'rgba(34,197,94,0.05)', label:'UCL', lc:'#22c55e' },
+      { pos1:5, pos2:5, col:'rgba(59,130,246,0.05)', label:'UEL', lc:'#3b82f6' },
+      { pos1:6, pos2:6, col:'rgba(234,179,8,0.04)',  label:'UECL',lc:'#eab308' },
+      { pos1:18, pos2:20, col:'rgba(239,68,68,0.06)', label:'Desc',lc:'#ef4444' },
+    ] : [];
+    const zoneSvg = zoneBands.map(z => {
+      const x1 = xScale(z.pos1 - 0.5).toFixed(1);
+      const x2 = xScale(z.pos2 + 0.5).toFixed(1);
+      return `<rect x="${x1}" y="8" width="${(+x2-+x1).toFixed(1)}" height="${ROWS*ROW_H}" fill="${z.col}" rx="2"/>`;
+    }).join('');
+
+    // ── Row backgrounds (zebra) ────────────────────────────────────────────
+    const rowBgs = PL_XPTS.map((t,i) => {
+      const isLiv = t.name === 'Liverpool';
+      const y = 20 + i * ROW_H;
+      return `<rect x="0" y="${y}" width="${W}" height="${ROW_H}" fill="${isLiv?'rgba(200,16,46,0.05)':i%2===0?'rgba(255,255,255,0.015)':'transparent'}"/>`;
+    }).join('');
+
+    // ── Rows: label + dots + connector ───────────────────────────────────
+    const dotR = 11;
+    const rows = PL_XPTS.map((t, i) => {
+      const isLiv = t.name === 'Liverpool';
+      const cy = yCenter(i);
+      const actual_v = view === 'pts' ? t.pts : t.pos;
+      const xpcts_v  = view === 'pts' ? t.xpts : t.xpos;
+      const diff = view === 'pts' ? (t.pts - t.xpts) : (t.xpos - t.pos); // positive = overperform
+      const overperform = diff > 0.5;
+      const underperform = diff < -0.5;
+      const isDashed = Math.abs(diff) < 2; // barely different
+
+      const xA = xScale(actual_v);   // actual dot x
+      const xX = xScale(xpcts_v);    // xPTS dot x
+      const escSrc = ESCUDOS[t.name]||'';
+      const escClipId = `xpts-clip-${i}`;
+
+      // Arrow: from xPTS dot to actual dot
+      const arrowDir = xA > xX ? 1 : -1;
+      const arrowX1 = xX + arrowDir * (dotR+2);
+      const arrowX2 = xA - arrowDir * (dotR+2);
+      const connectorSvg = Math.abs(xA - xX) > dotR*2+6
+        ? `<line x1="${arrowX1.toFixed(1)}" y1="${cy}" x2="${arrowX2.toFixed(1)}" y2="${cy}"
+            stroke="rgba(255,255,255,0.35)" stroke-width="1.2"
+            stroke-dasharray="${isDashed?'4,3':''}"
+            marker-end="url(#arr-${i})"/>
+          <defs><marker id="arr-${i}" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto">
+            <path d="M0,0 L5,2.5 L0,5 Z" fill="rgba(255,255,255,0.4)"/>
+          </marker></defs>`
+        : '';
+
+      // xPTS dot (purple)
+      const xptsDot = `<circle cx="${xX.toFixed(1)}" cy="${cy}" r="${dotR}" fill="#7c3aed" opacity="0.9"/>
+        <text x="${xX.toFixed(1)}" y="${(cy+3.5).toFixed(1)}" text-anchor="middle" fill="white" font-size="9" font-weight="700" font-family="'DM Sans',sans-serif">${view==='pts'?xpcts_v.toFixed(1):xpcts_v}</text>`;
+
+      // Actual dot (red/coral) — Liverpool uses club red
+      const dotColor = isLiv ? '#c8102e' : '#e05a5a';
+      const actualDot = `<circle cx="${xA.toFixed(1)}" cy="${cy}" r="${dotR}" fill="${dotColor}"/>
+        <text x="${xA.toFixed(1)}" y="${(cy+3.5).toFixed(1)}" text-anchor="middle" fill="white" font-size="9" font-weight="700" font-family="'DM Sans',sans-serif">${actual_v}</text>`;
+
+      // Team label (left side)
+      const label = `
+        ${escSrc ? `<defs><clipPath id="${escClipId}"><circle cx="${ESC_SIZE/2}" cy="${cy}" r="${ESC_SIZE/2}"/></clipPath></defs>
+          <image href="${escSrc}" x="0" y="${cy-ESC_SIZE/2}" width="${ESC_SIZE}" height="${ESC_SIZE}" clip-path="url(#${escClipId})"/>` : ''}
+        <text x="${ESC_SIZE+6}" y="${(cy+4).toFixed(1)}" fill="${isLiv?'#e8889a':'rgba(255,255,255,0.75)'}" font-size="11.5" font-weight="${isLiv?800:500}" font-family="'DM Sans',sans-serif">${t.name}</text>`;
+
+      // Diff badge (right)
+      const diffVal = view === 'pts' ? (t.pts - t.xpts) : (t.xpos - t.pos);
+      const diffSign = diffVal > 0 ? '+' : '';
+      const diffCol = diffVal > 1 ? '#4ade80' : diffVal < -1 ? '#f87171' : 'rgba(255,255,255,0.3)';
+      const diffBadge = `<text x="${W - 8}" y="${(cy+4).toFixed(1)}" text-anchor="end" fill="${diffCol}" font-size="10" font-weight="700" font-family="'DM Sans',sans-serif">${diffSign}${view==='pts'?diffVal.toFixed(1):diffVal}</text>`;
+
+      return label + connectorSvg + xptsDot + actualDot + diffBadge;
+    }).join('');
+
+    // ── Legend ─────────────────────────────────────────────────────────────
+    const legend = `
+      <circle cx="4" cy="4" r="4" fill="#e05a5a"/>
+      <text x="12" y="8" fill="rgba(255,255,255,0.7)" font-size="11" font-family="'DM Sans',sans-serif" font-weight="700">Real</text>
+      <circle cx="46" cy="4" r="4" fill="#7c3aed"/>
+      <text x="54" y="8" fill="rgba(255,255,255,0.7)" font-size="11" font-family="'DM Sans',sans-serif" font-weight="700">Esperado (xG)</text>
+      <text x="200" y="8" fill="rgba(255,255,255,0.4)" font-size="10" font-family="'DM Sans',sans-serif">Diferencia (Real − Esperado)</text>`;
+
+    const svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;font-family:'DM Sans',sans-serif;overflow:visible">
+      ${rowBgs}
+      ${zoneSvg}
+      ${gridLines}
+      ${rows}
+    </svg>`;
+
+    const viewBtns = `
+      <button onclick="_xptsToggleView('pts')" style="padding:4px 12px;border-radius:20px;border:1px solid ${view==='pts'?'rgba(124,58,237,0.6)':'rgba(255,255,255,0.1)'};background:${view==='pts'?'rgba(124,58,237,0.15)':'transparent'};color:${view==='pts'?'#a78bfa':'var(--text2)'};font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Puntos</button>
+      <button onclick="_xptsToggleView('pos')" style="padding:4px 12px;border-radius:20px;border:1px solid ${view==='pos'?'rgba(124,58,237,0.6)':'rgba(255,255,255,0.1)'};background:${view==='pos'?'rgba(124,58,237,0.15)':'transparent'};color:${view==='pos'?'#a78bfa':'var(--text2)'};font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Posición</button>`;
+
+    el.innerHTML = `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        <div style="padding:12px 20px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-size:14px;font-weight:900;color:var(--text1)">¿Qué equipos han sobre/infra-rendido?</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">Comparando <span style="color:#e05a5a;font-weight:700">puntos reales</span> y <span style="color:#a78bfa;font-weight:700">puntos esperados</span> (xG Opta) · Premier League 2025/26</div>
+          </div>
+          <div style="display:flex;gap:6px">${viewBtns}</div>
+        </div>
+        <div style="padding:16px 20px 12px;overflow-x:auto;background:#0d1117">
+          <div style="min-width:500px">
+            <div style="display:flex;gap:16px;margin-bottom:10px;padding-left:${LABEL_W+10}px">
+              <div style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:#e05a5a;display:inline-block"></span><span style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:700">Real</span></div>
+              <div style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:#7c3aed;display:inline-block"></span><span style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:700">Esperado (xPTS)</span></div>
+              <div style="margin-left:auto;font-size:10px;color:rgba(255,255,255,0.3)">Diferencia ▸</div>
+            </div>
+            ${svg}
+            <div style="text-align:center;font-size:10px;color:rgba(255,255,255,0.25);margin-top:6px">${view==='pts'?'Puntos':'Posición'} · Los puntos esperados se calculan simulando cada partido mediante distribución de Poisson aplicada al xG individual de cada disparo (Opta)</div>
+          </div>
+        </div>
+      </div>`;
   }
 
   function _renderClasifForma() {
