@@ -16974,6 +16974,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 ...(_possData ? [['posesion','⚽ Posesión']] : []),
                 ...(_drData ? [['regates','⚡ Regates']] : []),
                 ...(_livData ? [
+                  ['analisis','🧠 Análisis'],
                   ['finalizacion','Finalización'],
                   ['creacion','Creación'],
                   ['progresividad','Progresividad'],
@@ -16982,7 +16983,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 ...(_livDefData ? [['defensiva_liv','Acciones defensivas']] : []),
               ].map(([id,lbl]) => {
                 const act = _profileTab === id;
-                const tabCol = id==='carreras' ? '#f0883e' : id==='pases' ? '#58a6ff' : id==='posesion' ? '#3fb950' : id==='finalizacion' ? '#f85149' : id==='creacion' ? '#d2a8ff' : id==='progresividad' ? '#ffa657' : id==='carreras_sb' ? '#79c0ff' : id==='defensiva_liv' ? '#ff7b72' : 'var(--accent)';
+                const tabCol = id==='carreras' ? '#f0883e' : id==='pases' ? '#58a6ff' : id==='posesion' ? '#3fb950' : id==='analisis' ? '#3fb950' : id==='finalizacion' ? '#f85149' : id==='creacion' ? '#d2a8ff' : id==='progresividad' ? '#ffa657' : id==='carreras_sb' ? '#79c0ff' : id==='defensiva_liv' ? '#ff7b72' : 'var(--accent)';
                 return `<button onclick="_profileTab='${id}';_profileObeView='tabla';_profileRunView='tabla';_profilePasesView='tabla';_profilePossView='tabla';_profilePossPosIdx=0;openPlayerProfile(${p.d})"
                   style="background:transparent;border:none;border-bottom:2px solid ${act?tabCol:'transparent'};
                          color:${act?tabCol:'var(--text2)'};padding:8px 18px;
@@ -18094,6 +18095,90 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                     </div>
                     <div style="margin-top:8px;font-size:9px;color:var(--text3)">1ª RFEF 2025/26 · Temporada completa</div>
                   </div>
+                </div>`;
+            })() : (_profileTab === 'analisis') ? (() => {
+              if (!_livData) return '<div style="padding:40px;text-align:center;color:var(--text3)">Sin datos disponibles</div>';
+              const _posLabelA = {'W':'extremo','AM':'mediapunta','DM':'mediocentro defensivo','CM':'centrocampista','CB':'central','FB':'lateral','ST':'delantero'}[_livData.pos] || _livData.pos;
+              // Diccionario de métricas → etiqueta futbolística + grupo + frase de fortaleza/debilidad
+              const A_LABELS = {
+                'goals_90':    {lbl:'Capacidad goleadora',          grp:'Finalización', hi:'es un finalizador muy productivo: convierte ocasiones en goles a un ritmo muy por encima de la media de su posición', lo:'le está costando ver puerta: su ratio de goles por partido está por debajo de la media de su posición'},
+                'xg_90':       {lbl:'Generación de ocasiones (xG)', grp:'Finalización', hi:'se mete con frecuencia en zonas de remate de calidad, generando ocasiones muy peligrosas', lo:'apenas genera ocasiones de gol de calidad, se involucra poco en la fase final del ataque'},
+                'shots_ot_90': {lbl:'Tiros a puerta',               grp:'Finalización', hi:'tiene buena puntería: un alto porcentaje de sus disparos van a puerta', lo:'le falta precisión: pocos de sus disparos terminan entre los tres palos'},
+                'xa_90':       {lbl:'Calidad de las asistencias (xA)', grp:'Creación', hi:'es un asistente de calidad: sus pases ponen a los compañeros en situaciones muy claras de gol', lo:'sus pases al área generan poco peligro real para los compañeros'},
+                'kp_90':       {lbl:'Pases clave',                  grp:'Creación', hi:'aporta mucho al último pase, generando disparos de los compañeros con frecuencia', lo:'participa poco en la creación de disparos para sus compañeros'},
+                'bc_90':       {lbl:'Grandes ocasiones creadas',    grp:'Creación', hi:'es muy desequilibrante en el último tercio, dejando a compañeros en ocasiones clarísimas', lo:'rara vez deja a un compañero solo ante el portero'},
+                'xt_90':       {lbl:'Amenaza generada (xThreat)',   grp:'Creación', hi:'cada vez que toca el balón aumenta mucho el peligro del equipo, ya sea con pases o conducciones', lo:'sus acciones con balón aportan poco peligro directo a la portería rival'},
+                'lb_90':       {lbl:'Pases que rompen líneas',      grp:'Progresión', hi:'es muy vertical: rompe líneas rivales con sus pases con mucha frecuencia', lo:'apenas rompe líneas con el pase, su juego es poco directo'},
+                'prog_p_90':   {lbl:'Pases progresivos',            grp:'Progresión', hi:'hace avanzar al equipo con el pase de forma constante', lo:'aporta poco avance posicional con el pase'},
+                'prog_c_90':   {lbl:'Conducciones progresivas',     grp:'Progresión', hi:'es muy vertical conduciendo el balón, gana metros con regularidad', lo:'avanza poco el balón con conducción'},
+                'drb_90':      {lbl:'Regates intentados',           grp:'Progresión', hi:'busca el uno contra uno con frecuencia para superar rivales', lo:'recurre poco al regate para superar líneas'},
+                'drb_s_90':    {lbl:'Regates completados',          grp:'Progresión', hi:'es muy efectivo en el uno contra uno, supera rivales con regularidad', lo:'le cuesta superar a su par en el regate'},
+                'assists_90':  {lbl:'Asistencias',                  grp:'Creación', hi:'termina muchas jugadas de ataque con una asistencia', lo:'pocas veces termina la jugada con una asistencia directa'},
+                'poss_sh_90':  {lbl:'Posesiones que acaban en disparo', grp:'Creación', hi:'sus intervenciones suelen acabar en remate del equipo', lo:'sus posesiones rara vez derivan en un disparo'},
+                'poss_g_90':   {lbl:'Posesiones que acaban en gol', grp:'Creación', hi:'está muy implicado en las jugadas que terminan en gol', lo:'está poco involucrado en las jugadas que acaban en gol'},
+                'runs_90':     {lbl:'Movilidad sin balón',          grp:'Movimiento', hi:'es muy activo sin balón, generando desmarques constantemente', lo:'tiene poca movilidad sin balón, se desmarca poco'},
+                'runs_d_90':   {lbl:'Carreras peligrosas',          grp:'Movimiento', hi:'sus desmarques generan peligro constante a la espalda de la defensa rival', lo:'sus desmarques apenas desequilibran a la defensa rival'},
+                'runs_lb_90':  {lbl:'Carreras que rompen líneas',   grp:'Movimiento', hi:'sus carreras rompen líneas rivales con frecuencia, abriendo espacios', lo:'sus carreras casi nunca rompen líneas defensivas rivales'},
+                'press_90':    {lbl:'Volumen de presión',           grp:'Pressing', hi:'es muy intenso presionando al rival nada más perder el balón', lo:'presiona poco tras la pérdida, se replantea más que presiona'},
+                'press_fb_90': {lbl:'Presión que fuerza atrás',     grp:'Pressing', hi:'su presión obliga al rival a retrasar el balón con frecuencia', lo:'su presión rara vez incomoda al rival lo suficiente'},
+                // Defensiva (desde LIV_DEF, percentiles _livDefData.pct)
+                'tackles_90':       {lbl:'Entradas',            grp:'Defensa', hi:'es muy activo entrando al choque para robar el balón', lo:'entra poco al choque para recuperar el balón'},
+                'interceptions_90': {lbl:'Intercepciones',      grp:'Defensa', hi:'lee muy bien el juego rival, anticipando e interceptando pases con frecuencia', lo:'anticipa poco las líneas de pase rivales'},
+                'recoveries_90':    {lbl:'Recuperaciones',      grp:'Defensa', hi:'recupera muchos balones sueltos para su equipo', lo:'recupera pocos balones sueltos'},
+                'aerials_90':       {lbl:'Juego aéreo',         grp:'Defensa', hi:'es un jugador muy presente en el juego aéreo, disputa muchos duelos por arriba', lo:'apenas participa en el juego aéreo'},
+                'clearances_90':    {lbl:'Despejes',            grp:'Defensa', hi:'aparece con frecuencia para despejar el peligro de su área', lo:'despeja poco, no suele ser el último recurso defensivo'},
+                'obe_90':           {lbl:'Intervenciones defensivas', grp:'Defensa', hi:'interviene constantemente cuando el rival tiene el balón: duelos, coberturas y recuperaciones', lo:'tiene poca implicación cuando el equipo no tiene el balón'},
+                'press_dir_90':     {lbl:'Presión directa',     grp:'Pressing', hi:'presiona de forma directa e inmediata al poseedor del balón con frecuencia', lo:'rara vez presiona de forma directa al poseedor'},
+                'dispossessed_90':  {lbl:'Pérdidas de balón',   grp:'Vulnerabilidad', hiBad:true, hi:'pierde el balón con mucha frecuencia al ser presionado, un punto a vigilar', lo:'apenas pierde balones por presión rival, cuida mucho la posesión'},
+              };
+              // Recopilar percentiles disponibles
+              const _allPct = [];
+              const _pctA = _livData.pct || {};
+              for (const [key, info] of Object.entries(A_LABELS)) {
+                let pv;
+                if (_pctA[key] !== undefined) pv = _pctA[key];
+                else if (_livDefData && _livDefData.pct && _livDefData.pct[key] !== undefined) pv = _livDefData.pct[key];
+                if (pv === undefined) continue;
+                _allPct.push({key, pv, ...info});
+              }
+              // Para "pérdidas de balón" un percentil alto es MALO -> invertimos para ranking de fortalezas/debilidades
+              const _rankVal = e => e.hiBad ? (100 - e.pv) : e.pv;
+              const _sorted = [..._allPct].sort((a,b) => _rankVal(b) - _rankVal(a));
+              const _fortalezas = _sorted.filter(e => _rankVal(e) >= 70).slice(0,4);
+              const _debilidades = [..._sorted].reverse().filter(e => _rankVal(e) <= 30).slice(0,3);
+              // Perfil dominante por grupo (media de percentiles del grupo)
+              const _grpAgg = {};
+              for (const e of _allPct) {
+                if (e.grp === 'Vulnerabilidad') continue;
+                _grpAgg[e.grp] = _grpAgg[e.grp] || [];
+                _grpAgg[e.grp].push(e.pv);
+              }
+              const _grpAvg = Object.entries(_grpAgg).map(([g,arr]) => ({g, avg: arr.reduce((a,b)=>a+b,0)/arr.length}))
+                .sort((a,b)=>b.avg-a.avg);
+              const _topGrp = _grpAvg[0];
+              const _intro = `<strong style="color:var(--text1)">${p.name}</strong> es un <strong style="color:var(--text1)">${_posLabelA}</strong> con <strong style="color:var(--text1)">${_livData.mins||0} minutos</strong> disputados esta temporada en la Premier League. ` +
+                (_topGrp ? `Su perfil estadístico está marcado sobre todo por su aportación en <strong style="color:#79c0ff">${_topGrp.g.toLowerCase()}</strong> (percentil medio ${_topGrp.avg.toFixed(0)} frente a jugadores de su misma posición).` : '');
+              const _fortBlock = _fortalezas.length ? `
+                <div style="margin-top:14px">
+                  <div style="font-size:11px;font-weight:800;color:#3fb950;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">💪 Puntos fuertes</div>
+                  ${_fortalezas.map(e => `<div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:6px">
+                    <strong style="color:var(--text1)">${e.lbl}</strong> (P${e.pv}): ${p.name} ${e.hi}.
+                  </div>`).join('')}
+                </div>` : '';
+              const _debBlock = _debilidades.length ? `
+                <div style="margin-top:14px">
+                  <div style="font-size:11px;font-weight:800;color:#f0883e;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">🔧 Aspectos a mejorar</div>
+                  ${_debilidades.map(e => `<div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:6px">
+                    <strong style="color:var(--text1)">${e.lbl}</strong> (P${e.pv}): ${p.name} ${e.lo}.
+                  </div>`).join('')}
+                </div>` : '';
+              return `
+                <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px">
+                  <div style="font-size:11px;font-weight:800;color:#79c0ff;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">📋 Resumen del perfil</div>
+                  <div style="font-size:13px;color:var(--text2);line-height:1.7">${_intro}</div>
+                  ${_fortBlock}
+                  ${_debBlock}
+                  <div style="font-size:9px;color:var(--text3);margin-top:14px;padding-top:10px;border-top:1px solid var(--border)">Análisis generado automáticamente a partir de los percentiles por posición · Premier League 25/26.</div>
                 </div>`;
             })() : (_profileTab === 'defensiva_liv') ? (() => {
               if (!_livDefData) return '<div style="padding:40px;text-align:center;color:var(--text3)">Sin datos disponibles</div>';
