@@ -16394,6 +16394,8 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
   let _profileObeDistMetric = 'Total OBE';
   let _profileDefView = 'tabla'; // 'tabla' | 'dist'
   let _profileDefDistMetric = 'OBE totales (intervenciones)';
+  let _profileDefScatterX = 'Entradas';
+  let _profileDefScatterY = 'Intercepciones';
   let _profileObeScatterX = 'Total OBE';
   let _profileObeScatterY = 'Presión directa';
   let _profileObeScatterPreset = 0;   // index into _SCATTER_PRESETS; -1 = custom
@@ -18147,80 +18149,101 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   ['dispossessed_90','Pérdidas (Opta)','Vulnerabilidades','Veces que el jugador pierde el balón al ser despojado por un rival.'],
                 ];
                 const _GCOL = {'Volumen':'#ff7b72','Pressing':'#56d364','Opta':'#58a6ff','Vulnerabilidades':'#f0883e'};
-                const _cur = DEF_METRICS.find(m => m[1] === _profileDefDistMetric) || DEF_METRICS[0];
-                const _pCol_d = q => q >= 75 ? '#3fb950' : q >= 50 ? '#c8a96e' : q >= 25 ? '#f0883e' : '#f85149';
-                const _metricPills_d = DEF_METRICS.map(([key,lbl,grp]) => {
-                  const act = _profileDefDistMetric === lbl;
+                if (!DEF_METRICS.find(m=>m[1]===_profileDefScatterX)) _profileDefScatterX = 'Entradas';
+                if (!DEF_METRICS.find(m=>m[1]===_profileDefScatterY)) _profileDefScatterY = 'Intercepciones';
+                const _curX = DEF_METRICS.find(m => m[1] === _profileDefScatterX) || DEF_METRICS[0];
+                const _curY = DEF_METRICS.find(m => m[1] === _profileDefScatterY) || DEF_METRICS[1];
+                const _axisPills = (axisVar, curMetric) => DEF_METRICS.map(([key,lbl,grp]) => {
+                  const act = curMetric === lbl;
                   const c = _GCOL[grp];
-                  return `<button onclick="_profileDefDistMetric='${lbl.replace(/'/g,"\\'")}';openPlayerProfile(${p.d})"
-                    style="padding:4px 11px;border-radius:16px;border:1px solid ${act?c:'var(--border)'};
+                  return `<button onclick="${axisVar}='${lbl.replace(/'/g,"\\'")}';openPlayerProfile(${p.d})"
+                    style="padding:3px 10px;border-radius:14px;border:1px solid ${act?c:'var(--border)'};
                            background:${act?c+'2e':'var(--bg2)'};color:${act?c:'var(--text2)'};
-                           font-size:11px;font-weight:${act?700:400};cursor:pointer;white-space:nowrap;transition:all .15s">
+                           font-size:10px;font-weight:${act?700:400};cursor:pointer;white-space:nowrap;transition:all .15s">
                     ${lbl}
                   </button>`;
                 }).join('');
                 const _pos_d = _livDefData.pos || 'CB';
-                const _leaguePairs_d = (typeof LIV_DEF_DIST !== 'undefined' ? (LIV_DEF_DIST[_pos_d] || {})[_cur[1]] : null) || [];
-                const _selVal_d = _livDefData[_cur[0]];
-                const _selP_d = _pct[_cur[0]] !== undefined ? _pct[_cur[0]] : null;
-                const _leagueVals_d = _leaguePairs_d.map(x => x[0]);
-                const _leagueNames_d = _leaguePairs_d.map(x => x[1]);
-                const _nL = _leagueVals_d.length;
-                const _W=640,_H=240,_PL=10,_PR=10,_PT=36,_PB=28;
-                const _plotW=_W-_PL-_PR,_plotH=_H-_PT-_PB,_midY=_PT+_plotH/2,_R=5;
-                const _allV_d = _nL ? _leagueVals_d : [0,1];
-                let _minV_d=_allV_d[0], _maxV_d=_allV_d[_allV_d.length-1];
-                if (_selVal_d!==undefined){_minV_d=Math.min(_minV_d,_selVal_d);_maxV_d=Math.max(_maxV_d,_selVal_d);}
-                const _span_d=_maxV_d-_minV_d||1;
-                _minV_d-=_span_d*0.05; _maxV_d+=_span_d*0.05;
-                const _xSc_d = v => _PL+(v-_minV_d)/(_maxV_d-_minV_d)*_plotW;
-                const _placed_d=[];
-                for (let i=0;i<_nL;i++){
-                  const v=_leagueVals_d[i],x=_xSc_d(v);
-                  const _pct_i=_nL>1?i/(_nL-1)*100:50;
-                  const _col_i=_pCol_d(_pct_i);
-                  let yOff=0;
-                  for (let step=0;step<=_plotH/2;step+=_R*2.1){
-                    const cands=step===0?[0]:[step,-step];let ok_y=null;
-                    for (const off of cands){
-                      let ok=true;
-                      for (const pt of _placed_d){if((x-pt.x)**2+(_midY+off-pt.y)**2<(_R*2.1)**2){ok=false;break;}}
-                      if(ok){ok_y=off;break;}
-                    }
-                    if(ok_y!==null){yOff=ok_y;break;}
-                  }
-                  _placed_d.push({x,y:_midY+yOff,col:_col_i,name:_leagueNames_d[i],v});
+                const _posData = (typeof LIV_DEF_DIST !== 'undefined' ? LIV_DEF_DIST[_pos_d] : null) || {};
+                const _xPairs = _posData[_curX[1]] || [];
+                const _yPairs = _posData[_curY[1]] || [];
+                // Build name -> y value map, then merge with x pairs
+                const _yMap = new Map(_yPairs.map(([v,n]) => [n, v]));
+                const _pts = _xPairs.filter(([,n]) => _yMap.has(n)).map(([vx,n]) => ({x:vx, y:_yMap.get(n), name:n}));
+                const _selX = _livDefData[_curX[0]], _selY = _livDefData[_curY[0]];
+                // Geometry
+                const _W=640,_H=420,_PL=46,_PR=18,_PT=18,_PB=40;
+                const _plotW=_W-_PL-_PR,_plotH=_H-_PT-_PB;
+                const _xs = _pts.map(d=>d.x).concat(_selX!==undefined?[_selX]:[]);
+                const _ys = _pts.map(d=>d.y).concat(_selY!==undefined?[_selY]:[]);
+                let _minX=Math.min(..._xs), _maxX=Math.max(..._xs);
+                let _minY=Math.min(..._ys), _maxY=Math.max(..._ys);
+                const _spX=(_maxX-_minX)||1, _spY=(_maxY-_minY)||1;
+                _minX-=_spX*0.06; _maxX+=_spX*0.06; _minY-=_spY*0.06; _maxY+=_spY*0.06;
+                const _xSc = v => _PL+(v-_minX)/(_maxX-_minX)*_plotW;
+                const _ySc = v => _PT+_plotH-(v-_minY)/(_maxY-_minY)*_plotH;
+                // Median lines for quadrants
+                const _sortedX=[..._pts.map(d=>d.x)].sort((a,b)=>a-b);
+                const _sortedY=[..._pts.map(d=>d.y)].sort((a,b)=>a-b);
+                const _medX = _sortedX.length ? _sortedX[Math.floor(_sortedX.length/2)] : (_minX+_maxX)/2;
+                const _medY = _sortedY.length ? _sortedY[Math.floor(_sortedY.length/2)] : (_minY+_maxY)/2;
+                const _mx=_xSc(_medX), _my=_ySc(_medY);
+                // Quadrant backgrounds
+                const _quads = `
+                  <rect x="${_mx}" y="${_PT}" width="${_PL+_plotW-_mx}" height="${_my-_PT}" fill="#3fb950" fill-opacity="0.05"/>
+                  <rect x="${_PL}" y="${_PT}" width="${_mx-_PL}" height="${_my-_PT}" fill="#f0883e" fill-opacity="0.04"/>
+                  <rect x="${_mx}" y="${_my}" width="${_PL+_plotW-_mx}" height="${_PT+_plotH-_my}" fill="#58a6ff" fill-opacity="0.04"/>
+                  <rect x="${_PL}" y="${_my}" width="${_mx-_PL}" height="${_PT+_plotH-_my}" fill="#f85149" fill-opacity="0.05"/>
+                  <line x1="${_mx}" y1="${_PT}" x2="${_mx}" y2="${_PT+_plotH}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
+                  <line x1="${_PL}" y1="${_my}" x2="${_PL+_plotW}" y2="${_my}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
+                `;
+                // Dots
+                const _dots = _pts.map(d => {
+                  const cx=_xSc(d.x).toFixed(1), cy=_ySc(d.y).toFixed(1);
+                  const isMe = d.name === _livKey;
+                  if (isMe) return '';
+                  return `<circle cx="${cx}" cy="${cy}" r="4.5" fill="#8b949e" fill-opacity="0.45" stroke="none" style="cursor:pointer" onmouseover="_obeTipShow(event,'<strong>${d.name.replace(/'/g,"\\'")}</strong><br>${_curX[1].replace(/'/g,"\\'")}: ${d.x}<br>${_curY[1].replace(/'/g,"\\'")}: ${d.y}')" onmouseout="_obeTipHide()"/>`;
+                }).join('');
+                // Highlighted player dot
+                let _meDot = '';
+                if (_selX!==undefined && _selY!==undefined) {
+                  const cx=_xSc(_selX).toFixed(1), cy=_ySc(_selY).toFixed(1);
+                  _meDot = `<defs><filter id="pgdf" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                    <circle cx="${cx}" cy="${cy}" r="9" fill="none" stroke="#58a6ff" stroke-width="2.5" filter="url(#pgdf)"/>
+                    <circle cx="${cx}" cy="${cy}" r="6" fill="#58a6ff" filter="url(#pgdf)"/>
+                    <text x="${cx}" y="${(parseFloat(cy)-12).toFixed(1)}" text-anchor="middle" font-size="11" fill="#58a6ff" font-weight="800" style="paint-order:stroke" stroke="#0d1117" stroke-width="3">${p.name}</text>`;
                 }
-                const _metric_d = _cur[1];
-                const _dots_d=_placed_d.map(pt=>`<circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${_R}" fill="${pt.col}" fill-opacity="0.8" style="cursor:pointer" onmouseover="_obeTipShow(event,'<strong>${pt.name.replace(/'/g,"\\'")}</strong><br>${_metric_d.replace(/'/g,"\\'")} · ${pt.v}')" onmouseout="_obeTipHide()"/>`).join('');
-                let _ticks_d='';
-                for(let i=0;i<=5;i++){const v=_minV_d+(_maxV_d-_minV_d)*i/5,x=_xSc_d(v).toFixed(1);_ticks_d+=`<line x1="${x}" y1="${_PT+_plotH}" x2="${x}" y2="${_PT+_plotH+5}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/><text x="${x}" y="${_PT+_plotH+16}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.35)">${v.toFixed(v>10?0:1)}</text>`;}
-                const _cline_d=`<line x1="${_PL}" y1="${_midY}" x2="${_W-_PR}" y2="${_midY}" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="4,4"/>`;
-                let _selDot_d='';
-                if (_selVal_d!==undefined){
-                  const sx=_xSc_d(_selVal_d).toFixed(1),sc=_pCol_d(_selP_d!==null?_selP_d:50);
-                  _selDot_d=`<defs><filter id="pgdf" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-                    <line x1="${sx}" y1="${_PT}" x2="${sx}" y2="${_PT+_plotH}" stroke="${sc}" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
-                    <circle cx="${sx}" cy="${_midY}" r="${_R+4}" fill="none" stroke="${sc}" stroke-width="2.5" filter="url(#pgdf)"/>
-                    <circle cx="${sx}" cy="${_midY}" r="${_R+1.5}" fill="${sc}" filter="url(#pgdf)"/>
-                    <rect x="${(parseFloat(sx)-66).toFixed(1)}" y="${(_PT+2).toFixed(1)}" width="132" height="16" rx="4" fill="rgba(13,17,23,0.9)" stroke="${sc}" stroke-width="0.8"/>
-                    <text x="${sx}" y="${(_PT+14).toFixed(1)}" text-anchor="middle" font-size="10" fill="${sc}" font-weight="700">${p.name} · P${_selP_d!==null?_selP_d:'?'} · ${_selVal_d}</text>`;
+                // Axis ticks
+                let _xTicks='', _yTicks='';
+                for(let i=0;i<=5;i++){
+                  const v=_minX+(_maxX-_minX)*i/5, x=_xSc(v).toFixed(1);
+                  _xTicks+=`<line x1="${x}" y1="${_PT+_plotH}" x2="${x}" y2="${_PT+_plotH+5}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/><text x="${x}" y="${_PT+_plotH+17}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.4)">${v.toFixed(v>10?0:1)}</text>`;
                 }
-                const _svg_d=`<svg viewBox="0 0 ${_W} ${_H}" width="100%" style="display:block;overflow:visible">${_cline_d}${_dots_d}${_selDot_d}<line x1="${_PL}" y1="${_PT+_plotH}" x2="${_W-_PR}" y2="${_PT+_plotH}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>${_ticks_d}</svg>`;
+                for(let i=0;i<=4;i++){
+                  const v=_minY+(_maxY-_minY)*i/4, y=_ySc(v).toFixed(1);
+                  _yTicks+=`<line x1="${_PL-5}" y1="${y}" x2="${_PL}" y2="${y}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/><text x="${_PL-9}" y="${(parseFloat(y)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.4)">${v.toFixed(v>10?0:1)}</text>`;
+                }
+                const _axisLabels = `
+                  <text x="${_PL+_plotW/2}" y="${_H-6}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text2)">${_curX[1]} →</text>
+                  <text x="14" y="${_PT+_plotH/2}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text2)" transform="rotate(-90 14 ${_PT+_plotH/2})">${_curY[1]} →</text>
+                `;
+                const _border=`<rect x="${_PL}" y="${_PT}" width="${_plotW}" height="${_plotH}" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>`;
+                const _svg_d=`<svg viewBox="0 0 ${_W} ${_H}" width="100%" style="display:block;overflow:visible">${_quads}${_border}${_dots}${_meDot}${_xTicks}${_yTicks}${_axisLabels}</svg>`;
                 return _defTog + `
-                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center">${_metricPills_d}</div>
-                <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
-                  <div style="font-size:12px;font-weight:700;color:${_GCOL[_cur[2]]};margin-bottom:4px">${_cur[1]}</div>
-                  <div style="font-size:11px;color:var(--text3);line-height:1.5">${_cur[3]}</div>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px">
+                  <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:10px;color:var(--text3);font-weight:700;min-width:48px">Eje X:</span>${_axisPills('_profileDefScatterX', _profileDefScatterX)}</div>
+                  <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:10px;color:var(--text3);font-weight:700;min-width:48px">Eje Y:</span>${_axisPills('_profileDefScatterY', _profileDefScatterY)}</div>
+                </div>
+                <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin:12px 0 10px">
+                  <div style="font-size:12px;font-weight:700;color:var(--text1);margin-bottom:6px">${_curX[1]} vs ${_curY[1]}</div>
+                  <div style="font-size:11px;color:var(--text3);line-height:1.5"><strong style="color:${_GCOL[_curX[2]]}">${_curX[1]}:</strong> ${_curX[3]}</div>
+                  <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:4px"><strong style="color:${_GCOL[_curY[2]]}">${_curY[1]}:</strong> ${_curY[3]}</div>
                 </div>
                 <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 6px 4px;overflow:hidden">${_svg_d}</div>
-                <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
-                  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3fb950;margin-right:3px;vertical-align:middle"></span>P75–100</span>
-                  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#c8a96e;margin-right:3px;vertical-align:middle"></span>P50–74</span>
-                  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f0883e;margin-right:3px;vertical-align:middle"></span>P25–49</span>
-                  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f85149;margin-right:3px;vertical-align:middle"></span>P0–24</span>
-                  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#58a6ff;margin-right:3px;vertical-align:middle"></span>${p.name}</span>
-                  <span style="margin-left:auto">vs ${_posLabel} · Premier League 25/26</span>
+                <div style="display:flex;gap:14px;margin-top:8px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
+                  <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#58a6ff;margin-right:4px;vertical-align:middle"></span>${p.name}</span>
+                  <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#8b949e;opacity:.6;margin-right:4px;vertical-align:middle"></span>Resto de ${_posLabel.toLowerCase()} · Premier League 25/26</span>
+                  <span style="margin-left:auto">Líneas discontinuas = mediana de cada eje</span>
                 </div>`;
               }
 
