@@ -14964,7 +14964,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
         <span style="font-weight:600;color:var(--text2)">Leyenda:</span>
         <span>${cardIcon('yellow')} <span style="margin-left:4px">Tarjeta amarilla</span></span>
         <span>${cardIcon('red')} <span style="margin-left:4px">Tarjeta roja</span></span>
-        <span style="margin-left:auto">Datos: SkillCorner · Premier League · J1–J${lastJ}</span>
+        <span style="margin-left:auto">Premier League · J1–J${lastJ}</span>
       </div>`;
   }
 
@@ -17804,7 +17804,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                       </tr></thead>
                       <tbody>${_rows2}</tbody>
                     </table>
-                    <div style="padding:8px 12px;font-size:9px;color:var(--text3);border-top:1px solid var(--border)">SkillCorner · 1ª RFEF 25/26 · percentil vs. misma posición · ${_pdat.m} partidos</div>
+                    <div style="padding:8px 12px;font-size:9px;color:var(--text3);border-top:1px solid var(--border)">1ª RFEF 25/26 · percentil vs. misma posición · ${_pdat.m} partidos</div>
                   </div>`;
               }
 
@@ -17839,7 +17839,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   ${_radarLbls}
                 </svg>`;
                 return _pTogBar2 + _pPosSelect + _radarSvg +
-                  `<div style="font-size:9px;color:var(--text3);margin-top:10px;text-align:center">SkillCorner · 1ª RFEF 25/26 · percentil vs. misma posición · ${_pdat.m} partidos</div>`;
+                  `<div style="font-size:9px;color:var(--text3);margin-top:10px;text-align:center">1ª RFEF 25/26 · percentil vs. misma posición · ${_pdat.m} partidos</div>`;
               }
 
               // ── DISPERSIÓN ───────────────────────────────────────────────────────
@@ -18046,7 +18046,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   `<div style="margin-top:14px;margin-bottom:6px;font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Añadir jugador</div>` +
                   _teamPills +
                   `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:260px;overflow-y:auto">${_listH||'<div style="padding:14px;text-align:center;color:var(--text3);font-size:11px">Sin jugadores disponibles</div>'}</div>` +
-                  `<div style="font-size:9px;color:var(--text3);margin-top:8px">SkillCorner · 1ª RFEF 25/26 · percentil vs. misma posición</div>`;
+                  `<div style="font-size:9px;color:var(--text3);margin-top:8px">1ª RFEF 25/26 · percentil vs. misma posición</div>`;
               }
 
             })() : _profileTab === 'regates' ? (() => {
@@ -18127,7 +18127,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 '<div style="font-size:13px;font-weight:700;color:var(--text1)">' + (_livDefData.mins || 0) + '</div>' +
                 '</div></div>';
               const _section = (title, color) => '<div style="font-size:11px;font-weight:800;color:' + color + ';text-transform:uppercase;letter-spacing:0.6px;margin:18px 0 8px">' + title + '</div>';
-              const _footer = '<div style="font-size:9px;color:var(--text3);margin-top:10px">Percentil vs. ' + _posLabel + ' · Premier League 25/26 · Opta + SkillCorner</div>';
+              const _footer = '<div style="font-size:9px;color:var(--text3);margin-top:10px">Percentil vs. ' + _posLabel + ' · Premier League 25/26</div>';
               const _defTog = `<div style="display:flex;gap:8px;margin-bottom:14px">
                 <button onclick="_profileDefView='tabla';openPlayerProfile(${p.d})" style="padding:5px 16px;border-radius:6px;border:1px solid ${_profileDefView==='tabla'?'var(--accent)':'var(--border)'};background:${_profileDefView==='tabla'?'rgba(200,169,110,0.12)':'var(--bg2)'};color:${_profileDefView==='tabla'?'var(--accent)':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profileDefView==='tabla'?700:500}">📋 Tabla</button>
                 <button onclick="_profileDefView='dist';openPlayerProfile(${p.d})" style="padding:5px 16px;border-radius:6px;border:1px solid ${_profileDefView==='dist'?'#58a6ff':'var(--border)'};background:${_profileDefView==='dist'?'rgba(88,166,255,0.12)':'var(--bg2)'};color:${_profileDefView==='dist'?'#58a6ff':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profileDefView==='dist'?700:500}">📊 Dispersión</button>
@@ -18145,19 +18145,19 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   ['contrapress_90','Contrapresión','Pressing','Presión inmediata tras perder el balón, intentando recuperarlo en los segundos siguientes a la pérdida.'],
                   ['press_recup_90','Presión-recuperación','Pressing','Presiones que terminan directamente en una recuperación del balón para el equipo.'],
                   ['forz_atras_90','Forzar hacia atrás','Pressing','Veces que la presión obliga al rival a retrasar el balón o jugar hacia atrás, sin perderlo.'],
-                  ['tackles_90','Entradas','Opta','Entradas (tackles) realizadas por el jugador, completadas o no, según datos de eventos Opta.'],
-                  ['tackles_won_pct','% Entradas ganadas','Opta','Porcentaje de entradas que terminan con el jugador ganando el balón.'],
-                  ['interceptions_90','Intercepciones','Opta','Balones interceptados, cortando un pase o conducción rival.'],
-                  ['clearances_90','Despejes','Opta','Balones despejados para alejar el peligro de la propia área o zona de presión.'],
-                  ['aerials_90','Duelos aéreos','Opta','Disputas por el balón aéreo, ganadas o perdidas.'],
-                  ['aerials_won_pct','% Duelos aéreos ganados','Opta','Porcentaje de duelos aéreos ganados sobre el total disputado.'],
-                  ['recoveries_90','Recuperaciones','Opta','Balones sueltos recuperados por el jugador (ball recoveries).'],
-                  ['fouls_90','Faltas cometidas','Opta','Faltas señaladas en contra del jugador.'],
+                  ['tackles_90','Entradas','Acciones','Entradas (tackles) realizadas por el jugador, completadas o no.'],
+                  ['tackles_won_pct','% Entradas ganadas','Acciones','Porcentaje de entradas que terminan con el jugador ganando el balón.'],
+                  ['interceptions_90','Intercepciones','Acciones','Balones interceptados, cortando un pase o conducción rival.'],
+                  ['clearances_90','Despejes','Acciones','Balones despejados para alejar el peligro de la propia área o zona de presión.'],
+                  ['aerials_90','Duelos aéreos','Acciones','Disputas por el balón aéreo, ganadas o perdidas.'],
+                  ['aerials_won_pct','% Duelos aéreos ganados','Acciones','Porcentaje de duelos aéreos ganados sobre el total disputado.'],
+                  ['recoveries_90','Recuperaciones','Acciones','Balones sueltos recuperados por el jugador (ball recoveries).'],
+                  ['fouls_90','Faltas cometidas','Acciones','Faltas señaladas en contra del jugador.'],
                   ['sup_mov_90','Superado por movimiento','Vulnerabilidades','Veces que el rival supera al jugador con un movimiento (desmarque/cambio de ritmo) durante una intervención defensiva.'],
                   ['sup_pos_90','Superado por posesión','Vulnerabilidades','Veces que el rival supera al jugador conservando el balón (regate, protección) durante una intervención defensiva.'],
-                  ['dispossessed_90','Pérdidas (Opta)','Vulnerabilidades','Veces que el jugador pierde el balón al ser despojado por un rival.'],
+                  ['dispossessed_90','Pérdidas','Vulnerabilidades','Veces que el jugador pierde el balón al ser despojado por un rival.'],
                 ];
-                const _GCOL = {'Volumen':'#ff7b72','Pressing':'#56d364','Opta':'#58a6ff','Vulnerabilidades':'#f0883e'};
+                const _GCOL = {'Volumen':'#ff7b72','Pressing':'#56d364','Acciones':'#58a6ff','Vulnerabilidades':'#f0883e'};
                 if (!DEF_METRICS.find(m=>m[1]===_profileDefScatterX)) _profileDefScatterX = 'Entradas';
                 if (!DEF_METRICS.find(m=>m[1]===_profileDefScatterY)) _profileDefScatterY = 'Intercepciones';
                 const _curX = DEF_METRICS.find(m => m[1] === _profileDefScatterX) || DEF_METRICS[0];
@@ -18267,7 +18267,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   ['Recuperaciones vs Disrupciones','Recuperaciones','Disrupciones directas'],
                   ['Recuperaciones: directas vs indirectas','Recuperaciones directas','Recuperaciones indirectas'],
                   ['Recuperaciones totales vs Entradas','Recuperaciones','Entradas'],
-                  ['Recuperaciones vs Pérdidas','Recuperaciones','Pérdidas (Opta)'],
+                  ['Recuperaciones vs Pérdidas','Recuperaciones','Pérdidas'],
                   ['Presión-recuperación vs Contrapresión','Presión-recuperación','Contrapresión'],
                   ['Vulnerabilidades','Superado por movimiento','Superado por posesión'],
                   ['Pressing detallado','Contrapresión','Presiones en cadena'],
@@ -18329,19 +18329,19 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
               }
 
               return _defTog + _header +
-                _section('Volumen defensivo (SkillCorner)', '#ff7b72') +
+                _section('Volumen defensivo', '#ff7b72') +
                 _pBar('OBE totales (intervenciones)', 'obe_90', 2) +
                 _pBar('Recuperaciones directas', 'recup_d_90', 2) +
                 _pBar('Recuperaciones indirectas', 'recup_i_90', 2) +
                 _pBar('Disrupciones directas', 'disrup_d_90', 2) +
                 _pBar('Disrupciones indirectas', 'disrup_i_90', 2) +
-                _section('Pressing (SkillCorner)', '#56d364') +
+                _section('Pressing', '#56d364') +
                 _pBar('Presión directa', 'press_dir_90', 2) +
                 _pBar('Presiones en cadena', 'press_c_90', 2) +
                 _pBar('Contrapresión', 'contrapress_90', 2) +
                 _pBar('Presión-recuperación', 'press_recup_90', 2) +
                 _pBar('Forzar hacia atrás', 'forz_atras_90', 2) +
-                _section('Acciones discretas (Opta)', '#58a6ff') +
+                _section('Acciones discretas', '#58a6ff') +
                 _pBar('Entradas', 'tackles_90', 2) +
                 _pBar('% Entradas ganadas', 'tackles_won_pct', 1, '%') +
                 _pBar('Intercepciones', 'interceptions_90', 2) +
@@ -18350,10 +18350,10 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 _pBar('% Duelos aéreos ganados', 'aerials_won_pct', 1, '%') +
                 _pBar('Recuperaciones', 'recoveries_90', 2) +
                 _pBar('Faltas cometidas', 'fouls_90', 2) +
-                _section('Vulnerabilidades (SkillCorner)', '#f0883e') +
+                _section('Vulnerabilidades', '#f0883e') +
                 _pBar('Superado por movimiento', 'sup_mov_90', 2) +
                 _pBar('Superado por posesión', 'sup_pos_90', 2) +
-                _pBar('Pérdidas (Opta)', 'dispossessed_90', 2) +
+                _pBar('Pérdidas', 'dispossessed_90', 2) +
                 _footer;
             })() : (_profileTab === 'finalizacion' || _profileTab === 'creacion' || _profileTab === 'progresividad' || _profileTab === 'carreras_sb') ? (() => {
               if (!_livData) return '<div style="padding:40px;text-align:center;color:var(--text3)">Sin datos disponibles</div>';
@@ -18393,7 +18393,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 'Conducciones progresivas': 'Conducciones de balón que avanzan de forma significativa hacia la portería rival.',
                 'Regates intentados': 'Veces que el jugador intenta superar a un rival mediante un regate, complete o no la jugada.',
                 'Regates completados': 'Regates que terminan con el jugador superando al rival y conservando el balón.',
-                'Carreras totales': 'Desplazamientos sin balón del jugador detectados por seguimiento físico (SkillCorner), de cualquier tipo.',
+                'Carreras totales': 'Desplazamientos sin balón del jugador detectados por seguimiento físico, de cualquier tipo.',
                 'Carreras peligrosas': 'Carreras sin balón que generan peligro directo: hacia espacios de finalización o que desequilibran la defensa rival.',
                 'Carreras recibidas': 'Carreras sin balón que terminan con el jugador recibiendo el balón de un compañero.',
                 'Líneas rotas (carrera)': 'Carreras sin balón que superan la línea defensiva de uno o más rivales, abriendo espacio de ataque.',
@@ -18417,7 +18417,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Minutos</div>' +
                 '<div style="font-size:13px;font-weight:700;color:var(--text1)">' + (_livData.mins || 0) + '</div>' +
                 '</div></div>';
-              const _footer = '<div style="font-size:9px;color:var(--text3);margin-top:10px">Percentil vs. ' + _posLabel + ' · Premier League 25/26 · Opta + SkillCorner</div>';
+              const _footer = '<div style="font-size:9px;color:var(--text3);margin-top:10px">Percentil vs. ' + _posLabel + ' · Premier League 25/26</div>';
               if (_profileTab === 'finalizacion') {
                 const _finTog = `<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
                   <button onclick="_profileFinView='resumen';openPlayerProfile(${p.d})" style="padding:5px 16px;border-radius:6px;border:1px solid ${_profileFinView==='resumen'?'var(--accent)':'var(--border)'};background:${_profileFinView==='resumen'?'rgba(200,169,110,0.12)':'var(--bg2)'};color:${_profileFinView==='resumen'?'var(--accent)':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profileFinView==='resumen'?700:500}">📋 Resumen</button>
