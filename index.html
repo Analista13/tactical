@@ -18217,8 +18217,6 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   <text x="${(_PL+4).toFixed(1)}" y="${(_PT+11).toFixed(1)}" font-size="9" fill="#f0883e" font-weight="700">Menos ${_curX[1]} / Más ${_curY[1]}</text>
                   <text x="${(_mx+5).toFixed(1)}" y="${(_PT+_plotH-6).toFixed(1)}" font-size="9" fill="#58a6ff" font-weight="700">Más ${_curX[1]} / Menos ${_curY[1]}</text>
                   <text x="${(_PL+4).toFixed(1)}" y="${(_PT+_plotH-6).toFixed(1)}" font-size="9" fill="#f85149" font-weight="700">Menos ${_curX[1]} / Menos ${_curY[1]}</text>
-                  <text x="${(_mx).toFixed(1)}" y="${(_PT+_plotH+30).toFixed(1)}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)">Mediana ${_curX[1]}: ${_medX.toFixed(_medX>10?0:1)}</text>
-                  <text x="${(_PL-30).toFixed(1)}" y="${(_my-7).toFixed(1)}" text-anchor="start" font-size="9" fill="rgba(255,255,255,0.5)" transform="rotate(-90 ${(_PL-30).toFixed(1)} ${(_my-7).toFixed(1)})">Mediana ${_curY[1]}: ${_medY.toFixed(_medY>10?0:1)}</text>
                 `;
                 // Dots
                 const _dots = _pts.map(d => {
@@ -18316,7 +18314,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 <div style="display:flex;gap:14px;margin-top:8px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
                   <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#58a6ff;margin-right:4px;vertical-align:middle"></span>${p.name}</span>
                   <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#8b949e;opacity:.6;margin-right:4px;vertical-align:middle"></span>Resto de ${_posLabel.toLowerCase()} · Premier League 25/26</span>
-                  <span style="margin-left:auto">Líneas discontinuas = mediana de cada eje</span>
+                  <span style="margin-left:auto">Líneas discontinuas = mediana (${_curX[1]}: ${_medX.toFixed(_medX>10?0:1)} · ${_curY[1]}: ${_medY.toFixed(_medY>10?0:1)})</span>
                 </div>`;
               }
 
