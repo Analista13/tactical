@@ -18418,7 +18418,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
 
                 // Half pitch, vertical, attacking goal at top — replicating the reference
                 // (light pitch, purple = shot, red = goal, circle size = xG).
-                const _pW=300,_pH=240;
+                const _pW=300,_pH=175;
                 const _px2m = _pW/68; // px per metre (pitch width 68m)
                 const _pxSc = y => (y/100)*_pW;                 // Opta y(0-100, width) -> px
                 const _pySc = x => _pH - ((x-50)/50)*_pH;       // Opta x(50-100, length) -> px (100=goal line)
@@ -18463,7 +18463,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                     <div>
                       <div style="font-size:11px;color:#888;margin-bottom:4px">Valor xG:</div>
                       <div style="display:flex;gap:8px;align-items:center">
-                        ${[0.05,0.15,0.3,0.5].map(v=>`<span style="display:inline-block;width:${(3+v*22)*2}px;height:${(3+v*22)*2}px;border-radius:50%;border:1.5px solid #bbb"></span>`).join('')}
+                        ${[0.05,0.15,0.3,0.5].map(v=>`<span style="display:inline-block;width:${(3+Math.min(v,0.6)*18)*2}px;height:${(3+Math.min(v,0.6)*18)*2}px;border-radius:50%;border:1.5px solid #bbb"></span>`).join('')}
                       </div>
                     </div>
                   </div>`;
@@ -18479,6 +18479,8 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                         ${_statBox('Goles:', _goalsN)}
                         ${_statBox('xG:', _totalXG.toFixed(1))}
                         ${_statBox('Tiros:', _shots.length)}
+                        ${_statBox('A puerta:', _shots.filter(s=>s.result==='Goal'||s.result==='OnTarget').length)}
+                        ${_statBox('G − xG:', (_goalsN-_totalXG>=0?'+':'')+(_goalsN-_totalXG).toFixed(1))}
                       </div>
                     </div>
                     ${_legendBlock}
