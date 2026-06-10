@@ -18223,9 +18223,9 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   <line x1="${_mx}" y1="${_PT}" x2="${_mx}" y2="${_PT+_plotH}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
                   <line x1="${_PL}" y1="${_my}" x2="${_PL+_plotW}" y2="${_my}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
                   ${_trendLine}${_r2Lbl}
-                  <text x="${(_mx+5).toFixed(1)}" y="${(_PT+11).toFixed(1)}" font-size="9" fill="#2ec4b6" font-weight="700">Más ${_curX[1]} / Más ${_curY[1]}</text>
+                  <text x="${(_PL+_plotW-4).toFixed(1)}" y="${(_PT+11).toFixed(1)}" text-anchor="end" font-size="9" fill="#2ec4b6" font-weight="700">Más ${_curX[1]} / Más ${_curY[1]}</text>
                   <text x="${(_PL+4).toFixed(1)}" y="${(_PT+11).toFixed(1)}" font-size="9" fill="#58a6ff" font-weight="700">Menos ${_curX[1]} / Más ${_curY[1]}</text>
-                  <text x="${(_mx+5).toFixed(1)}" y="${(_PT+_plotH-6).toFixed(1)}" font-size="9" fill="#e3b341" font-weight="700">Más ${_curX[1]} / Menos ${_curY[1]}</text>
+                  <text x="${(_PL+_plotW-4).toFixed(1)}" y="${(_PT+_plotH-6).toFixed(1)}" text-anchor="end" font-size="9" fill="#e3b341" font-weight="700">Más ${_curX[1]} / Menos ${_curY[1]}</text>
                   <text x="${(_PL+4).toFixed(1)}" y="${(_PT+_plotH-6).toFixed(1)}" font-size="9" fill="#f85149" font-weight="700">Menos ${_curX[1]} / Menos ${_curY[1]}</text>
                 `;
                 // Dots
@@ -18473,9 +18473,9 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                     <line x1="${_mx2}" y1="${_PT2}" x2="${_mx2}" y2="${_PT2+_plotH2}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
                     <line x1="${_PL2}" y1="${_my2}" x2="${_PL2+_plotW2}" y2="${_my2}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
                     ${_diagLine}
-                    <text x="${(_mx2+5).toFixed(1)}" y="${(_PT2+11).toFixed(1)}" font-size="9" fill="#2ec4b6" font-weight="700">Más xG / Más goles</text>
+                    <text x="${(_PL2+_plotW2-4).toFixed(1)}" y="${(_PT2+11).toFixed(1)}" text-anchor="end" font-size="9" fill="#2ec4b6" font-weight="700">Más xG / Más goles</text>
                     <text x="${(_PL2+4).toFixed(1)}" y="${(_PT2+11).toFixed(1)}" font-size="9" fill="#58a6ff" font-weight="700">Menos xG / Más goles</text>
-                    <text x="${(_mx2+5).toFixed(1)}" y="${(_PT2+_plotH2-6).toFixed(1)}" font-size="9" fill="#e3b341" font-weight="700">Más xG / Menos goles</text>
+                    <text x="${(_PL2+_plotW2-4).toFixed(1)}" y="${(_PT2+_plotH2-6).toFixed(1)}" text-anchor="end" font-size="9" fill="#e3b341" font-weight="700">Más xG / Menos goles</text>
                     <text x="${(_PL2+4).toFixed(1)}" y="${(_PT2+_plotH2-6).toFixed(1)}" font-size="9" fill="#f85149" font-weight="700">Menos xG / Menos goles</text>
                   `;
                   const _dots2 = _pts.map(d => {
@@ -18727,9 +18727,9 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   <rect x="${_PLc}" y="${_myc}" width="${_mxc-_PLc}" height="${_PTc+_plotHc-_myc}" fill="#f85149" fill-opacity="0.08"/>
                   <line x1="${_mxc}" y1="${_PTc}" x2="${_mxc}" y2="${_PTc+_plotHc}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
                   <line x1="${_PLc}" y1="${_myc}" x2="${_PLc+_plotWc}" y2="${_myc}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
-                  <text x="${(_mxc+5).toFixed(1)}" y="${(_PTc+11).toFixed(1)}" font-size="9" fill="#2ec4b6" font-weight="700">Más ${_curXc[1]} / Más ${_curYc[1]}</text>
+                  <text x="${(_PLc+_plotWc-4).toFixed(1)}" y="${(_PTc+11).toFixed(1)}" text-anchor="end" font-size="9" fill="#2ec4b6" font-weight="700">Más ${_curXc[1]} / Más ${_curYc[1]}</text>
                   <text x="${(_PLc+4).toFixed(1)}" y="${(_PTc+11).toFixed(1)}" font-size="9" fill="#58a6ff" font-weight="700">Menos ${_curXc[1]} / Más ${_curYc[1]}</text>
-                  <text x="${(_mxc+5).toFixed(1)}" y="${(_PTc+_plotHc-6).toFixed(1)}" font-size="9" fill="#e3b341" font-weight="700">Más ${_curXc[1]} / Menos ${_curYc[1]}</text>
+                  <text x="${(_PLc+_plotWc-4).toFixed(1)}" y="${(_PTc+_plotHc-6).toFixed(1)}" text-anchor="end" font-size="9" fill="#e3b341" font-weight="700">Más ${_curXc[1]} / Menos ${_curYc[1]}</text>
                   <text x="${(_PLc+4).toFixed(1)}" y="${(_PTc+_plotHc-6).toFixed(1)}" font-size="9" fill="#f85149" font-weight="700">Menos ${_curXc[1]} / Menos ${_curYc[1]}</text>
                 `;
                 const _dotsC = _ptsC.map(d => {
@@ -18873,9 +18873,9 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   <rect x="${_PLp}" y="${_myp}" width="${_mxp-_PLp}" height="${_PTp+_plotHp-_myp}" fill="#f85149" fill-opacity="0.08"/>
                   <line x1="${_mxp}" y1="${_PTp}" x2="${_mxp}" y2="${_PTp+_plotHp}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
                   <line x1="${_PLp}" y1="${_myp}" x2="${_PLp+_plotWp}" y2="${_myp}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
-                  <text x="${(_mxp+5).toFixed(1)}" y="${(_PTp+11).toFixed(1)}" font-size="9" fill="#2ec4b6" font-weight="700">Más ${_curXp[1]} / Más ${_curYp[1]}</text>
+                  <text x="${(_PLp+_plotWp-4).toFixed(1)}" y="${(_PTp+11).toFixed(1)}" text-anchor="end" font-size="9" fill="#2ec4b6" font-weight="700">Más ${_curXp[1]} / Más ${_curYp[1]}</text>
                   <text x="${(_PLp+4).toFixed(1)}" y="${(_PTp+11).toFixed(1)}" font-size="9" fill="#58a6ff" font-weight="700">Menos ${_curXp[1]} / Más ${_curYp[1]}</text>
-                  <text x="${(_mxp+5).toFixed(1)}" y="${(_PTp+_plotHp-6).toFixed(1)}" font-size="9" fill="#e3b341" font-weight="700">Más ${_curXp[1]} / Menos ${_curYp[1]}</text>
+                  <text x="${(_PLp+_plotWp-4).toFixed(1)}" y="${(_PTp+_plotHp-6).toFixed(1)}" text-anchor="end" font-size="9" fill="#e3b341" font-weight="700">Más ${_curXp[1]} / Menos ${_curYp[1]}</text>
                   <text x="${(_PLp+4).toFixed(1)}" y="${(_PTp+_plotHp-6).toFixed(1)}" font-size="9" fill="#f85149" font-weight="700">Menos ${_curXp[1]} / Menos ${_curYp[1]}</text>
                 `;
                 const _dotsP = _ptsP.map(d => {
@@ -19017,9 +19017,9 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   <rect x="${_PLr}" y="${_myr}" width="${_mxr-_PLr}" height="${_PTr+_plotHr-_myr}" fill="#f85149" fill-opacity="0.08"/>
                   <line x1="${_mxr}" y1="${_PTr}" x2="${_mxr}" y2="${_PTr+_plotHr}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
                   <line x1="${_PLr}" y1="${_myr}" x2="${_PLr+_plotWr}" y2="${_myr}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
-                  <text x="${(_mxr+5).toFixed(1)}" y="${(_PTr+11).toFixed(1)}" font-size="9" fill="#2ec4b6" font-weight="700">Más ${_curXr[1]} / Más ${_curYr[1]}</text>
+                  <text x="${(_PLr+_plotWr-4).toFixed(1)}" y="${(_PTr+11).toFixed(1)}" text-anchor="end" font-size="9" fill="#2ec4b6" font-weight="700">Más ${_curXr[1]} / Más ${_curYr[1]}</text>
                   <text x="${(_PLr+4).toFixed(1)}" y="${(_PTr+11).toFixed(1)}" font-size="9" fill="#58a6ff" font-weight="700">Menos ${_curXr[1]} / Más ${_curYr[1]}</text>
-                  <text x="${(_mxr+5).toFixed(1)}" y="${(_PTr+_plotHr-6).toFixed(1)}" font-size="9" fill="#e3b341" font-weight="700">Más ${_curXr[1]} / Menos ${_curYr[1]}</text>
+                  <text x="${(_PLr+_plotWr-4).toFixed(1)}" y="${(_PTr+_plotHr-6).toFixed(1)}" text-anchor="end" font-size="9" fill="#e3b341" font-weight="700">Más ${_curXr[1]} / Menos ${_curYr[1]}</text>
                   <text x="${(_PLr+4).toFixed(1)}" y="${(_PTr+_plotHr-6).toFixed(1)}" font-size="9" fill="#f85149" font-weight="700">Menos ${_curXr[1]} / Menos ${_curYr[1]}</text>
                 `;
                 const _dotsR = _ptsR.map(d => {
