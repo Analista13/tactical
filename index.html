@@ -18433,7 +18433,8 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   <rect x="${((_pW-_goalW)/2).toFixed(1)}" y="-7" width="${_goalW.toFixed(1)}" height="7" fill="none" stroke="#c9c9c9" stroke-width="1.2"/>
                   <circle cx="${(_pW/2).toFixed(1)}" cy="${_spotDist.toFixed(1)}" r="1.4" fill="#c9c9c9"/>
                   <path d="M ${(_pW/2-_arcR*0.92).toFixed(1)} ${_boxD.toFixed(1)} A ${_arcR.toFixed(1)} ${_arcR.toFixed(1)} 0 0 0 ${(_pW/2+_arcR*0.92).toFixed(1)} ${_boxD.toFixed(1)}" fill="none" stroke="#c9c9c9" stroke-width="1.2"/>
-                  <path d="M 0 ${_pH} A ${(_pH*0.42).toFixed(1)} ${(_pH*0.42).toFixed(1)} 0 0 1 ${_pW} ${_pH}" fill="none" stroke="#c9c9c9" stroke-width="1.2"/>`;
+                  <line x1="0" y1="${_pH}" x2="${_pW}" y2="${_pH}" stroke="#c9c9c9" stroke-width="1.2"/>
+                  <path d="M ${(_pW/2-_arcR).toFixed(1)} ${_pH} A ${_arcR.toFixed(1)} ${_arcR.toFixed(1)} 0 0 1 ${(_pW/2+_arcR).toFixed(1)} ${_pH}" fill="none" stroke="#c9c9c9" stroke-width="1.2"/>`;
                 const _shotMarkers = _shots.map(s => {
                   const cx=_pxSc(s.y).toFixed(1), cy=_pySc(s.x).toFixed(1);
                   const isGoal = s.result==='Goal';
@@ -18455,7 +18456,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   }
                   return `<g style="cursor:pointer" onmouseover="_obeTipShow(event,'${tip}')" onmouseout="_obeTipHide()">${shape}</g>`;
                 }).join('');
-                const _pitchSvg = `<svg viewBox="-2 -10 ${_pW+4} ${_pH+12}" width="100%" style="display:block;overflow:visible;background:#f7f7f7;border-radius:8px">${_pitchLines}${_shotMarkers}</svg>`;
+                const _pitchSvg = `<svg viewBox="-2 -10 ${_pW+4} ${(_pH+_arcR+8).toFixed(1)}" width="100%" style="display:block;overflow:visible;background:#f7f7f7;border-radius:8px">${_pitchLines}${_shotMarkers}</svg>`;
 
                 const _penGoals = _shots.filter(s=>s.result==='Goal' && s.body==='Pen').length;
                 const _statBox = (lbl,val) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
