@@ -18206,16 +18206,16 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 }
                 // Quadrant backgrounds
                 const _quads = `
-                  <rect x="${_mx}" y="${_PT}" width="${_PL+_plotW-_mx}" height="${_my-_PT}" fill="#3fb950" fill-opacity="0.05"/>
-                  <rect x="${_PL}" y="${_PT}" width="${_mx-_PL}" height="${_my-_PT}" fill="#f0883e" fill-opacity="0.04"/>
-                  <rect x="${_mx}" y="${_my}" width="${_PL+_plotW-_mx}" height="${_PT+_plotH-_my}" fill="#58a6ff" fill-opacity="0.04"/>
-                  <rect x="${_PL}" y="${_my}" width="${_mx-_PL}" height="${_PT+_plotH-_my}" fill="#f85149" fill-opacity="0.05"/>
+                  <rect x="${_mx}" y="${_PT}" width="${_PL+_plotW-_mx}" height="${_my-_PT}" fill="#2ec4b6" fill-opacity="0.10"/>
+                  <rect x="${_PL}" y="${_PT}" width="${_mx-_PL}" height="${_my-_PT}" fill="#58a6ff" fill-opacity="0.08"/>
+                  <rect x="${_mx}" y="${_my}" width="${_PL+_plotW-_mx}" height="${_PT+_plotH-_my}" fill="#e3b341" fill-opacity="0.08"/>
+                  <rect x="${_PL}" y="${_my}" width="${_mx-_PL}" height="${_PT+_plotH-_my}" fill="#f85149" fill-opacity="0.08"/>
                   <line x1="${_mx}" y1="${_PT}" x2="${_mx}" y2="${_PT+_plotH}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
                   <line x1="${_PL}" y1="${_my}" x2="${_PL+_plotW}" y2="${_my}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
                   ${_trendLine}${_r2Lbl}
-                  <text x="${(_mx+5).toFixed(1)}" y="${(_PT+11).toFixed(1)}" font-size="9" fill="#3fb950" font-weight="700">Más ${_curX[1]} / Más ${_curY[1]}</text>
-                  <text x="${(_PL+4).toFixed(1)}" y="${(_PT+11).toFixed(1)}" font-size="9" fill="#f0883e" font-weight="700">Menos ${_curX[1]} / Más ${_curY[1]}</text>
-                  <text x="${(_mx+5).toFixed(1)}" y="${(_PT+_plotH-6).toFixed(1)}" font-size="9" fill="#58a6ff" font-weight="700">Más ${_curX[1]} / Menos ${_curY[1]}</text>
+                  <text x="${(_mx+5).toFixed(1)}" y="${(_PT+11).toFixed(1)}" font-size="9" fill="#2ec4b6" font-weight="700">Más ${_curX[1]} / Más ${_curY[1]}</text>
+                  <text x="${(_PL+4).toFixed(1)}" y="${(_PT+11).toFixed(1)}" font-size="9" fill="#58a6ff" font-weight="700">Menos ${_curX[1]} / Más ${_curY[1]}</text>
+                  <text x="${(_mx+5).toFixed(1)}" y="${(_PT+_plotH-6).toFixed(1)}" font-size="9" fill="#e3b341" font-weight="700">Más ${_curX[1]} / Menos ${_curY[1]}</text>
                   <text x="${(_PL+4).toFixed(1)}" y="${(_PT+_plotH-6).toFixed(1)}" font-size="9" fill="#f85149" font-weight="700">Menos ${_curX[1]} / Menos ${_curY[1]}</text>
                 `;
                 // Dots
