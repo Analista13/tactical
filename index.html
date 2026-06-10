@@ -18416,106 +18416,73 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   return 'rgb(165,15,21)';
                 };
 
-                // Half pitch, vertical, attacking goal at top. x:50-100 (Opta) -> top, y:0-100 -> left-right
-                const _pW=400,_pH=300,_pPad=8;
-                const _pxSc = y => _pPad + (y/100)*(_pW-2*_pPad);
-                const _pySc = x => _pH - _pPad - ((x-50)/50)*(_pH-2*_pPad);
+                // Half pitch, vertical, attacking goal at top — replicating the reference
+                // (light pitch, purple = shot, red = goal, circle size = xG).
+                const _pW=300,_pH=240;
+                const _px2m = _pW/68; // px per metre (pitch width 68m)
+                const _pxSc = y => (y/100)*_pW;                 // Opta y(0-100, width) -> px
+                const _pySc = x => _pH - ((x-50)/50)*_pH;       // Opta x(50-100, length) -> px (100=goal line)
+                const _boxW=40.3*_px2m, _boxD=16.5*_px2m;
+                const _sixW=18.32*_px2m, _sixD=5.5*_px2m;
+                const _arcR=9.15*_px2m, _spotDist=11*_px2m;
+                const _goalW=7.32*_px2m;
                 const _pitchLines = `
-                  <rect x="${_pPad}" y="${_pPad}" width="${_pW-2*_pPad}" height="${_pH-2*_pPad}" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.5"/>
-                  <rect x="${_pW*0.21}" y="${_pPad}" width="${_pW*0.58}" height="${_pH*0.18}" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
-                  <rect x="${_pW*0.37}" y="${_pPad}" width="${_pW*0.26}" height="${_pH*0.07}" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
-                  <circle cx="${_pW/2}" cy="${_pH*0.18}" r="1.6" fill="rgba(255,255,255,0.35)"/>
-                  <path d="M ${_pW*0.32} ${_pH*0.18} A ${_pW*0.1} ${_pW*0.1} 0 0 0 ${_pW*0.68} ${_pH*0.18}" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
-                  <path d="M ${_pPad} ${_pH/2} A ${_pH/2} ${_pH/2} 0 0 0 ${_pW-_pPad} ${_pH/2}" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>`;
+                  <rect x="0" y="0" width="${_pW}" height="${_pH}" fill="none" stroke="#c9c9c9" stroke-width="1.5"/>
+                  <rect x="${((_pW-_boxW)/2).toFixed(1)}" y="0" width="${_boxW.toFixed(1)}" height="${_boxD.toFixed(1)}" fill="none" stroke="#c9c9c9" stroke-width="1.2"/>
+                  <rect x="${((_pW-_sixW)/2).toFixed(1)}" y="0" width="${_sixW.toFixed(1)}" height="${_sixD.toFixed(1)}" fill="none" stroke="#c9c9c9" stroke-width="1.2"/>
+                  <rect x="${((_pW-_goalW)/2).toFixed(1)}" y="-7" width="${_goalW.toFixed(1)}" height="7" fill="none" stroke="#c9c9c9" stroke-width="1.2"/>
+                  <circle cx="${(_pW/2).toFixed(1)}" cy="${_spotDist.toFixed(1)}" r="1.4" fill="#c9c9c9"/>
+                  <path d="M ${(_pW/2-_arcR*0.92).toFixed(1)} ${_boxD.toFixed(1)} A ${_arcR.toFixed(1)} ${_arcR.toFixed(1)} 0 0 0 ${(_pW/2+_arcR*0.92).toFixed(1)} ${_boxD.toFixed(1)}" fill="none" stroke="#c9c9c9" stroke-width="1.2"/>
+                  <path d="M 0 ${_pH} A ${(_pH*0.42).toFixed(1)} ${(_pH*0.42).toFixed(1)} 0 0 1 ${_pW} ${_pH}" fill="none" stroke="#c9c9c9" stroke-width="1.2"/>`;
                 const _shotMarkers = _shots.map(s => {
                   const cx=_pxSc(s.y).toFixed(1), cy=_pySc(s.x).toFixed(1);
-                  const col=_xgColor(s.xG);
                   const isGoal = s.result==='Goal';
-                  const r = isGoal ? 8 : 6;
-                  const op = isGoal ? 0.95 : 0.55;
-                  const stroke = isGoal ? '#fff' : '#0d1117';
-                  const sw = isGoal ? 2 : 1;
+                  const col = isGoal ? '#e0566a' : '#9b8fd6';
+                  const r = (3 + s.xG*22).toFixed(1);
                   const resLbl = {'Goal':'⚽ Gol','OnTarget':'A puerta (parado)','Post':'Al palo','Off':'Fuera'}[s.result] || s.result;
                   const bodyLbl = {'PD':'Pie derecho','PI':'Pie izquierdo','Cab':'Cabeza','Otro':'Otro'}[s.body] || s.body;
                   const tip = `<strong>${resLbl}</strong><br>${bodyLbl} · min ${s.min}'<br>vs ${(s.rival||'').replace(/'/g,"\\'")}<br>xG: ${s.xG.toFixed(3)}`;
-                  let shape;
-                  if (s.body==='Cab') {
-                    const pts = [[cx,(+cy-r*1.15).toFixed(1)],[(+cx+r).toFixed(1),(+cy+r*0.75).toFixed(1)],[(+cx-r).toFixed(1),(+cy+r*0.75).toFixed(1)]].map(pt=>pt.join(',')).join(' ');
-                    shape = `<polygon points="${pts}" fill="${col}" fill-opacity="${op}" stroke="${stroke}" stroke-width="${sw}"/>`;
-                  } else {
-                    shape = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" fill-opacity="${op}" stroke="${stroke}" stroke-width="${sw}"/>`;
-                  }
-                  return `<g style="cursor:pointer" onmouseover="_obeTipShow(event,'${tip}')" onmouseout="_obeTipHide()">${shape}</g>`;
+                  return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" fill-opacity="0.65" stroke="${isGoal?'#a8324a':'#7a6dc4'}" stroke-width="1" style="cursor:pointer" onmouseover="_obeTipShow(event,'${tip}')" onmouseout="_obeTipHide()"/>`;
                 }).join('');
-                const _pitchSvg = `<svg viewBox="0 0 ${_pW} ${_pH}" width="100%" style="display:block;overflow:visible;background:#0a1f14;border-radius:8px">${_pitchLines}${_shotMarkers}</svg>`;
+                const _pitchSvg = `<svg viewBox="-2 -10 ${_pW+4} ${_pH+12}" width="100%" style="display:block;overflow:visible;background:#f7f7f7;border-radius:8px">${_pitchLines}${_shotMarkers}</svg>`;
 
-                // Goal mouth — canvas mapped so the frame keeps a realistic ~goal shape.
-                // Posts at goalY ≈ 44.65 / 55.35, crossbar at goalZ ≈ 38 (data scale).
-                const _gW=320,_gH=190,_gPadX=24,_gPadTop=16,_gGround=30;
-                const _gY0=35,_gY1=65,_gZ0=0,_gZ1=60;
-                const _gxSc = gy => _gPadX + (gy-_gY0)/(_gY1-_gY0)*(_gW-2*_gPadX);
-                const _gySc = gz => (_gH-_gGround) - (gz-_gZ0)/(_gZ1-_gZ0)*((_gH-_gGround)-_gPadTop);
-                const _postYmin=_gxSc(44.65), _postYmax=_gxSc(55.35), _crossbar=_gySc(38), _ground=_gH-_gGround;
-                const _goalDots = _shots.filter(s=>s.goalY!=null && s.goalZ!=null).map(s => {
-                  const cx=_gxSc(Math.min(Math.max(s.goalY,_gY0),_gY1)).toFixed(1), cy=_gySc(Math.min(Math.max(s.goalZ,_gZ0),_gZ1)).toFixed(1);
-                  const col=_xgColor(s.xG);
-                  const isGoal = s.result==='Goal';
-                  const resLbl = {'Goal':'⚽ Gol','OnTarget':'A puerta (parado)','Post':'Al palo','Off':'Fuera'}[s.result] || s.result;
-                  const bodyLbl = {'PD':'Pie derecho','PI':'Pie izquierdo','Cab':'Cabeza','Otro':'Otro'}[s.body] || s.body;
-                  const tip = `<strong>${resLbl}</strong><br>${bodyLbl} · min ${s.min}'<br>vs ${(s.rival||'').replace(/'/g,"\\'")}<br>xG: ${s.xG.toFixed(3)}`;
-                  const r = isGoal ? 6.5 : 5;
-                  const op = isGoal ? 0.95 : 0.65;
-                  const stroke = isGoal ? '#fff' : '#0d1117';
-                  const shape = s.body==='Cab'
-                    ? `<polygon points="${cx},${(+cy-r*1.15).toFixed(1)} ${(+cx+r).toFixed(1)},${(+cy+r*0.75).toFixed(1)} ${(+cx-r).toFixed(1)},${(+cy+r*0.75).toFixed(1)}" fill="${col}" fill-opacity="${op}" stroke="${stroke}" stroke-width="${isGoal?2:1}"/>`
-                    : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" fill-opacity="${op}" stroke="${stroke}" stroke-width="${isGoal?2:1}"/>`;
-                  return `<g style="cursor:pointer" onmouseover="_obeTipShow(event,'${tip}')" onmouseout="_obeTipHide()">${shape}</g>`;
-                }).join('');
-                let _gNet='';
-                for(let i=1;i<6;i++){ const x=_postYmin+(_postYmax-_postYmin)*i/6; _gNet+=`<line x1="${x.toFixed(1)}" y1="${_crossbar.toFixed(1)}" x2="${x.toFixed(1)}" y2="${_ground.toFixed(1)}" stroke="#324a5e" stroke-width="0.6"/>`; }
-                for(let i=1;i<4;i++){ const y=_crossbar+(_ground-_crossbar)*i/4; _gNet+=`<line x1="${_postYmin.toFixed(1)}" y1="${y.toFixed(1)}" x2="${_postYmax.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#324a5e" stroke-width="0.6"/>`; }
-                const _goalSvg = `<svg viewBox="0 0 ${_gW} ${_gH}" width="100%" style="display:block;overflow:visible;background:#101820;border-radius:8px">
-                  <rect x="0" y="0" width="${_gW}" height="${_gH}" fill="none" stroke="rgba(255,255,255,0.06)"/>
-                  <line x1="0" y1="${_ground.toFixed(1)}" x2="${_gW}" y2="${_ground.toFixed(1)}" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
-                  <rect x="${_postYmin.toFixed(1)}" y="${_crossbar.toFixed(1)}" width="${(_postYmax-_postYmin).toFixed(1)}" height="${(_ground-_crossbar).toFixed(1)}" fill="rgba(255,255,255,0.03)"/>
-                  ${_gNet}
-                  <rect x="${_postYmin.toFixed(1)}" y="${_crossbar.toFixed(1)}" width="${(_postYmax-_postYmin).toFixed(1)}" height="${(_ground-_crossbar).toFixed(1)}" fill="none" stroke="#e6edf3" stroke-width="3"/>
-                  ${_goalDots}
-                  <text x="${_gW/2}" y="${_gH-6}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.35)">Vista desde la perspectiva del portero</text>
-                </svg>`;
-
-                const _legendGrad = `<div style="display:flex;align-items:center;gap:6px">
-                  <span style="font-size:9px;color:var(--text3)">xG bajo</span>
-                  <div style="width:90px;height:9px;border-radius:4px;background:linear-gradient(90deg, rgb(8,48,107), rgb(33,113,181), rgb(107,174,214), rgb(198,219,239), rgb(255,237,160), rgb(254,178,76), rgb(227,74,51), rgb(165,15,21))"></div>
-                  <span style="font-size:9px;color:var(--text3)">xG alto</span>
+                const _penGoals = _shots.filter(s=>s.result==='Goal' && s.body==='Pen').length;
+                const _statBox = (lbl,val) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
+                  <span style="font-size:13px;color:#444">${lbl}</span>
+                  <span style="background:#e0566a;color:#fff;font-weight:800;font-size:13px;border-radius:5px;padding:3px 10px;min-width:46px;text-align:center">${val}</span>
                 </div>`;
+                const _legendBlock = `
+                  <div style="margin-top:14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">
+                    <div>
+                      <div style="font-size:11px;color:#888;margin-bottom:4px">Resultado:</div>
+                      <div style="display:flex;gap:14px;align-items:center">
+                        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#444"><span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#9b8fd6;opacity:.65;border:1px solid #7a6dc4"></span>Tiro</span>
+                        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#444"><span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#e0566a;opacity:.65;border:1px solid #a8324a"></span>Gol</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div style="font-size:11px;color:#888;margin-bottom:4px">Valor xG:</div>
+                      <div style="display:flex;gap:8px;align-items:center">
+                        ${[0.05,0.15,0.3,0.5].map(v=>`<span style="display:inline-block;width:${(3+v*22)*2}px;height:${(3+v*22)*2}px;border-radius:50%;border:1.5px solid #bbb"></span>`).join('')}
+                      </div>
+                    </div>
+                  </div>`;
 
                 return _finTog + `
-                  <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
-                    <div>
-                      <div style="font-size:16px;font-weight:800;color:var(--text1)">${p.name}</div>
-                      <div style="font-size:11px;color:var(--text3)">Premier League 25/26 · Todos los disparos (Opta)</div>
+                  <div style="background:#f7f7f7;border-radius:10px;padding:14px;color:#222">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px">
+                      <div style="flex:1.6;min-width:280px">
+                        ${_pitchSvg}
+                      </div>
+                      <div style="min-width:160px;padding-top:6px">
+                        <div style="font-size:15px;font-weight:800;margin-bottom:10px;color:#222">${p.name}</div>
+                        ${_statBox('Goles:', _goalsN)}
+                        ${_statBox('xG:', _totalXG.toFixed(1))}
+                        ${_statBox('Tiros:', _shots.length)}
+                      </div>
                     </div>
-                    <div style="text-align:right">
-                      <div style="font-size:13px;font-weight:800;color:#3fb950">${_goalsN} goles · ${_shots.length} disparos</div>
-                      <div style="font-size:11px;color:var(--text3)">xG total: ${_totalXG.toFixed(2)} &nbsp;·&nbsp; G−xG: <strong style="color:${(_goalsN-_totalXG)>=0?'#3fb950':'#f85149'}">${(_goalsN-_totalXG)>=0?'+':''}${(_goalsN-_totalXG).toFixed(2)}</strong></div>
-                    </div>
-                  </div>
-                  <div style="display:flex;gap:14px;flex-wrap:wrap">
-                    <div style="flex:1.4;min-width:280px">
-                      <div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-align:center;font-weight:700">Mapa de tiros (campo)</div>
-                      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px">${_pitchSvg}</div>
-                    </div>
-                    <div style="flex:1;min-width:240px">
-                      <div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-align:center;font-weight:700">Dirección a portería</div>
-                      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px">${_goalSvg}</div>
-                    </div>
-                  </div>
-                  <div style="display:flex;gap:18px;margin-top:10px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
-                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#888;border:2px solid #fff;margin-right:4px;vertical-align:middle"></span>Gol (relleno + borde blanco)</span>
-                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#888;opacity:.55;margin-right:4px;vertical-align:middle"></span>Otro disparo</span>
-                    <span><span style="display:inline-block;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid #888;margin-right:4px;vertical-align:middle"></span>Remate de cabeza</span>
-                    ${_legendGrad}
+                    ${_legendBlock}
+                    <div style="font-size:10px;color:#999;margin-top:10px;text-align:right">Premier League 25/26 · Datos Opta</div>
                   </div>`;
               }
               if (_profileTab === 'creacion') {
