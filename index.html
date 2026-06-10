@@ -16398,6 +16398,9 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
   let _profileDefScatterY = 'Intercepciones';
   let _profileDefCustomize = false;
   let _profileFinView = 'resumen'; // 'resumen' | 'mapa'
+  let _profileCreaView = 'resumen'; // 'resumen' | 'dispersion'
+  let _profileCreaX = 'xa_90';
+  let _profileCreaY = 'kp_90';
   let _profileObeScatterX = 'Total OBE';
   let _profileObeScatterY = 'Presión directa';
   let _profileObeScatterPreset = 0;   // index into _SCATTER_PRESETS; -1 = custom
@@ -18619,13 +18622,149 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   </div>`;
               }
               if (_profileTab === 'creacion') {
-                return _header +
-                  _pBar('Asistencias', 'assists_90', 3) +
-                  _pBar('xA (Expected Assists)', 'xa_90', 3) +
-                  _pBar('Pases clave', 'kp_90', 2) +
-                  _pBar('Grandes ocasiones', 'bc_90', 2) +
-                  _pBar('xThreat generado', 'xt_90', 3) +
-                  _footer;
+                const _creaTog = `<div style="display:flex;gap:8px;margin-bottom:14px">
+                  <button onclick="_profileCreaView='resumen';openPlayerProfile(${p.d})" style="padding:5px 16px;border-radius:6px;border:1px solid ${_profileCreaView==='resumen'?'var(--accent)':'var(--border)'};background:${_profileCreaView==='resumen'?'rgba(200,169,110,0.12)':'var(--bg2)'};color:${_profileCreaView==='resumen'?'var(--accent)':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profileCreaView==='resumen'?700:500}">📋 Resumen</button>
+                  <button onclick="_profileCreaView='dispersion';openPlayerProfile(${p.d})" style="padding:5px 16px;border-radius:6px;border:1px solid ${_profileCreaView==='dispersion'?'#58a6ff':'var(--border)'};background:${_profileCreaView==='dispersion'?'rgba(88,166,255,0.12)':'var(--bg2)'};color:${_profileCreaView==='dispersion'?'#58a6ff':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profileCreaView==='dispersion'?700:500}">📊 Dispersión</button>
+                </div>`;
+
+                if (_profileCreaView === 'resumen') {
+                  return _creaTog + _header +
+                    _pBar('Asistencias', 'assists_90', 3) +
+                    _pBar('xA (Expected Assists)', 'xa_90', 3) +
+                    _pBar('Pases clave', 'kp_90', 2) +
+                    _pBar('Grandes ocasiones', 'bc_90', 2) +
+                    _pBar('xThreat generado', 'xt_90', 3) +
+                    _pBar('Pases que rompen líneas', 'lb_90', 2) +
+                    _pBar('Posesiones que acaban en disparo', 'poss_sh_90', 2) +
+                    _pBar('Posesiones que acaban en gol', 'poss_g_90', 3) +
+                    _footer;
+                }
+
+                // ── Dispersión: métricas de creación, plantilla del Liverpool ──────
+                const CREA_METRICS = [
+                  ['xa_90','xA (Expected Assists)'],
+                  ['kp_90','Pases clave'],
+                  ['bc_90','Grandes ocasiones creadas'],
+                  ['xt_90','xThreat generado'],
+                  ['lb_90','Pases que rompen líneas'],
+                  ['poss_sh_90','Posesiones que acaban en disparo'],
+                  ['poss_g_90','Posesiones que acaban en gol'],
+                  ['assists_90','Asistencias'],
+                ];
+                const _CM = Object.fromEntries(CREA_METRICS);
+                const _curXc = [_profileCreaX, _CM[_profileCreaX]||_profileCreaX];
+                const _curYc = [_profileCreaY, _CM[_profileCreaY]||_profileCreaY];
+                const _allLivC = (typeof LIV_PLAYERS !== 'undefined' ? Object.entries(LIV_PLAYERS.players) : []);
+                const _ptsC = _allLivC.filter(([,d]) => (d.mins||0) >= 300 && d[_profileCreaX]!==undefined && d[_profileCreaY]!==undefined)
+                  .map(([nm,d]) => ({x:d[_profileCreaX], y:d[_profileCreaY], name:nm}));
+                const _selXc = _livData[_profileCreaX], _selYc = _livData[_profileCreaY];
+                const _Wc=640,_Hc=400,_PLc=46,_PRc=18,_PTc=18,_PBc=40;
+                const _plotWc=_Wc-_PLc-_PRc,_plotHc=_Hc-_PTc-_PBc;
+                const _xsC = _ptsC.map(d=>d.x).concat(_selXc!==undefined?[_selXc]:[]);
+                const _ysC = _ptsC.map(d=>d.y).concat(_selYc!==undefined?[_selYc]:[]);
+                let _minXc=Math.min(0,..._xsC), _maxXc=Math.max(..._xsC);
+                let _minYc=Math.min(0,..._ysC), _maxYc=Math.max(..._ysC);
+                const _spXc=(_maxXc-_minXc)||1, _spYc=(_maxYc-_minYc)||1;
+                _maxXc+=_spXc*0.08; _maxYc+=_spYc*0.08;
+                const _xScC = v => _PLc+(v-_minXc)/(_maxXc-_minXc)*_plotWc;
+                const _yScC = v => _PTc+_plotHc-(v-_minYc)/(_maxYc-_minYc)*_plotHc;
+                const _sortedXc=[..._ptsC.map(d=>d.x)].sort((a,b)=>a-b);
+                const _sortedYc=[..._ptsC.map(d=>d.y)].sort((a,b)=>a-b);
+                const _medXc = _sortedXc.length ? _sortedXc[Math.floor(_sortedXc.length/2)] : (_minXc+_maxXc)/2;
+                const _medYc = _sortedYc.length ? _sortedYc[Math.floor(_sortedYc.length/2)] : (_minYc+_maxYc)/2;
+                const _mxc=_xScC(_medXc), _myc=_yScC(_medYc);
+                const _quadsC = `
+                  <rect x="${_mxc}" y="${_PTc}" width="${_PLc+_plotWc-_mxc}" height="${_myc-_PTc}" fill="#2ec4b6" fill-opacity="0.10"/>
+                  <rect x="${_PLc}" y="${_PTc}" width="${_mxc-_PLc}" height="${_myc-_PTc}" fill="#58a6ff" fill-opacity="0.08"/>
+                  <rect x="${_mxc}" y="${_myc}" width="${_PLc+_plotWc-_mxc}" height="${_PTc+_plotHc-_myc}" fill="#e3b341" fill-opacity="0.08"/>
+                  <rect x="${_PLc}" y="${_myc}" width="${_mxc-_PLc}" height="${_PTc+_plotHc-_myc}" fill="#f85149" fill-opacity="0.08"/>
+                  <line x1="${_mxc}" y1="${_PTc}" x2="${_mxc}" y2="${_PTc+_plotHc}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
+                  <line x1="${_PLc}" y1="${_myc}" x2="${_PLc+_plotWc}" y2="${_myc}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
+                  <text x="${(_mxc+5).toFixed(1)}" y="${(_PTc+11).toFixed(1)}" font-size="9" fill="#2ec4b6" font-weight="700">Más ${_curXc[1]} / Más ${_curYc[1]}</text>
+                  <text x="${(_PLc+4).toFixed(1)}" y="${(_PTc+11).toFixed(1)}" font-size="9" fill="#58a6ff" font-weight="700">Menos ${_curXc[1]} / Más ${_curYc[1]}</text>
+                  <text x="${(_mxc+5).toFixed(1)}" y="${(_PTc+_plotHc-6).toFixed(1)}" font-size="9" fill="#e3b341" font-weight="700">Más ${_curXc[1]} / Menos ${_curYc[1]}</text>
+                  <text x="${(_PLc+4).toFixed(1)}" y="${(_PTc+_plotHc-6).toFixed(1)}" font-size="9" fill="#f85149" font-weight="700">Menos ${_curXc[1]} / Menos ${_curYc[1]}</text>
+                `;
+                const _dotsC = _ptsC.map(d => {
+                  if (d.name===_livKey) return '';
+                  const cx=_xScC(d.x).toFixed(1), cy=_yScC(d.y).toFixed(1);
+                  return `<circle cx="${cx}" cy="${cy}" r="4.5" fill="#8b949e" fill-opacity="0.45" style="cursor:pointer" onmouseover="_obeTipShow(event,'<strong>${d.name.replace(/'/g,"\\'")}</strong><br>${_curXc[1].replace(/'/g,"\\'")}: ${d.x.toFixed(2)}<br>${_curYc[1].replace(/'/g,"\\'")}: ${d.y.toFixed(2)}')" onmouseout="_obeTipHide()"/>`;
+                }).join('');
+                let _meDotC = '';
+                if (_selXc!==undefined && _selYc!==undefined) {
+                  const cx=_xScC(_selXc).toFixed(1), cy=_yScC(_selYc).toFixed(1);
+                  _meDotC = `<defs><filter id="pgdfc" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                    <circle cx="${cx}" cy="${cy}" r="9" fill="none" stroke="#58a6ff" stroke-width="2.5" filter="url(#pgdfc)"/>
+                    <circle cx="${cx}" cy="${cy}" r="6" fill="#58a6ff" filter="url(#pgdfc)"/>
+                    <text x="${cx}" y="${(parseFloat(cy)-12).toFixed(1)}" text-anchor="middle" font-size="11" fill="#58a6ff" font-weight="800" style="paint-order:stroke" stroke="#0d1117" stroke-width="3">${p.name}</text>`;
+                }
+                let _xTicksC='', _yTicksC='';
+                for(let i=0;i<=5;i++){
+                  const v=_minXc+(_maxXc-_minXc)*i/5, x=_xScC(v).toFixed(1);
+                  _xTicksC+=`<line x1="${x}" y1="${_PTc+_plotHc}" x2="${x}" y2="${_PTc+_plotHc+5}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/><text x="${x}" y="${_PTc+_plotHc+17}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.4)">${v.toFixed(2)}</text>`;
+                }
+                for(let i=0;i<=4;i++){
+                  const v=_minYc+(_maxYc-_minYc)*i/4, y=_yScC(v).toFixed(1);
+                  _yTicksC+=`<line x1="${_PLc-5}" y1="${y}" x2="${_PLc}" y2="${y}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/><text x="${_PLc-9}" y="${(parseFloat(y)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.4)">${v.toFixed(2)}</text>`;
+                }
+                const _axisLabelsC = `
+                  <text x="${_PLc+_plotWc/2}" y="${_Hc-6}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text2)">${_curXc[1]} (por 90) →</text>
+                  <text x="14" y="${_PTc+_plotHc/2}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text2)" transform="rotate(-90 14 ${_PTc+_plotHc/2})">${_curYc[1]} (por 90) →</text>
+                `;
+                const _borderC=`<rect x="${_PLc}" y="${_PTc}" width="${_plotWc}" height="${_plotHc}" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>`;
+                const _svgC=`<svg viewBox="0 0 ${_Wc} ${_Hc}" width="100%" style="display:block;overflow:visible">${_quadsC}${_borderC}${_dotsC}${_meDotC}${_xTicksC}${_yTicksC}${_axisLabelsC}</svg>`;
+
+                const _CREA_PRESETS = [
+                  ['xA vs Pases clave','xa_90','kp_90'],
+                  ['xThreat vs Pases que rompen líneas','xt_90','lb_90'],
+                  ['Grandes ocasiones vs Posesiones a disparo','bc_90','poss_sh_90'],
+                  ['Posesiones a disparo vs a gol','poss_sh_90','poss_g_90'],
+                  ['xA vs xThreat','xa_90','xt_90'],
+                ];
+                const _presetBtnsC = _CREA_PRESETS.map(([lbl,x,y]) => {
+                  const act = _profileCreaX===x && _profileCreaY===y;
+                  return `<button onclick="_profileCreaX='${x}';_profileCreaY='${y}';openPlayerProfile(${p.d})"
+                    style="padding:5px 12px;border-radius:8px;border:1px solid ${act?'#58a6ff':'var(--border)'};
+                           background:${act?'rgba(88,166,255,0.15)':'var(--bg2)'};color:${act?'#58a6ff':'var(--text2)'};
+                           font-size:11px;font-weight:${act?700:500};cursor:pointer;white-space:nowrap;transition:all .15s">${lbl}</button>`;
+                }).join('');
+
+                let _explainC = '';
+                if (_selXc!==undefined && _selYc!==undefined) {
+                  const aboveX = _selXc >= _medXc, aboveY = _selYc >= _medYc;
+                  let perfil, desc;
+                  if (aboveX && aboveY) {
+                    perfil = 'Perfil completo';
+                    desc = `combina ambas facetas por encima de la mediana de la plantilla: aporta tanto en <strong style="color:var(--text1)">${_curXc[1].toLowerCase()}</strong> como en <strong style="color:var(--text1)">${_curYc[1].toLowerCase()}</strong>.`;
+                  } else if (aboveX && !aboveY) {
+                    perfil = `Especialista en ${_curXc[1].toLowerCase()}`;
+                    desc = `destaca en <strong style="color:var(--text1)">${_curXc[1].toLowerCase()}</strong>, pero queda por debajo de la mediana en <strong style="color:var(--text1)">${_curYc[1].toLowerCase()}</strong>.`;
+                  } else if (!aboveX && aboveY) {
+                    perfil = `Especialista en ${_curYc[1].toLowerCase()}`;
+                    desc = `destaca en <strong style="color:var(--text1)">${_curYc[1].toLowerCase()}</strong>, pero queda por debajo de la mediana en <strong style="color:var(--text1)">${_curXc[1].toLowerCase()}</strong>.`;
+                  } else {
+                    perfil = 'Perfil discreto';
+                    desc = `se sitúa por debajo de la mediana de la plantilla tanto en <strong style="color:var(--text1)">${_curXc[1].toLowerCase()}</strong> como en <strong style="color:var(--text1)">${_curYc[1].toLowerCase()}</strong>.`;
+                  }
+                  _explainC = `<div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+                    <strong style="color:#58a6ff">${p.name}</strong> — <strong style="color:var(--text1)">${perfil}</strong>: ${desc}
+                    Cada punto gris representa a un jugador de la plantilla del Liverpool con ≥300 minutos en la Premier League 25/26;
+                    las líneas discontinuas marcan la mediana de la plantilla en cada eje.
+                  </div>`;
+                }
+
+                return _creaTog + `
+                  <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${_presetBtnsC}</div>
+                  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin:12px 0 10px">
+                    <div style="font-size:12px;font-weight:700;color:var(--text1);margin-bottom:6px">${_curXc[1]} vs ${_curYc[1]} (plantilla Liverpool)</div>
+                    ${_explainC}
+                  </div>
+                  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 6px 4px;overflow:hidden">${_svgC}</div>
+                  <div style="display:flex;gap:14px;margin-top:8px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
+                    <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#58a6ff;margin-right:4px;vertical-align:middle"></span>${p.name}</span>
+                    <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#8b949e;opacity:.6;margin-right:4px;vertical-align:middle"></span>Resto de la plantilla (≥300 min)</span>
+                    <span style="margin-left:auto">Mediana — ${_curXc[1]}: ${_medXc.toFixed(2)} · ${_curYc[1]}: ${_medYc.toFixed(2)}</span>
+                  </div>`;
               }
               if (_profileTab === 'progresividad') {
                 return _header +
