@@ -18449,12 +18449,13 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 }).join('');
                 const _pitchSvg = `<svg viewBox="0 0 ${_pW} ${_pH}" width="100%" style="display:block;overflow:visible;background:#0a1f14;border-radius:8px">${_pitchLines}${_shotMarkers}</svg>`;
 
-                // Goal mouth (Y: 0-100, posts ~44.65-55.35; Z: 0-100, crossbar ~38)
-                const _gW=300,_gH=170,_gPad=22;
-                const _gY0=25,_gY1=75,_gZ0=0,_gZ1=70;
-                const _gxSc = gy => _gPad + (gy-_gY0)/(_gY1-_gY0)*(_gW-2*_gPad);
-                const _gySc = gz => _gH - _gPad - (gz-_gZ0)/(_gZ1-_gZ0)*(_gH-2*_gPad);
-                const _postYmin=_gxSc(44.65), _postYmax=_gxSc(55.35), _crossbar=_gySc(38);
+                // Goal mouth — canvas mapped so the frame keeps a realistic ~goal shape.
+                // Posts at goalY ≈ 44.65 / 55.35, crossbar at goalZ ≈ 38 (data scale).
+                const _gW=320,_gH=190,_gPadX=24,_gPadTop=16,_gGround=30;
+                const _gY0=35,_gY1=65,_gZ0=0,_gZ1=60;
+                const _gxSc = gy => _gPadX + (gy-_gY0)/(_gY1-_gY0)*(_gW-2*_gPadX);
+                const _gySc = gz => (_gH-_gGround) - (gz-_gZ0)/(_gZ1-_gZ0)*((_gH-_gGround)-_gPadTop);
+                const _postYmin=_gxSc(44.65), _postYmax=_gxSc(55.35), _crossbar=_gySc(38), _ground=_gH-_gGround;
                 const _goalDots = _shots.filter(s=>s.goalY!=null && s.goalZ!=null).map(s => {
                   const cx=_gxSc(Math.min(Math.max(s.goalY,_gY0),_gY1)).toFixed(1), cy=_gySc(Math.min(Math.max(s.goalZ,_gZ0),_gZ1)).toFixed(1);
                   const col=_xgColor(s.xG);
@@ -18462,19 +18463,25 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   const resLbl = {'Goal':'⚽ Gol','OnTarget':'A puerta (parado)','Post':'Al palo','Off':'Fuera'}[s.result] || s.result;
                   const bodyLbl = {'PD':'Pie derecho','PI':'Pie izquierdo','Cab':'Cabeza','Otro':'Otro'}[s.body] || s.body;
                   const tip = `<strong>${resLbl}</strong><br>${bodyLbl} · min ${s.min}'<br>vs ${(s.rival||'').replace(/'/g,"\\'")}<br>xG: ${s.xG.toFixed(3)}`;
-                  const r = isGoal ? 7 : 5.5;
-                  const op = isGoal ? 0.95 : 0.6;
+                  const r = isGoal ? 6.5 : 5;
+                  const op = isGoal ? 0.95 : 0.65;
                   const stroke = isGoal ? '#fff' : '#0d1117';
                   const shape = s.body==='Cab'
                     ? `<polygon points="${cx},${(+cy-r*1.15).toFixed(1)} ${(+cx+r).toFixed(1)},${(+cy+r*0.75).toFixed(1)} ${(+cx-r).toFixed(1)},${(+cy+r*0.75).toFixed(1)}" fill="${col}" fill-opacity="${op}" stroke="${stroke}" stroke-width="${isGoal?2:1}"/>`
                     : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" fill-opacity="${op}" stroke="${stroke}" stroke-width="${isGoal?2:1}"/>`;
                   return `<g style="cursor:pointer" onmouseover="_obeTipShow(event,'${tip}')" onmouseout="_obeTipHide()">${shape}</g>`;
                 }).join('');
-                const _goalSvg = `<svg viewBox="0 0 ${_gW} ${_gH}" width="100%" style="display:block;overflow:visible;background:#16202c;border-radius:8px">
-                  ${Array.from({length:5},(_,i)=>`<line x1="${_postYmin}" y1="${(_crossbar+(_gH-_gPad-_crossbar)*i/4).toFixed(1)}" x2="${_postYmax}" y2="${(_crossbar+(_gH-_gPad-_crossbar)*i/4).toFixed(1)}" stroke="#2a3a4a" stroke-width="0.6"/>`).join('')}
-                  ${Array.from({length:7},(_,i)=>`<line x1="${(_postYmin+(_postYmax-_postYmin)*i/6).toFixed(1)}" y1="${_crossbar}" x2="${(_postYmin+(_postYmax-_postYmin)*i/6).toFixed(1)}" y2="${_gH-_gPad}" stroke="#2a3a4a" stroke-width="0.6"/>`).join('')}
-                  <rect x="${_postYmin}" y="${_crossbar}" width="${(_postYmax-_postYmin).toFixed(1)}" height="${(_gH-_gPad-_crossbar).toFixed(1)}" fill="none" stroke="#e6edf3" stroke-width="2.5"/>
+                let _gNet='';
+                for(let i=1;i<6;i++){ const x=_postYmin+(_postYmax-_postYmin)*i/6; _gNet+=`<line x1="${x.toFixed(1)}" y1="${_crossbar.toFixed(1)}" x2="${x.toFixed(1)}" y2="${_ground.toFixed(1)}" stroke="#324a5e" stroke-width="0.6"/>`; }
+                for(let i=1;i<4;i++){ const y=_crossbar+(_ground-_crossbar)*i/4; _gNet+=`<line x1="${_postYmin.toFixed(1)}" y1="${y.toFixed(1)}" x2="${_postYmax.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#324a5e" stroke-width="0.6"/>`; }
+                const _goalSvg = `<svg viewBox="0 0 ${_gW} ${_gH}" width="100%" style="display:block;overflow:visible;background:#101820;border-radius:8px">
+                  <rect x="0" y="0" width="${_gW}" height="${_gH}" fill="none" stroke="rgba(255,255,255,0.06)"/>
+                  <line x1="0" y1="${_ground.toFixed(1)}" x2="${_gW}" y2="${_ground.toFixed(1)}" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+                  <rect x="${_postYmin.toFixed(1)}" y="${_crossbar.toFixed(1)}" width="${(_postYmax-_postYmin).toFixed(1)}" height="${(_ground-_crossbar).toFixed(1)}" fill="rgba(255,255,255,0.03)"/>
+                  ${_gNet}
+                  <rect x="${_postYmin.toFixed(1)}" y="${_crossbar.toFixed(1)}" width="${(_postYmax-_postYmin).toFixed(1)}" height="${(_ground-_crossbar).toFixed(1)}" fill="none" stroke="#e6edf3" stroke-width="3"/>
                   ${_goalDots}
+                  <text x="${_gW/2}" y="${_gH-6}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.35)">Vista desde la perspectiva del portero</text>
                 </svg>`;
 
                 const _legendGrad = `<div style="display:flex;align-items:center;gap:6px">
