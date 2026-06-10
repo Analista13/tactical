@@ -16965,12 +16965,11 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   ['creacion','Creación'],
                   ['progresividad','Progresividad'],
                   ['carreras_sb','Carreras s/b'],
-                  ['pressing_liv','Pressing'],
                 ] : []),
                 ...(_livDefData ? [['defensiva_liv','Acciones defensivas']] : []),
               ].map(([id,lbl]) => {
                 const act = _profileTab === id;
-                const tabCol = id==='carreras' ? '#f0883e' : id==='pases' ? '#58a6ff' : id==='posesion' ? '#3fb950' : id==='finalizacion' ? '#f85149' : id==='creacion' ? '#d2a8ff' : id==='progresividad' ? '#ffa657' : id==='carreras_sb' ? '#79c0ff' : id==='pressing_liv' ? '#56d364' : id==='defensiva_liv' ? '#ff7b72' : 'var(--accent)';
+                const tabCol = id==='carreras' ? '#f0883e' : id==='pases' ? '#58a6ff' : id==='posesion' ? '#3fb950' : id==='finalizacion' ? '#f85149' : id==='creacion' ? '#d2a8ff' : id==='progresividad' ? '#ffa657' : id==='carreras_sb' ? '#79c0ff' : id==='defensiva_liv' ? '#ff7b72' : 'var(--accent)';
                 return `<button onclick="_profileTab='${id}';_profileObeView='tabla';_profileRunView='tabla';_profilePasesView='tabla';_profilePossView='tabla';_profilePossPosIdx=0;openPlayerProfile(${p.d})"
                   style="background:transparent;border:none;border-bottom:2px solid ${act?tabCol:'transparent'};
                          color:${act?tabCol:'var(--text2)'};padding:8px 18px;
@@ -18143,7 +18142,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 _pBar('Superado por posesión', 'sup_pos_90', 2) +
                 _pBar('Pérdidas (Opta)', 'dispossessed_90', 2) +
                 _footer;
-            })() : (_profileTab === 'finalizacion' || _profileTab === 'creacion' || _profileTab === 'progresividad' || _profileTab === 'carreras_sb' || _profileTab === 'pressing_liv') ? (() => {
+            })() : (_profileTab === 'finalizacion' || _profileTab === 'creacion' || _profileTab === 'progresividad' || _profileTab === 'carreras_sb') ? (() => {
               if (!_livData) return '<div style="padding:40px;text-align:center;color:var(--text3)">Sin datos disponibles</div>';
               const _pct = _livData.pct || {};
               const _pColor = pv => pv >= 80 ? '#3fb950' : pv >= 60 ? '#a1d46a' : pv >= 40 ? '#e3b341' : pv >= 20 ? '#f0883e' : '#f85149';
@@ -18207,14 +18206,6 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   _pBar('Carreras recibidas', 'runs_r_90', 2) +
                   _pBar('Líneas rotas (carrera)', 'runs_lb_90', 3) +
                   _pBar('xThreat por carrera', 'runs_xt_90', 4) +
-                  _footer;
-              }
-              if (_profileTab === 'pressing_liv') {
-                return _header +
-                  _pBar('Presiones totales', 'press_90', 2) +
-                  _pBar('Presiones en cadena', 'press_c_90', 2) +
-                  _pBar('Presiones hacia atrás', 'press_fb_90', 2) +
-                  _pBar('Acciones defensivas', 'def_90', 2) +
                   _footer;
               }
               return '<div style="padding:40px;text-align:center;color:var(--text3)">—</div>';
