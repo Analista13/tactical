@@ -18131,13 +18131,26 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 'press_dir_90':     {lbl:'Presión directa',     grp:'Pressing', hi:'presiona de forma directa e inmediata al poseedor del balón con frecuencia', lo:'rara vez presiona de forma directa al poseedor'},
                 'dispossessed_90':  {lbl:'Pérdidas de balón',   grp:'Vulnerabilidad', hiBad:true, hi:'pierde el balón con mucha frecuencia al ser presionado, un punto a vigilar', lo:'apenas pierde balones por presión rival, cuida mucho la posesión'},
               };
-              // Recopilar percentiles disponibles
+              // Grupos de métricas relevantes según la posición (para no destacar facetas
+              // ajenas al rol del jugador, p.ej. "creación" en un central)
+              const POS_CORE_GROUPS = {
+                'CB': ['Defensa','Pressing','Vulnerabilidad','Progresión'],
+                'FB': ['Defensa','Pressing','Vulnerabilidad','Progresión','Movimiento','Creación'],
+                'DM': ['Defensa','Pressing','Vulnerabilidad','Progresión','Creación'],
+                'CM': ['Progresión','Creación','Pressing','Defensa','Vulnerabilidad'],
+                'AM': ['Creación','Progresión','Finalización','Movimiento','Vulnerabilidad'],
+                'W':  ['Creación','Progresión','Finalización','Movimiento','Vulnerabilidad'],
+                'ST': ['Finalización','Creación','Movimiento','Vulnerabilidad'],
+              };
+              const _coreGroups = new Set(POS_CORE_GROUPS[_livData.pos] || Object.values(A_LABELS).map(i=>i.grp));
+              // Recopilar percentiles disponibles (solo de grupos relevantes para la posición)
               const _allPct = [];
               const _pctA = _livData.pct || {};
               for (const [key, info] of Object.entries(A_LABELS)) {
+                if (!_coreGroups.has(info.grp)) continue;
                 let pv;
-                if (_pctA[key] !== undefined) pv = _pctA[key];
-                else if (_livDefData && _livDefData.pct && _livDefData.pct[key] !== undefined) pv = _livDefData.pct[key];
+                if (_livDefData && _livDefData.pct && _livDefData.pct[key] !== undefined) pv = _livDefData.pct[key];
+                else if (_pctA[key] !== undefined) pv = _pctA[key];
                 if (pv === undefined) continue;
                 _allPct.push({key, pv, ...info});
               }
