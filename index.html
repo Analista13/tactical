@@ -18195,10 +18195,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   <rect x="${_PL}" y="${_my}" width="${_mx-_PL}" height="${_PT+_plotH-_my}" fill="#f85149" fill-opacity="0.05"/>
                   <line x1="${_mx}" y1="${_PT}" x2="${_mx}" y2="${_PT+_plotH}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
                   <line x1="${_PL}" y1="${_my}" x2="${_PL+_plotW}" y2="${_my}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
-                  <rect x="${(_mx+3).toFixed(1)}" y="${(_PT+2).toFixed(1)}" width="${(_medX.toFixed(_medX>10?0:1)+'').length*5.5+44}" height="13" rx="3" fill="rgba(13,17,23,0.85)"/>
-                  <text x="${(_mx+6).toFixed(1)}" y="${(_PT+11).toFixed(1)}" font-size="9" fill="rgba(255,255,255,0.55)">Mediana ${_medX.toFixed(_medX>10?0:1)}</text>
-                  <rect x="${(_PL+3).toFixed(1)}" y="${(_my-15).toFixed(1)}" width="${(_medY.toFixed(_medY>10?0:1)+'').length*5.5+44}" height="13" rx="3" fill="rgba(13,17,23,0.85)"/>
-                  <text x="${(_PL+6).toFixed(1)}" y="${(_my-6).toFixed(1)}" font-size="9" fill="rgba(255,255,255,0.55)">Mediana ${_medY.toFixed(_medY>10?0:1)}</text>
+                  <line x1="${_PL}" y1="${(_PT+_plotH).toFixed(1)}" x2="${(_PL+_plotW).toFixed(1)}" y2="${_PT}" stroke="#e3b341" stroke-width="1.2" stroke-opacity="0.5"/>
                 `;
                 // Dots
                 const _dots = _pts.map(d => {
