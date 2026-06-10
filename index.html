@@ -18187,6 +18187,23 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 const _medX = _sortedX.length ? _sortedX[Math.floor(_sortedX.length/2)] : (_minX+_maxX)/2;
                 const _medY = _sortedY.length ? _sortedY[Math.floor(_sortedY.length/2)] : (_minY+_maxY)/2;
                 const _mx=_xSc(_medX), _my=_ySc(_medY);
+                // Linear regression (trend line) + R²
+                const _nReg = _pts.length;
+                let _trendLine = '', _r2Lbl = '';
+                if (_nReg >= 2) {
+                  const _mxv = _pts.reduce((a,d)=>a+d.x,0)/_nReg, _myv = _pts.reduce((a,d)=>a+d.y,0)/_nReg;
+                  let _num=0,_denX=0,_denY=0;
+                  for (const d of _pts){ _num += (d.x-_mxv)*(d.y-_myv); _denX += (d.x-_mxv)**2; _denY += (d.y-_myv)**2; }
+                  const _slope = _denX ? _num/_denX : 0;
+                  const _intercept = _myv - _slope*_mxv;
+                  const _r = (_denX && _denY) ? _num/Math.sqrt(_denX*_denY) : 0;
+                  const _r2 = (_r*_r).toFixed(2);
+                  const _y1 = _intercept + _slope*_minX, _y2 = _intercept + _slope*_maxX;
+                  const _tx1=_xSc(_minX).toFixed(1), _ty1=_ySc(Math.min(Math.max(_y1,_minY),_maxY)).toFixed(1);
+                  const _tx2=_xSc(_maxX).toFixed(1), _ty2=_ySc(Math.min(Math.max(_y2,_minY),_maxY)).toFixed(1);
+                  _trendLine = `<line x1="${_tx1}" y1="${_ty1}" x2="${_tx2}" y2="${_ty2}" stroke="#e3b341" stroke-width="1.4" stroke-opacity="0.6"/>`;
+                  _r2Lbl = `<text x="${(_PL+_plotW-6).toFixed(1)}" y="${(_PT+_plotH-6).toFixed(1)}" text-anchor="end" font-size="9" fill="#e3b341" font-weight="700">R² = ${_r2}</text>`;
+                }
                 // Quadrant backgrounds
                 const _quads = `
                   <rect x="${_mx}" y="${_PT}" width="${_PL+_plotW-_mx}" height="${_my-_PT}" fill="#3fb950" fill-opacity="0.05"/>
@@ -18195,7 +18212,13 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   <rect x="${_PL}" y="${_my}" width="${_mx-_PL}" height="${_PT+_plotH-_my}" fill="#f85149" fill-opacity="0.05"/>
                   <line x1="${_mx}" y1="${_PT}" x2="${_mx}" y2="${_PT+_plotH}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
                   <line x1="${_PL}" y1="${_my}" x2="${_PL+_plotW}" y2="${_my}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
-                  <line x1="${_PL}" y1="${(_PT+_plotH).toFixed(1)}" x2="${(_PL+_plotW).toFixed(1)}" y2="${_PT}" stroke="#e3b341" stroke-width="1.2" stroke-opacity="0.5"/>
+                  ${_trendLine}${_r2Lbl}
+                  <text x="${(_mx+5).toFixed(1)}" y="${(_PT+11).toFixed(1)}" font-size="9" fill="#3fb950" font-weight="700">Más ${_curX[1]} / Más ${_curY[1]}</text>
+                  <text x="${(_PL+4).toFixed(1)}" y="${(_PT+11).toFixed(1)}" font-size="9" fill="#f0883e" font-weight="700">Menos ${_curX[1]} / Más ${_curY[1]}</text>
+                  <text x="${(_mx+5).toFixed(1)}" y="${(_PT+_plotH-6).toFixed(1)}" font-size="9" fill="#58a6ff" font-weight="700">Más ${_curX[1]} / Menos ${_curY[1]}</text>
+                  <text x="${(_PL+4).toFixed(1)}" y="${(_PT+_plotH-6).toFixed(1)}" font-size="9" fill="#f85149" font-weight="700">Menos ${_curX[1]} / Menos ${_curY[1]}</text>
+                  <text x="${(_mx).toFixed(1)}" y="${(_PT+_plotH+30).toFixed(1)}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)">Mediana ${_curX[1]}: ${_medX.toFixed(_medX>10?0:1)}</text>
+                  <text x="${(_PL-30).toFixed(1)}" y="${(_my-7).toFixed(1)}" text-anchor="start" font-size="9" fill="rgba(255,255,255,0.5)" transform="rotate(-90 ${(_PL-30).toFixed(1)} ${(_my-7).toFixed(1)})">Mediana ${_curY[1]}: ${_medY.toFixed(_medY>10?0:1)}</text>
                 `;
                 // Dots
                 const _dots = _pts.map(d => {
