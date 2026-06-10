@@ -18379,8 +18379,9 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 '</div></div>';
               const _footer = '<div style="font-size:9px;color:var(--text3);margin-top:10px">Percentil vs. ' + _posLabel + ' · Premier League 25/26 · Opta + SkillCorner</div>';
               if (_profileTab === 'finalizacion') {
-                const _finTog = `<div style="display:flex;gap:8px;margin-bottom:14px">
+                const _finTog = `<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
                   <button onclick="_profileFinView='resumen';openPlayerProfile(${p.d})" style="padding:5px 16px;border-radius:6px;border:1px solid ${_profileFinView==='resumen'?'var(--accent)':'var(--border)'};background:${_profileFinView==='resumen'?'rgba(200,169,110,0.12)':'var(--bg2)'};color:${_profileFinView==='resumen'?'var(--accent)':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profileFinView==='resumen'?700:500}">📋 Resumen</button>
+                  <button onclick="_profileFinView='dispersion';openPlayerProfile(${p.d})" style="padding:5px 16px;border-radius:6px;border:1px solid ${_profileFinView==='dispersion'?'#58a6ff':'var(--border)'};background:${_profileFinView==='dispersion'?'rgba(88,166,255,0.12)':'var(--bg2)'};color:${_profileFinView==='dispersion'?'#58a6ff':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profileFinView==='dispersion'?700:500}">📊 xG vs Goles</button>
                   <button onclick="_profileFinView='mapa';openPlayerProfile(${p.d})" style="padding:5px 16px;border-radius:6px;border:1px solid ${_profileFinView==='mapa'?'#3fb950':'var(--border)'};background:${_profileFinView==='mapa'?'rgba(63,185,80,0.12)':'var(--bg2)'};color:${_profileFinView==='mapa'?'#3fb950':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profileFinView==='mapa'?700:500}">🎯 Mapa de tiros</button>
                 </div>`;
 
@@ -18391,6 +18392,117 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                     _pBar('Golpeos', 'shots_90', 2) +
                     _pBar('Golpeos a puerta', 'shots_ot_90', 2) +
                     _footer;
+                }
+
+                if (_profileFinView === 'dispersion') {
+                  // ── Dispersión xG vs Goles (por 90'), plantilla del Liverpool ─────
+                  const _allLiv = (typeof LIV_PLAYERS !== 'undefined' ? Object.entries(LIV_PLAYERS.players) : []);
+                  const _pts = _allLiv
+                    .filter(([,d]) => (d.mins||0) >= 300)
+                    .map(([nm,d]) => ({x:d.xg_90, y:d.goals_90, name:nm, mins:d.mins, goalsTot:d.goals, xgTot:d.xg_tot}));
+                  const _selX = _livData.xg_90, _selY = _livData.goals_90;
+                  const _W2=640,_H2=400,_PL2=46,_PR2=18,_PT2=18,_PB2=40;
+                  const _plotW2=_W2-_PL2-_PR2,_plotH2=_H2-_PT2-_PB2;
+                  const _xs2 = _pts.map(d=>d.x).concat(_selX!==undefined?[_selX]:[]);
+                  const _ys2 = _pts.map(d=>d.y).concat(_selY!==undefined?[_selY]:[]);
+                  let _minX2=Math.min(0,...(_xs2)), _maxX2=Math.max(..._xs2);
+                  let _minY2=Math.min(0,...(_ys2)), _maxY2=Math.max(..._ys2);
+                  const _spX2=(_maxX2-_minX2)||1, _spY2=(_maxY2-_minY2)||1;
+                  _maxX2+=_spX2*0.08; _maxY2+=_spY2*0.08;
+                  const _xSc2 = v => _PL2+(v-_minX2)/(_maxX2-_minX2)*_plotW2;
+                  const _ySc2 = v => _PT2+_plotH2-(v-_minY2)/(_maxY2-_minY2)*_plotH2;
+                  const _sortedX2=[..._pts.map(d=>d.x)].sort((a,b)=>a-b);
+                  const _sortedY2=[..._pts.map(d=>d.y)].sort((a,b)=>a-b);
+                  const _medX2 = _sortedX2.length ? _sortedX2[Math.floor(_sortedX2.length/2)] : (_minX2+_maxX2)/2;
+                  const _medY2 = _sortedY2.length ? _sortedY2[Math.floor(_sortedY2.length/2)] : (_minY2+_maxY2)/2;
+                  const _mx2=_xSc2(_medX2), _my2=_ySc2(_medY2);
+                  // G = xG diagonal reference line
+                  const _diagV = Math.min(_maxX2,_maxY2);
+                  const _diagLine = `<line x1="${_xSc2(0).toFixed(1)}" y1="${_ySc2(0).toFixed(1)}" x2="${_xSc2(_diagV).toFixed(1)}" y2="${_ySc2(_diagV).toFixed(1)}" stroke="#e3b341" stroke-width="1.4" stroke-dasharray="5,4" stroke-opacity="0.6"/>`;
+                  const _quads2 = `
+                    <rect x="${_mx2}" y="${_PT2}" width="${_PL2+_plotW2-_mx2}" height="${_my2-_PT2}" fill="#2ec4b6" fill-opacity="0.10"/>
+                    <rect x="${_PL2}" y="${_PT2}" width="${_mx2-_PL2}" height="${_my2-_PT2}" fill="#58a6ff" fill-opacity="0.08"/>
+                    <rect x="${_mx2}" y="${_my2}" width="${_PL2+_plotW2-_mx2}" height="${_PT2+_plotH2-_my2}" fill="#e3b341" fill-opacity="0.08"/>
+                    <rect x="${_PL2}" y="${_my2}" width="${_mx2-_PL2}" height="${_PT2+_plotH2-_my2}" fill="#f85149" fill-opacity="0.08"/>
+                    <line x1="${_mx2}" y1="${_PT2}" x2="${_mx2}" y2="${_PT2+_plotH2}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
+                    <line x1="${_PL2}" y1="${_my2}" x2="${_PL2+_plotW2}" y2="${_my2}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
+                    ${_diagLine}
+                    <text x="${(_mx2+5).toFixed(1)}" y="${(_PT2+11).toFixed(1)}" font-size="9" fill="#2ec4b6" font-weight="700">Más xG / Más goles</text>
+                    <text x="${(_PL2+4).toFixed(1)}" y="${(_PT2+11).toFixed(1)}" font-size="9" fill="#58a6ff" font-weight="700">Menos xG / Más goles</text>
+                    <text x="${(_mx2+5).toFixed(1)}" y="${(_PT2+_plotH2-6).toFixed(1)}" font-size="9" fill="#e3b341" font-weight="700">Más xG / Menos goles</text>
+                    <text x="${(_PL2+4).toFixed(1)}" y="${(_PT2+_plotH2-6).toFixed(1)}" font-size="9" fill="#f85149" font-weight="700">Menos xG / Menos goles</text>
+                  `;
+                  const _dots2 = _pts.map(d => {
+                    if (d.name===_livKey) return '';
+                    const cx=_xSc2(d.x).toFixed(1), cy=_ySc2(d.y).toFixed(1);
+                    return `<circle cx="${cx}" cy="${cy}" r="4.5" fill="#8b949e" fill-opacity="0.45" style="cursor:pointer" onmouseover="_obeTipShow(event,'<strong>${d.name.replace(/'/g,"\\'")}</strong><br>xG/90: ${d.x.toFixed(2)}<br>Goles/90: ${d.y.toFixed(2)}<br>Total: ${d.goalsTot} goles / ${d.xgTot.toFixed(2)} xG')" onmouseout="_obeTipHide()"/>`;
+                  }).join('');
+                  let _meDot2 = '';
+                  if (_selX!==undefined && _selY!==undefined) {
+                    const cx=_xSc2(_selX).toFixed(1), cy=_ySc2(_selY).toFixed(1);
+                    _meDot2 = `<defs><filter id="pgdf2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                      <circle cx="${cx}" cy="${cy}" r="9" fill="none" stroke="#58a6ff" stroke-width="2.5" filter="url(#pgdf2)"/>
+                      <circle cx="${cx}" cy="${cy}" r="6" fill="#58a6ff" filter="url(#pgdf2)"/>
+                      <text x="${cx}" y="${(parseFloat(cy)-12).toFixed(1)}" text-anchor="middle" font-size="11" fill="#58a6ff" font-weight="800" style="paint-order:stroke" stroke="#0d1117" stroke-width="3">${p.name}</text>`;
+                  }
+                  let _xTicks2='', _yTicks2='';
+                  for(let i=0;i<=5;i++){
+                    const v=_minX2+(_maxX2-_minX2)*i/5, x=_xSc2(v).toFixed(1);
+                    _xTicks2+=`<line x1="${x}" y1="${_PT2+_plotH2}" x2="${x}" y2="${_PT2+_plotH2+5}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/><text x="${x}" y="${_PT2+_plotH2+17}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.4)">${v.toFixed(2)}</text>`;
+                  }
+                  for(let i=0;i<=4;i++){
+                    const v=_minY2+(_maxY2-_minY2)*i/4, y=_ySc2(v).toFixed(1);
+                    _yTicks2+=`<line x1="${_PL2-5}" y1="${y}" x2="${_PL2}" y2="${y}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/><text x="${_PL2-9}" y="${(parseFloat(y)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.4)">${v.toFixed(2)}</text>`;
+                  }
+                  const _axisLabels2 = `
+                    <text x="${_PL2+_plotW2/2}" y="${_H2-6}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text2)">xG por 90' →</text>
+                    <text x="14" y="${_PT2+_plotH2/2}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text2)" transform="rotate(-90 14 ${_PT2+_plotH2/2})">Goles por 90' →</text>
+                  `;
+                  const _border2=`<rect x="${_PL2}" y="${_PT2}" width="${_plotW2}" height="${_plotH2}" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>`;
+                  const _svg2=`<svg viewBox="0 0 ${_W2} ${_H2}" width="100%" style="display:block;overflow:visible">${_quads2}${_border2}${_dots2}${_meDot2}${_xTicks2}${_yTicks2}${_axisLabels2}</svg>`;
+
+                  let _explain2 = '';
+                  if (_selX!==undefined && _selY!==undefined) {
+                    const aboveX = _selX >= _medX2, aboveY = _selY >= _medY2;
+                    const diff = _livData.goals_90 - _livData.xg_90;
+                    let perfil, desc;
+                    if (aboveX && aboveY) {
+                      perfil = 'Generador y finalizador';
+                      desc = 'genera ocasiones de buena calidad (xG por encima de la media de la plantilla) y además las convierte a un buen ritmo de gol.';
+                    } else if (aboveX && !aboveY) {
+                      perfil = 'Volumen sin acierto';
+                      desc = 'genera más xG por 90\' que la media de la plantilla, pero su ratio de conversión está por debajo: desperdicia ocasiones de calidad.';
+                    } else if (!aboveX && aboveY) {
+                      perfil = 'Finalizador clínico';
+                      desc = 'con menos volumen/calidad de ocasiones que la media de la plantilla, su ratio de gol por 90\' está por encima: convierte más de lo esperado.';
+                    } else {
+                      perfil = 'Perfil discreto en finalización';
+                      desc = 'se sitúa por debajo de la media de la plantilla tanto en generación de xG como en goles por 90\'.';
+                    }
+                    const overUnder = diff >= 0
+                      ? `<strong style="color:#3fb950">supera su xG en ${diff.toFixed(2)} goles/90</strong> (sobrerendimiento)`
+                      : `<strong style="color:#f85149">queda por debajo de su xG en ${Math.abs(diff).toFixed(2)} goles/90</strong> (infrarrendimiento)`;
+                    _explain2 = `<div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+                      <strong style="color:#58a6ff">${p.name}</strong> — <strong style="color:var(--text1)">${perfil}</strong>: ${desc}
+                      Actualmente ${overUnder}.
+                      Cada punto gris representa a un jugador de la plantilla del Liverpool con ≥300 minutos en la Premier League 25/26;
+                      las líneas discontinuas blancas marcan la mediana de la plantilla y la línea amarilla discontinua marca <strong style="color:var(--text1)">Goles = xG</strong> (rendimiento esperado).
+                    </div>`;
+                  }
+
+                  return _finTog + `
+                    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
+                      <div style="font-size:12px;font-weight:700;color:var(--text1);margin-bottom:6px">xG vs Goles (por 90 minutos) — Plantilla Liverpool</div>
+                      <div style="font-size:11px;color:var(--text3);line-height:1.5">Compara el volumen/calidad de las ocasiones generadas (<strong style="color:var(--text1)">xG/90</strong>) con la eficacia real de cara a portería (<strong style="color:var(--text1)">Goles/90</strong>).</div>
+                      ${_explain2}
+                    </div>
+                    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 6px 4px;overflow:hidden">${_svg2}</div>
+                    <div style="display:flex;gap:14px;margin-top:8px;font-size:10px;color:var(--text3);flex-wrap:wrap;align-items:center">
+                      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#58a6ff;margin-right:4px;vertical-align:middle"></span>${p.name}</span>
+                      <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#8b949e;opacity:.6;margin-right:4px;vertical-align:middle"></span>Resto de la plantilla (≥300 min)</span>
+                      <span><span style="display:inline-block;width:14px;height:0;border-top:1.5px dashed #e3b341;margin-right:4px;vertical-align:middle"></span>Goles = xG</span>
+                      <span style="margin-left:auto">Mediana plantilla — xG/90: ${_medX2.toFixed(2)} · Goles/90: ${_medY2.toFixed(2)}</span>
+                    </div>`;
                 }
 
                 // ── MAPA DE TIROS ───────────────────────────────────────────────
