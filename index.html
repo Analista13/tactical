@@ -18438,7 +18438,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   const cx=_pxSc(s.y).toFixed(1), cy=_pySc(s.x).toFixed(1);
                   const isGoal = s.result==='Goal';
                   const col = isGoal ? '#e0566a' : '#9b8fd6';
-                  const r = (3 + s.xG*22).toFixed(1);
+                  const r = (3 + Math.min(s.xG,0.6)*18).toFixed(1);
                   const resLbl = {'Goal':'⚽ Gol','OnTarget':'A puerta (parado)','Post':'Al palo','Off':'Fuera'}[s.result] || s.result;
                   const bodyLbl = {'PD':'Pie derecho','PI':'Pie izquierdo','Cab':'Cabeza','Otro':'Otro'}[s.body] || s.body;
                   const tip = `<strong>${resLbl}</strong><br>${bodyLbl} · min ${s.min}'<br>vs ${(s.rival||'').replace(/'/g,"\\'")}<br>xG: ${s.xG.toFixed(3)}`;
@@ -18482,7 +18482,6 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                       </div>
                     </div>
                     ${_legendBlock}
-                    <div style="font-size:10px;color:#999;margin-top:10px;text-align:right">Premier League 25/26 · Datos Opta</div>
                   </div>`;
               }
               if (_profileTab === 'creacion') {
