@@ -16396,6 +16396,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
   let _profileDefDistMetric = 'OBE totales (intervenciones)';
   let _profileDefScatterX = 'Entradas';
   let _profileDefScatterY = 'Intercepciones';
+  let _profileDefCustomize = false;
   let _profileObeScatterX = 'Total OBE';
   let _profileObeScatterY = 'Presión directa';
   let _profileObeScatterPreset = 0;   // index into _SCATTER_PRESETS; -1 = custom
@@ -18229,11 +18230,33 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 `;
                 const _border=`<rect x="${_PL}" y="${_PT}" width="${_plotW}" height="${_plotH}" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>`;
                 const _svg_d=`<svg viewBox="0 0 ${_W} ${_H}" width="100%" style="display:block;overflow:visible">${_quads}${_border}${_dots}${_meDot}${_xTicks}${_yTicks}${_axisLabels}</svg>`;
+                const _PRESETS = [
+                  ['Volumen vs Pressing','OBE totales (intervenciones)','Presión directa'],
+                  ['Entradas vs Intercepciones','Entradas','Intercepciones'],
+                  ['Despejes vs Aéreos','Despejes','Duelos aéreos'],
+                  ['Recuperaciones vs Disrupciones','Recuperaciones','Disrupciones directas'],
+                  ['Vulnerabilidades','Superado por movimiento','Superado por posesión'],
+                  ['Pressing detallado','Contrapresión','Presiones en cadena'],
+                ];
+                const _presetBtns = _PRESETS.map(([lbl,x,y]) => {
+                  const act = _profileDefScatterX===x && _profileDefScatterY===y;
+                  return `<button onclick="_profileDefScatterX='${x.replace(/'/g,"\\'")}';_profileDefScatterY='${y.replace(/'/g,"\\'")}';openPlayerProfile(${p.d})"
+                    style="padding:5px 12px;border-radius:8px;border:1px solid ${act?'#58a6ff':'var(--border)'};
+                           background:${act?'rgba(88,166,255,0.15)':'var(--bg2)'};color:${act?'#58a6ff':'var(--text2)'};
+                           font-size:11px;font-weight:${act?700:500};cursor:pointer;white-space:nowrap;transition:all .15s">${lbl}</button>`;
+                }).join('');
+                const _customizeBtn = `<button onclick="_profileDefCustomize=${!_profileDefCustomize};openPlayerProfile(${p.d})"
+                  style="padding:5px 12px;border-radius:8px;border:1px solid ${_profileDefCustomize?'#d2a8ff':'var(--border)'};
+                         background:${_profileDefCustomize?'rgba(210,168,255,0.15)':'var(--bg2)'};color:${_profileDefCustomize?'#d2a8ff':'var(--text2)'};
+                         font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s">⚙️ Personalizar ejes</button>`;
+                const _customPanel = _profileDefCustomize ? `
+                  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:8px;display:flex;flex-direction:column;gap:8px">
+                    <div style="display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap"><span style="font-size:10px;color:var(--text3);font-weight:700;min-width:48px;padding-top:4px">Eje X:</span><div style="display:flex;gap:6px;flex-wrap:wrap">${_axisPills('_profileDefScatterX', _profileDefScatterX)}</div></div>
+                    <div style="display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap"><span style="font-size:10px;color:var(--text3);font-weight:700;min-width:48px;padding-top:4px">Eje Y:</span><div style="display:flex;gap:6px;flex-wrap:wrap">${_axisPills('_profileDefScatterY', _profileDefScatterY)}</div></div>
+                  </div>` : '';
                 return _defTog + `
-                <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px">
-                  <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:10px;color:var(--text3);font-weight:700;min-width:48px">Eje X:</span>${_axisPills('_profileDefScatterX', _profileDefScatterX)}</div>
-                  <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:10px;color:var(--text3);font-weight:700;min-width:48px">Eje Y:</span>${_axisPills('_profileDefScatterY', _profileDefScatterY)}</div>
-                </div>
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${_presetBtns}${_customizeBtn}</div>
+                ${_customPanel}
                 <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin:12px 0 10px">
                   <div style="font-size:12px;font-weight:700;color:var(--text1);margin-bottom:6px">${_curX[1]} vs ${_curY[1]}</div>
                   <div style="font-size:11px;color:var(--text3);line-height:1.5"><strong style="color:${_GCOL[_curX[2]]}">${_curX[1]}:</strong> ${_curX[3]}</div>
