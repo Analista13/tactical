@@ -14627,7 +14627,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
     for (const nm of Object.keys(LIV_ZONES)) {
       const zd = LIV_ZONES[nm] && LIV_ZONES[nm][sub[3]];
       if (!zd) continue;
-      allPts = allPts.concat(zd.pts);
+      allPts = allPts.concat(zd.pts.map(p => [p[0], p[1], null, nm]));
       perPlayer.push({name: nm, total: zd.total});
     }
     perPlayer.sort((a,b) => b.total - a.total);
@@ -14683,7 +14683,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
               <span style="font-size:13px;font-weight:700;color:var(--text1)">${isAll?'Todo el equipo':equipoRecPerdPlayerSel}</span>
               <span style="font-size:11px;color:var(--text3);margin-left:8px">${cnt} ${sub[3]==='recov'?'recuperaciones':'pérdidas'}</span>
             </div>
-            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 6px 4px;overflow:hidden">${_genZoneMap(pts, sub[2])}</div>
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 6px 4px;overflow:hidden">${_genZoneMap(pts, sub[2], {pointLabel: sub[3]==='recov'?'Recuperación':'Pérdida'})}</div>
             <div style="font-size:9px;color:var(--text3);margin-top:8px;text-align:center">Eventos Opta · Premier League 25/26</div>
           </div>
         </div>`;
@@ -14721,7 +14721,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
     for (const nm of Object.keys(LIV_ZONES)) {
       const zd = LIV_ZONES[nm] && LIV_ZONES[nm].drb;
       if (!zd) continue;
-      allPts = allPts.concat(zd.pts);
+      allPts = allPts.concat(zd.pts.map(p => [p[0], p[1], p[2], nm]));
       totSucc += (zd.success||0); totAtt += zd.total;
       perPlayer.push({name: nm, total: zd.total, success: zd.success||0});
     }
@@ -14780,7 +14780,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
               <span style="font-size:13px;font-weight:700;color:var(--text1)">${isAll?'Todo el equipo':equipoRegPlayerSel}</span>
               <span style="font-size:11px;color:var(--text3);margin-left:8px">${data.total} intentados · ${data.success} completados (${pct}%)</span>
             </div>
-            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 6px 4px;overflow:hidden">${_genZoneMap(data.pts, '#ffd33d', {failColor:'#f85149'})}</div>
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 6px 4px;overflow:hidden">${_genZoneMap(data.pts, '#ffd33d', {failColor:'#f85149', pointLabel:'Regate'})}</div>
             <div style="display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:10px;color:var(--text3)">
               <span><svg width="12" height="12" style="vertical-align:middle;margin-right:3px"><circle cx="6" cy="6" r="5" fill="#ffd33d"/></svg>Regate completado</span>
               <span><svg width="12" height="12" style="vertical-align:middle;margin-right:3px"><circle cx="6" cy="6" r="5" fill="#f85149"/></svg>Regate fallado</span>
@@ -16661,14 +16661,22 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
     `;
     const failCol = opts.failColor || '#f85149';
     const PSX = W/100, PSY = H/100; // point coords come in a 0-100 x 0-100 scale
+    const baseLabel = opts.pointLabel || 'Acción';
     const dots = pts.map(pt => {
       const px=(pt[0]*PSX).toFixed(1), py=(pt[1]*PSY).toFixed(1);
       let fill = color, stroke = color;
-      if (pt.length > 2) { // success flag (regates)
+      let succTxt = '';
+      if (pt.length > 2 && pt[2] !== null && pt[2] !== undefined) { // success flag (regates)
         fill = pt[2] ? color : failCol;
         stroke = fill;
+        succTxt = pt[2] ? ' · Completado' : ' · Fallado';
       }
-      return `<circle cx="${px}" cy="${py}" r="4.5" fill="${fill}" fill-opacity="0.55" stroke="${stroke}" stroke-width="1"/>`;
+      const player = pt[3] ? (pt[3] + ' · ') : '';
+      const tip = `${player}${baseLabel}${succTxt}`;
+      const dot = `<circle cx="${px}" cy="${py}" r="4.5" fill="${fill}" fill-opacity="0.55" stroke="${stroke}" stroke-width="1" style="pointer-events:none"/>`;
+      const hit = `<circle cx="${px}" cy="${py}" r="9" fill="transparent" stroke="none" style="cursor:pointer"
+        data-tip="${tip}" onmouseenter="svgTip(event,this)" onmousemove="svgTip(event,this)" onmouseleave="sancionTipHide()"/>`;
+      return `<g>${dot}${hit}</g>`;
     }).join('');
     return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;border-radius:6px;overflow:visible">${stripes}${marks}${dividers}${labels}${dots}</svg>`;
   }
