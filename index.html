@@ -19839,18 +19839,13 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   <div style=\"background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px\">
                     <div style=\"font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px\">🧠 Inteligencia de pase (SkillCorner) — ${p.name} (percentil vs ${_posLabelP} de la Premier)</div>
                     ${_intRows}
-                  </div>
-                  <div style=\"background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px\">
-                    <div style=\"font-size:12px;font-weight:700;color:var(--text1);margin-bottom:8px\">Próximas ampliaciones</div>
-                    <div style=\"font-size:11px;color:var(--text3);line-height:1.6\">
-                      Más adelante se incorporará: % xPass vs % real, rivales superados por pase, opciones de pase peligrosas recibidas y perfil de distancia/dirección de pase, cruzando los eventos de pase de Opta con el tracking de SkillCorner partido a partido.
-                    </div>
                   </div>`;
               }
 
               // ── Mapa de pase ─────────────────────────────────────────────────────
-              const _viewTogP = `<div style=\"display:flex;gap:8px;margin-bottom:14px\">
-                <button onclick=\"_profilePaseView='dist';openPlayerProfile(${p.d})\" style=\"padding:5px 16px;border-radius:6px;border:1px solid ${_profilePaseView==='dist'?'#58a6ff':'var(--border)'};background:${_profilePaseView==='dist'?'rgba(88,166,255,0.12)':'var(--bg2)'};color:${_profilePaseView==='dist'?'#58a6ff':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profilePaseView==='dist'?700:500}\">📊 Métricas y dispersión</button>
+              const _viewTogP = `<div style=\"display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap\">
+                <button onclick=\"_profilePaseView='dist';openPlayerProfile(${p.d})\" style=\"padding:5px 16px;border-radius:6px;border:1px solid ${_profilePaseView==='dist'?'#58a6ff':'var(--border)'};background:${_profilePaseView==='dist'?'rgba(88,166,255,0.12)':'var(--bg2)'};color:${_profilePaseView==='dist'?'#58a6ff':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profilePaseView==='dist'?700:500}\">📊 Métricas</button>
+                <button onclick=\"_profilePaseView='dispersion';openPlayerProfile(${p.d})\" style=\"padding:5px 16px;border-radius:6px;border:1px solid ${_profilePaseView==='dispersion'?'#a371f7':'var(--border)'};background:${_profilePaseView==='dispersion'?'rgba(163,113,247,0.12)':'var(--bg2)'};color:${_profilePaseView==='dispersion'?'#a371f7':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profilePaseView==='dispersion'?700:500}\">📈 Dispersión</button>
                 <button onclick=\"_profilePaseView='centros';openPlayerProfile(${p.d})\" style=\"padding:5px 16px;border-radius:6px;border:1px solid ${_profilePaseView==='centros'?'#39c5cf':'var(--border)'};background:${_profilePaseView==='centros'?'rgba(57,197,207,0.12)':'var(--bg2)'};color:${_profilePaseView==='centros'?'#39c5cf':'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${_profilePaseView==='centros'?700:500}\">🎯 Mapa de centros</button>
               </div>`;
 
@@ -19897,16 +19892,20 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 </div>
               </div>`;
 
-              return _subTogP + _viewTogP + _rows + _genDispersion({
-                distData: (typeof LIV_PASS_DIST !== 'undefined') ? LIV_PASS_DIST : null,
-                posKey: _posKeyP, posLabel: _posLabelP,
-                curX: _curXP, curY: _curYP,
-                xVal: _pp[_curXkP], yVal: _pp[_curYkP],
-                livKey: _livKey, playerName: p.name, suffix: 'pase',
-                presets: _PASE_PRESETS,
-                setX: {name:'_profilePaseX', cur:_curXkP}, setY: {name:'_profilePaseY', cur:_curYkP},
-                pd: p.d, color: '#39c5cf',
-              });
+              if (_profilePaseView === 'dispersion') {
+                return _subTogP + _viewTogP + _genDispersion({
+                  distData: (typeof LIV_PASS_DIST !== 'undefined') ? LIV_PASS_DIST : null,
+                  posKey: _posKeyP, posLabel: _posLabelP,
+                  curX: _curXP, curY: _curYP,
+                  xVal: _pp[_curXkP], yVal: _pp[_curYkP],
+                  livKey: _livKey, playerName: p.name, suffix: 'pase',
+                  presets: _PASE_PRESETS,
+                  setX: {name:'_profilePaseX', cur:_curXkP}, setY: {name:'_profilePaseY', cur:_curYkP},
+                  pd: p.d, color: '#39c5cf',
+                });
+              }
+
+              return _subTogP + _viewTogP + _rows;
             })() : (() => {
               const keys   = _OBE_TAB[_profileTab] || [];
               const pCol   = p => p >= 75 ? '#3fb950' : p >= 50 ? '#c8a96e' : p >= 25 ? '#f0883e' : '#f85149';
