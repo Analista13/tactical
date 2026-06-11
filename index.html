@@ -547,6 +547,7 @@
   let pasesDropdownOpen = false;      // dropdown selector de partido
   let pasesSubTab       = 'equipo';   // 'equipo' | 'jugadores' | 'progresion'
   let plantillaView     = 'plantilla'; // 'plantilla' | 'fichajes' | 'regates'
+  let equipoRPSub       = 'recuperaciones'; // 'recuperaciones' | 'perdidas' | 'regates'
   let equipoSubTab      = 'alineaciones'; // 'alineaciones'
   let minutosVista      = 'total'; // 'total' | 'jornadas'
   let tarjetasVista     = 'total'; // 'total' | 'jornadas'
@@ -14592,6 +14593,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
           ${tabBtn('tarjetas', 'Tarjetas')}
           ${tabBtn('goles', 'Goles')}
           ${tabBtn('asistencias', 'Asistencias')}
+          ${(currentTeam.id === 14 && typeof LIV_ZONES !== 'undefined') ? tabBtn('rec_perd_reg', '🔄 Recup/Pérdidas/Regates') : ''}
         </div>
         <div id="equipo-subtab-content"></div>
       </div>`;
@@ -14602,6 +14604,70 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
     else if (equipoSubTab === 'tarjetas') renderEquipoTarjetas();
     else if (equipoSubTab === 'goles') renderEquipoGoles();
     else if (equipoSubTab === 'asistencias') renderEquipoAsistencias();
+    else if (equipoSubTab === 'rec_perd_reg') renderEquipoRecPerdReg();
+  }
+
+  function renderEquipoRecPerdReg() {
+    const el = document.getElementById('equipo-subtab-content');
+    if (typeof LIV_ZONES === 'undefined' || !el) return;
+    const SUBS = [
+      ['recuperaciones','🟢 Recuperaciones','#3fb950','recov'],
+      ['perdidas','🔴 Pérdidas','#f85149','perd'],
+      ['regates','⚡ Regates','#ffd33d','drb'],
+    ];
+    const sub = SUBS.find(s => s[0]===equipoRPSub) || SUBS[0];
+    const subTog = `<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">` +
+      SUBS.map(([id,lbl,col]) => `<button onclick="equipoRPSub='${id}';renderEquipoRecPerdReg()" style="padding:5px 16px;border-radius:6px;border:1px solid ${equipoRPSub===id?col:'var(--border)'};background:${equipoRPSub===id?col+'22':'var(--bg2)'};color:${equipoRPSub===id?col:'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${equipoRPSub===id?700:500}">${lbl}</button>`).join('') +
+      `</div>`;
+
+    // Aggregate across all Liverpool players + per-player breakdown
+    let allPts = [];
+    let totSucc = 0, totAtt = 0;
+    const perPlayer = [];
+    for (const nm in LIV_ZONES) {
+      const zd = LIV_ZONES[nm][sub[3]];
+      if (!zd) continue;
+      allPts = allPts.concat(zd.pts);
+      if (sub[3]==='drb') { totSucc += (zd.success||0); totAtt += zd.total; }
+      perPlayer.push({name: nm, total: zd.total, success: zd.success});
+    }
+    perPlayer.sort((a,b) => b.total - a.total);
+
+    let infoLine, captionLine;
+    if (sub[3]==='recov') {
+      infoLine = `Recuperaciones del equipo: ${allPts.length} totales esta temporada`;
+      captionLine = `Cada punto es una recuperación de balón (Ball recovery) de algún jugador del Liverpool, en su ubicación exacta sobre el campo.`;
+    } else if (sub[3]==='perd') {
+      infoLine = `Pérdidas del equipo: ${allPts.length} totales esta temporada`;
+      captionLine = `Cada punto es una pérdida de balón por robo directo (Dispossessed) de algún jugador del Liverpool, en su ubicación exacta sobre el campo.`;
+    } else {
+      const pct = totAtt>0 ? Math.round(100*totSucc/totAtt) : 0;
+      infoLine = `Regates del equipo: ${allPts.length} intentados · ${totSucc} completados (${pct}%)`;
+      captionLine = `Cada punto es un regate intentado por algún jugador del Liverpool, en su ubicación exacta sobre el campo. <span style="color:#ffd33d">●</span> Completado · <span style="color:#f85149">●</span> Fallado.`;
+    }
+
+    const rows = perPlayer.map(p => {
+      const extra = (sub[3]==='drb') ? ` · ${p.success} completados (${p.total>0?Math.round(100*p.success/p.total):0}%)` : '';
+      return `<tr><td style="padding:6px 12px;font-size:12px;color:var(--text2);border-bottom:1px solid rgba(255,255,255,0.04)">${p.name}</td>
+        <td style="padding:6px 12px;font-size:12px;color:var(--text1);font-weight:700;border-bottom:1px solid rgba(255,255,255,0.04)">${p.total}${extra}</td></tr>`;
+    }).join('');
+
+    el.innerHTML = `
+      ${subTog}
+      <div style="display:flex;gap:18px;flex-wrap:wrap">
+        <div style="flex:2;min-width:320px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
+            <div style="font-size:12px;font-weight:700;color:var(--text1)">${infoLine}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px">${captionLine}</div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 6px 4px;overflow:hidden">${_genZoneMap(allPts, sub[2])}</div>
+          <div style="font-size:9px;color:var(--text3);margin-top:8px">Eventos Opta · Premier League 25/26</div>
+        </div>
+        <div style="flex:1;min-width:220px">
+          <div style="font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Por jugador</div>
+          <table style="width:100%;border-collapse:collapse">${rows}</table>
+        </div>
+      </div>`;
   }
 
   function renderEquipoMinutos() {
