@@ -548,6 +548,10 @@
   let pasesSubTab       = 'equipo';   // 'equipo' | 'jugadores' | 'progresion'
   let plantillaView     = 'plantilla'; // 'plantilla' | 'fichajes' | 'regates'
   let equipoRPSub       = 'recuperaciones'; // 'recuperaciones' | 'perdidas' | 'regates'
+  let equipoRecPerdVista = 'tabla'; // 'tabla' | 'mapa'
+  let equipoRecPerdPlayerSel = '__ALL__';
+  let equipoRegVista = 'tabla'; // 'tabla' | 'mapa'
+  let equipoRegPlayerSel = '__ALL__';
   let equipoSubTab      = 'alineaciones'; // 'alineaciones'
   let minutosVista      = 'total'; // 'total' | 'jornadas'
   let tarjetasVista     = 'total'; // 'total' | 'jornadas'
@@ -14593,7 +14597,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
           ${tabBtn('tarjetas', 'Tarjetas')}
           ${tabBtn('goles', 'Goles')}
           ${tabBtn('asistencias', 'Asistencias')}
-          ${(currentTeam.id === 14 && typeof LIV_ZONES !== 'undefined') ? tabBtn('rec_perd_reg', '🔄 Recup/Pérdidas/Regates') : ''}
+          ${(currentTeam.id === 14 && typeof LIV_ZONES !== 'undefined') ? (tabBtn('rec_perd', '🟢🔴 Recup/Pérdidas') + tabBtn('regates_eq', '⚡ Regates')) : ''}
         </div>
         <div id="equipo-subtab-content"></div>
       </div>`;
@@ -14604,70 +14608,208 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
     else if (equipoSubTab === 'tarjetas') renderEquipoTarjetas();
     else if (equipoSubTab === 'goles') renderEquipoGoles();
     else if (equipoSubTab === 'asistencias') renderEquipoAsistencias();
-    else if (equipoSubTab === 'rec_perd_reg') renderEquipoRecPerdReg();
+    else if (equipoSubTab === 'rec_perd') renderEquipoRecPerd();
+    else if (equipoSubTab === 'regates_eq') renderEquipoRegatesEq();
   }
 
-  function renderEquipoRecPerdReg() {
+  function renderEquipoRecPerd() {
     const el = document.getElementById('equipo-subtab-content');
     if (typeof LIV_ZONES === 'undefined' || !el) return;
     const SUBS = [
       ['recuperaciones','🟢 Recuperaciones','#3fb950','recov'],
       ['perdidas','🔴 Pérdidas','#f85149','perd'],
-      ['regates','⚡ Regates','#ffd33d','drb'],
     ];
     const sub = SUBS.find(s => s[0]===equipoRPSub) || SUBS[0];
-    const subTog = `<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">` +
-      SUBS.map(([id,lbl,col]) => `<button onclick="equipoRPSub='${id}';renderEquipoRecPerdReg()" style="padding:5px 16px;border-radius:6px;border:1px solid ${equipoRPSub===id?col:'var(--border)'};background:${equipoRPSub===id?col+'22':'var(--bg2)'};color:${equipoRPSub===id?col:'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${equipoRPSub===id?700:500}">${lbl}</button>`).join('') +
-      `</div>`;
 
     // Aggregate across all Liverpool players + per-player breakdown
     let allPts = [];
-    let totSucc = 0, totAtt = 0;
     const perPlayer = [];
-    for (const nm in LIV_ZONES) {
-      const zd = LIV_ZONES[nm][sub[3]];
+    for (const nm of LIV_NAMES) {
+      const zd = LIV_ZONES[nm] && LIV_ZONES[nm][sub[3]];
       if (!zd) continue;
       allPts = allPts.concat(zd.pts);
-      if (sub[3]==='drb') { totSucc += (zd.success||0); totAtt += zd.total; }
-      perPlayer.push({name: nm, total: zd.total, success: zd.success});
+      perPlayer.push({name: nm, total: zd.total});
     }
     perPlayer.sort((a,b) => b.total - a.total);
+    const total = perPlayer.reduce((s,p)=>s+p.total,0);
+    const top = perPlayer[0];
 
-    let infoLine, captionLine;
-    if (sub[3]==='recov') {
-      infoLine = `Recuperaciones del equipo: ${allPts.length} totales esta temporada`;
-      captionLine = `Cada punto es una recuperación de balón (Ball recovery) de algún jugador del Liverpool, en su ubicación exacta sobre el campo.`;
-    } else if (sub[3]==='perd') {
-      infoLine = `Pérdidas del equipo: ${allPts.length} totales esta temporada`;
-      captionLine = `Cada punto es una pérdida de balón por robo directo (Dispossessed) de algún jugador del Liverpool, en su ubicación exacta sobre el campo.`;
-    } else {
-      const pct = totAtt>0 ? Math.round(100*totSucc/totAtt) : 0;
-      infoLine = `Regates del equipo: ${allPts.length} intentados · ${totSucc} completados (${pct}%)`;
-      captionLine = `Cada punto es un regate intentado por algún jugador del Liverpool, en su ubicación exacta sobre el campo. <span style="color:#ffd33d">●</span> Completado · <span style="color:#f85149">●</span> Fallado.`;
-    }
+    const vBtn = (id,label) => `<button onclick="equipoRecPerdVista='${id}';renderEquipoRecPerd()"
+      style="background:${equipoRecPerdVista===id?'var(--bg2)':'transparent'};border:${equipoRecPerdVista===id?'1px solid var(--border)':'1px solid transparent'};color:${equipoRecPerdVista===id?'var(--accent)':'var(--text2)'};border-radius:6px;padding:5px 14px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">${label}</button>`;
+    const subTog = SUBS.map(([id,lbl,col]) => `<button onclick="equipoRPSub='${id}';renderEquipoRecPerd()" style="padding:5px 16px;border-radius:6px;border:1px solid ${equipoRPSub===id?col:'var(--border)'};background:${equipoRPSub===id?col+'22':'var(--bg2)'};color:${equipoRPSub===id?col:'var(--text2)'};font-size:12px;cursor:pointer;font-weight:${equipoRPSub===id?700:500};margin-right:8px">${lbl}</button>`).join('');
 
-    const rows = perPlayer.map(p => {
-      const extra = (sub[3]==='drb') ? ` · ${p.success} completados (${p.total>0?Math.round(100*p.success/p.total):0}%)` : '';
-      return `<tr><td style="padding:6px 12px;font-size:12px;color:var(--text2);border-bottom:1px solid rgba(255,255,255,0.04)">${p.name}</td>
-        <td style="padding:6px 12px;font-size:12px;color:var(--text1);font-weight:700;border-bottom:1px solid rgba(255,255,255,0.04)">${p.total}${extra}</td></tr>`;
-    }).join('');
+    const title = sub[3]==='recov' ? 'RECUPERACIONES' : 'PÉRDIDAS';
+    const desc = sub[3]==='recov'
+      ? 'Recuperaciones de balón (Ball recovery) por jugador, temporada 2025/26.'
+      : 'Pérdidas de balón por robo directo (Dispossessed) por jugador, temporada 2025/26.';
+
+    // ── TABLA ──────────────────────────────────────────────────────────────
+    const renderTabla = () => `
+      <div class="table-wrap anim">
+        <table>
+          <thead><tr>
+            <th>Jugador</th>
+            <th style="text-align:center">${sub[1]}</th>
+          </tr></thead>
+          <tbody>${perPlayer.map(p => `<tr>
+              <td style="font-weight:700;cursor:pointer" onclick="equipoRecPerdVista='mapa';equipoRecPerdPlayerSel='${p.name.replace(/'/g,"\\'")}';renderEquipoRecPerd()">${p.name}</td>
+              <td style="text-align:center;font-weight:800;color:${sub[2]}">${p.total}</td>
+            </tr>`).join('')}</tbody>
+        </table>
+      </div>`;
+
+    // ── MAPA ───────────────────────────────────────────────────────────────
+    const renderMapa = () => {
+      const isAll = equipoRecPerdPlayerSel === '__ALL__' || !LIV_ZONES[equipoRecPerdPlayerSel];
+      const pts = isAll ? allPts : (LIV_ZONES[equipoRecPerdPlayerSel][sub[3]]?.pts || []);
+      const cnt = isAll ? total : (LIV_ZONES[equipoRecPerdPlayerSel][sub[3]]?.total || 0);
+      const playerList = `<div onclick="equipoRecPerdPlayerSel='__ALL__';renderEquipoRecPerd()"
+          style="padding:8px 12px;cursor:pointer;border-radius:6px;background:${isAll?'#1e3a5f':'transparent'};border:1px solid ${isAll?'#3b82f6':'transparent'};display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span style="font-size:12px;font-weight:${isAll?700:500};color:${isAll?'#93c5fd':'var(--text2)'}">Todo el equipo</span>
+          <span style="font-size:11px;font-weight:800;color:${sub[2]};flex-shrink:0">${total}</span>
+        </div>` +
+        perPlayer.map(p => `
+        <div onclick="equipoRecPerdPlayerSel='${p.name.replace(/'/g,"\\'")}';renderEquipoRecPerd()"
+          style="padding:8px 12px;cursor:pointer;border-radius:6px;background:${equipoRecPerdPlayerSel===p.name?'#1e3a5f':'transparent'};border:1px solid ${equipoRecPerdPlayerSel===p.name?'#3b82f6':'transparent'};display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span style="font-size:12px;font-weight:${equipoRecPerdPlayerSel===p.name?700:500};color:${equipoRecPerdPlayerSel===p.name?'#93c5fd':'var(--text2)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</span>
+          <span style="font-size:11px;font-weight:800;color:${sub[2]};flex-shrink:0">${p.total}</span>
+        </div>`).join('');
+
+      return `
+        <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+          <div style="width:160px;flex-shrink:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px;max-height:480px;overflow-y:auto">${playerList}</div>
+          <div style="flex:1;min-width:320px">
+            <div style="text-align:center;margin-bottom:8px">
+              <span style="font-size:13px;font-weight:700;color:var(--text1)">${isAll?'Todo el equipo':equipoRecPerdPlayerSel}</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:8px">${cnt} ${sub[3]==='recov'?'recuperaciones':'pérdidas'}</span>
+            </div>
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 6px 4px;overflow:hidden">${_genZoneMap(pts, sub[2])}</div>
+            <div style="font-size:9px;color:var(--text3);margin-top:8px;text-align:center">Eventos Opta · Premier League 25/26</div>
+          </div>
+        </div>`;
+    };
 
     el.innerHTML = `
-      ${subTog}
-      <div style="display:flex;gap:18px;flex-wrap:wrap">
-        <div style="flex:2;min-width:320px">
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
-            <div style="font-size:12px;font-weight:700;color:var(--text1)">${infoLine}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:4px">${captionLine}</div>
-          </div>
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 6px 4px;overflow:hidden">${_genZoneMap(allPts, sub[2])}</div>
-          <div style="font-size:9px;color:var(--text3);margin-top:8px">Eventos Opta · Premier League 25/26</div>
+      <div class="content-head anim">
+        <div><h2>${title}</h2>
+          <p>Temporada 2025/26 · Premier League</p>
         </div>
-        <div style="flex:1;min-width:220px">
-          <div style="font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Por jugador</div>
-          <table style="width:100%;border-collapse:collapse">${rows}</table>
+      </div>
+      <div class="cards anim" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+        <div class="card"><div class="card-label">Total ${sub[3]==='recov'?'recuperaciones':'pérdidas'}</div><div class="card-value" style="color:${sub[2]}">${total}</div><div class="card-sub">equipo · 25/26</div></div>
+        <div class="card"><div class="card-label">${sub[3]==='recov'?'Mayor recuperador':'Mayor pérdida de balón'}</div><div class="card-value" style="color:${sub[2]};font-size:18px">${top?.name||'—'}</div><div class="card-sub">${top?.total||0} ${sub[3]==='recov'?'recuperaciones':'pérdidas'}</div></div>
+        <div class="card"><div class="card-label">Media por jugador</div><div class="card-value" style="color:var(--accent)">${perPlayer.length?(total/perPlayer.length).toFixed(1):'0'}</div><div class="card-sub">de ${perPlayer.length} jugadores</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        ${subTog}
+        <div style="display:flex;background:var(--bg3);border-radius:8px;padding:3px;gap:2px">
+          ${vBtn('tabla','Tabla')}
+          ${vBtn('mapa','Mapa')}
         </div>
+        <span style="font-size:11px;color:var(--text3)">${desc}</span>
+      </div>
+      ${equipoRecPerdVista==='mapa' ? renderMapa() : renderTabla()}`;
+  }
+
+  function renderEquipoRegatesEq() {
+    const el = document.getElementById('equipo-subtab-content');
+    if (typeof LIV_ZONES === 'undefined' || !el) return;
+
+    let allPts = [];
+    let totSucc = 0, totAtt = 0;
+    const perPlayer = [];
+    for (const nm of LIV_NAMES) {
+      const zd = LIV_ZONES[nm] && LIV_ZONES[nm].drb;
+      if (!zd) continue;
+      allPts = allPts.concat(zd.pts);
+      totSucc += (zd.success||0); totAtt += zd.total;
+      perPlayer.push({name: nm, total: zd.total, success: zd.success||0});
+    }
+    perPlayer.sort((a,b) => b.total - a.total);
+    const totalPct = totAtt>0 ? Math.round(100*totSucc/totAtt) : 0;
+    const top = perPlayer[0];
+    const topPct = perPlayer.slice().filter(p=>p.total>=5).sort((a,b)=>(b.success/b.total)-(a.success/a.total))[0];
+
+    const vBtn = (id,label) => `<button onclick="equipoRegVista='${id}';renderEquipoRegatesEq()"
+      style="background:${equipoRegVista===id?'var(--bg2)':'transparent'};border:${equipoRegVista===id?'1px solid var(--border)':'1px solid transparent'};color:${equipoRegVista===id?'var(--accent)':'var(--text2)'};border-radius:6px;padding:5px 14px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">${label}</button>`;
+
+    // ── TABLA ──────────────────────────────────────────────────────────────
+    const renderTabla = () => `
+      <div class="table-wrap anim">
+        <table>
+          <thead><tr>
+            <th>Jugador</th>
+            <th style="text-align:center">⚡ Intentados</th>
+            <th style="text-align:center">✅ Completados</th>
+            <th style="text-align:center">% Éxito</th>
+          </tr></thead>
+          <tbody>${perPlayer.map(p => {
+            const pct = p.total>0 ? Math.round(100*p.success/p.total) : 0;
+            return `<tr>
+              <td style="font-weight:700;cursor:pointer" onclick="equipoRegVista='mapa';equipoRegPlayerSel='${p.name.replace(/'/g,"\\'")}';renderEquipoRegatesEq()">${p.name}</td>
+              <td style="text-align:center;font-weight:800;color:#ffd33d">${p.total}</td>
+              <td style="text-align:center;color:var(--text2)">${p.success}</td>
+              <td style="text-align:center;font-weight:700;color:${pct>=50?'#3fb950':'#f85149'}">${pct}%</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
       </div>`;
+
+    // ── MAPA ───────────────────────────────────────────────────────────────
+    const renderMapa = () => {
+      const isAll = equipoRegPlayerSel === '__ALL__' || !LIV_ZONES[equipoRegPlayerSel];
+      const data = isAll ? {pts:allPts, total:totAtt, success:totSucc} : (LIV_ZONES[equipoRegPlayerSel].drb || {pts:[],total:0,success:0});
+      const pct = data.total>0 ? Math.round(100*data.success/data.total) : 0;
+      const playerList = `<div onclick="equipoRegPlayerSel='__ALL__';renderEquipoRegatesEq()"
+          style="padding:8px 12px;cursor:pointer;border-radius:6px;background:${isAll?'#1e3a5f':'transparent'};border:1px solid ${isAll?'#3b82f6':'transparent'};display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span style="font-size:12px;font-weight:${isAll?700:500};color:${isAll?'#93c5fd':'var(--text2)'}">Todo el equipo</span>
+          <span style="font-size:11px;font-weight:800;color:#ffd33d;flex-shrink:0">${totAtt}</span>
+        </div>` +
+        perPlayer.map(p => `
+        <div onclick="equipoRegPlayerSel='${p.name.replace(/'/g,"\\'")}';renderEquipoRegatesEq()"
+          style="padding:8px 12px;cursor:pointer;border-radius:6px;background:${equipoRegPlayerSel===p.name?'#1e3a5f':'transparent'};border:1px solid ${equipoRegPlayerSel===p.name?'#3b82f6':'transparent'};display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span style="font-size:12px;font-weight:${equipoRegPlayerSel===p.name?700:500};color:${equipoRegPlayerSel===p.name?'#93c5fd':'var(--text2)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</span>
+          <span style="font-size:11px;font-weight:800;color:#ffd33d;flex-shrink:0">${p.total}</span>
+        </div>`).join('');
+
+      return `
+        <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+          <div style="width:160px;flex-shrink:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px;max-height:480px;overflow-y:auto">${playerList}</div>
+          <div style="flex:1;min-width:320px">
+            <div style="text-align:center;margin-bottom:8px">
+              <span style="font-size:13px;font-weight:700;color:var(--text1)">${isAll?'Todo el equipo':equipoRegPlayerSel}</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:8px">${data.total} intentados · ${data.success} completados (${pct}%)</span>
+            </div>
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 6px 4px;overflow:hidden">${_genZoneMap(data.pts, '#ffd33d', {failColor:'#f85149'})}</div>
+            <div style="display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:10px;color:var(--text3)">
+              <span><svg width="12" height="12" style="vertical-align:middle;margin-right:3px"><circle cx="6" cy="6" r="5" fill="#ffd33d"/></svg>Regate completado</span>
+              <span><svg width="12" height="12" style="vertical-align:middle;margin-right:3px"><circle cx="6" cy="6" r="5" fill="#f85149"/></svg>Regate fallado</span>
+            </div>
+            <div style="font-size:9px;color:var(--text3);margin-top:8px;text-align:center">Eventos Opta · Premier League 25/26</div>
+          </div>
+        </div>`;
+    };
+
+    el.innerHTML = `
+      <div class="content-head anim">
+        <div><h2>REGATES</h2>
+          <p>Temporada 2025/26 · Premier League</p>
+        </div>
+      </div>
+      <div class="cards anim" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+        <div class="card"><div class="card-label">Regates intentados</div><div class="card-value" style="color:#ffd33d">${totAtt}</div><div class="card-sub">equipo · 25/26</div></div>
+        <div class="card"><div class="card-label">Regates completados</div><div class="card-value" style="color:#3fb950">${totSucc}</div><div class="card-sub">${totalPct}% de éxito</div></div>
+        <div class="card"><div class="card-label">Más regateador</div><div class="card-value" style="color:#ffd33d;font-size:18px">${top?.name||'—'}</div><div class="card-sub">${top?.total||0} intentados</div></div>
+        <div class="card"><div class="card-label">Mejor % éxito</div><div class="card-value" style="color:#3fb950;font-size:18px">${topPct?.name||'—'}</div><div class="card-sub">${topPct?(Math.round(100*topPct.success/topPct.total)+'% (≥5 intentos)'):'—'}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <div style="display:flex;background:var(--bg3);border-radius:8px;padding:3px;gap:2px">
+          ${vBtn('tabla','Tabla')}
+          ${vBtn('mapa','Mapa')}
+        </div>
+        <span style="font-size:11px;color:var(--text3)">${equipoRegVista==='mapa'?'Selecciona un jugador para ver su mapa de regates':'Haz clic en un jugador para ver su mapa de regates'}</span>
+      </div>
+      ${equipoRegVista==='mapa' ? renderMapa() : renderTabla()}`;
   }
 
   function renderEquipoMinutos() {
