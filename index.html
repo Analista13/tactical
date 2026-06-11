@@ -14624,7 +14624,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
     // Aggregate across all Liverpool players + per-player breakdown
     let allPts = [];
     const perPlayer = [];
-    for (const nm of LIV_NAMES) {
+    for (const nm of Object.keys(LIV_ZONES)) {
       const zd = LIV_ZONES[nm] && LIV_ZONES[nm][sub[3]];
       if (!zd) continue;
       allPts = allPts.concat(zd.pts);
@@ -14718,7 +14718,7 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
     let allPts = [];
     let totSucc = 0, totAtt = 0;
     const perPlayer = [];
-    for (const nm of LIV_NAMES) {
+    for (const nm of Object.keys(LIV_ZONES)) {
       const zd = LIV_ZONES[nm] && LIV_ZONES[nm].drb;
       if (!zd) continue;
       allPts = allPts.concat(zd.pts);
