@@ -18154,43 +18154,53 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 if (pv === undefined) continue;
                 _allPct.push({key, pv, ...info});
               }
-              // Para "pérdidas de balón" un percentil alto es MALO -> invertimos para ranking de fortalezas/debilidades
+              // Para "pérdidas de balón" un percentil alto es MALO -> invertimos para valorar fortaleza/debilidad
               const _rankVal = e => e.hiBad ? (100 - e.pv) : e.pv;
-              const _sorted = [..._allPct].sort((a,b) => _rankVal(b) - _rankVal(a));
-              const _fortalezas = _sorted.filter(e => _rankVal(e) >= 70).slice(0,4);
-              const _debilidades = [..._sorted].reverse().filter(e => _rankVal(e) <= 30).slice(0,3);
               // Perfil dominante por grupo (media de percentiles del grupo)
               const _grpAgg = {};
               for (const e of _allPct) {
-                if (e.grp === 'Vulnerabilidad') continue;
                 _grpAgg[e.grp] = _grpAgg[e.grp] || [];
-                _grpAgg[e.grp].push(e.pv);
+                _grpAgg[e.grp].push(_rankVal(e));
               }
               const _grpAvg = Object.entries(_grpAgg).map(([g,arr]) => ({g, avg: arr.reduce((a,b)=>a+b,0)/arr.length}))
+                .filter(x => x.g !== 'Vulnerabilidad')
                 .sort((a,b)=>b.avg-a.avg);
               const _topGrp = _grpAvg[0];
               const _intro = `<strong style="color:var(--text1)">${p.name}</strong> es un <strong style="color:var(--text1)">${_posLabelA}</strong> con <strong style="color:var(--text1)">${_livData.mins||0} minutos</strong> disputados esta temporada en la Premier League. ` +
-                (_topGrp ? `Su perfil estadístico está marcado sobre todo por su aportación en <strong style="color:#79c0ff">${_topGrp.g.toLowerCase()}</strong> (percentil medio ${_topGrp.avg.toFixed(0)} frente a jugadores de su misma posición).` : '');
-              const _fortBlock = _fortalezas.length ? `
-                <div style="margin-top:14px">
-                  <div style="font-size:11px;font-weight:800;color:#3fb950;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">💪 Puntos fuertes</div>
-                  ${_fortalezas.map(e => `<div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:6px">
-                    <strong style="color:var(--text1)">${e.lbl}</strong> (P${e.pv}): ${p.name} ${e.hi}.
-                  </div>`).join('')}
-                </div>` : '';
-              const _debBlock = _debilidades.length ? `
-                <div style="margin-top:14px">
-                  <div style="font-size:11px;font-weight:800;color:#f0883e;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">🔧 Aspectos a mejorar</div>
-                  ${_debilidades.map(e => `<div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:6px">
-                    <strong style="color:var(--text1)">${e.lbl}</strong> (P${e.pv}): ${p.name} ${e.lo}.
-                  </div>`).join('')}
-                </div>` : '';
+                (_topGrp ? `Estadísticamente, su perfil destaca sobre todo en <strong style="color:#79c0ff">${_topGrp.g.toLowerCase()}</strong> (percentil medio ${_topGrp.avg.toFixed(0)} frente a jugadores de su misma posición).` : '');
+
+              // Secciones temáticas (en el orden de aportación del jugador)
+              const GRP_INFO = {
+                'Defensa':       {title:'🛡️ Cualidades defensivas', color:'#ff7b72'},
+                'Pressing':      {title:'🔥 Pressing e intensidad', color:'#56d364'},
+                'Progresión':    {title:'🚀 Salida de balón y progresión', color:'#a5d6ff'},
+                'Creación':      {title:'🎯 Creación de juego', color:'#d2a8ff'},
+                'Finalización':  {title:'⚽ Definición', color:'#f85149'},
+                'Movimiento':    {title:'🏃 Movimiento sin balón', color:'#ffa657'},
+                'Vulnerabilidad':{title:'⚠️ Aspectos a vigilar', color:'#f0883e'},
+              };
+              const _sections = [..._grpAvg.map(g=>g.g), 'Vulnerabilidad'].map(grp => {
+                const items = _allPct.filter(e => e.grp === grp);
+                if (!items.length) return '';
+                const info = GRP_INFO[grp] || {title:grp, color:'var(--text1)'};
+                // Para vulnerabilidades sólo se comenta si el dato es realmente llamativo (alto)
+                const hi = items.filter(e => (grp==='Vulnerabilidad' ? e.pv : e.pv) >= (grp==='Vulnerabilidad' ? 75 : 65)).sort((a,b)=>b.pv-a.pv);
+                const lo = grp==='Vulnerabilidad' ? [] : items.filter(e => e.pv <= 30).sort((a,b)=>a.pv-b.pv);
+                if (!hi.length && !lo.length) return '';
+                const frases = [];
+                hi.forEach(e => frases.push(`${p.name} ${e.hi} (percentil ${e.pv} en ${e.lbl.toLowerCase()}).`));
+                lo.forEach(e => frases.push(`Por el contrario, ${e.lo} (percentil ${e.pv} en ${e.lbl.toLowerCase()}).`));
+                return `<div style="margin-top:14px">
+                  <div style="font-size:11px;font-weight:800;color:${info.color};text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">${info.title}</div>
+                  <div style="font-size:12px;color:var(--text2);line-height:1.7">${frases.join(' ')}</div>
+                </div>`;
+              }).join('');
+
               return `
                 <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px">
                   <div style="font-size:11px;font-weight:800;color:#79c0ff;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">📋 Resumen del perfil</div>
                   <div style="font-size:13px;color:var(--text2);line-height:1.7">${_intro}</div>
-                  ${_fortBlock}
-                  ${_debBlock}
+                  ${_sections}
                   <div style="font-size:9px;color:var(--text3);margin-top:14px;padding-top:10px;border-top:1px solid var(--border)">Análisis generado automáticamente a partir de los percentiles por posición · Premier League 25/26.</div>
                 </div>`;
             })() : (_profileTab === 'defensiva_liv') ? (() => {
