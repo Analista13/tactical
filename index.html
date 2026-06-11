@@ -18735,6 +18735,8 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                 'Pases largos completados': 'Pases de 30 metros o más que llegan correctamente a un compañero.',
                 'Conducciones que avanzan (forward momentum)': 'Posesiones con balón en las que el jugador avanza el juego hacia la portería rival (detectado por seguimiento físico), independientemente de si conduce, regatea o combina.',
                 'Carreras sin recibir': 'Carreras sin balón que NO terminan con el jugador recibiendo el balón: desmarques que generan espacio para compañeros o desequilibran al rival aunque no acaben en pase.',
+                'Toques en área rival': 'Veces que el jugador toca el balón dentro del área rival, sin importar el resultado de la jugada. Mide su presencia en zona de remate.',
+                'Faltas recibidas': 'Faltas señaladas a favor del jugador durante una acción con balón. Mide su capacidad de generar paradas de juego en zonas peligrosas o aliviar la presión.',
               };
               // Bloque con la definición de las dos métricas usadas en un gráfico de dispersión
               const _metricDefBlock = (curX, curY) => {
@@ -19195,6 +19197,9 @@ const PL_RESULTS = {"Arsenal": {"1": ["L", 0, 3, "Wolves", 1], "2": ["W", 2, 1, 
                   ['lp_att_90','Pases largos intentados'],
                   ['lp_comp_90','Pases largos completados'],
                   ['fwd_mom_90','Conducciones que avanzan (forward momentum)'],
+                  ['touches_box_90','Toques en área rival'],
+                  ['fouls_drawn_90','Faltas recibidas'],
+                  ['runs_unrec_90','Carreras sin recibir'],
                 ];
                 const _PM = Object.fromEntries(PROG_METRICS);
                 const _curXp = [_profileProgX, _PM[_profileProgX]||_profileProgX];
